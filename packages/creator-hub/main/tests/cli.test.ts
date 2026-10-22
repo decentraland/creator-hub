@@ -48,8 +48,8 @@ import {
   getPreview,
   start,
   supportsAssetBundles,
-  supportsDeployResource,
-  supportsDeployToken,
+  getDeployCommandSupport,
+  type DeployCommandSupport,
   deploy,
 } from '../src/modules/cli';
 
@@ -817,14 +817,12 @@ describe('supportsAssetBundles', () => {
   });
 });
 
-describe('supportsDeployResource', () => {
-  let path: string;
+describe('getDeployCommandSupport', () => {
   let files: Record<string, string>;
-  let result: boolean;
+  let result: DeployCommandSupport;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    path = `/scenes/scene-${++sceneCount}`;
     files = {};
     const find = (file: string) => {
       const name = Object.keys(files).find(suffix => file.endsWith(suffix));
@@ -838,99 +836,83 @@ describe('supportsDeployResource', () => {
     });
   });
 
-  describe('when the deploy command ships its routes module', () => {
+  const read = async () => {
+    result = await getDeployCommandSupport(`/scenes/scene-${++sceneCount}`);
+  };
+
+  describe('when the deploy command predates programmatic deploys', () => {
     beforeEach(async () => {
       files['deploy/index.js'] = 'deploy command';
+      await read();
+    });
+
+    it('should report it as legacy, without any newer capability', () => {
+      expect(result).toEqual({
+        legacy: true,
+        multiScene: false,
+        deployResource: false,
+        deployToken: false,
+      });
+    });
+  });
+
+  describe('when the deploy command ships its routes module and declares every flag', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] =
+        "const args = { '--programmatic': Boolean, '--multi-scene': Boolean, '--deploy-token': String }";
       files['deploy/routes.js'] = "router.delete('/api/deploy')";
-      result = await supportsDeployResource(path);
+      await read();
     });
 
-    it('should report the resource api as supported', () => {
-      expect(result).toBe(true);
+    it('should report every capability', () => {
+      expect(result).toEqual({
+        legacy: false,
+        multiScene: true,
+        deployResource: true,
+        deployToken: true,
+      });
     });
 
-    it('should not read the deploy command', () => {
-      expect(mocks.readFile).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('when the deploy command mentions respond-async', () => {
-    beforeEach(async () => {
-      files['deploy/index.js'] = '--help: Prefer: respond-async';
-      result = await supportsDeployResource(path);
-    });
-
-    it('should report the resource api as supported', () => {
-      expect(result).toBe(true);
+    it('should read the deploy command once', () => {
+      expect(mocks.readFile).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('when the deploy command has neither', () => {
+  describe('when the deploy command only mentions respond-async', () => {
     beforeEach(async () => {
-      files['deploy/index.js'] = 'deploy command with --programmatic';
-      files['deploy/utils.js'] = "router.post('/api/deploy')";
-      result = await supportsDeployResource(path);
+      files['deploy/index.js'] = "'--programmatic' --help: Prefer: respond-async";
+      await read();
     });
 
-    it('should report the resource api as unsupported', () => {
-      expect(result).toBe(false);
+    it('should report the deploy resource without a deploy token', () => {
+      expect({ deployResource: result.deployResource, deployToken: result.deployToken }).toEqual({
+        deployResource: true,
+        deployToken: false,
+      });
+    });
+  });
+
+  describe('when the deploy command declares the token flag with double quotes', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] =
+        'const args = { "--programmatic": Boolean, "--deploy-token": String }';
+      await read();
+    });
+
+    it('should still report the token flag', () => {
+      expect(result.deployToken).toBe(true);
     });
   });
 
   describe('when the sdk is not installed', () => {
+    let error: unknown;
+
     beforeEach(async () => {
-      result = await supportsDeployResource(path);
+      error = await read().catch(e => e);
     });
 
-    it('should report the resource api as unsupported', () => {
-      expect(result).toBe(false);
-    });
-  });
-});
-
-describe('supportsDeployToken', () => {
-  let files: Record<string, string>;
-  let result: boolean;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    files = {};
-    mocks.readFile.mockImplementation(async (file: string) => {
-      const name = Object.keys(files).find(suffix => file.endsWith(suffix));
-      if (name === undefined) throw new Error('ENOENT');
-      return files[name];
-    });
-  });
-
-  describe('when the deploy command declares the flag', () => {
-    beforeEach(async () => {
-      files['deploy/index.js'] = "const args = { '--deploy-token': String }";
-      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
-    });
-
-    it('should report the flag as supported', () => {
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('when the deploy command does not declare the flag', () => {
-    beforeEach(async () => {
-      files['deploy/index.js'] = '--help: Prefer: respond-async';
-      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
-    });
-
-    it('should report the flag as unsupported', () => {
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('when the sdk is not installed', () => {
-    beforeEach(async () => {
-      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
-    });
-
-    it('should report the flag as unsupported', () => {
-      expect(result).toBe(false);
+    it('should fail, as there is no deploy command to run', () => {
+      expect(error).toBeInstanceOf(Error);
     });
   });
 });
@@ -995,6 +977,10 @@ describe('deploy', () => {
 
     it('should return the port the CLI serves', () => {
       expect(result.port).toBe(4000);
+    });
+
+    it('should read the deploy command once', () => {
+      expect(mocks.readFile).toHaveBeenCalledTimes(1);
     });
   });
 

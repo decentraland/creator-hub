@@ -18,8 +18,8 @@ const {
   deployWithProgress,
   isDeployResourceAvailable,
   parseServerSentEvents,
+  registerDeployServer,
   requestDeploymentCancel,
-  setDeployToken,
   MAX_POLL_FAILURES,
 } = await import('./deploy-api');
 const { isDeploymentError } = await import('/@/lib/deploy');
@@ -27,6 +27,10 @@ const { FetchError } = await import('/shared/fetch');
 const { DEPLOY_REQUEST_TIMEOUT_MS } = await import('./utils');
 
 const URL = 'http://localhost:4000/api';
+
+/** Adopts the CLI on `port` with `deployToken`, as after main starts a deploy. */
+const adoptCli = (deployToken: string | undefined, port = 4000) =>
+  registerDeployServer({ port, supportsDeployResource: true, deployToken });
 const PAYLOAD = { address: '0xabc', authChain: [], chainId: ChainId.ETHEREUM_MAINNET };
 
 const state = (phase: DeployState['phase'], extra: Partial<DeployState> = {}): DeployState => ({
@@ -198,8 +202,47 @@ describe('isDeployResourceAvailable', () => {
       await run();
     });
 
-    it('should throw', () => {
-      expect((error as Error).message).toBe('Failed to fetch the deployment state: HTTP 500');
+    it('should report the resource as unavailable, so the blocking request is used', () => {
+      expect({ result, error }).toEqual({ result: false, error: undefined });
+    });
+  });
+
+  describe('when the connection resets while the CLI is still starting', () => {
+    beforeEach(async () => {
+      fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+      await run();
+    });
+
+    it('should report the resource as unavailable, so the blocking request is used', () => {
+      expect({ result, error }).toEqual({ result: false, error: undefined });
+    });
+  });
+});
+
+describe('registerDeployServer', () => {
+  let adopted: ReturnType<typeof registerDeployServer>;
+
+  afterEach(() => {
+    adoptCli(undefined);
+  });
+
+  describe('when main hands out a deploy token', () => {
+    beforeEach(() => {
+      adopted = adoptCli('token-example-123');
+    });
+
+    it('should report the url, support and that the app holds the token', () => {
+      expect(adopted).toEqual({ url: URL, supportsDeployResource: true, hasCancelToken: true });
+    });
+  });
+
+  describe('when main hands out no deploy token', () => {
+    beforeEach(() => {
+      adopted = adoptCli(undefined);
+    });
+
+    it('should report that the app holds no token', () => {
+      expect(adopted.hasCancelToken).toBe(false);
     });
   });
 });
@@ -508,6 +551,17 @@ describe('deployWithProgress', () => {
       expect((error as Error).message).toBe('Invalid payload: address');
     });
   });
+
+  describe('when the CLI accepts the deployment but its answer cannot be read', () => {
+    beforeEach(async () => {
+      mockServer({ POST: [() => new Response('{"phase": "upl', { status: 202 })] });
+      await run();
+    });
+
+    it('should throw an error that keeps the deployment from being retried', () => {
+      expect(isDeploymentError(error, 'DEPLOY_STATE_LOST')).toBe(true);
+    });
+  });
 });
 
 describe('requestDeploymentCancel', () => {
@@ -533,13 +587,13 @@ describe('requestDeploymentCancel', () => {
 
   describe('when the CLI accepts the cancellation', () => {
     beforeEach(async () => {
-      setDeployToken(URL, 'token-example-123');
+      adoptCli('token-example-123');
       mockServer({ DELETE: [() => jsonResponse(202, uploading(10))] });
       await run();
     });
 
     afterEach(() => {
-      setDeployToken(URL, undefined);
+      adoptCli(undefined);
     });
 
     it('should send DELETE to the deployment with its token', () => {
@@ -602,7 +656,7 @@ describe('requestDeploymentCancel', () => {
 
   describe('when the deployment of that CLI already ended', () => {
     beforeEach(async () => {
-      setDeployToken(URL, 'token-example-123');
+      adoptCli('token-example-123');
       mockServer({
         POST: [() => jsonResponse(202, uploading(0))],
         'GET text/event-stream': [() => sseResponse([sseEvent(state('cancelled'))])],
@@ -626,14 +680,14 @@ describe('requestDeploymentCancel', () => {
 
   describe('when another deploy CLI started after it', () => {
     beforeEach(async () => {
-      setDeployToken(URL, 'token-example-123');
-      setDeployToken('http://localhost:4001/api', 'token-example-456');
+      adoptCli('token-example-123');
+      adoptCli('token-example-456', 4001);
       mockServer({ DELETE: [() => jsonResponse(403, {})] });
       await run();
     });
 
     afterEach(() => {
-      setDeployToken(URL, undefined);
+      adoptCli(undefined);
     });
 
     it('should no longer send the token of the stopped CLI', () => {

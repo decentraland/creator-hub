@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { LinearProgress } from 'decentraland-ui2';
 
 import type { DeployUpload } from '/@/lib/deploy';
+import type { CancelRejection } from '/@/modules/store/deployment/deploy-api';
+import type { TranslationPath } from '/@/modules/store/translation/types';
 import { t } from '/@/modules/store/translation/utils';
 import { formatSize } from '/@/modules/file';
 
@@ -8,15 +11,26 @@ import { Button } from '/@/components/Button';
 
 import './styles.css';
 
+/** What the deployment allows about cancelling it. */
+export type DeployCancel =
+  | { kind: 'hidden' }
+  /** Shown without allowing it: the CLI would turn the request down. */
+  | { kind: 'unsupported' }
+  /** The CLI reports a cancellation under way. */
+  | { kind: 'cancelling' }
+  /** `onCancel` resolves with why the CLI turned the request down, or `null` when it took it. */
+  | { kind: 'available'; onCancel: () => Promise<CancelRejection | null> };
+
 type Props = {
   upload?: DeployUpload | null;
-  canCancel: boolean;
-  cancelling: boolean;
-  /** Shows the cancel button without allowing it, as the CLI would turn the request down. */
-  cancelDisabled?: boolean;
-  /** Why cancelling is not possible, or why the last cancel request was turned down. */
-  cancelNotice?: string;
-  onCancel: () => void;
+  cancel: DeployCancel;
+};
+
+type CancelRequest = 'idle' | 'sent' | CancelRejection;
+
+const REJECTION_NOTICES: Record<CancelRejection, TranslationPath> = {
+  'too-early': 'modal.publish_project.deploy.deploying.progress.cancel_too_early',
+  unauthorized: 'modal.publish_project.deploy.deploying.progress.cancel_unauthorized',
 };
 
 function getPercent({ sentBytes, totalBytes }: DeployUpload) {
@@ -37,17 +51,31 @@ function getMessage(upload: DeployUpload) {
   }
 }
 
-export function DeployProgress({
-  upload,
-  canCancel,
-  cancelling,
-  cancelDisabled,
-  cancelNotice,
-  onCancel,
-}: Props) {
-  if (!upload && !canCancel) return null;
+/** Rendered per deployment (`key`), so a cancel request never carries over to the next one. */
+export function DeployProgress({ upload, cancel }: Props) {
+  const [request, setRequest] = useState<CancelRequest>('idle');
+
+  if (!upload && cancel.kind === 'hidden') return null;
 
   const determinate = upload?.stage === 'uploading' && upload.totalBytes > 0;
+
+  const handleCancel = async () => {
+    if (cancel.kind !== 'available') return;
+    setRequest('sent');
+    try {
+      setRequest((await cancel.onCancel()) ?? 'sent');
+    } catch {
+      setRequest('idle');
+    }
+  };
+
+  const cancelling = cancel.kind === 'cancelling' || request === 'sent';
+  const notice =
+    cancel.kind === 'unsupported'
+      ? t('modal.publish_project.deploy.deploying.progress.cancel_unsupported')
+      : request === 'too-early' || request === 'unauthorized'
+        ? t(REJECTION_NOTICES[request])
+        : undefined;
 
   return (
     <div className="DeployProgress">
@@ -71,22 +99,22 @@ export function DeployProgress({
           </div>
         </div>
       )}
-      {canCancel && (
+      {cancel.kind !== 'hidden' && (
         <div className="cancel">
-          {cancelNotice && (
+          {notice && (
             <span
               className="notice"
               role="status"
             >
-              {cancelNotice}
+              {notice}
             </span>
           )}
           <Button
             size="medium"
             variant="outlined"
             color="secondary"
-            disabled={cancelling || cancelDisabled}
-            onClick={onCancel}
+            disabled={cancelling || cancel.kind === 'unsupported'}
+            onClick={handleCancel}
           >
             {cancelling
               ? t('modal.publish_project.deploy.deploying.actions.cancelling')

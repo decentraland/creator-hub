@@ -15,7 +15,7 @@ import { useDeploy } from '/@/hooks/useDeploy';
 import { useCounter } from '/@/hooks/useCounter';
 
 import { actions as deploymentActions, type Deployment } from '/@/modules/store/deployment/slice';
-import { type CancelRejection, isFinalPhase } from '/@/modules/store/deployment/deploy-api';
+import { isFinalPhase } from '/@/modules/store/deployment/deploy-api';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
 import {
   actions as managementActions,
@@ -37,7 +37,7 @@ import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
 import { parseCoords } from '/@/components/Modals/PublishProject/utils';
 
-import { DeployProgress } from './DeployProgress';
+import { DeployProgress, type DeployCancel } from './DeployProgress';
 
 import './styles.css';
 
@@ -52,7 +52,7 @@ function getPath(filename: string) {
 }
 
 export function Deploy(props: Props) {
-  const { project, previousStep, onStep, onBack, deploymentMetadata } = props;
+  const { project, previousStep, onStep, onBack, onClose, deploymentMetadata } = props;
   const { signOut, wallet } = useAuth();
   const dispatch = useDispatch();
   const { updateProjectInfo } = useWorkspace();
@@ -63,8 +63,6 @@ export function Deploy(props: Props) {
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
-  const [cancelling, setCancelling] = useState(false);
-  const [cancelRejection, setCancelRejection] = useState<CancelRejection | null>(null);
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
 
@@ -124,32 +122,18 @@ export function Deploy(props: Props) {
     !!deployment.phase &&
     !isFinalPhase(deployment.phase);
 
-  const handleCancel = useCallback(async () => {
-    setCancelling(true);
-    setCancelRejection(null);
-    try {
-      const rejection = await dispatch(deploymentActions.cancelDeployment(project.path)).unwrap();
-      if (rejection) {
-        setCancelling(false);
-        setCancelRejection(rejection);
-      }
-    } catch {
-      setCancelling(false);
-    }
-  }, [dispatch, project.path]);
+  const handleCancel = useCallback(
+    async () =>
+      (await dispatch(deploymentActions.cancelDeployment(project.path)).unwrap()).rejection,
+    [dispatch, project.path],
+  );
 
-  useEffect(() => {
-    setCancelling(false);
-    setCancelRejection(null);
-  }, [deployment?.id]);
-
-  const cancelNotice = !deployment?.cancellable
-    ? t('modal.publish_project.deploy.deploying.progress.cancel_unsupported')
-    : cancelRejection
-      ? cancelRejection === 'too-early'
-        ? t('modal.publish_project.deploy.deploying.progress.cancel_too_early')
-        : t('modal.publish_project.deploy.deploying.progress.cancel_unauthorized')
-      : undefined;
+  const cancel = useMemo<DeployCancel>(() => {
+    if (!canCancel) return { kind: 'hidden' };
+    if (!deployment.hasCancelToken) return { kind: 'unsupported' };
+    if (deployment.cancelRequested) return { kind: 'cancelling' };
+    return { kind: 'available', onCancel: handleCancel };
+  }, [canCancel, deployment?.hasCancelToken, deployment?.cancelRequested, handleCancel]);
 
   // A cancelled deployment leaves the CLI unable to deploy again, so leave this step: the
   // previous step starts a fresh one. Only on the transition, as a deployment cancelled
@@ -162,9 +146,9 @@ export function Deploy(props: Props) {
     if (previousStep && onBack) {
       onBack();
     } else {
-      props.onClose();
+      onClose();
     }
-  }, [deployment?.status]);
+  }, [deployment?.status, previousStep, onBack, onClose]);
 
   const jumpInLocation = useMemo(() => {
     const [x, y] = parseCoords(project.scene.base);
@@ -361,12 +345,9 @@ export function Deploy(props: Props) {
                 {(deployment.status === 'pending' || undeployStatus === 'pending') && (
                   <Deploying steps={steps}>
                     <DeployProgress
+                      key={deployment.id}
                       upload={deployment.upload}
-                      canCancel={canCancel}
-                      cancelling={cancelling || !!deployment.cancelRequested}
-                      cancelDisabled={!deployment.cancellable}
-                      cancelNotice={cancelNotice}
-                      onCancel={handleCancel}
+                      cancel={cancel}
                     />
                   </Deploying>
                 )}

@@ -12,8 +12,7 @@ import { isWorkspaceError } from '/shared/types/workspace';
 import { editor } from '#preload';
 
 import { actions as deploymentActions } from '../deployment';
-import { setDeployToken } from '../deployment/deploy-api';
-import { getDeploymentUrl } from '../deployment/utils';
+import { registerDeployServer } from '../deployment/deploy-api';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
@@ -47,23 +46,19 @@ export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
-    const { port, supportsDeployResource, deployToken } = await editor.publishScene({
-      ...opts,
-      language: translation.locale,
-    });
-    const url = getDeploymentUrl(port);
-    if (url) setDeployToken(url, deployToken);
-    const deployment = {
-      path: opts.path,
-      port,
-      supportsDeployResource,
-      // Main only hands out a token when the CLI it runs takes `--deploy-token`.
-      cancellable: !!deployToken,
-      chainId: opts.chainId,
-      wallet: opts.wallet,
-    };
-    await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
-    return port;
+    const server = await editor.publishScene({ ...opts, language: translation.locale });
+    const { supportsDeployResource, hasCancelToken } = registerDeployServer(server);
+    await dispatch(
+      deploymentActions.initializeDeployment({
+        path: opts.path,
+        port: server.port,
+        supportsDeployResource,
+        hasCancelToken,
+        chainId: opts.chainId,
+        wallet: opts.wallet,
+      }),
+    ).unwrap();
+    return server.port;
   },
 );
 export const killPreviewScene = createAsyncThunk(

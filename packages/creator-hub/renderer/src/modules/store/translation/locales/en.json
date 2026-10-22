@@ -474,7 +474,7 @@
             "processing": "Publishing...",
             "batches": "Batch {completed} of {total} uploaded",
             "cancel_too_early": "Can't cancel while the previous scenes are being removed. Try again in a moment.",
-            "cancel_unauthorized": "Couldn't cancel the deployment from here. Cancel it from the terminal running the CLI.",
+            "cancel_unauthorized": "Couldn't cancel the deployment from here. Close Creator Hub to stop it.",
             "cancel_unsupported": "Update the SDK of this scene to cancel deployments from here."
           },
           "errors": {
@@ -491,8 +491,8 @@
             "invalid_identity": "Failed to validate your identity.",
             "max_file_size_exceeded": "One or more assets exceed the allowed limit ({maxFileSizeInMb}MB).\nOptimize or remove large files and try again.",
             "max_scene_size_exceeded": "Your scene exceeds the maximum allowed size.\nReduce the number or size of assets and try again.",
-            "deploy_state_lost": "Lost track of the deployment, which may still finish.\nCheck the deploy CLI's output before publishing again.",
-            "deploy_request_timeout": "The deployment did not finish within 60 minutes and may still be running.\nCheck the deploy CLI's output before publishing again.",
+            "deploy_state_lost": "Lost track of the deployment, which may still finish.\nCheck the scene in the Manage section before publishing again.",
+            "deploy_request_timeout": "The deployment did not finish within 60 minutes and may still be running.\nCheck the scene in the Manage section before publishing again.",
             "unknown": "Something went wrong.\nPlease, try again.",
             "invalid_creator_wallet": "Creator must be a valid Ethereum wallet address."
           },

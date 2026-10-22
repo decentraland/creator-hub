@@ -61,7 +61,7 @@ const createDeployment = (overrides: Partial<Deployment> = {}): Deployment => ({
   status: 'pending',
   componentsStatus: { catalyst: 'pending', assetBundle: 'idle' },
   supportsDeployResource: true,
-  cancellable: true,
+  hasCancelToken: true,
   phase: 'uploading',
   upload: null,
   createdAt: 0,
@@ -158,7 +158,7 @@ describe('Deploy step', () => {
 
   describe('when the CLI follows the deployment but takes no deploy token', () => {
     beforeEach(() => {
-      hooks.deployment = createDeployment({ cancellable: false });
+      hooks.deployment = createDeployment({ hasCancelToken: false });
       mount();
     });
 
@@ -181,7 +181,9 @@ describe('Deploy step', () => {
     ['unauthorized', 'modal.publish_project.deploy.deploying.progress.cancel_unauthorized'],
   ])('when the CLI turns the cancellation down as %s', (rejection, message) => {
     beforeEach(async () => {
-      hooks.dispatch.mockReturnValue({ unwrap: () => Promise.resolve(rejection) });
+      hooks.dispatch.mockReturnValue({
+        unwrap: () => Promise.resolve({ deploymentId: 'deployment-1', rejection }),
+      });
       hooks.deployment = createDeployment();
       mount();
       await act(async () => {
@@ -202,6 +204,44 @@ describe('Deploy step', () => {
         name: 'modal.publish_project.deploy.deploying.actions.cancel',
       }) as HTMLButtonElement;
       expect(button.disabled).toBe(false);
+    });
+  });
+
+  describe('when the CLI takes the cancellation', () => {
+    beforeEach(async () => {
+      hooks.dispatch.mockReturnValue({
+        unwrap: () => Promise.resolve({ deploymentId: 'deployment-1', rejection: null }),
+      });
+      hooks.deployment = createDeployment();
+      mount();
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole('button', {
+            name: 'modal.publish_project.deploy.deploying.actions.cancel',
+          }),
+        );
+      });
+    });
+
+    it('should show the cancellation in progress until the deployment ends', () => {
+      const button = screen.getByRole('button', {
+        name: 'modal.publish_project.deploy.deploying.actions.cancelling',
+      }) as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+    });
+
+    describe('and a new deployment starts', () => {
+      beforeEach(() => {
+        hooks.deployment = createDeployment({ id: 'deployment-2' });
+        rerender();
+      });
+
+      it('should offer to cancel the new one', () => {
+        const button = screen.getByRole('button', {
+          name: 'modal.publish_project.deploy.deploying.actions.cancel',
+        }) as HTMLButtonElement;
+        expect(button.disabled).toBe(false);
+      });
     });
   });
 });

@@ -43,8 +43,8 @@ import {
 import {
   deployWithProgress,
   isDeployResourceAvailable,
+  registerDeployServer,
   requestDeploymentCancel,
-  setDeployToken,
 } from './deploy-api';
 
 function buildError(action: any): Deployment['error'] {
@@ -70,10 +70,15 @@ export interface Deployment {
   /** Whether the CLI serving `url` reports progress (`/api/deploy` resource). */
   supportsDeployResource: boolean;
   /** Whether the app holds the token the CLI requires to cancel the deployment. */
-  cancellable: boolean;
+  hasCancelToken: boolean;
   phase?: DeployPhase;
   upload?: DeployUpload | null;
+  /** The CLI reports a cancellation under way. */
   cancelRequested?: boolean;
+  /** The CLI accepted the user's cancel request, so a failure must not be retried. */
+  cancelAccepted?: boolean;
+  /** The `executeDeployment` run that owns this deployment; others' outcomes are ignored. */
+  executeRequestId?: string;
   createdAt: number;
   lastUpdated: number;
 }
@@ -86,8 +91,8 @@ export interface DeploymentState {
 interface InitializeDeploymentPayload {
   path: string;
   port: number;
-  supportsDeployResource?: boolean;
-  cancellable?: boolean;
+  supportsDeployResource: boolean;
+  hasCancelToken: boolean;
   wallet: string;
   chainId: ChainId;
 }
@@ -121,14 +126,7 @@ export const initializeDeployment = createAsyncThunk(
 
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
 
-    return {
-      ...payload,
-      url,
-      info,
-      files,
-      supportsDeployResource: !!payload.supportsDeployResource,
-      cancellable: !!payload.cancellable,
-    };
+    return { ...payload, url, info, files };
   },
 );
 
@@ -141,23 +139,17 @@ const updateDeploymentTarget = createAsyncThunk(
     const { path, target, chainId, wallet } = payload;
     const { translation } = getState();
 
-    const { port, supportsDeployResource, deployToken } = await editor.publishScene({
-      target,
-      path,
-      chainId,
-      wallet,
-      language: translation.locale,
-    });
-    const url = getDeploymentUrl(port);
+    const { url, supportsDeployResource, hasCancelToken } = registerDeployServer(
+      await editor.publishScene({ target, path, chainId, wallet, language: translation.locale }),
+    );
 
     if (!url) {
       return rejectWithValue(new DeploymentError('INVALID_URL', getInitialDeploymentStatus()));
     }
 
-    setDeployToken(url, deployToken);
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
 
-    return { path, url, info, files, supportsDeployResource, cancellable: !!deployToken };
+    return { path, url, info, files, supportsDeployResource, hasCancelToken };
   },
 );
 
@@ -196,7 +188,12 @@ export const deploy = createAsyncThunk(
         retries--;
 
         const currentDeployment = getState().deployment.deployments[path];
-        if (isDeploymentError(error, 'DEPLOYMENT_CANCELLED')) {
+        // A newer deployment took over the path: deploying again would start a CLI over its one.
+        if (currentDeployment?.id !== deploymentId) {
+          return rejectWithValue(error);
+        }
+        // The user cancelled: a CLI that failed meanwhile must not be retried on another catalyst.
+        if (isDeploymentError(error, 'DEPLOYMENT_CANCELLED') || currentDeployment.cancelAccepted) {
           return rejectWithValue(
             new DeploymentError('DEPLOYMENT_CANCELLED', currentDeployment.componentsStatus),
           );
@@ -247,6 +244,17 @@ export const deploy = createAsyncThunk(
         }
 
         await delay(delayMs);
+
+        const deploymentAfterDelay = getState().deployment.deployments[path];
+        if (deploymentAfterDelay?.id !== deploymentId) {
+          return rejectWithValue(error);
+        }
+        // The answer to a cancel sent just before the failure may only arrive now.
+        if (deploymentAfterDelay.cancelAccepted) {
+          return rejectWithValue(
+            new DeploymentError('DEPLOYMENT_CANCELLED', currentDeployment.componentsStatus),
+          );
+        }
 
         const selectedServer = getAvailableCatalystServer(triedServers, chainId);
         triedServers.add(selectedServer);
@@ -310,11 +318,11 @@ export const executeDeployment = createAsyncThunk(
           identity,
           getState().featureFlags.flags[FeatureFlag.ABGEN_PIPELINE] === true,
         );
-      let isCancelled = false;
-      const shouldAbort = () => signal.aborted || isCancelled;
+      let hasFailed = false;
+      const shouldAbort = () => signal.aborted || hasFailed;
 
       const onStatusChange = (componentsStatus: DeploymentComponentsStatus) => {
-        isCancelled = deriveOverallStatus(componentsStatus) === 'failed';
+        hasFailed = deriveOverallStatus(componentsStatus) === 'failed';
         dispatch(actions.updateDeploymentStatus({ path, deploymentId, componentsStatus }));
       };
 
@@ -375,10 +383,18 @@ export const cancelDeployment = createAsyncThunk(
   'deployment/cancel',
   async (path: string, { getState }) => {
     const deployment = getState().deployment.deployments[path];
-    if (!deployment?.url) return null;
-    return requestDeploymentCancel(deployment.url);
+    if (!deployment?.url) return { deploymentId: deployment?.id, rejection: null };
+    const rejection = await requestDeploymentCancel(deployment.url);
+    return { deploymentId: deployment.id, rejection };
   },
 );
+
+/** Clears the CLI-reported progress, for a deployment that (re)starts or ends. */
+function resetProgress(deployment: Deployment) {
+  deployment.phase = undefined;
+  deployment.upload = null;
+  deployment.cancelRequested = false;
+}
 
 const deploymentSlice = createSlice({
   name: 'deployment',
@@ -425,7 +441,7 @@ const deploymentSlice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(initializeDeployment.fulfilled, (state, action) => {
-        const { path, url, info, wallet, chainId, files, supportsDeployResource, cancellable } =
+        const { path, url, info, wallet, chainId, files, supportsDeployResource, hasCancelToken } =
           action.payload;
         const existingDeployment = state.deployments[path];
 
@@ -451,13 +467,13 @@ const deploymentSlice = createSlice({
           status: 'idle',
           componentsStatus: getInitialDeploymentStatus(),
           supportsDeployResource,
-          cancellable,
+          hasCancelToken,
           createdAt: timestamp,
           lastUpdated: timestamp,
         };
       })
       .addCase(updateDeploymentTarget.fulfilled, (state, action) => {
-        const { path, url, info, files, supportsDeployResource, cancellable } = action.payload;
+        const { path, url, info, files, supportsDeployResource, hasCancelToken } = action.payload;
         const deployment = state.deployments[path];
         // we are preserving componentsStatus, status, and error
         if (deployment) {
@@ -465,10 +481,8 @@ const deploymentSlice = createSlice({
           deployment.info = info;
           deployment.files = files;
           deployment.supportsDeployResource = supportsDeployResource;
-          deployment.cancellable = cancellable;
-          deployment.phase = undefined;
-          deployment.upload = null;
-          deployment.cancelRequested = false;
+          deployment.hasCancelToken = hasCancelToken;
+          resetProgress(deployment);
           deployment.lastUpdated = Date.now();
         }
       })
@@ -488,7 +502,7 @@ const deploymentSlice = createSlice({
           error: buildError(action),
           componentsStatus: getInitialDeploymentStatus(),
           supportsDeployResource: false,
-          cancellable: false,
+          hasCancelToken: false,
           createdAt: existingDeployment?.createdAt ?? timestamp,
           lastUpdated: timestamp,
         };
@@ -498,16 +512,16 @@ const deploymentSlice = createSlice({
         const deployment = state.deployments[path];
         if (deployment) {
           deployment.status = 'pending';
-          deployment.phase = undefined;
-          deployment.upload = null;
-          deployment.cancelRequested = false;
+          deployment.executeRequestId = action.meta.requestId;
+          deployment.cancelAccepted = false;
+          resetProgress(deployment);
         }
       })
       .addCase(executeDeployment.fulfilled, (state, action) => {
         const path = action.meta.arg;
         const deployment = state.deployments[path];
         const { info, componentsStatus } = action.payload;
-        if (deployment) {
+        if (deployment?.executeRequestId === action.meta.requestId) {
           deployment.info = info;
           deployment.status = 'complete';
           deployment.componentsStatus = componentsStatus;
@@ -518,10 +532,10 @@ const deploymentSlice = createSlice({
       .addCase(executeDeployment.rejected, (state, action) => {
         const path = action.meta.arg;
         const deployment = state.deployments[path];
-        if (deployment) {
+        // An orphaned run (the user published again) must not mark the newer deployment.
+        if (deployment?.executeRequestId === action.meta.requestId) {
           const error = buildError(action);
-          deployment.upload = null;
-          deployment.cancelRequested = false;
+          resetProgress(deployment);
           deployment.lastUpdated = Date.now();
           if (error?.name === 'DEPLOYMENT_CANCELLED') {
             deployment.status = 'cancelled';
@@ -530,6 +544,13 @@ const deploymentSlice = createSlice({
             deployment.status = 'failed';
             deployment.error = error;
           }
+        }
+      })
+      .addCase(cancelDeployment.fulfilled, (state, action) => {
+        const { deploymentId, rejection } = action.payload;
+        const deployment = state.deployments[action.meta.arg];
+        if (deployment && deployment.id === deploymentId && !rejection) {
+          deployment.cancelAccepted = true;
         }
       });
   },

@@ -1,13 +1,17 @@
-import { fetch, isFetchError } from '/shared/fetch';
+import { fetch } from '/shared/fetch';
 import { seconds } from '/shared/time';
 import { delay } from '/shared/utils';
+
+import type { DeployServer } from '/shared/types/deploy';
 
 import { type DeployPhase, type DeployState, DeploymentError } from '/@/lib/deploy';
 import {
   type DeployPayload,
   DEPLOY_REQUEST_TIMEOUT_MS,
-  createDeployRequestError,
+  discardBody,
+  getDeploymentUrl,
   getInitialDeploymentStatus,
+  reportDeployRequestError,
 } from './utils';
 
 // Client for the deploy resource of the sdk-commands linker server (`/api/deploy`): POST with
@@ -18,14 +22,22 @@ const POLL_INTERVAL_MS = seconds(1);
 const STREAM_IDLE_TIMEOUT_MS = seconds(45);
 export const MAX_POLL_FAILURES = 10;
 
-// Authorizes cancelling the deployment of the CLI serving each url. Kept out of the store,
-// whose actions and states redux-logger prints to the console.
-const deployTokens = new Map<string, string>();
+// Authorizes cancelling the deployment of the CLI main runs (one at a time). Kept out of the
+// store, whose actions and states redux-logger prints to the console.
+let current: { url: string; token: string } | undefined;
 
-/** Records the token of a new deploy CLI. Main stops the previous one, so its token goes. */
-export function setDeployToken(url: string, token: string | undefined) {
-  deployTokens.clear();
-  if (token) deployTokens.set(url, token);
+/**
+ * Adopts the CLI main started for a deployment, keeping its cancel token. Main stops the
+ * previous CLI, so the previous token goes.
+ */
+export function registerDeployServer({ port, supportsDeployResource, deployToken }: DeployServer) {
+  const url = getDeploymentUrl(port);
+  current = url && deployToken ? { url, token: deployToken } : undefined;
+  return { url, supportsDeployResource, hasCancelToken: !!current };
+}
+
+function getDeployToken(url: string) {
+  return current?.url === url ? current.token : undefined;
 }
 
 const FINAL_PHASES: DeployPhase[] = ['deployed', 'failed', 'cancelled'];
@@ -67,26 +79,18 @@ export function parseServerSentEvents(buffer: string): {
   return { events, rest };
 }
 
-async function discardBody(resp: Response) {
-  await resp.body?.cancel().catch(() => undefined);
-}
-
 /**
- * Checks whether the CLI serves the deploy resource. A CLI that predates it answers the GET
- * with a 4xx (404 on the released ones), or may not answer it at all.
+ * Checks whether the CLI serves the deploy resource. Anything but a 2xx or 409 (a 4xx from a
+ * CLI that predates it, a 5xx, no answer) falls back to the blocking request.
  */
 export async function isDeployResourceAvailable(url: string): Promise<boolean> {
-  let resp: Response;
   try {
-    resp = await fetch(`${url}/deploy`, { headers: { Accept: 'application/json' } });
-  } catch (error) {
-    if (isFetchError(error, 'REQUEST_TIMEOUT')) return false;
-    throw error;
+    const resp = await fetch(`${url}/deploy`, { headers: { Accept: 'application/json' } });
+    await discardBody(resp);
+    return resp.ok || resp.status === 409;
+  } catch {
+    return false;
   }
-  await discardBody(resp);
-  if (resp.ok || resp.status === 409) return true;
-  if (resp.status < 500) return false;
-  throw new Error(`Failed to fetch the deployment state: HTTP ${resp.status}`);
 }
 
 async function fetchDeployState(url: string): Promise<DeployState> {
@@ -115,8 +119,13 @@ async function startDeployment(url: string, payload: DeployPayload): Promise<Dep
     DEPLOY_REQUEST_TIMEOUT_MS,
   );
 
-  // 409: this CLI run already started its deployment, so follow that one.
-  if (resp.status === 202 || resp.status === 409) return resp.json();
+  // 409: this CLI run already started its deployment, so follow that one. The CLI has it from
+  // here on, so failing to read the state must not deploy again.
+  if (resp.status === 202 || resp.status === 409) {
+    return resp.json().catch(error => {
+      throw new DeploymentError('DEPLOY_STATE_LOST', getInitialDeploymentStatus(), error);
+    });
+  }
 
   if (resp.ok) {
     await discardBody(resp);
@@ -124,7 +133,7 @@ async function startDeployment(url: string, payload: DeployPayload): Promise<Dep
   }
 
   const data = await resp.json().catch(() => ({}));
-  throw createDeployRequestError(data.message ?? `HTTP ${resp.status}`, {
+  throw reportDeployRequestError(data.message ?? `HTTP ${resp.status}`, {
     status: resp.status,
     url,
   });
@@ -247,14 +256,14 @@ export async function deployWithProgress(
     if (final.phase === 'cancelled') {
       throw new DeploymentError('DEPLOYMENT_CANCELLED', getInitialDeploymentStatus());
     }
-    throw createDeployRequestError(final.error?.message ?? 'Deployment failed', {
+    throw reportDeployRequestError(final.error?.message ?? 'Deployment failed', {
       code: final.error?.code,
       url,
     });
   } finally {
     // The deployment is over (or no longer followed), so there is nothing left to cancel. On
     // DEPLOY_STATE_LOST the CLI may still publish, but the status leaves pending and Cancel hides.
-    deployTokens.delete(url);
+    if (current?.url === url) current = undefined;
   }
 }
 
@@ -269,7 +278,7 @@ export type CancelRejection = 'too-early' | 'unauthorized';
  * `unauthorized` when it does not accept the token.
  */
 export async function requestDeploymentCancel(url: string): Promise<CancelRejection | null> {
-  const deployToken = deployTokens.get(url);
+  const deployToken = getDeployToken(url);
   const resp = await fetch(`${url}/deploy`, {
     method: 'delete',
     headers: deployToken ? { 'X-Deploy-Token': deployToken } : undefined,

@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import type { DeployUpload } from '/@/lib/deploy';
+import type { CancelRejection } from '/@/modules/store/deployment/deploy-api';
 
 import { DeployProgress } from './component';
 
@@ -18,9 +19,7 @@ const renderProgress = (props: Partial<Parameters<typeof DeployProgress>[0]> = {
   render(
     <ThemeProvider theme={dark}>
       <DeployProgress
-        canCancel={false}
-        cancelling={false}
-        onCancel={vi.fn()}
+        cancel={{ kind: 'hidden' }}
         {...props}
       />
     </ThemeProvider>,
@@ -94,11 +93,11 @@ describe('DeployProgress', () => {
   });
 
   describe('when the deployment can be cancelled', () => {
-    let onCancel: ReturnType<typeof vi.fn>;
+    let onCancel: Mock<[], Promise<CancelRejection | null>>;
 
     beforeEach(() => {
-      onCancel = vi.fn();
-      renderProgress({ upload, canCancel: true, onCancel });
+      onCancel = vi.fn<[], Promise<CancelRejection | null>>().mockResolvedValue(null);
+      renderProgress({ upload, cancel: { kind: 'available', onCancel } });
       fireEvent.click(
         screen.getByRole('button', {
           name: 'modal.publish_project.deploy.deploying.actions.cancel',
@@ -113,7 +112,7 @@ describe('DeployProgress', () => {
 
   describe('when a cancellation is in flight', () => {
     beforeEach(() => {
-      renderProgress({ upload, canCancel: true, cancelling: true });
+      renderProgress({ upload, cancel: { kind: 'cancelling' } });
     });
 
     it('should disable the cancel button', () => {
@@ -129,11 +128,33 @@ describe('DeployProgress', () => {
 
   describe('when the deployment can no longer be cancelled', () => {
     beforeEach(() => {
-      renderProgress({ upload, canCancel: false });
+      renderProgress({ upload, cancel: { kind: 'hidden' } });
     });
 
     it('should not offer to cancel', () => {
       expect(screen.queryByRole('button')).toBeNull();
+    });
+  });
+
+  describe('when the CLI cannot be asked to cancel', () => {
+    beforeEach(() => {
+      renderProgress({ upload, cancel: { kind: 'unsupported' } });
+    });
+
+    it('should show the cancel button disabled', () => {
+      expect(
+        (
+          screen.getByRole('button', {
+            name: 'modal.publish_project.deploy.deploying.actions.cancel',
+          }) as HTMLButtonElement
+        ).disabled,
+      ).toBe(true);
+    });
+
+    it('should explain why', () => {
+      expect(screen.getByRole('status').textContent).toBe(
+        'modal.publish_project.deploy.deploying.progress.cancel_unsupported',
+      );
     });
   });
 });

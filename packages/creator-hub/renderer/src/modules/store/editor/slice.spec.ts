@@ -5,13 +5,14 @@ import type { PreviewOptions } from '/shared/types/settings';
 import { editor } from '#preload';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
-import { setDeployToken } from '../deployment/deploy-api';
+import type * as DeployApi from '../deployment/deploy-api';
+import { registerDeployServer } from '../deployment/deploy-api';
 import { cancelPreview, publishScene, runScene, setPreviewProgress } from './slice';
 
-vi.mock('../deployment/deploy-api', async importOriginal => ({
-  ...((await importOriginal()) as object),
-  setDeployToken: vi.fn(),
-}));
+vi.mock('../deployment/deploy-api', async importOriginal => {
+  const actual = await importOriginal<typeof DeployApi>();
+  return { ...actual, registerDeployServer: vi.fn(actual.registerDeployServer) };
+});
 
 vi.mock('../deployment/utils', async importOriginal => ({
   ...((await importOriginal()) as object),
@@ -187,7 +188,7 @@ describe('editor slice publish', () => {
 
   beforeEach(() => {
     store = createTestStore();
-    vi.mocked(setDeployToken).mockClear();
+    vi.mocked(registerDeployServer).mockClear();
   });
 
   describe('when the CLI hands out a deploy token', () => {
@@ -200,16 +201,20 @@ describe('editor slice publish', () => {
       await publish();
     });
 
-    it('should keep the token for the cancel requests to that CLI', () => {
-      expect(setDeployToken).toHaveBeenCalledWith('http://localhost:4100/api', 'token-example-123');
+    it('should hand the CLI and its token to the cancel requests', () => {
+      expect(registerDeployServer).toHaveBeenCalledWith({
+        port: 4100,
+        supportsDeployResource: true,
+        deployToken: 'token-example-123',
+      });
     });
 
     it('should flag the deployment as supporting the deploy resource', () => {
       expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(true);
     });
 
-    it('should flag the deployment as cancellable', () => {
-      expect(store.getState().deployment.deployments[TEST_PATH]?.cancellable).toBe(true);
+    it('should flag the deployment as holding its cancel token', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.hasCancelToken).toBe(true);
     });
 
     it('should keep the token out of the store', () => {
@@ -230,8 +235,8 @@ describe('editor slice publish', () => {
       expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(true);
     });
 
-    it('should flag the deployment as not cancellable', () => {
-      expect(store.getState().deployment.deployments[TEST_PATH]?.cancellable).toBe(false);
+    it('should flag the deployment as holding no cancel token', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.hasCancelToken).toBe(false);
     });
   });
 
@@ -244,8 +249,11 @@ describe('editor slice publish', () => {
       await publish();
     });
 
-    it('should drop any token kept for that url', () => {
-      expect(setDeployToken).toHaveBeenCalledWith('http://localhost:4100/api', undefined);
+    it('should hand the CLI over without a token, dropping any earlier one', () => {
+      expect(registerDeployServer).toHaveBeenCalledWith({
+        port: 4100,
+        supportsDeployResource: false,
+      });
     });
 
     it('should flag the deployment as not supporting the deploy resource', () => {

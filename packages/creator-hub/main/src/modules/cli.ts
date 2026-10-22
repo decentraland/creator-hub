@@ -640,6 +640,8 @@ export async function legacyDeploy({
   return port;
 }
 
+// ############################################################################################
+
 async function readDeployCommandFile(path: string) {
   return fs.readFile(
     join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
@@ -647,35 +649,31 @@ async function readDeployCommandFile(path: string) {
   );
 }
 
-async function shouldRunLegacyDeploy(path: string) {
-  const file = await readDeployCommandFile(path);
-  return !file.includes('--programmatic');
-}
+/** What the project's deploy command supports, read from its dist once per deploy. */
+export type DeployCommandSupport = {
+  /** Predates `--programmatic`, so it runs as a separate process. */
+  legacy: boolean;
+  multiScene: boolean;
+  /** Serves `/api/deploy`: `routes.js` beside the command, or `respond-async` in its help text. */
+  deployResource: boolean;
+  /** `arg` rejects unknown flags, so `--deploy-token` is only passed when declared. */
+  deployToken: boolean;
+};
 
-async function supportsMultiSceneDeploy(path: string) {
-  const file = await readDeployCommandFile(path);
-  return file.includes('--multi-scene');
-}
-// ############################################################################################
-
-// The deploy resource API (POST with `Prefer: respond-async`, GET to follow, DELETE to cancel)
-// ships with a `routes.js` beside the deploy command, whose help text mentions `respond-async`.
-export async function supportsDeployResource(path: string): Promise<boolean> {
-  const dir = join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy');
-  try {
-    await fs.stat(join(dir, 'routes.js'));
-    return true;
-  } catch {
-    const index = await fs.readFile(join(dir, 'index.js'), 'utf-8').catch(() => '');
-    return index.includes('respond-async');
-  }
-}
-
-// `arg` rejects unknown flags, so only pass `--deploy-token` to a CLI whose deploy command
-// declares it; the token arrived after the deploy resource itself.
-export async function supportsDeployToken(path: string): Promise<boolean> {
-  const file = await readDeployCommandFile(path).catch(() => '');
-  return file.includes("'--deploy-token'");
+export async function getDeployCommandSupport(path: string): Promise<DeployCommandSupport> {
+  const index = await readDeployCommandFile(path);
+  const hasRoutes = await fs
+    .stat(join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/routes.js'))
+    .then(
+      () => true,
+      () => false,
+    );
+  return {
+    legacy: !index.includes('--programmatic'),
+    multiScene: index.includes('--multi-scene'),
+    deployResource: hasRoutes || index.includes('respond-async'),
+    deployToken: index.includes('--deploy-token'),
+  };
 }
 
 async function getComponents(path: string) {
@@ -704,8 +702,8 @@ export async function deploy({
     await deployServer.stop();
   }
 
-  const isLegacyDeploy = await shouldRunLegacyDeploy(path);
-  if (isLegacyDeploy) {
+  const support = await getDeployCommandSupport(path);
+  if (support.legacy) {
     log.info('[CLI] Running legacy deploy');
     return {
       port: await legacyDeploy({ path, target, targetContent, chainId, wallet }),
@@ -714,11 +712,7 @@ export async function deploy({
   }
 
   const port = await getAvailablePort();
-  const multiScene = await supportsMultiSceneDeploy(path);
-  const deployResource = await supportsDeployResource(path);
-  // Only the holder of this token may cancel the deployment through the CLI's HTTP API.
-  const deployToken =
-    deployResource && (await supportsDeployToken(path)) ? randomUUID() : undefined;
+  const deployToken = support.deployResource && support.deployToken ? randomUUID() : undefined;
 
   const { stop } = await runCommand(path, 'deploy', [
     '--dir',
@@ -730,12 +724,12 @@ export async function deploy({
     ...(targetContent ? ['--target-content', targetContent] : []),
     '--programmatic',
     '--yes',
-    ...(multiScene ? ['--multi-scene'] : []),
+    ...(support.multiScene ? ['--multi-scene'] : []),
     ...(language ? ['--language', language] : []),
     ...(deployToken ? ['--deploy-token', deployToken] : []),
   ]);
 
   deployServer = { stop };
 
-  return { port, supportsDeployResource: deployResource, deployToken };
+  return { port, supportsDeployResource: support.deployResource, deployToken };
 }

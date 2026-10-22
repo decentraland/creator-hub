@@ -239,7 +239,6 @@ export const slice = createSlice({
       .addCase(deploymentActions.executeDeployment.rejected, (state, action) => {
         const path = action.meta.arg;
         state.notifications = state.notifications.filter($ => $.requestId !== path);
-        // The user cancelled it: there is nothing to report.
         if (action.error.name === 'DEPLOYMENT_CANCELLED') return;
         state.notifications.push(
           createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),

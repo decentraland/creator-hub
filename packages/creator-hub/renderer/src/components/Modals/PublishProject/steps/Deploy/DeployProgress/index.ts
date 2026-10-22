@@ -1,1 +1,1 @@
-export { DeployProgress } from './component';
+export { DeployProgress, type DeployCancel } from './component';

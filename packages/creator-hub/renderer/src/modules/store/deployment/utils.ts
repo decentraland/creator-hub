@@ -63,11 +63,15 @@ export type DeployPayload = {
 // failed deployment while the CLI went on to publish it.
 export const DEPLOY_REQUEST_TIMEOUT_MS = minutes(60);
 
+export async function discardBody(resp: Response) {
+  await resp.body?.cancel().catch(() => undefined);
+}
+
 /**
- * Builds the error for a deployment the local CLI reported as failed, keeping only the
- * catalyst's own message when the CLI wraps a whole catalyst response.
+ * Reports to Sentry a deployment the local CLI reported as failed, and returns its error, keeping
+ * only the catalyst's own message when the CLI wraps a whole catalyst response.
  */
-export function createDeployRequestError(message: string, extra: Record<string, unknown>): Error {
+export function reportDeployRequestError(message: string, extra: Record<string, unknown>): Error {
   let error = message;
   if (/Response was/.test(error)) {
     error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
@@ -95,12 +99,12 @@ export const deploy = async (url: string, payload: DeployPayload) => {
     const data = await resp.json().catch(() => ({ message: `HTTP ${resp.status}` }));
     console.log('[DEPLOY ERROR] raw data:', JSON.stringify(data));
     console.log('[DEPLOY ERROR] error message:', data.message);
-    throw createDeployRequestError(data.message ?? `HTTP ${resp.status}`, {
+    throw reportDeployRequestError(data.message ?? `HTTP ${resp.status}`, {
       status: resp.status,
       url,
     });
   }
-  await resp.body?.cancel().catch(() => undefined);
+  await discardBody(resp);
 };
 
 export const getInitialDeploymentStatus = (): DeploymentComponentsStatus => ({

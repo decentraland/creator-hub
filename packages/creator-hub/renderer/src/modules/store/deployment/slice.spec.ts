@@ -59,7 +59,6 @@ vi.mock('./deploy-api', async importOriginal => ({
   deployWithProgress: vi.fn(),
   isDeployResourceAvailable: vi.fn(),
   requestDeploymentCancel: vi.fn(),
-  setDeployToken: vi.fn(),
 }));
 
 import { deploy, checkDeploymentStatus, fetchDeploymentStatus, fetchInfo } from './utils';
@@ -67,7 +66,6 @@ import {
   deployWithProgress,
   isDeployResourceAvailable,
   requestDeploymentCancel,
-  setDeployToken,
 } from './deploy-api';
 
 describe('deployment slice', () => {
@@ -83,6 +81,8 @@ describe('deployment slice', () => {
           port: TEST_PORT,
           chainId: TEST_CHAIN_ID,
           wallet: TEST_WALLET,
+          supportsDeployResource: false,
+          hasCancelToken: false,
         }),
       )
       .unwrap();
@@ -145,6 +145,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -162,6 +164,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -178,6 +182,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -211,6 +217,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -229,6 +237,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -248,6 +258,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -277,6 +289,8 @@ describe('deployment slice', () => {
                 port: TEST_PORT,
                 chainId: TEST_CHAIN_ID,
                 wallet: TEST_WALLET,
+                supportsDeployResource: false,
+                hasCancelToken: false,
               }),
             )
             .catch(() => {});
@@ -294,6 +308,8 @@ describe('deployment slice', () => {
                 port: TEST_PORT,
                 chainId: TEST_CHAIN_ID,
                 wallet: TEST_WALLET,
+                supportsDeployResource: false,
+                hasCancelToken: false,
               }),
             )
             .catch(() => {});
@@ -319,6 +335,8 @@ describe('deployment slice', () => {
                 port: TEST_PORT,
                 chainId: TEST_CHAIN_ID,
                 wallet: TEST_WALLET,
+                supportsDeployResource: false,
+                hasCancelToken: false,
               }),
             )
             .unwrap();
@@ -345,6 +363,8 @@ describe('deployment slice', () => {
                 port: TEST_PORT,
                 chainId: TEST_CHAIN_ID,
                 wallet: TEST_WALLET,
+                supportsDeployResource: false,
+                hasCancelToken: false,
               }),
             )
             .catch(() => {});
@@ -364,6 +384,8 @@ describe('deployment slice', () => {
                 port: TEST_PORT,
                 chainId: TEST_CHAIN_ID,
                 wallet: TEST_WALLET,
+                supportsDeployResource: false,
+                hasCancelToken: false,
               }),
             )
             .catch(() => {});
@@ -592,6 +614,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -605,6 +629,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -653,6 +679,8 @@ describe('deployment slice', () => {
                 port: TEST_PORT,
                 chainId: TEST_CHAIN_ID,
                 wallet: TEST_WALLET,
+                supportsDeployResource: false,
+                hasCancelToken: false,
               }),
             )
             .unwrap();
@@ -694,6 +722,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -707,6 +737,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -730,6 +762,8 @@ describe('deployment slice', () => {
               port: TEST_PORT,
               chainId: TEST_CHAIN_ID,
               wallet: TEST_WALLET,
+              supportsDeployResource: false,
+              hasCancelToken: false,
             }),
           )
           .unwrap();
@@ -765,6 +799,7 @@ describe('deployment slice', () => {
             path: TEST_PATH,
             port: TEST_PORT,
             supportsDeployResource,
+            hasCancelToken: supportsDeployResource,
             chainId: TEST_CHAIN_ID,
             wallet: TEST_WALLET,
           }),
@@ -788,18 +823,6 @@ describe('deployment slice', () => {
       it('should flag the deployment as supporting it', () => {
         expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(
           true,
-        );
-      });
-    });
-
-    describe('when the CLI support is not reported', () => {
-      beforeEach(async () => {
-        store = await initDeploymentStore();
-      });
-
-      it('should flag the deployment as not supporting it', () => {
-        expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(
-          false,
         );
       });
     });
@@ -946,15 +969,8 @@ describe('deployment slice', () => {
         );
       });
 
-      it('should hand the token of the new CLI to the cancel requests', () => {
-        expect(setDeployToken).toHaveBeenCalledWith(
-          `http://localhost:${TEST_PORT + 1}/api`,
-          'token-example-123',
-        );
-      });
-
-      it('should flag the deployment on the new CLI as cancellable', () => {
-        expect(store.getState().deployment.deployments[TEST_PATH]?.cancellable).toBe(true);
+      it('should flag the deployment on the new CLI as holding its cancel token', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.hasCancelToken).toBe(true);
       });
     });
 
@@ -1016,6 +1032,8 @@ describe('deployment slice', () => {
                 port: TEST_PORT,
                 chainId: TEST_CHAIN_ID,
                 wallet: TEST_WALLET,
+                supportsDeployResource: false,
+                hasCancelToken: false,
               }),
             )
             .unwrap();
@@ -1041,7 +1059,112 @@ describe('deployment slice', () => {
       });
 
       it('should resolve with why the CLI turned it down', () => {
-        expect(result).toBe('too-early');
+        expect(result).toEqual({
+          deploymentId: store.getState().deployment.deployments[TEST_PATH]?.id,
+          rejection: 'too-early',
+        });
+      });
+
+      it('should not mark the cancel as accepted', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.cancelAccepted).toBeFalsy();
+      });
+    });
+
+    describe('when the CLI fails after it accepted the cancellation', () => {
+      let result: Awaited<ReturnType<ReturnType<typeof executeDeployment>>>;
+
+      beforeEach(async () => {
+        vi.mocked(requestDeploymentCancel).mockResolvedValue(null);
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockImplementation(async () => {
+          await store.dispatch(cancelDeployment(TEST_PATH));
+          throw new Error('Deployment failed');
+        });
+        store = await initResourceDeploymentStore(true);
+        result = await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should reject with a cancelled outcome', () => {
+        expect(result.error.name).toBe('DEPLOYMENT_CANCELLED');
+      });
+
+      it('should not start a CLI to deploy again', () => {
+        expect(editor.publishScene).not.toHaveBeenCalled();
+      });
+
+      it('should mark the deployment as cancelled', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.status).toBe('cancelled');
+      });
+    });
+
+    describe('when the answer to a cancel arrives just after the CLI failed', () => {
+      let result: Awaited<ReturnType<ReturnType<typeof executeDeployment>>>;
+
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        vi.mocked(requestDeploymentCancel).mockResolvedValue(null);
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockRejectedValue(new Error('Deployment failed'));
+        store = await initResourceDeploymentStore(true);
+        const running = store.dispatch(executeDeployment(TEST_PATH));
+        await vi.advanceTimersByTimeAsync(0);
+        await store.dispatch(cancelDeployment(TEST_PATH));
+        await advanceRetryTimers(1);
+        result = await running;
+      });
+
+      it('should reject with a cancelled outcome', () => {
+        expect(result.error.name).toBe('DEPLOYMENT_CANCELLED');
+      });
+
+      it('should not start a CLI to deploy again', () => {
+        expect(editor.publishScene).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when the user publishes again while an earlier run is still following its CLI', () => {
+      let failEarlierRun: (error: Error) => void;
+      let earlierRun: Promise<unknown>;
+
+      beforeEach(async () => {
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockImplementation(
+          () =>
+            new Promise((_, reject) => {
+              failEarlierRun = reject;
+            }),
+        );
+        store = await initResourceDeploymentStore(true);
+        earlierRun = store.dispatch(executeDeployment(TEST_PATH));
+        await vi.waitFor(() => expect(deployWithProgress).toHaveBeenCalled());
+        await store
+          .dispatch(
+            initializeDeployment({
+              path: TEST_PATH,
+              port: TEST_PORT + 1,
+              supportsDeployResource: true,
+              hasCancelToken: true,
+              chainId: TEST_CHAIN_ID,
+              wallet: TEST_WALLET,
+            }),
+          )
+          .unwrap();
+        failEarlierRun(
+          new DeploymentError('DEPLOY_STATE_LOST', { catalyst: 'idle', assetBundle: 'idle' }),
+        );
+        await earlierRun;
+      });
+
+      it('should leave the newer deployment untouched', () => {
+        const deployment = store.getState().deployment.deployments[TEST_PATH];
+        expect({ status: deployment?.status, error: deployment?.error }).toEqual({
+          status: 'idle',
+          error: undefined,
+        });
+      });
+
+      it('should not start a CLI to deploy again', () => {
+        expect(editor.publishScene).not.toHaveBeenCalled();
       });
     });
   });
