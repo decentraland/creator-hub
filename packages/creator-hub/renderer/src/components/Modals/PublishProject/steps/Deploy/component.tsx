@@ -2,7 +2,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import cx from 'classnames';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
-import { misc, env } from '#preload';
+import { misc } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import { type File, type Info, type Status } from '/@/lib/deploy';
@@ -23,7 +23,7 @@ import {
 } from '/@/modules/store/management/slice';
 
 import { t } from '/@/modules/store/translation/utils';
-import { REPORT_ISSUES_URL } from '/@/modules/utils';
+import { REPORT_ISSUES_URL, getSceneJumpInDeeplink, getSceneJumpInUrl } from '/@/modules/utils';
 import { formatSize } from '/@/modules/file';
 
 import { PublishModal } from '/@/components/Modals/PublishProject/PublishModal';
@@ -35,15 +35,13 @@ import { ExpandMore } from '/@/components/ExpandMore';
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
+import { parseCoords } from '/@/components/Modals/PublishProject/utils';
+
 import { DeployProgress } from './DeployProgress';
 
 import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
-
-function getDclEnv() {
-  return env.getEnv() === 'dev' ? 'zone' : 'org';
-}
 
 function getPath(filename: string) {
   return filename.length > MAX_FILE_PATH_LENGTH
@@ -69,7 +67,6 @@ export function Deploy(props: Props) {
   const [cancelRejection, setCancelRejection] = useState<CancelRejection | null>(null);
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
-  const dclEnv = useMemo(() => getDclEnv(), []);
 
   /** True if the project needs to undeploy existing world scenes before deploying the new one.
    * True when deploying to a single-scene world and there are existing scenes in the world that do not overlap with the project parcels. */
@@ -169,18 +166,22 @@ export function Deploy(props: Props) {
     }
   }, [deployment?.status]);
 
-  // jump in
-  const jumpInUrl = useMemo(() => {
-    if (deployment?.info.isWorld && project.worldConfiguration) {
-      return `decentraland://?realm=${project.worldConfiguration.name}&dclenv=${dclEnv}`;
-    } else {
-      return `decentraland://?position=${project.scene.base}&dclenv=${dclEnv}`;
-    }
+  const jumpInLocation = useMemo(() => {
+    const [x, y] = parseCoords(project.scene.base);
+    const world =
+      deployment?.info.isWorld && project.worldConfiguration
+        ? project.worldConfiguration.name
+        : undefined;
+    return { world, x, y };
   }, [deployment, project]);
 
+  /** Web link shown and copied for sharing: it opens for people without the desktop client. */
+  const shareUrl = useMemo(() => getSceneJumpInUrl(jumpInLocation), [jumpInLocation]);
+
+  /** Jump In opens the installed desktop client; the share link stays the web one. */
   const handleJumpIn = useCallback(() => {
-    void misc.openExternal(jumpInUrl);
-  }, [jumpInUrl]);
+    void misc.openExternal(getSceneJumpInDeeplink(jumpInLocation));
+  }, [jumpInLocation]);
 
   const handleReportIssue = useCallback(() => {
     void misc.openExternal(REPORT_ISSUES_URL);
@@ -372,7 +373,7 @@ export function Deploy(props: Props) {
                 {deployment.status === 'complete' && (
                   <Success
                     info={deployment.info}
-                    url={jumpInUrl}
+                    url={shareUrl}
                     onClick={handleJumpIn}
                   />
                 )}

@@ -1,0 +1,21 @@
+{
+  "id": "8ecdaaaf-5606-485c-b9eb-ffde3939d1fd",
+  "name": "Fishing - Cast",
+  "category": "actions",
+  "tags": [
+    "fishing",
+    "fish",
+    "fishing rod",
+    "rod",
+    "lake",
+    "river",
+    "cast",
+    "throw",
+    "line",
+    "emote",
+    "animation",
+    "avatar"
+  ],
+  "description": "Avatar swings a fishing rod back and casts the line.",
+  "author": "Decentraland Foundation"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "bd3979ec-0a32-416c-b9b6-39bea251dde7",
+  "name": "Pick Up",
+  "category": "actions",
+  "tags": ["pick up", "grab", "bend", "collect", "emote", "animation", "avatar"],
+  "description": "Avatar bends down to pick something up.",
+  "author": "Decentraland Foundation"
+}

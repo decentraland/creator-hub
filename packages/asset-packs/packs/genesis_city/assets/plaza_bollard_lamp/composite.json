@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/plaza_bollard_lamp/plaza_bollard_lamp.glb"
+          }
+        }
+      }
+    }
+  ]
+}

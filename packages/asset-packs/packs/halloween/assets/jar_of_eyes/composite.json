@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/jar_of_eyes/jar_of_eyes.glb"
+          }
+        }
+      }
+    }
+  ]
+}

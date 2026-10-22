@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/number_nine_balloon/number_nine_balloon.glb"
+          }
+        }
+      }
+    }
+  ]
+}

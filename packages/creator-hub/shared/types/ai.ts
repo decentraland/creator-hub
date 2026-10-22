@@ -226,6 +226,14 @@ export interface AiMirrorMessage {
   attachments?: AiAttachmentMeta[];
 }
 
+// A local asset the user mentioned for the next prompt: a scene file (scene-relative path), or a
+// built-in avatar animation, which every scene can play by name and which has no file.
+export type AiAssetMention = { path: string } | { builtInEmote: string };
+
+export function assetMentionKey(mention: AiAssetMention): string {
+  return 'path' in mention ? `path:${mention.path}` : `emote:${mention.builtInEmote}`;
+}
+
 export interface AiMirrorState {
   providers: AiProviderInfo[];
   provider: AiProvider;
@@ -234,6 +242,7 @@ export interface AiMirrorState {
   busy: boolean;
   detecting: boolean;
   selection: { id: number; name: string }[];
+  assetMentions: AiAssetMention[];
   billingDismissed: boolean;
   sessions: { id: string; title: string; updatedAt: number }[];
   currentSessionId: string;
@@ -255,6 +264,7 @@ export type AiRemoteCommand =
   | { type: 'switchSession'; id: string }
   | { type: 'deleteSession'; id: string }
   | { type: 'clearSelection' }
+  | { type: 'removeAssetMention'; mention: AiAssetMention }
   // The detached window's close button: shut the assistant entirely (close the window AND the
   // inline panel), instead of just docking back — so close is consistent whether detached or not.
   | { type: 'closeAssistant' }

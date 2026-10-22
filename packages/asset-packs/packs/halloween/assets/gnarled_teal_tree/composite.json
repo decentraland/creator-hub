@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/gnarled_teal_tree/gnarled_teal_tree.glb"
+          }
+        }
+      }
+    }
+  ]
+}

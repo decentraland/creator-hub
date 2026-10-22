@@ -134,6 +134,8 @@ make protoc        # Regenerate TypeScript from .proto files
 - Scripts for validating, uploading to S3, and downloading assets.
 - Public API is exported via `src/definitions.ts` (built to `dist/definitions.js`, the package `main`). Cross-package VALUE imports from `@dcl/asset-packs` in the inspector only resolve after rebuilding asset-packs (`make build-asset-packs`). This also affects the inspector's **vitest unit tests**, which import the built `@dcl/asset-packs` — a source edit in asset-packs won't be seen (in imports, typecheck, or tests) until rebuilt. `npm run build:lib` (in `packages/asset-packs`) is the minimal/fast rebuild to refresh `dist/`.
 - **`@dcl/asset-packs` is the shared home for generic helpers the inspector consumes** (e.g. `parseHexColor` / `validateAssetPath` in `src/validation.ts`). When deleting an asset-packs feature module, relocate its generically useful exports there (and keep the `definitions.ts` re-export) instead of inlining them into inspector consumers.
+- **Smart-item scripts (`packs/**/*.ts`) sit outside every tsconfig**, so `make typecheck` never checks them. Typecheck an edited one with a throwaway config that extends `packages/asset-packs/tsconfig.json` and lists it under `files`. Unit-test one against the real `@dcl/ecs` engine through `packages/asset-packs/test/script-harness.ts`.
+- **Keep the `// DO NOT REMOVE` comments on a smart-item script's `src` and `entity` constructor params.** They come from the inspector's script template (`ScriptInspector/templates.ts`) and every smart item carries them. Nothing parses them; they stay so every script matches.
 
 ## CI / GitHub Actions
 

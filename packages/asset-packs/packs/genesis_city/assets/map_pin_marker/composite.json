@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/map_pin_marker/map_pin_marker.glb"
+          }
+        }
+      }
+    }
+  ]
+}

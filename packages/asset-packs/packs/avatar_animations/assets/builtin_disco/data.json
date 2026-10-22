@@ -1,0 +1,9 @@
+{
+  "id": "98f48d6b-059f-4546-b3d8-90a521588c9a",
+  "name": "Disco",
+  "category": "expressions",
+  "tags": ["animation", "avatar", "built-in", "default", "disco", "emote"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'disco' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "disco"
+}
