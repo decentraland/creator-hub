@@ -3,7 +3,8 @@ import { IoClose } from 'react-icons/io5';
 import { FiAlertTriangle } from 'react-icons/fi';
 import cx from 'classnames';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
+import { getStorage } from '../../lib/data-layer/client/storage';
+import { removeAssetFiles, removeEmptiedFolders } from '../../lib/data-layer/remove-assets';
 import { DEFAULT_UNDO_MAX_SIZE } from '../../lib/data-layer/host/utils/undo-redo-array';
 import { setRemovedFiles } from '../../redux/clean-assets';
 import { getAssetCatalog, getDataLayerInterface } from '../../redux/data-layer';
@@ -92,6 +93,8 @@ const CleanAssets: React.FC<Props> = ({
       const filePaths = Array.from(selectedAssets.values());
       const filesBackup = await dataLayer.getFilesList({ paths: filePaths });
       const { removed, error, batched } = await removeAssetFiles(dataLayer, filePaths);
+      const storage = getStorage();
+      if (storage) await removeEmptiedFolders(storage, removed);
       const backups = filesBackup.files
         .filter(file => file.success && file.content && removed.includes(file.path))
         .map(file => ({ path: file.path, content: file.content }));

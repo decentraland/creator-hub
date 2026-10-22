@@ -291,7 +291,6 @@ export async function initRpcMethods(
               continue;
             }
             success.push(filePath);
-            await removeEmptyDirectoryRecursive(fs, fs.dirname(filePath));
           }
         } finally {
           if (undoAcc.length > 0) undoRedoProvider.addUndoFile(undoAcc);

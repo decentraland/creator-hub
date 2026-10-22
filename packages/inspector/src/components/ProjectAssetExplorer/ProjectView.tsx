@@ -57,7 +57,14 @@ import {
 } from './utils';
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
-import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
+import {
+  generateAssetTree,
+  getChildren as _getChildren,
+  getEmptiedFolders,
+  TreeNode,
+  ROOT,
+  getTiles,
+} from './tree';
 import { Filters } from './Filters';
 import { Filter } from './Filters/types';
 import { ThumbnailGenerator } from './ThumbnailGenerator';
@@ -115,6 +122,8 @@ interface ModalState {
   entities: Entity[];
   /** Deleted folders, so the empty ones that only exist in the explorer go away on confirm. */
   folders: string[];
+  /** Folders the deletion leaves empty, kept in the explorer on confirm. */
+  emptied: string[];
 }
 
 export const DRAG_N_DROP_ASSET_KEY = 'local-asset';
@@ -271,6 +280,11 @@ function ProjectView({ folders, thumbnails }: Props) {
     setVirtualFolders(current => current.filter(path => !isRemoved(path)));
   }, []);
 
+  const keepFolders = useCallback((folders: string[]) => {
+    if (!folders.length) return;
+    setVirtualFolders(current => Array.from(new Set([...current, ...folders])));
+  }, []);
+
   /** Deletes `values` with every file on disk inside them, confirming first when the scene uses one. */
   const handleRemoveMany = useCallback(
     async (values: string[]) => {
@@ -283,6 +297,7 @@ function ProjectView({ folders, thumbnails }: Props) {
         return;
       }
       const folders = targets.filter(value => fullTree.get(value)?.type === 'folder');
+      const emptied = getEmptiedFolders(fullTree, targets);
       let paths: string[];
       try {
         paths = (await Promise.all(targets.map(listFilesOnDisk))).flat();
@@ -292,10 +307,11 @@ function ProjectView({ folders, thumbnails }: Props) {
       }
       const entities = paths.flatMap(path => getEntitiesWithAsset(path));
       if (entities.length) {
-        setModal({ isOpen: true, values: paths, entities, folders });
+        setModal({ isOpen: true, values: paths, entities, folders, emptied });
         return;
       }
       removeVirtualFolders(folders);
+      keepFolders(emptied);
       if (paths.length || folders.length) {
         dispatch(removeAssets({ paths, folders: folders.map(folder => withAssetDir(folder)) }));
       }
@@ -307,6 +323,7 @@ function ProjectView({ folders, thumbnails }: Props) {
       listFilesOnDisk,
       getEntitiesWithAsset,
       removeVirtualFolders,
+      keepFolders,
       clearSelection,
     ],
   );
@@ -319,6 +336,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const handleConfirm = useCallback(async () => {
     if (!modal) return;
     removeVirtualFolders(modal.folders);
+    keepFolders(modal.emptied);
     dispatch(
       removeAssets({
         paths: modal.values,
@@ -327,7 +345,7 @@ function ProjectView({ folders, thumbnails }: Props) {
     );
     setModal(undefined);
     clearSelection();
-  }, [modal, setModal, removeVirtualFolders, clearSelection]);
+  }, [modal, setModal, removeVirtualFolders, keepFolders, clearSelection]);
 
   const handleModalClose = useCallback(() => setModal(undefined), []);
 
@@ -454,6 +472,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   /** Copies or moves `paths`; empty folders only exist in the explorer, so they move here. */
   const transfer = useCallback(
     async (paths: string[], options: { targetFolder?: string; move?: boolean }) => {
+      if (options.move) keepFolders(getEmptiedFolders(fullTree, paths));
       const created: string[] = [];
       for (const path of paths.filter(isVirtualFolder)) {
         const destination = options.targetFolder ?? getParentPath(path);
@@ -481,7 +500,7 @@ function ProjectView({ folders, thumbnails }: Props) {
       }
       return created;
     },
-    [operations, isVirtualFolder, followRename],
+    [operations, isVirtualFolder, followRename, keepFolders, fullTree],
   );
 
   const handleDuplicate = useCallback(

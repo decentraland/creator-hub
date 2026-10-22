@@ -1,4 +1,9 @@
-import { removeAssetFiles, removeEmptyFolders, waitForLegacyUndoCommit } from './remove-assets';
+import {
+  removeAssetFiles,
+  removeEmptiedFolders,
+  removeEmptyFolders,
+  waitForLegacyUndoCommit,
+} from './remove-assets';
 
 const MISSING_METHOD = new Error('Method RemoveAssets not implemented in server port');
 
@@ -147,7 +152,7 @@ describe('removeAssetFiles', () => {
   });
 });
 
-describe('removeEmptyFolders', () => {
+describe('folder cleanup', () => {
   let folders: Set<string>;
   let files: Set<string>;
   let storage: Parameters<typeof removeEmptyFolders>[0];
@@ -176,39 +181,78 @@ describe('removeEmptyFolders', () => {
     };
   });
 
-  describe('when the folder holds only empty folders', () => {
-    beforeEach(() => {
-      folders.add('assets/props/trees');
-      folders.add('assets/props/trees/pine');
-      folders.add('assets/props/rocks');
+  describe('removeEmptyFolders', () => {
+    describe('when the folder holds only empty folders', () => {
+      beforeEach(() => {
+        folders.add('assets/props/trees');
+        folders.add('assets/props/trees/pine');
+        folders.add('assets/props/rocks');
+      });
+
+      it('should remove the folder and every folder below it', async () => {
+        await removeEmptyFolders(storage, ['assets/props']);
+        expect([...folders]).toEqual(['assets']);
+      });
     });
 
-    it('should remove the folder and every folder below it', async () => {
-      await removeEmptyFolders(storage, ['assets/props']);
-      expect([...folders]).toEqual(['assets']);
+    describe('when a folder below it still holds a file', () => {
+      beforeEach(() => {
+        folders.add('assets/props/trees');
+        folders.add('assets/props/rocks');
+        files.add('assets/props/rocks/boulder.glb');
+      });
+
+      it('should remove only the folders left empty', async () => {
+        await removeEmptyFolders(storage, ['assets/props']);
+        expect([...folders]).toEqual(['assets', 'assets/props', 'assets/props/rocks']);
+      });
+    });
+
+    describe('when the folder is no longer on disk', () => {
+      beforeEach(() => {
+        folders.delete('assets/props');
+      });
+
+      it('should resolve without removing anything', async () => {
+        await expect(removeEmptyFolders(storage, ['assets/props'])).resolves.toBeUndefined();
+      });
     });
   });
 
-  describe('when a folder below it still holds a file', () => {
+  describe('removeEmptiedFolders', () => {
     beforeEach(() => {
-      folders.add('assets/props/trees');
       folders.add('assets/props/rocks');
-      files.add('assets/props/rocks/boulder.glb');
+      folders.add('assets/props/rocks/small');
     });
 
-    it('should remove only the folders left empty', async () => {
-      await removeEmptyFolders(storage, ['assets/props']);
-      expect([...folders]).toEqual(['assets', 'assets/props', 'assets/props/rocks']);
-    });
-  });
-
-  describe('when the folder is no longer on disk', () => {
-    beforeEach(() => {
-      folders.delete('assets/props');
+    describe('when the removed files leave their folders empty', () => {
+      it('should remove every emptied folder up to, but not including, the assets folder', async () => {
+        await removeEmptiedFolders(storage, ['assets/props/rocks/small/pebble.glb']);
+        expect([...folders]).toEqual(['assets']);
+      });
     });
 
-    it('should resolve without removing anything', async () => {
-      await expect(removeEmptyFolders(storage, ['assets/props'])).resolves.toBeUndefined();
+    describe('when a folder on the way up still holds a file', () => {
+      beforeEach(() => {
+        files.add('assets/props/tree.glb');
+      });
+
+      it('should stop at that folder', async () => {
+        await removeEmptiedFolders(storage, ['assets/props/rocks/small/pebble.glb']);
+        expect([...folders]).toEqual(['assets', 'assets/props']);
+      });
+    });
+
+    describe('when the removed file sits directly in the assets folder', () => {
+      beforeEach(() => {
+        files.clear();
+        folders = new Set(['assets']);
+      });
+
+      it('should leave the assets folder', async () => {
+        await removeEmptiedFolders(storage, ['assets/logo.png']);
+        expect([...folders]).toEqual(['assets']);
+      });
     });
   });
 });
