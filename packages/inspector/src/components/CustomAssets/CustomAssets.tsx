@@ -148,15 +148,11 @@ export function CustomAssets({ onAddToFilesystem }: CustomAssetsProps) {
           placeholder="Search custom items"
           onChange={setSearch}
         />
-        <div className="Assets-crumbs inline">
-          <button
-            className="current"
-            disabled
-          >
-            {search ? `${visibleAssets.length} of ${customAssets.length} items` : 'Custom Items'}
-          </button>
-          {!search && <span className="Assets-crumbs-count">{customAssets.length}</span>}
-        </div>
+        {search && (
+          <span className="Assets-crumbs inline">
+            {visibleAssets.length} of {customAssets.length} items
+          </span>
+        )}
       </div>
       {visibleAssets.length === 0 ? (
         <div className="custom-assets-no-results">No custom items match your search.</div>

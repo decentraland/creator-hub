@@ -45,23 +45,25 @@ const Header: React.FC<Props> = ({ selectedTheme, search, onChangeTheme, onSearc
           onChange={onSearch}
           debounceMs={300}
         />
-        <nav
-          className="Assets-crumbs inline assets-catalog-header-title"
-          aria-label="Asset pack path"
-        >
-          {crumbs.map((crumb, index) => (
-            <React.Fragment key={crumb.label}>
-              {index > 0 && <ChevronIcon />}
-              <button
-                className={cx({ current: index === crumbs.length - 1 })}
-                onClick={crumb.onClick}
-                disabled={!crumb.onClick}
-              >
-                {crumb.label}
-              </button>
-            </React.Fragment>
-          ))}
-        </nav>
+        {!isMainHeader && (
+          <nav
+            className="Assets-crumbs inline assets-catalog-header-title"
+            aria-label="Asset pack path"
+          >
+            {crumbs.map((crumb, index) => (
+              <React.Fragment key={crumb.label}>
+                {index > 0 && <ChevronIcon />}
+                <button
+                  className={cx({ current: index === crumbs.length - 1 })}
+                  onClick={crumb.onClick}
+                  disabled={!crumb.onClick}
+                >
+                  {crumb.label}
+                </button>
+              </React.Fragment>
+            ))}
+          </nav>
+        )}
       </div>
     </div>
   );
