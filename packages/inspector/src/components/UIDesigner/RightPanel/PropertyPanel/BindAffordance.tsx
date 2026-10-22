@@ -23,7 +23,7 @@ export const BindAffordance: React.FC<BindAffordanceProps> = ({
     <button
       ref={anchorRef}
       type="button"
-      className="ui-designer-bindable-link"
+      className="ui-designer-bindable-link ui-designer-icon-btn"
       onClick={() => setPickerOpen(true)}
       aria-label="Bind to variable"
       title="Bind this field to a variable"

@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { BiUndo, BiRedo, BiBadgeCheck, BiPlay, BiPause, BiStop } from 'react-icons/bi';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
-import cx from 'classnames';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { getSceneClient } from '../../../lib/rpc/scene';
@@ -67,14 +66,14 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
   return (
     <div className="Toolbar ui-designer-toolbar">
       <ToolbarButton
-        className="save"
+        className="save ui-designer-icon-btn"
         disabled
         title="All changes saved"
       >
         <BiBadgeCheck />
       </ToolbarButton>
       <ToolbarButton
-        className="undo"
+        className="undo ui-designer-icon-btn"
         title="Undo"
         disabled={!canUndo}
         onClick={canUndo ? handleUndo : undefined}
@@ -82,7 +81,7 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
         <BiUndo />
       </ToolbarButton>
       <ToolbarButton
-        className="redo"
+        className="redo ui-designer-icon-btn"
         title="Redo"
         disabled={!canRedo}
         onClick={canRedo ? handleRedo : undefined}
@@ -93,14 +92,16 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
       {sceneRun && (
         <>
           <ToolbarButton
-            className={cx('scene-run', { active: sceneRunning })}
+            className="scene-run ui-designer-toggle"
+            aria-pressed={sceneRunning}
+            aria-label="Run scene"
             onClick={sceneRunning ? handlePause : handlePlay}
             title={sceneRunning ? 'Pause scene' : 'Run scene'}
           >
             {sceneRunning ? <BiPause /> : <BiPlay />}
           </ToolbarButton>
           <ToolbarButton
-            className="scene-reset"
+            className="scene-reset ui-designer-icon-btn"
             onClick={handleStop}
             title="Stop and reset scene to its initial state"
           >
@@ -111,7 +112,8 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
       <div className="RightContent">
         {showSceneInfoButton && (
           <ToolbarButton
-            className={cx('scene-info', { active: isSceneInfoPanelOpen })}
+            className="scene-info ui-designer-toggle"
+            aria-pressed={isSceneInfoPanelOpen}
             onClick={handleToggleSceneInfo}
             title="Scene Info"
           >

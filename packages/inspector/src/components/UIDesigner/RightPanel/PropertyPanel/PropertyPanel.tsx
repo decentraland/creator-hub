@@ -6,16 +6,13 @@ import { useState } from 'react';
 import { AiOutlinePlus } from 'react-icons/ai';
 import { IoClose } from 'react-icons/io5';
 import { IoCubeOutline } from 'react-icons/io5';
-import { IoDesktopOutline } from 'react-icons/io5';
-import { IoEyeOffOutline } from 'react-icons/io5';
-import { IoEyeOutline } from 'react-icons/io5';
 import { IoOptionsOutline } from 'react-icons/io5';
 import { IoPhoneLandscapeOutline } from 'react-icons/io5';
 import { IoWarningOutline } from 'react-icons/io5';
-import { VscTrash } from 'react-icons/vsc';
 import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
 import { classifyNode } from '../../shared/tree-model';
+import { DesktopIcon, EyeIcon, EyeOffIcon, TrashIcon } from '../../icons';
 import { codeComponentValueForLayer } from '../../code/store';
 import { addPlatformVariant } from '../../code/store';
 import { addInteractionStates } from '../../code/store';
@@ -136,7 +133,7 @@ const LAYER_HINTS: Record<InteractionStateKey, string> = {
 const STATES_INFO =
   'Style this node differently while the pointer is over it, while it is held down, or while a bound condition is true.';
 
-const StatesBar: React.FC<{
+export const StatesBar: React.FC<{
   node: CodeUINode;
   entity: Entity;
   layer: InteractionStateKey;
@@ -164,7 +161,7 @@ const StatesBar: React.FC<{
         {interaction ? (
           <button
             type="button"
-            className="ui-designer-prop-remove"
+            className="ui-designer-prop-remove ui-designer-icon-btn ui-designer-compact"
             aria-label={
               layer === 'base'
                 ? 'Remove interaction states'
@@ -184,12 +181,12 @@ const StatesBar: React.FC<{
               }
             }}
           >
-            <VscTrash aria-hidden />
+            <TrashIcon />
           </button>
         ) : (
           <button
             type="button"
-            className="ui-designer-prop-add"
+            className="ui-designer-prop-add ui-designer-icon-btn ui-designer-compact"
             aria-label="Add interaction states"
             title={STATES_INFO}
             onClick={() => {
@@ -216,11 +213,7 @@ const StatesBar: React.FC<{
                   type="button"
                   role="tab"
                   aria-selected={present && key === layer}
-                  aria-disabled={!present}
-                  className={cx('ui-designer-states-tab', {
-                    selected: present && key === layer,
-                    absent: !present,
-                  })}
+                  className="ui-designer-states-tab ui-designer-toggle"
                   title={
                     present
                       ? LAYER_HINTS[key]
@@ -241,7 +234,7 @@ const StatesBar: React.FC<{
 };
 
 const PLATFORM_TABS: { key: DeviceKind; label: string; icon: React.ReactNode }[] = [
-  { key: 'desktop', label: 'Desktop', icon: <IoDesktopOutline aria-hidden /> },
+  { key: 'desktop', label: 'Desktop', icon: <DesktopIcon /> },
   { key: 'mobile', label: 'Mobile', icon: <IoPhoneLandscapeOutline aria-hidden /> },
 ];
 
@@ -281,17 +274,17 @@ const VariantsBar: React.FC<{
         {node.platform ? (
           <button
             type="button"
-            className="ui-designer-prop-remove"
+            className="ui-designer-prop-remove ui-designer-icon-btn ui-designer-compact"
             aria-label="Remove device variants"
             title="Remove device variants — the layout you're editing becomes the only one"
             onClick={handleRemove}
           >
-            <VscTrash aria-hidden />
+            <TrashIcon />
           </button>
         ) : (
           <button
             type="button"
-            className="ui-designer-prop-add"
+            className="ui-designer-prop-add ui-designer-icon-btn ui-designer-compact"
             aria-label="Add device variants"
             title={VARIANTS_INFO}
             onClick={() => {
@@ -306,7 +299,7 @@ const VariantsBar: React.FC<{
       {node.platform ? (
         <>
           <div
-            className="ui-designer-states-tabs"
+            className="ui-designer-states-tabs ui-designer-segmented"
             role="tablist"
             aria-label="Device variant"
           >
@@ -316,7 +309,7 @@ const VariantsBar: React.FC<{
                 type="button"
                 role="tab"
                 aria-selected={t.key === platform}
-                className={cx('ui-designer-states-tab', { selected: t.key === platform })}
+                className="ui-designer-states-tab ui-designer-toggle"
                 title={`Edit the ${t.label} layout`}
                 onClick={() => dispatch(setPlatform({ platform: t.key }))}
               >
@@ -337,7 +330,7 @@ const VariantsBar: React.FC<{
       >
         <button
           type="button"
-          className="close"
+          className="close ui-designer-icon-btn"
           aria-label="Close"
           onClick={() => setConfirmOpen(false)}
         >
@@ -441,7 +434,7 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
     {node.opaque ? null : (
       <button
         type="button"
-        className="ui-designer-panel-header-eye"
+        className="ui-designer-panel-header-eye ui-designer-toggle ui-designer-compact"
         aria-pressed={hidden}
         aria-label={hidden ? 'Show this node on the canvas' : 'Hide this node on the canvas'}
         title={
@@ -451,7 +444,7 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
         }
         onClick={onToggle}
       >
-        {hidden ? <IoEyeOffOutline /> : <IoEyeOutline />}
+        {hidden ? <EyeOffIcon /> : <EyeIcon />}
       </button>
     )}
   </div>
@@ -676,7 +669,7 @@ const PropertyPanelComponent: React.FC = () => {
         {removable ? (
           <button
             type="button"
-            className="ui-designer-prop-remove"
+            className="ui-designer-prop-remove ui-designer-icon-btn ui-designer-compact"
             aria-label={
               overriding
                 ? `Reset ${field.label ?? 'property'} to its Default value`
@@ -689,7 +682,7 @@ const PropertyPanelComponent: React.FC = () => {
             }
             onClick={() => writeAndDispatch(field.componentId, buildRemovePatch(field))}
           >
-            <VscTrash aria-hidden />
+            <TrashIcon />
           </button>
         ) : null}
       </div>
@@ -708,7 +701,7 @@ const PropertyPanelComponent: React.FC = () => {
       >
         <button
           type="button"
-          className="ui-designer-prop-add"
+          className="ui-designer-prop-add ui-designer-icon-btn ui-designer-compact"
           aria-label={`Add ${field.label ?? 'property'}`}
           title={`Add ${field.label ?? 'property'}`}
           onClick={() => writeAndDispatch(field.componentId, buildAddPatch(field))}

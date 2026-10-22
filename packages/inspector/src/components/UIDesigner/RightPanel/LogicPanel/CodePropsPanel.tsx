@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
 import { analytics, Event } from '../../../../lib/logic/analytics';
@@ -7,6 +6,7 @@ import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
 import { Dropdown, TextField } from '../../../ui';
 import type { BindVariable } from '../../code/bindings';
 import { addBindProp, removeProp, retypeProp, useCodeState } from '../../code/store';
+import { TrashIcon } from '../../icons';
 
 import './CodeVariablesPanel.css';
 
@@ -69,12 +69,12 @@ const CodePropsPanelComponent: React.FC = () => {
             />
             <button
               type="button"
-              className="ui-designer-code-variable-delete"
+              className="ui-designer-code-variable-delete ui-designer-icon-btn ui-designer-compact"
               title={`Delete ${v.name}`}
               aria-label={`Delete ${v.name}`}
               onClick={() => void removeProp(v.name)}
             >
-              <VscTrash aria-hidden />
+              <TrashIcon />
             </button>
           </div>
         ))}
@@ -97,7 +97,7 @@ const CodePropsPanelComponent: React.FC = () => {
           />
           <button
             type="button"
-            className="ui-designer-code-add"
+            className="ui-designer-code-add ui-designer-icon-btn"
             aria-label="Add input"
             disabled={!canAdd}
             onClick={add}

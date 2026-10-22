@@ -94,8 +94,9 @@ export const LengthVecField = React.memo(function LengthVecField({
         {field.aspectLockable ? (
           <button
             type="button"
-            className={`ui-designer-vec-lock${aspectLocked ? ' active' : ''}`}
+            className="ui-designer-vec-lock ui-designer-toggle"
             aria-pressed={aspectLocked}
+            disabled={fieldDisabled}
             aria-label={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
             title={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
             onClick={() => dispatch(setAspectLocked({ entity, locked: !aspectLocked }))}

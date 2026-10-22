@@ -149,6 +149,19 @@ describe('when searching', () => {
     expect(guis()).not.toBeNull();
     expect(nodes()).not.toBeNull();
   });
+
+  it('should clear the term from a named Clear search button', () => {
+    renderRail('nothinghere');
+    const clear = screen.getByLabelText('Clear search');
+    expect(clear.tagName).toBe('BUTTON');
+    fireEvent.click(clear);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+
+    expect(guis()).not.toBeNull();
+    expect(nodes()).not.toBeNull();
+  });
 });
 
 describe('when pressing an add button', () => {

@@ -249,30 +249,13 @@
   width: 24px;
   height: 24px;
   padding: 0;
-  background: transparent;
   border: none;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.85);
-  cursor: pointer;
-}
-
-.ui-designer-node-action:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.ui-designer-node-action[aria-label="Delete node"]:hover {
-  background: rgba(255, 90, 90, 0.25);
-  color: rgb(255, 140, 140);
-}
-
-.ui-designer-node-action:focus-visible {
-  outline: 2px solid var(--ui-designer-accent);
-  outline-offset: 1px;
 }
 
 .ui-designer-node-action svg {
-  width: 15px;
-  height: 15px;
+  width: auto;
+  height: 13px;
 }
 
 .ui-designer-canvas-empty {
@@ -415,19 +398,7 @@
 }
 
 .ui-designer-canvas-zoom-btn {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  padding: 0;
   font-size: 14px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: #fcfcfc;
-  cursor: pointer;
 }
 
 .ui-designer-canvas-zoom-level {
@@ -441,7 +412,7 @@
   background: transparent;
   border: none;
   border-radius: 4px;
-  color: #fcfcfc;
+  color: var(--ui-designer-text);
   cursor: pointer;
   font-size: 12px;
   text-align: center;
@@ -453,23 +424,15 @@
 }
 
 .ui-designer-zoom-panel .ui-designer-canvas-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 22px;
   height: 22px;
-  color: #a09ba8;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
   font-size: 16px;
-}
-
-.ui-designer-zoom-panel .ui-designer-canvas-zoom-btn:disabled {
-  color: #fcfcfc;
-}
-
-.ui-designer-canvas-zoom-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.ui-designer-canvas-zoom-btn:focus-visible {
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
 }
 
 .ui-designer-canvas-zoom-level:hover {
@@ -478,7 +441,7 @@
 }
 
 .ui-designer-canvas-zoom-level:focus-visible {
-  outline: 1px solid #fcfcfc;
+  outline: 1px solid var(--ui-designer-text);
   outline-offset: -1px;
 }
 
@@ -493,14 +456,10 @@
   opacity: 0.75;
 }
 
-.ui-designer-canvas-zoom-btn.active {
-  background: #244b7d;
-  color: #fcfcfc;
-}
-
-.ui-designer-canvas-zoom-btn.locked {
-  cursor: default;
-  opacity: 1;
+.ui-designer-toggles .ui-designer-canvas-zoom-btn.locked {
+  --ui-designer-ctl-fg: var(--ui-designer-control-active-fg);
+  --ui-designer-ctl-fill: var(--ui-designer-control-active-bg);
+  --ui-designer-ctl-edge: var(--ui-designer-control-active-bg);
 }
 
 .ui-designer-preview-mode-panel {
@@ -528,22 +487,9 @@
 .ui-designer-toggles {
   display: flex;
   align-items: center;
-  gap: 4px;
-}
-
-.ui-designer-toggles .ui-designer-canvas-zoom-btn {
-  width: 22px;
-  height: 22px;
-  font-size: 19px;
-}
-
-.ui-designer-toggles .ui-designer-canvas-zoom-btn.active:hover {
-  background: #243852;
 }
 
 .ui-designer-canvas-zoom-btn:disabled:not(.locked) {
-  opacity: 0.2;
-  cursor: default;
   pointer-events: none;
 }
 
@@ -554,6 +500,10 @@
   border-radius: 4px;
 }
 
+.ui-designer-device-toggle.ui-designer-segmented {
+  --ui-designer-segmented-radius: 4px;
+}
+
 .ui-designer-device-toggle-btn {
   box-sizing: border-box;
   display: inline-flex;
@@ -562,39 +512,7 @@
   width: 26px;
   height: 22px;
   padding: 0;
-  font-size: 19px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: #fcfcfc;
-  cursor: pointer;
-}
-
-.ui-designer-device-toggle-btn:first-child {
-  border-radius: 4px 0 0 4px;
-}
-
-.ui-designer-device-toggle-btn:last-child {
-  border-radius: 0 4px 4px 0;
-}
-
-.ui-designer-device-toggle-btn:not(.active) {
-  border-color: #35333b;
-}
-
-.ui-designer-device-toggle-btn.active {
-  background: #244b7d;
-  color: #fcfcfc;
-}
-
-.ui-designer-device-toggle-btn:not(.active):hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.ui-designer-device-toggle-btn:focus-visible {
-  position: relative;
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
-  z-index: 1;
+  font-size: 13px;
 }
 
 /* Mobile device-preview chrome, layered onto the stage. The bezel colour shows
