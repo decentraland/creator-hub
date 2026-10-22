@@ -2,7 +2,8 @@
 .ui-designer-toggle {
   --ui-designer-ctl-fg: var(--ui-designer-text-muted);
   --ui-designer-ctl-fill: transparent;
-  --ui-designer-ctl-edge: var(--palette-neutral-onyx);
+  --ui-designer-ctl-rest-edge: transparent;
+  --ui-designer-ctl-edge: var(--ui-designer-ctl-rest-edge);
   color: var(--ui-designer-ctl-fg);
   background: var(--ui-designer-ctl-fill);
   cursor: pointer;
@@ -10,6 +11,11 @@
 
 .ui-designer-toggle {
   border: 1px solid var(--ui-designer-ctl-edge);
+}
+
+.ui-designer-tab,
+.ui-designer-segmented > .ui-designer-toggle {
+  --ui-designer-ctl-rest-edge: var(--palette-neutral-onyx);
 }
 
 .ui-designer-icon-btn:hover:not(:disabled, [aria-disabled="true"]),
@@ -37,7 +43,7 @@
 .ui-designer-toggle:is(:disabled, [aria-disabled="true"]) {
   --ui-designer-ctl-fg: var(--palette-whiteTransparent-soft);
   --ui-designer-ctl-fill: transparent;
-  --ui-designer-ctl-edge: var(--palette-neutral-onyx);
+  --ui-designer-ctl-edge: var(--ui-designer-ctl-rest-edge);
   cursor: default;
 }
 

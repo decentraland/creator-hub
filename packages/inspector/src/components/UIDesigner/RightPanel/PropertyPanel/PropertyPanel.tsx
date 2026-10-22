@@ -213,7 +213,7 @@ export const StatesBar: React.FC<{
                   type="button"
                   role="tab"
                   aria-selected={present && key === layer}
-                  className="ui-designer-states-tab ui-designer-toggle"
+                  className="ui-designer-states-tab ui-designer-toggle ui-designer-tab"
                   title={
                     present
                       ? LAYER_HINTS[key]
