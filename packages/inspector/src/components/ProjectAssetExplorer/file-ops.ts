@@ -92,15 +92,21 @@ export function getUniqueCopyName(name: string, siblings: Iterable<string>, isFo
 
 /**
  * Builds a function that maps a path inside `from` (the file itself or anything below it, when
- * it is a folder) to the equivalent path below `to`. Returns undefined for unrelated paths.
+ * it is a folder) to the equivalent path below `to`, ignoring letter case as the explorer's file
+ * lookup does. Returns undefined for unrelated paths.
  */
 export function createPathMapper(from: string, to: string) {
+  const lowerFrom = from.toLowerCase();
   return (path: string): string | undefined => {
-    if (path === from) return to;
-    if (path.startsWith(from + '/')) return to + path.slice(from.length);
+    const lowerPath = path.toLowerCase();
+    if (lowerPath === lowerFrom) return to;
+    if (lowerPath.startsWith(lowerFrom + '/')) return to + path.slice(from.length);
     return undefined;
   };
 }
+
+type PathMap = (path: string) => string | undefined;
+type OnUnreachable = (path: string) => void;
 
 // `scriptPath` is the CALL_SCRIPT_METHOD action's copy of a Script component `path`.
 const REFERENCE_KEYS = new Set(['src', 'audioClipUrl', 'path', 'scriptPath']);
@@ -128,37 +134,38 @@ function isScriptLayout(
   return key === SCRIPT_LAYOUT_KEY && typeof child === 'string' && typeof owner.path === 'string';
 }
 
+function isFileName(value: string): boolean {
+  return !value.includes(':') && normalizePath(value) === value;
+}
+
 function getFileParams(layout: string): [name: string, value: string][] {
   const { params } = (parseJsonPayload(layout) ?? {}) as ScriptLayout;
   return Object.entries(params ?? {}).flatMap(([name, param]) =>
-    param?.type === 'string' && typeof param.value === 'string' && param.value
+    param?.type === 'string' && typeof param.value === 'string' && isFileName(param.value)
       ? [[name, param.value] as [string, string]]
       : [],
   );
 }
 
-function getRelativePath(folder: string, to: string): string {
-  const from = folder.split('/');
-  const target = to.split('/');
-  let common = 0;
-  while (common < from.length && common < target.length - 1 && from[common] === target[common]) {
-    common++;
-  }
-  return [...from.slice(common).map(() => '..'), ...target.slice(common)].join('/');
-}
-
 function replaceScriptParams(
   layout: string,
   scriptPath: string,
-  map: (path: string) => string | undefined,
+  map: PathMap,
+  onUnreachable?: OnUnreachable,
 ): string {
   const folder = getParentPath(scriptPath);
   const newFolder = getParentPath(map(scriptPath) ?? scriptPath);
+  const prefix = newFolder ? `${newFolder}/` : '';
   const values: Record<string, string> = {};
   for (const [name, value] of getFileParams(layout)) {
     const moved = map(normalizePath(joinPath(folder, value)));
-    const next = moved && getRelativePath(newFolder, moved);
-    if (next && next !== value) values[name] = next;
+    if (!moved) continue;
+    if (!moved.toLowerCase().startsWith(prefix.toLowerCase())) {
+      onUnreachable?.(moved);
+      continue;
+    }
+    const next = moved.slice(prefix.length);
+    if (next !== value) values[name] = next;
   }
   if (!Object.keys(values).length) return layout;
   const parsed = parseJsonPayload(layout) as ScriptLayout;
@@ -172,12 +179,19 @@ function replaceScriptParams(
  * (`src`, `audioClipUrl`, `path`, `scriptPath`, also inside an Action's `jsonPayload`) through
  * `map`, and the file names a Script's string parameters give relative to its folder.
  * Returns the same reference when nothing changed.
+ *
+ * @param onUnreachable - called with each moved file a Script parameter can't name, because the
+ * script only reads files inside its own folder; the parameter is left as it was.
  */
-export function replaceAssetReferences<T>(value: T, map: (path: string) => string | undefined): T {
+export function replaceAssetReferences<T>(
+  value: T,
+  map: PathMap,
+  onUnreachable?: OnUnreachable,
+): T {
   if (Array.isArray(value)) {
     let changed = false;
     const next = value.map(item => {
-      const replaced = replaceAssetReferences(item, map);
+      const replaced = replaceAssetReferences(item, map, onUnreachable);
       if (replaced !== item) changed = true;
       return replaced;
     });
@@ -192,15 +206,15 @@ export function replaceAssetReferences<T>(value: T, map: (path: string) => strin
       if (REFERENCE_KEYS.has(key) && typeof child === 'string') {
         replaced = map(child) ?? child;
       } else if (isScriptLayout(key, child, owner)) {
-        replaced = replaceScriptParams(child, owner.path as string, map);
+        replaced = replaceScriptParams(child, owner.path as string, map, onUnreachable);
       } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
         const payload = parseJsonPayload(child);
-        const replacedPayload = replaceAssetReferences(payload, map);
+        const replacedPayload = replaceAssetReferences(payload, map, onUnreachable);
         if (payload !== undefined && replacedPayload !== payload) {
           replaced = JSON.stringify(replacedPayload);
         }
       } else {
-        replaced = replaceAssetReferences(child, map);
+        replaced = replaceAssetReferences(child, map, onUnreachable);
       }
       if (replaced !== child) changed = true;
       next[key] = replaced;
