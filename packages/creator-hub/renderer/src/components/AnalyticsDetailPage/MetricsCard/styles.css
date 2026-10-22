@@ -8,6 +8,7 @@
   background-color: var(--card);
 }
 
+.MetricsCard .Headlines,
 .MetricsCard .MetricsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

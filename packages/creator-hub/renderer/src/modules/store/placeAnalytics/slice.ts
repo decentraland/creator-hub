@@ -123,21 +123,23 @@ const slice = createSlice({
 
 const getPlaceAnalyticsState = (state: AppState) => state.placeAnalytics;
 
+/** A summary row for every place in the snapshot, before search and sort. */
+const getPlaceSummaries = createSelector(getPlaceAnalyticsState, analytics =>
+  analytics.places.flatMap(place => {
+    const metrics = analytics.metricsByPlaceId[place.placeId];
+    return metrics ? [toSummary(metrics, analytics.window, place)] : [];
+  }),
+);
+
 /**
  * Places to render: matching the search query, pinned ones first, then sorted.
  *
  * The whole list arrives in one response, so filtering and sorting happen here.
  */
-const getVisiblePlaces = createSelector(getPlaceAnalyticsState, analytics =>
-  sortPlaces(
-    analytics.places.flatMap(place => {
-      const metrics = analytics.metricsByPlaceId[place.placeId];
-      return metrics ? [toSummary(metrics, analytics.window, place)] : [];
-    }),
-    analytics.searchQuery,
-    analytics.sortBy,
-    analytics.pinnedPlaceIds,
-  ),
+const getVisiblePlaces = createSelector(
+  [getPlaceSummaries, getPlaceAnalyticsState],
+  (summaries, analytics) =>
+    sortPlaces(summaries, analytics.searchQuery, analytics.sortBy, analytics.pinnedPlaceIds),
 );
 
 /** The metrics for one scene, or `undefined` if it is not in the snapshot. */
@@ -147,6 +149,6 @@ export const getPlaceMetrics = (state: AppState, placeId: string): LocationMetri
 export const getPlace = (state: AppState, placeId: string): AnalyticsPlace | undefined =>
   state.placeAnalytics.places.find(place => place.placeId === placeId);
 
-export const selectors = { getVisiblePlaces, getPlaceMetrics, getPlace };
+export const selectors = { getPlaceSummaries, getVisiblePlaces, getPlaceMetrics, getPlace };
 export const actions = { ...slice.actions, fetchAnalytics };
 export const reducer = slice.reducer;

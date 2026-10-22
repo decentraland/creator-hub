@@ -1,0 +1,1 @@
+export { CreatorFundPage } from './component';

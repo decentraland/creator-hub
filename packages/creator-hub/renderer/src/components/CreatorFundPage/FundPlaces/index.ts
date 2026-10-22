@@ -1,0 +1,1 @@
+export { FundPlaces } from './component';

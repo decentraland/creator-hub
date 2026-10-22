@@ -16,6 +16,8 @@ export type Metric = {
 type Props = {
   /** The metric this card leads with, rendered larger than the rest. */
   headline: Metric;
+  /** A second lead metric beside the first, for pairs read together (D3 and D7 retention). */
+  secondaryHeadline?: Metric;
   metrics: Metric[];
 };
 
@@ -39,18 +41,31 @@ function MetricLabel({ metric }: { metric: Metric }) {
   );
 }
 
-export function MetricsCard({ headline, metrics }: Props) {
+function Headline({ metric }: { metric: Metric }) {
+  return (
+    <Box className="Metric Headline">
+      <MetricLabel metric={metric} />
+      <Typography
+        variant="h4"
+        color={metric.color}
+      >
+        {metric.value}
+      </Typography>
+    </Box>
+  );
+}
+
+export function MetricsCard({ headline, secondaryHeadline, metrics }: Props) {
   return (
     <Box className="MetricsCard">
-      <Box className="Metric Headline">
-        <MetricLabel metric={headline} />
-        <Typography
-          variant="h4"
-          color={headline.color}
-        >
-          {headline.value}
-        </Typography>
-      </Box>
+      {secondaryHeadline ? (
+        <Box className="Headlines">
+          <Headline metric={headline} />
+          <Headline metric={secondaryHeadline} />
+        </Box>
+      ) : (
+        <Headline metric={headline} />
+      )}
       <Box className="MetricsGrid">
         {metrics.map(metric => (
           <Box

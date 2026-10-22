@@ -4,6 +4,13 @@
   padding-bottom: 32px;
 }
 
+.ManagePage .ManageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .ManagePage .RefreshButton {
   margin-left: 16px;
 }
@@ -51,6 +58,10 @@
 .ManagePage .FilterChip {
   font-weight: 600;
   border: 1px solid var(--dark-gray);
+}
+
+.ManagePage .FundFilterChip .MuiChip-icon {
+  color: var(--dcl);
 }
 
 .ManagePage .FiltersBar .Select {

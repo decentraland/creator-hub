@@ -1,0 +1,40 @@
+.PayoutWallet {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.PayoutWallet .Label {
+  font-weight: 600;
+}
+
+.PayoutWallet .Muted {
+  color: var(--text-on-secondary);
+}
+
+.PayoutWallet .MuiTextField-root {
+  margin-top: 8px;
+  max-width: 560px;
+}
+
+.PayoutWallet .MuiInputBase-input {
+  font-family: var(--font-monospace);
+}
+
+.PayoutWallet .Locked .MuiInputBase-input.Mui-disabled {
+  -webkit-text-fill-color: var(--text);
+}
+
+.PayoutWallet .Locked .LockButton {
+  color: var(--success);
+}
+
+.PayoutWallet .Locked .MuiFormHelperText-root {
+  color: var(--success);
+}
+
+.PayoutWallet .UseConnected {
+  padding-left: 0;
+  text-transform: none;
+}

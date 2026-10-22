@@ -1,0 +1,80 @@
+.JoinCreatorFundModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.JoinCreatorFundModalBody .Heading {
+  font-weight: 700;
+}
+
+.JoinCreatorFundModalBody .Points {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--text-on-secondary);
+  line-height: 1.5;
+}
+
+.JoinCreatorFundModalBody .Muted {
+  color: var(--text-on-secondary);
+}
+
+.JoinCreatorFundModalBody .Status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0 8px 0;
+  text-align: center;
+}
+
+.JoinCreatorFundModalBody .StatusIcon {
+  font-size: 48px;
+}
+
+.JoinCreatorFundModalBody .StatusIcon.Success {
+  color: var(--success);
+}
+
+.JoinCreatorFundModalBody .StatusIcon.Warning {
+  color: var(--danger);
+}
+
+.JoinCreatorFundModalBody .Terms {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 16px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--divider);
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.JoinCreatorFundModalBody .Terms:focus-visible {
+  outline: 2px solid var(--dcl);
+  outline-offset: 2px;
+}
+
+.JoinCreatorFundModalBody .Terms section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.JoinCreatorFundModalBody .Terms .MuiTypography-subtitle1 {
+  font-weight: 700;
+}
+
+.JoinCreatorFundModalBody .Terms .MuiTypography-body2 {
+  color: var(--text-on-secondary);
+  line-height: 1.6;
+}
+
+.JoinCreatorFundModalBody .Accept {
+  margin: 0;
+}

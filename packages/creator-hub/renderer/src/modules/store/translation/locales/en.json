@@ -301,7 +301,8 @@
       "analytics": "Analytics",
       "manage": "Manage",
       "learn": "Learn",
-      "more": "More"
+      "more": "More",
+      "creator-fund": "Creator Fund"
     },
     "feedback": "Submit feedback",
     "report_an_issue": "Report an Issue",
@@ -1073,7 +1074,8 @@
     "filter_by": "Filter by",
     "filters": {
       "published": "Published",
-      "unpublished": "Not published"
+      "unpublished": "Not published",
+      "in_fund": "In Creator Fund"
     },
     "sign_in": {
       "title": "Sign in to manage your worlds",
@@ -1095,11 +1097,16 @@
       "all": {
         "title": "No places to display",
         "description": "Mint a NAME or become a collaborator to add your first Place."
+      },
+      "in_fund": {
+        "title": "No scenes in the Creator Fund",
+        "description": "Join the Creator Fund to enroll your eligible scenes."
       }
     },
     "actions": {
       "view_scenes": "View Scenes",
-      "mint_name": "Mint a new NAME"
+      "mint_name": "Mint a new NAME",
+      "creator_fund": "Creator Fund"
     },
     "worlds_storage": {
       "used": "Space used",
@@ -1210,6 +1217,14 @@
         "churn": {
           "title": "Weekly Churn Rate",
           "description": "Percentage of active users from the previous week who did not return this week."
+        },
+        "day_3_platforms": {
+          "title": "Day 3 Retention",
+          "description": "Share of new players back within 1 to 3 days, compared across mobile and desktop."
+        },
+        "day_3_cohort": {
+          "title": "Day 3 Retention by Cohort Week",
+          "description": "Percentage of new players who returned within 1 to 3 days of their first visit, grouped by the week they first jumped into your place."
         }
       },
       "visits": {
@@ -1348,6 +1363,14 @@
       "peak_concurrent_users": {
         "label": "Peak Concurrent Users",
         "tooltip": "The highest number of users in your place at the same time."
+      },
+      "new_players": {
+        "label": "New Players",
+        "tooltip": "Players on their first day in Decentraland, credited to the scene they played most that day. Paid-ads installs don't count. Mocked for the Creator Fund POC."
+      },
+      "day_3_retention": {
+        "label": "Day 3 Retention",
+        "tooltip": "Share of new players who came back within 1 to 3 days of their first day. Mocked for the Creator Fund POC."
       }
     },
     "list": {
@@ -1368,7 +1391,9 @@
         "day_7_retention": "D7 Retention",
         "revenue": "Revenue",
         "median_playtime": "Median Playtime",
-        "concurrent_users": "Concurrent Users"
+        "concurrent_users": "Concurrent Users",
+        "new_players": "New Players",
+        "day_3_retention": "D3 Retention"
       },
       "actions": {
         "pin_to_watchlist": "Pin to Watchlist",
@@ -1378,7 +1403,13 @@
     },
     "no_data_yet": "No data yet",
     "no_data_yet_description": "This scene has no numbers in the latest export. If it was published recently, check back after the next one.",
-    "exported_at": "Data as of {date}"
+    "exported_at": "Data as of {date}",
+    "creator_summary": {
+      "title": "Across your Places",
+      "description": "Your totals for the selected window, counted the way the Creator Fund pays on them.",
+      "link": "Creator Fund",
+      "mock": "Mocked for the Creator Fund POC"
+    }
   },
   "connection": {
     "offline": {
@@ -1391,6 +1422,179 @@
     "errors": {
       "NO_INTERNET_CONNECTION": "No internet connection available",
       "REQUEST_TIMEOUT": "Request timed out. Please check your connection and try again."
+    }
+  },
+  "creator_fund": {
+    "title": "Creator Fund",
+    "beta": "Beta",
+    "banner": {
+      "title": "Get paid for the players you bring",
+      "description": "Join the <b>Creator Fund</b> and earn a share of a {pool} pool every half-month, based on the new players your scenes bring and keep.",
+      "cta": "Learn more",
+      "enrolled_title": "You're in the Creator Fund",
+      "enrolled_description": "See this cycle's numbers and choose where your payouts go.",
+      "enrolled_cta": "View payouts",
+      "close": "Dismiss"
+    },
+    "page": {
+      "description": "Earn from a fixed pool every half-month, based on the players your scenes bring to Decentraland and bring back.",
+      "join": "Join Creator Fund",
+      "enrolled_since": "Enrolled since {date}",
+      "rules": "{pool} pool every half-month · Paid to scenes with {minPlayers}+ counted players · {minPayout} minimum payout",
+      "sign_in": {
+        "title": "Sign in to join the Creator Fund",
+        "action": "Sign In"
+      },
+      "pillars": {
+        "new_players": {
+          "title": "New players",
+          "description": "Players on their first day in Decentraland, credited to the scene they played most."
+        },
+        "playtime": {
+          "title": "Playtime",
+          "description": "AFK-free minutes from players the fund counts: real people, on live realms."
+        },
+        "returners": {
+          "title": "Returning players",
+          "description": "New players who come back within 1 to 3 days."
+        }
+      }
+    },
+    "modal": {
+      "intro": {
+        "title": "Creator Fund",
+        "subtitle": "Get paid for the players you bring",
+        "points": {
+          "pool": "A {pool} pool is shared every half-month among the scenes that take part.",
+          "metrics": "Your share follows three numbers: new players, playtime, and players who come back.",
+          "counted": "Only real players count. Bots, self-play and paid installs are filtered out."
+        },
+        "join": "Join Creator Fund",
+        "not_now": "Not now"
+      },
+      "checking": {
+        "title": "Checking your eligibility",
+        "description": "We are checking your account with the Creator Fund. This takes a few seconds."
+      },
+      "not_eligible": {
+        "title": "Sorry, you are not eligible to join the Creator Fund",
+        "reasons": {
+          "internal_account": "Foundation and Regenesis Labs accounts can't join the Creator Fund.",
+          "suspended": "This account can't take part in the Creator Fund right now."
+        },
+        "help": "If you think this is a mistake, our support team can review your account.",
+        "contact_support": "Contact Support",
+        "close": "Close"
+      },
+      "terms": {
+        "scroll_hint": "Scroll to the end of the terms to accept them.",
+        "accept": "I have read and accept the Creator Fund Program Terms",
+        "join": "Join Creator Fund",
+        "cancel": "Cancel"
+      },
+      "joined": {
+        "title": "Welcome to the Creator Fund",
+        "places": "{count, plural, =0 {Publish a scene to a World or your LAND to start earning.} one {# of your scenes is enrolled.} other {# of your scenes are enrolled.}}",
+        "next": "Set a payout wallet so your first payout has somewhere to go.",
+        "cta": "Set up payout wallet"
+      },
+      "error": {
+        "title": "We couldn't reach the Creator Fund",
+        "description": "Nothing changed on your account. Try again in a moment.",
+        "retry": "Try again"
+      }
+    },
+    "cycle": {
+      "title": "Current cycle",
+      "in_progress": "In progress · Closes {date}",
+      "no_estimate": "Estimated payouts aren't shown during the beta.",
+      "metrics": {
+        "new_players": {
+          "label": "New Players",
+          "tooltip": "Counted players on their first day in Decentraland, credited to the scene they played most that day."
+        },
+        "returners": {
+          "label": "Returning Players",
+          "tooltip": "New players who came back within 1 to 3 days."
+        },
+        "day_3_retention": {
+          "label": "Day 3 Retention",
+          "tooltip": "Returning players as a share of new players."
+        },
+        "playtime": {
+          "label": "Counted Playtime",
+          "tooltip": "AFK-free hours from counted players across your scenes."
+        }
+      },
+      "hours": "{value} h"
+    },
+    "payouts": {
+      "title": "Payouts",
+      "support": "Payout support",
+      "wallet": {
+        "title": "Payout wallet",
+        "description": "Each cycle is paid to the wallet that's locked when the cycle closes.",
+        "placeholder": "0x…",
+        "invalid": "Enter a valid wallet address",
+        "use_connected": "Use connected wallet",
+        "lock": "Lock payout wallet",
+        "unlock": "Unlock to edit",
+        "locked": "Locked. Payouts go to this wallet.",
+        "unlocked": "Lock the wallet to receive payouts.",
+        "unlock_confirm": {
+          "title": "Unlock your payout wallet?",
+          "description": "This cycle closes on {date}. Lock a wallet again before then, or this cycle has nowhere to be paid.",
+          "confirm": "Unlock",
+          "cancel": "Cancel"
+        }
+      },
+      "history": {
+        "title": "Past payouts",
+        "columns": {
+          "cycle": "Cycle",
+          "status": "Status",
+          "scenes": "Paid Scenes",
+          "amount": "Amount",
+          "wallet": "Paid To",
+          "transaction": "Transaction"
+        },
+        "status": {
+          "paid": "Paid",
+          "processing": "Processing",
+          "below_minimum": "Below $5 minimum",
+          "not_qualified": "Not qualified"
+        },
+        "view_transaction": "View transaction",
+        "empty": "No payouts yet. Your first one comes after this cycle closes on {date}.",
+        "error": "We couldn't load your payouts. Try again in a moment."
+      }
+    },
+    "places": {
+      "title": "Your scenes",
+      "description": "Every eligible scene you own or operate takes part.",
+      "empty": "Publish a scene to a World or your LAND to start earning.",
+      "qualified": "Paid last cycle",
+      "below_min_players": "Below {count} counted players last cycle",
+      "manage": "Manage Worlds",
+      "error": "We couldn't load your scenes. Try again in a moment."
+    },
+    "chip": {
+      "in_fund": "In Creator Fund",
+      "eligible": "Creator Fund eligible",
+      "not_eligible": "Not eligible",
+      "reasons": {
+        "place_disabled": "This place is disabled in Places.",
+        "excluded_content": "Foundation and Regenesis Labs content is not part of the Creator Fund.",
+        "private_world": "Private Worlds (password, invite list or NFT gate) are not part of the Creator Fund.",
+        "world_access_unavailable": "This World's access couldn't be checked. Try again later.",
+        "road": "Genesis City roads are not part of the Creator Fund."
+      }
+    },
+    "poc": {
+      "label": "POC · Mock data",
+      "simulate_eligible": "Simulate an eligible creator",
+      "simulate_not_eligible": "Simulate a not eligible creator",
+      "reset": "Reset demo"
     }
   }
 }

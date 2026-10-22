@@ -1,0 +1,14 @@
+.PocMenuChip.MuiChip-root {
+  flex-direction: row-reverse;
+  padding-right: 4px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  border-style: dashed;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.PocMenuChip .MuiChip-icon {
+  margin: 0 0 0 -4px;
+  color: var(--danger);
+}

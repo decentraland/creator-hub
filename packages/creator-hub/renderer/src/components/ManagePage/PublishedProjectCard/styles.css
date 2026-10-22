@@ -58,6 +58,12 @@
   text-align: right;
 }
 
+.PublishedProjectCard .CardThumbnail .FundChipContainer {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
 .PublishedProjectCard .ChipsContainer .MuiChip-root {
   font-weight: 600;
   background-color: rgba(36, 33, 41, 0.5);

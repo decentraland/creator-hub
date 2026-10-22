@@ -24,6 +24,7 @@ import * as management from './management';
 import * as placeAnalytics from './placeAnalytics';
 import * as profiles from './profiles';
 import * as optimizer from './optimizer';
+import * as creatorFund from './creatorFund';
 
 export function createRootReducer() {
   return {
@@ -43,6 +44,7 @@ export function createRootReducer() {
     placeAnalytics: placeAnalytics.reducer,
     profiles: profiles.reducer,
     optimizer: optimizer.reducer,
+    creatorFund: creatorFund.reducer,
   };
 }
 

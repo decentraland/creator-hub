@@ -1,0 +1,23 @@
+.CreatorSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 16px;
+  background-color: var(--card);
+}
+
+.CreatorSummary .CreatorSummaryHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.CreatorSummary .CreatorSummaryHeader .MuiTypography-h6 {
+  font-weight: 700;
+}
+
+.CreatorSummary .Muted {
+  color: var(--text-on-secondary);
+}

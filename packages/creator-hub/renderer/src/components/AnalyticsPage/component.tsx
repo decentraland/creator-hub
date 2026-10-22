@@ -19,6 +19,7 @@ import { Navbar, NavbarItem } from '../Navbar';
 import { Search } from '../Search';
 import { Select } from '../Select';
 
+import { CreatorSummary } from './CreatorSummary';
 import { PlacesTable } from './PlacesTable';
 import { formatExportDate } from './utils';
 
@@ -36,6 +37,7 @@ export function AnalyticsPage() {
     state => state.placeAnalytics,
   );
   const visiblePlaces = useSelector(selectors.getVisiblePlaces);
+  const placeSummaries = useSelector(selectors.getPlaceSummaries);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -94,6 +96,7 @@ export function AnalyticsPage() {
           </Box>
         ) : (
           <>
+            <CreatorSummary places={placeSummaries} />
             <FiltersBar className="FiltersBar">
               <Typography variant="h6">
                 {t('analytics.list.places', { count: visiblePlaces.length })}

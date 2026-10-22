@@ -1,0 +1,1 @@
+export { PocMenu } from './component';

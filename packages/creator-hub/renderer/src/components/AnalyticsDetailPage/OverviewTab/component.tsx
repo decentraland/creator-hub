@@ -2,6 +2,8 @@ import { Box, Typography } from 'decentraland-ui2';
 
 import type { PlaceOverviewMetrics } from '/shared/types/place-analytics';
 
+import type { PlaceFundMetrics } from '/@/lib/creatorFund';
+
 import { t } from '/@/modules/store/translation/utils';
 
 import {
@@ -17,9 +19,11 @@ import './styles.css';
 
 type Props = {
   overview: PlaceOverviewMetrics;
+  /** Creator Fund POC: mocked new players and D3 retention. */
+  fund: PlaceFundMetrics;
 };
 
-export function OverviewTab({ overview }: Props) {
+export function OverviewTab({ overview, fund }: Props) {
   return (
     <Box className="OverviewTab">
       <Typography variant="h5">{t('analytics.detail.overview.title')}</Typography>
@@ -41,6 +45,11 @@ export function OverviewTab({ overview }: Props) {
               label: t('analytics.metrics.unique_visits.label'),
               tooltip: t('analytics.metrics.unique_visits.tooltip'),
               value: formatCount(overview.uniqueVisits),
+            },
+            {
+              label: t('analytics.metrics.new_players.label'),
+              tooltip: t('analytics.metrics.new_players.tooltip'),
+              value: formatCount(fund.newPlayers),
             },
             {
               label: t('analytics.metrics.concurrent_users.label'),
@@ -68,6 +77,11 @@ export function OverviewTab({ overview }: Props) {
         />
         <MetricsCard
           headline={{
+            label: t('analytics.metrics.day_3_retention.label'),
+            tooltip: t('analytics.metrics.day_3_retention.tooltip'),
+            value: formatPercentage(fund.day3Retention),
+          }}
+          secondaryHeadline={{
             label: t('analytics.metrics.day_7_retention.label'),
             tooltip: t('analytics.metrics.day_7_retention.tooltip'),
             value: formatPercentage(overview.day7Retention),

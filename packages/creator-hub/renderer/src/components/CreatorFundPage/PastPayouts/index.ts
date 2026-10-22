@@ -1,0 +1,1 @@
+export { PastPayouts } from './component';

@@ -25,6 +25,7 @@ import {
   toVisits,
 } from '/@/lib/placeAnalytics.adapter';
 import { useAuth } from '/@/hooks/useAuth';
+import { placeDay3Retention, placeFundMetrics } from '/@/lib/creatorFund';
 
 import { Container } from '../Container';
 import { Loader } from '../Loader';
@@ -88,19 +89,20 @@ export function AnalyticsDetailPage() {
     dispatch(placeAnalyticsActions.setWindow(e.target.value as MetricsWindow));
   }, []);
 
-  const projections = useMemo(
-    () =>
-      metrics
-        ? {
-            overview: toOverview(metrics, metricsWindow),
-            retention: toRetention(metrics, metricsWindow),
-            visits: toVisits(metrics, metricsWindow),
-            engagement: toEngagement(metrics, metricsWindow),
-            isEmpty: hasNoData(metrics),
-          }
-        : null,
-    [metrics, metricsWindow],
-  );
+  const projections = useMemo(() => {
+    if (!metrics) return null;
+    const overview = toOverview(metrics, metricsWindow);
+    const retention = toRetention(metrics, metricsWindow);
+    return {
+      overview,
+      retention,
+      visits: toVisits(metrics, metricsWindow),
+      engagement: toEngagement(metrics, metricsWindow),
+      fund: placeFundMetrics(placeId, overview),
+      day3: placeDay3Retention(placeId, retention),
+      isEmpty: hasNoData(metrics),
+    };
+  }, [metrics, metricsWindow, placeId]);
 
   const title = place
     ? t('analytics.detail.title', { name: place.name })
@@ -199,8 +201,18 @@ export function AnalyticsDetailPage() {
                 </Box>
               ) : (
                 <>
-                  {tab === 'overview' && <OverviewTab overview={projections.overview} />}
-                  {tab === 'retention' && <RetentionTab retention={projections.retention} />}
+                  {tab === 'overview' && (
+                    <OverviewTab
+                      overview={projections.overview}
+                      fund={projections.fund}
+                    />
+                  )}
+                  {tab === 'retention' && (
+                    <RetentionTab
+                      retention={projections.retention}
+                      day3={projections.day3}
+                    />
+                  )}
                   {tab === 'visits' && <VisitsTab visits={projections.visits} />}
                   {tab === 'engagement' && <EngagementTab engagement={projections.engagement} />}
                 </>

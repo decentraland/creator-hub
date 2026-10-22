@@ -1,0 +1,57 @@
+.CycleSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  border-radius: 16px;
+  background-color: var(--card);
+}
+
+.CycleSummary .Muted {
+  color: var(--text-on-secondary);
+}
+
+.CycleSummary .CycleHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.CycleSummary .CycleHeader .MuiTypography-h6 {
+  font-weight: 700;
+}
+
+.CycleSummary .InProgress {
+  margin-left: auto;
+  font-weight: 600;
+  border: 1px solid var(--transparent-gray-light);
+  background-color: var(--transparent-gray-dark);
+}
+
+.CycleSummary .CycleStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.CycleSummary .CycleStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.CycleSummary .CycleStatLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--secondary-text);
+}
+
+.CycleSummary .CycleStatLabel svg {
+  font-size: 16px;
+  cursor: help;
+}
+
+.CycleSummary .CycleStat .MuiTypography-h4 {
+  font-weight: 600;
+}

@@ -13,6 +13,7 @@ import {
 
 import type { PlaceAnalyticsSummary } from '/shared/types/place-analytics';
 
+import { placeFundMetrics } from '/@/lib/creatorFund';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Dropdown } from '../../Dropdown';
@@ -32,6 +33,16 @@ type Props = {
   onTogglePin: (placeId: string) => void;
   onSelectPlace: (placeId: string) => void;
 };
+
+function FundCells({ place }: { place: PlaceAnalyticsSummary }) {
+  const fund = placeFundMetrics(place.placeId, place);
+  return (
+    <>
+      <TableCell>{formatCount(fund.newPlayers)}</TableCell>
+      <TableCell>{formatPercentage(fund.day3Retention)}</TableCell>
+    </>
+  );
+}
 
 export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace }: Props) {
   const getDropdownOptions = useCallback(
@@ -60,8 +71,9 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace
         <TableRow>
           <TableCell>{t('analytics.list.columns.place')}</TableCell>
           <TableCell>{t('analytics.list.columns.total_visits')}</TableCell>
-          {/* new_users: awaiting a first-time-visitor metric.
-          <TableCell>{t('analytics.list.columns.new_users')}</TableCell> */}
+          {/* Creator Fund POC: mocked until analytics carries attributable new players. */}
+          <TableCell>{t('analytics.list.columns.new_players')}</TableCell>
+          <TableCell>{t('analytics.list.columns.day_3_retention')}</TableCell>
           <TableCell>{t('analytics.list.columns.day_7_retention')}</TableCell>
           {/* revenue: awaiting a revenue metric.
           <TableCell>{t('analytics.list.columns.revenue')}</TableCell> */}
@@ -110,7 +122,7 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace
                * indistinguishable. Neither is an error.
                */
               <TableCell
-                colSpan={4}
+                colSpan={6}
                 className="NoDataCell"
               >
                 <Typography variant="body2">{t('analytics.no_data_yet')}</Typography>
@@ -118,8 +130,7 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace
             ) : (
               <>
                 <TableCell>{formatCount(place.totalVisits)}</TableCell>
-                {/* new_users: awaiting a first-time-visitor metric.
-                <TableCell>{formatCount(place.newUsers)}</TableCell> */}
+                <FundCells place={place} />
                 <TableCell>
                   <Typography
                     variant="body2"

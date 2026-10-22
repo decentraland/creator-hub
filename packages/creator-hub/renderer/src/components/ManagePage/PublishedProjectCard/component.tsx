@@ -14,9 +14,11 @@ import { RoleType as LandRoleType } from '/@/lib/land';
 import FallbackThumbnail from '/assets/images/scene-thumbnail-fallback.png';
 import { analytics, misc } from '#preload';
 import { getJumpInUrl } from '/@/modules/utils';
+import { fundKeyOfProject } from '/@/lib/creatorFund';
 import { Image } from '../../Image';
 import { Button } from '../../Button';
 import { Dropdown } from '../../Dropdown';
+import { EligibilityChip } from '../../CreatorFund/EligibilityChip';
 import type { Option } from '../../Dropdown';
 import { formatName, getLogo, getStorageUrl, isENSDomain } from './utils';
 import './styles.css';
@@ -168,6 +170,9 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                 alt="Project thumbnail"
                 fallbackSrc={FallbackThumbnail}
               />
+              <div className="FundChipContainer">
+                <EligibilityChip fundKey={fundKeyOfProject(project)} />
+              </div>
               <div className="ChipsContainer">
                 {type === 'world' && deployment.scenesCount > 0 && (
                   <Chip

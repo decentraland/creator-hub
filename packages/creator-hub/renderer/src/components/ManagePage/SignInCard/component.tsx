@@ -4,10 +4,11 @@ import { t } from '/@/modules/store/translation/utils';
 import './styles.css';
 
 type Props = {
+  title?: string;
   onClickSignIn: () => void;
 };
 
-const SignInCard: React.FC<Props> = ({ onClickSignIn }) => {
+const SignInCard: React.FC<Props> = ({ title, onClickSignIn }) => {
   return (
     <Card className="Card SignInCard">
       <CardContent className="CardContent CenteredContent">
@@ -15,7 +16,7 @@ const SignInCard: React.FC<Props> = ({ onClickSignIn }) => {
           className="CardTitle"
           variant="h6"
         >
-          {t('manage.sign_in.title')}
+          {title ?? t('manage.sign_in.title')}
         </Typography>
         <Button
           className="SignInButton"

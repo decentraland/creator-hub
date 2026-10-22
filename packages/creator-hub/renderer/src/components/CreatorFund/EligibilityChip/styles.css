@@ -1,0 +1,32 @@
+.EligibilityChip.MuiChip-root {
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+  background-color: rgba(22, 20, 26, 0.7);
+  border: 1px solid var(--transparent-gray-light);
+  color: var(--text);
+}
+
+.EligibilityChip .MuiChip-icon {
+  font-size: 16px;
+}
+
+.EligibilityChip.in_fund {
+  border-color: var(--success);
+}
+
+.EligibilityChip.in_fund .MuiChip-icon {
+  color: var(--success);
+}
+
+.EligibilityChip.eligible .MuiChip-icon {
+  color: var(--dcl);
+}
+
+.EligibilityChip.not_eligible {
+  color: var(--text-on-secondary);
+  cursor: help;
+}
+
+.EligibilityChip.not_eligible .MuiChip-icon {
+  color: var(--dcl-silver);
+}

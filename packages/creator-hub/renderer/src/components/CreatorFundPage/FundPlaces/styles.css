@@ -1,0 +1,70 @@
+.FundPlaces {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.FundPlaces .Muted {
+  color: var(--text-on-secondary);
+}
+
+.FundPlaces .SectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.FundPlaces .SectionHeader .MuiTypography-h5 {
+  font-weight: 700;
+}
+
+.FundPlaces .PlaceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: var(--card);
+}
+
+.FundPlaces .PlaceRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+}
+
+.FundPlaces .PlaceRow + .PlaceRow {
+  border-top: 1px solid var(--divider);
+}
+
+.FundPlaces .Thumbnail {
+  width: 72px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background-color: var(--darker-gray);
+}
+
+.FundPlaces .PlaceName {
+  flex: 1;
+  min-width: 0;
+}
+
+.FundPlaces .PlaceName .MuiTypography-root {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.FundPlaces .LastCycle {
+  color: var(--success);
+  white-space: nowrap;
+}
+
+.FundPlaces .LastCycle.Below {
+  color: var(--text-on-secondary);
+}

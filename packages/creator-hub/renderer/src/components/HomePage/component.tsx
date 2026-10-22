@@ -27,6 +27,7 @@ import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
 import { CreateProject } from '../Modals/CreateProject';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Footer } from '../Footer';
+import { CreatorFundBanner } from '../CreatorFund/Banner';
 import { DOCS, LearnTab, VIDEOS } from './resources';
 import type { HomeCardProps, NewProjectPayload, RowProps } from './types';
 
@@ -294,6 +295,7 @@ export function HomePage() {
           >
             {t('home.header.title')}
           </Typography>
+          <CreatorFundBanner />
           <MyScenesRow />
           <TemplatesRow />
           <LearnRow />

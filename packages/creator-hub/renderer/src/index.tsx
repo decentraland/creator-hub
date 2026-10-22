@@ -27,6 +27,7 @@ import { CollectionsPage } from '/@/components/CollectionsPage';
 import { AnalyticsPage } from '/@/components/AnalyticsPage';
 import { AnalyticsDetailPage } from '/@/components/AnalyticsDetailPage';
 import { ManagePage } from '/@/components/ManagePage';
+import { CreatorFundPage } from '/@/components/CreatorFundPage';
 import { LearnPage } from '/@/components/LearnPage';
 import { SignInPage } from '/@/components/SignInPage';
 import { TemplatesPage } from '/@/components/TemplatesPage';
@@ -141,6 +142,10 @@ if (isAiChatWindow || isConsoleWindow) {
                     <Route
                       path="/manage"
                       element={<ManagePage />}
+                    />
+                    <Route
+                      path="/creator-fund"
+                      element={<CreatorFundPage />}
                     />
                     <Route
                       path="/learn"

@@ -24,6 +24,8 @@ export enum NavbarItem {
   LEARN = 'learn',
   MANAGE = 'manage',
   MORE = 'more',
+  /** Has no menu entry yet: reached from the Home banner, Manage and Analytics. */
+  CREATOR_FUND = 'creator-fund',
 }
 
 function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boolean }) {

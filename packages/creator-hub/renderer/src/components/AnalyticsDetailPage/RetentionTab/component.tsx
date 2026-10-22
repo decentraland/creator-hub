@@ -3,6 +3,7 @@ import { Box, Typography } from 'decentraland-ui2';
 import type { PlaceRetentionMetrics } from '/shared/types/place-analytics';
 import { DAY_7_RETENTION_BENCHMARK } from '/shared/types/place-analytics';
 
+import type { PlaceDay3Retention } from '/@/lib/creatorFund';
 import { t } from '/@/modules/store/translation/utils';
 
 import { formatPercentage } from '../../AnalyticsPage/utils';
@@ -14,9 +15,11 @@ import './styles.css';
 
 type Props = {
   retention: PlaceRetentionMetrics;
+  /** Creator Fund POC: mocked Day 3 counterparts of the Day 7 cards. */
+  day3: PlaceDay3Retention;
 };
 
-export function RetentionTab({ retention }: Props) {
+export function RetentionTab({ retention, day3 }: Props) {
   return (
     <Box className="RetentionTab">
       <Typography variant="h5">{t('analytics.detail.retention.title')}</Typography>
@@ -46,6 +49,37 @@ export function RetentionTab({ retention }: Props) {
                 value: formatPercentage(retention.platforms.mobile),
               },
             ]}
+          />
+        </ChartCard>
+        <ChartCard
+          title={t('analytics.detail.retention.day_3_platforms.title')}
+          description={t('analytics.detail.retention.day_3_platforms.description')}
+        >
+          <StatsRow
+            stats={[
+              {
+                label: t('analytics.detail.platforms.all'),
+                value: formatPercentage(day3.platforms.all),
+              },
+              {
+                label: t('analytics.detail.platforms.desktop'),
+                value: formatPercentage(day3.platforms.desktop),
+              },
+              {
+                label: t('analytics.detail.platforms.mobile'),
+                value: formatPercentage(day3.platforms.mobile),
+              },
+            ]}
+          />
+        </ChartCard>
+        <ChartCard
+          title={t('analytics.detail.retention.day_3_cohort.title')}
+          description={t('analytics.detail.retention.day_3_cohort.description')}
+        >
+          <TimeSeriesChart
+            points={day3.byCohortWeek}
+            seriesName={t('analytics.metrics.day_3_retention.label')}
+            formatValue={formatPercentage}
           />
         </ChartCard>
         <ChartCard

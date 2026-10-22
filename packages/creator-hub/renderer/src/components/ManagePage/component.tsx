@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cx from 'classnames';
 import RefreshIcon from '@mui/icons-material/Cached';
+import PaidIcon from '@mui/icons-material/Paid';
 import type { SelectChangeEvent } from 'decentraland-ui2';
 import { Box, Chip, IconButton, MenuItem, Typography } from 'decentraland-ui2';
 import { analytics, misc } from '#preload';
@@ -9,6 +10,9 @@ import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
 import { fetchENSList } from '/@/modules/store/ens';
 import { useAuth } from '/@/hooks/useAuth';
+import { useCreatorFund } from '/@/hooks/useCreatorFund';
+import { fundKeyOfProject } from '/@/lib/creatorFund';
+import { actions as creatorFundActions } from '/@/modules/store/creatorFund';
 import { useDispatch, useSelector } from '#store';
 import { FilterBy, SortBy } from '/shared/types/manage';
 import { Navbar, NavbarItem } from '../Navbar';
@@ -55,6 +59,7 @@ export function ManagePage() {
   const { status, projects, total, page, sortBy, searchQuery, publishFilter } = useSelector(
     state => state.management,
   );
+  const { isEnrolled, showInFundOnly, places: fundPlaces } = useCreatorFund();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -68,6 +73,46 @@ export function ManagePage() {
       dispatch(fetchENSList({ address: wallet }));
     }
   }, [wallet, dispatch]);
+
+  // Labels for every tile on screen; already-answered places are skipped by the thunk.
+  useEffect(() => {
+    const deployed = projects.filter(project => project.deployment);
+    if (!deployed.length) return;
+    dispatch(
+      creatorFundActions.fetchPlacesEligibility(
+        deployed.map(project => ({
+          key: fundKeyOfProject(project),
+          title: project.deployment?.title ?? null,
+        })),
+      ),
+    );
+  }, [projects, dispatch]);
+
+  /**
+   * Narrows the loaded page only. POC: the real filter belongs in the
+   * management query, or it cannot see past the current page.
+   */
+  const visibleProjects = useMemo(
+    () =>
+      showInFundOnly && publishFilter === FilterBy.PUBLISHED
+        ? projects.filter(
+            project => isEnrolled && fundPlaces[fundKeyOfProject(project)]?.opt_in.eligible,
+          )
+        : projects,
+    [projects, showInFundOnly, publishFilter, isEnrolled, fundPlaces],
+  );
+
+  const isFundFilterEmpty =
+    showInFundOnly &&
+    publishFilter === FilterBy.PUBLISHED &&
+    projects.length > 0 &&
+    !visibleProjects.length;
+
+  const handleToggleFundFilter = useCallback(() => {
+    dispatch(creatorFundActions.setShowInFundOnly(!showInFundOnly));
+  }, [dispatch, showInFundOnly]);
+
+  const handleOpenCreatorFund = useCallback(() => navigate('/creator-fund'), [navigate]);
 
   const handleSortDropdownChange = useCallback((e: SelectChangeEvent<SortBy>) => {
     dispatch(managementActions.setSortBy(e.target.value as SortBy));
@@ -124,18 +169,30 @@ export function ManagePage() {
     <main className="ManagePage">
       <Navbar active={NavbarItem.MANAGE} />
       <Container>
-        <Typography variant="h3">
-          {t('manage.header.title')}
+        <Box className="ManageHeader">
+          <Typography variant="h3">
+            {t('manage.header.title')}
+            {isSignedIn && (
+              <IconButton
+                onClick={handleRefreshProjects}
+                disabled={isLoading}
+                className={cx('RefreshButton', { Loading: isLoading && !showMainLoader })}
+              >
+                <RefreshIcon />
+              </IconButton>
+            )}
+          </Typography>
           {isSignedIn && (
-            <IconButton
-              onClick={handleRefreshProjects}
-              disabled={isLoading}
-              className={cx('RefreshButton', { Loading: isLoading && !showMainLoader })}
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<PaidIcon />}
+              onClick={handleOpenCreatorFund}
             >
-              <RefreshIcon />
-            </IconButton>
+              {t('manage.actions.creator_fund')}
+            </Button>
           )}
-        </Typography>
+        </Box>
         {!isSignedIn && !isSigningIn ? (
           <SignInCard onClickSignIn={signIn} />
         ) : (
@@ -144,7 +201,7 @@ export function ManagePage() {
               <FiltersBar className="FiltersBar">
                 <>
                   <Typography variant="h6">
-                    {t('manage.items', { count: projects.length })}
+                    {t('manage.items', { count: visibleProjects.length })}
                   </Typography>
                   <Box className="FilterChipsContainer">
                     <Typography>{t('manage.filter_by')}</Typography>
@@ -161,6 +218,16 @@ export function ManagePage() {
                         }
                       />
                     ))}
+                    {publishFilter === FilterBy.PUBLISHED && (
+                      <Chip
+                        icon={<PaidIcon />}
+                        label={t('manage.filters.in_fund')}
+                        variant={showInFundOnly ? 'filled' : 'outlined'}
+                        className="FilterChip FundFilterChip"
+                        aria-pressed={showInFundOnly}
+                        onClick={handleToggleFundFilter}
+                      />
+                    )}
                   </Box>
                 </>
                 {publishFilter === FilterBy.PUBLISHED && (
@@ -214,9 +281,22 @@ export function ManagePage() {
                       </Button>
                     ))}
                 </Box>
+              ) : isFundFilterEmpty ? (
+                <Box className="EmptyContainer">
+                  <Typography variant="h6">{t('manage.empty_list.in_fund.title')}</Typography>
+                  <Typography variant="body1">
+                    {t('manage.empty_list.in_fund.description')}
+                  </Typography>
+                  <Button
+                    onClick={handleOpenCreatorFund}
+                    color="secondary"
+                  >
+                    {t('manage.actions.creator_fund')}
+                  </Button>
+                </Box>
               ) : (
                 <ManagedProjectsList
-                  projects={projects}
+                  projects={visibleProjects}
                   total={total}
                   isLoading={isLoading}
                   onLoadMore={handleLoadMoreProjects}
