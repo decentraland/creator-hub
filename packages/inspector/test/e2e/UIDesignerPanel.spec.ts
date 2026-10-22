@@ -141,3 +141,33 @@ describe('UI Designer left panel', () => {
     await expect(UIDesigner.rootNames()).resolves.toEqual([]);
   });
 });
+
+describe('UI Designer toolbar', () => {
+  beforeAll(async () => {
+    await App.waitUntilReady();
+    await UIDesigner.open();
+  });
+
+  test('keep the panel accent ring on the 2D toolbar', async () => {
+    const accentRing = () =>
+      page.evaluate(() => {
+        const el = document.activeElement as HTMLElement;
+        const style = getComputedStyle(el);
+        return { className: el.className, outline: `${style.outlineStyle} ${style.outlineColor}` };
+      });
+
+    await page.locator('.ui-designer-toolbar .gizmo.free').click();
+    await page.keyboard.press('Tab');
+    await expect(accentRing()).resolves.toEqual({
+      className: expect.stringContaining('gizmo position'),
+      outline: 'solid rgb(99, 180, 246)',
+    });
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(accentRing()).resolves.toEqual({
+      className: expect.stringContaining('open-panel'),
+      outline: 'solid rgb(99, 180, 246)',
+    });
+  });
+});

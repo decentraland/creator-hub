@@ -2,6 +2,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { setSceneRunIntent } from '../../../redux/ui';
 import { UIDesignerTool } from '../../../redux/ui/types';
 import { Tools } from './Tools';
 import UIDesignerToolbar from './UIDesignerToolbar';
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   tool: 'free' as string,
   sceneRunning: false,
   sceneInfoPanelVisible: false,
+  dispatch: vi.fn(),
 }));
 
 vi.mock('../../../redux/hooks', () => ({
@@ -22,7 +24,7 @@ vi.mock('../../../redux/hooks', () => ({
       },
       dataLayer: { sceneInfo: { content: 'Scene info' } },
     }),
-  useAppDispatch: () => vi.fn(),
+  useAppDispatch: () => mocks.dispatch,
 }));
 
 vi.mock('../../../hooks/sdk/useSdk', () => ({
@@ -93,6 +95,18 @@ describe('UI Designer toolbar', () => {
       render(<UIDesignerToolbar />);
       expect(pressed('Run scene')).toBe('true');
       expect(pressed('Scene Info')).toBe('true');
+    });
+  });
+
+  describe('when Stop is clicked', () => {
+    it('should dispatch the reset flag', () => {
+      render(<UIDesignerToolbar />);
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Stop and reset scene to its initial state' }),
+      );
+      expect(mocks.dispatch).toHaveBeenCalledWith(
+        setSceneRunIntent({ running: false, reset: true }),
+      );
     });
   });
 });

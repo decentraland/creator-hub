@@ -4,8 +4,9 @@
 }
 
 .Gizmos .gizmo {
-  background-repeat: no-repeat;
-  background-position: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 100%;
 }
 
@@ -13,20 +14,17 @@
   margin: 0px;
   border-top-right-radius: 0px;
   border-bottom-right-radius: 0px;
-  background-image: url(./icons/free.svg);
 }
 
 .Gizmos .gizmo.position {
   margin-left: 1px;
   margin-right: 1px;
   border-radius: 0px;
-  background-image: url(./icons/position.svg);
 }
 
 .Gizmos .gizmo.rotation {
   margin: 0px;
   border-radius: 0px;
-  background-image: url(./icons/rotation.svg);
 }
 
 .Gizmos .gizmo.scale {
@@ -34,7 +32,32 @@
   margin-right: 3px;
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;
-  background-image: url(./icons/scale.svg);
+}
+
+.Gizmos .gizmo::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+
+.Gizmos .gizmo.free::before {
+  mask-image: url("./icons/free.svg");
+}
+
+.Gizmos .gizmo.position::before {
+  mask-image: url("./icons/position.svg");
+}
+
+.Gizmos .gizmo.rotation::before {
+  mask-image: url("./icons/rotation.svg");
+}
+
+.Gizmos .gizmo.scale::before {
+  mask-image: url("./icons/scale.svg");
 }
 
 .Gizmos .open-panel {
@@ -62,7 +85,7 @@
 
 .Gizmos .panel .title {
   position: relative;
-  color: var(--text);
+  color: var(--title);
   font-weight: bold;
   margin-bottom: 6px;
   line-height: 14px;
@@ -81,17 +104,4 @@
 
 .Gizmos .panel .snaps {
   margin-bottom: 10px;
-}
-
-.Gizmos .panel .alignment {
-  position: relative;
-}
-
-.Gizmos .panel .alignment label {
-  color: var(--secondary-text);
-}
-
-.Gizmos .panel .alignment.disabled .icon {
-  cursor: not-allowed;
-  opacity: 0.5;
 }

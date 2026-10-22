@@ -55,7 +55,7 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
     sceneRun?.setRunning(false);
   }, [dispatch, sceneRun]);
   const handleStop = useCallback(() => {
-    dispatch(setSceneRunIntent({ running: false }));
+    dispatch(setSceneRunIntent({ running: false, reset: true }));
     void sceneRun?.reset();
   }, [dispatch, sceneRun]);
 

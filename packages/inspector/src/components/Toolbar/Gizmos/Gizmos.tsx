@@ -85,41 +85,42 @@ export const Gizmos = withSdk(({ sdk }) => {
       ref={ref}
     >
       <ToolbarButton
-        className={cx('gizmo free', {
-          active: selection?.gizmo === GizmoType.FREE && !isSpawnAreaSelected,
-        })}
+        className="gizmo free"
+        aria-pressed={selection?.gizmo === GizmoType.FREE && !isSpawnAreaSelected}
         disabled={disableGizmos}
         onClick={handleFreeGizmo}
         title="Free movement tool"
       />
       <ToolbarButton
-        className={cx('gizmo position', {
-          active: selection?.gizmo === GizmoType.POSITION || isSpawnAreaSelected,
-        })}
+        className="gizmo position"
+        aria-pressed={selection?.gizmo === GizmoType.POSITION || isSpawnAreaSelected}
         disabled={disableGizmos}
         onClick={handlePositionGizmo}
         title="Translation tool"
       />
       <ToolbarButton
-        className={cx('gizmo rotation', {
-          active: selection?.gizmo === GizmoType.ROTATION && !isSpawnAreaSelected,
-        })}
+        className="gizmo rotation"
+        aria-pressed={selection?.gizmo === GizmoType.ROTATION && !isSpawnAreaSelected}
         disabled={disableGizmos}
         onClick={handleRotationGizmo}
         title="Rotation tool"
       />
       <ToolbarButton
-        className={cx('gizmo scale', {
-          active: selection?.gizmo === GizmoType.SCALE && !isSpawnAreaSelected,
-        })}
+        className="gizmo scale"
+        aria-pressed={selection?.gizmo === GizmoType.SCALE && !isSpawnAreaSelected}
         disabled={disableGizmos}
         onClick={handleScaleGizmo}
         title="Scaling tool"
       />
-      <BsCaretDown
+      <button
+        type="button"
         className="open-panel"
+        aria-label="Snap options"
+        aria-expanded={showPanel}
         onClick={handleTogglePanel}
-      />
+      >
+        <BsCaretDown />
+      </button>
       <div className={cx('panel', { visible: showPanel })}>
         <div className="title">
           <label>Snap</label>
