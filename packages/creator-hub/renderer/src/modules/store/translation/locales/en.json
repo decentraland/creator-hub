@@ -1584,6 +1584,28 @@
       "simulate_eligible": "Simulate an eligible creator",
       "simulate_not_eligible": "Simulate a not eligible creator",
       "reset": "Reset demo"
+    },
+    "leaderboard": {
+      "title": "Leaderboard",
+      "description": "The top {count} creators and scenes of each cycle, by what the Creator Fund paid them. Public: only the rank and the amount are shown.",
+      "tabs": {
+        "creators": "Creators",
+        "scenes": "Scenes"
+      },
+      "cycle": "Cycle",
+      "columns": {
+        "rank": "Rank",
+        "creator": "Creator",
+        "scene": "Scene",
+        "paid_scenes": "Paid Scenes",
+        "paid": "Paid"
+      },
+      "you": "You",
+      "genesis_city": "Genesis City {coords}",
+      "join_hint": "Join the Creator Fund to see where you rank.",
+      "not_paid": "You weren't paid in this cycle, so you're not ranked in it.",
+      "footer": "{creators} creators and {scenes} scenes were paid in this cycle.",
+      "error": "We couldn't load the leaderboard. Try again in a moment."
     }
   }
 }

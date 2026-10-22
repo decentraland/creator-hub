@@ -34,6 +34,7 @@ Settled by product on 2026-10-22:
 | 2c | Eligible: program terms, scroll to bottom → checkbox → **JOIN CREATOR FUND** | Modal step `terms` | `lib/creatorFund/terms.ts` |
 | 3 | Eligible / not eligible label on Scenes & Worlds tiles, plus an "In Creator Fund" filter | Manage page cards and filter bar | `components/CreatorFund/EligibilityChip` |
 | 4 | Payout section: wallet input + lock toggle, past payouts (support icon dropped, see Decisions) | Payouts page | `CreatorFundPage/PayoutWallet`, `PastPayouts` |
+| 4a | Public leaderboard: top 20 creators and scenes by USDC paid, plus your own rank | Payouts page | `CreatorFundPage/Leaderboard` |
 | 5 | D3 retention and attributable new players, per scene and per creator | Analytics list (columns + creator summary), Analytics detail (Overview, Retention) | `lib/creatorFund/metrics.ts` |
 
 ## Flows
@@ -93,6 +94,23 @@ The page is titled **Payouts** (the navbar tab); the Creator Fund is the program
 
 Estimated payout for the running cycle is deliberately absent ("Estimated payout: not for beta", Notion Payout Calculation page). The cycle card shows the three metrics the fund pays on.
 
+### Leaderboard
+
+The fund's own rule (Notion "Payout Calculation" → Definitions): payouts per creator and per scene, top 20 public, ranking and amount posted. Scene and World metrics stay private to their owner, so the board shows the rank, the name and the USDC paid, nothing else.
+
+- **Creators / Scenes** tabs and a **cycle** picker over the closed cycles (latest first), the same tabs + select bar as the Analytics detail page. The top 3 ranks take the accent.
+- **Your row** (creators board), for a member:
+
+| Your standing in the cycle | What you see                                                       |
+| -------------------------- | ------------------------------------------------------------------ |
+| In the top 20              | Your row highlighted in place (accent edge + "You")                |
+| Below it, e.g. #64         | The top 20, a `⋯` gap, then "#64 · You" pinned under it            |
+| Not paid in that cycle     | "You weren't paid in this cycle, so you're not ranked in it."      |
+| Not in the Creator Fund    | "Join the Creator Fund to see where you rank." + JOIN CREATOR FUND |
+
+- **Public**: it renders signed out too (under the sign-in card), with no "you" row.
+- Your leaderboard amount and your Past payouts row come from the same standing, so they always agree.
+
 ### Metrics
 
 The fund pays on **qualifying** players (anti-bot classified, 5+ AFK-free minutes, prod realms), not on the raw visitors Analytics shows. The two new metrics follow the fund's definitions:
@@ -121,6 +139,7 @@ The fund pays on **qualifying** players (anti-bot classified, 5+ AFK-free minute
 | `PUT /users/:address/payout-wallet` (signed fetch) | **proposed** | Locking the wallet field (saves it) |
 | `GET /users/:address/payouts` | **proposed** | Past payouts |
 | `GET /users/:address/metrics?cycle=` | **proposed** | Cycle card, creator summary |
+| `GET /leaderboard?cycle=&limit=20[&address=]` | **proposed** (public) | Leaderboard; `address` adds `me` |
 
 The eligibility service takes Places API ids. Creator Hub has no Places id for a World or a parcel, so the POC keys places by location (`world:<name>`, `land:<x,y>`). The real client needs a lookup (`/places?names=` / `?positions=`) or a service endpoint that accepts locations.
 
@@ -130,6 +149,7 @@ The eligibility service takes Places API ids. Creator Hub has no Places id for a
 
 - Place opt-in: World names on the fund's exclusion list are `excluded_content`; about 1 in 6 other Worlds are `private_world`; the rest can opt in. About 1 in 4 opted-in places were `below_min_players` last cycle.
 - Creator eligibility: eligible, except the Foundation wallet and when the demo is set to "not eligible".
+- Leaderboard (`mockLeaderboard.ts`): each cycle pays 80–110 creators, rank r taking a share of the pool ∝ 1/r^1.1 (the long tail % Share produced: the top 10% take most of it). The asking creator is unpaid in ~12% of cycles, top 20 in ~13%, further down otherwise; Past payouts read from the same standing. The scene board splits each creator's payout over their scenes; it leaves out the asker's own scenes, whose titles the mock doesn't have.
 - Metrics: derived from the place's real Analytics numbers (new players ≈ 12–30% of total visits; D3 ≈ 74–86% of D7, the range the fund's Retention Window tab measured). A place with no base number gets no mocked one, so "-" still means "no data". The Payouts page's cycle totals come from the hash alone.
 
 The page header has a **POC** menu: simulate an eligible / not eligible creator, and reset the demo (leave the fund, clear the wallet, show the banner again; the simulated creator is kept, so a reset re-runs the join as them).

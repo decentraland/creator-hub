@@ -91,6 +91,38 @@ export enum PayoutStatus {
   NOT_QUALIFIED = 'not_qualified',
 }
 
+/** One creator on the public leaderboard. Only the rank and what was paid are public. */
+export type LeaderboardCreator = {
+  rank: number;
+  address: string;
+  /** Their Decentraland NAME, when they have one. */
+  name: string | null;
+  paid_places: number;
+  amount_usdc: number;
+};
+
+export type LeaderboardScene = {
+  rank: number;
+  place_id: string;
+  title: string;
+  world_name: string | null;
+  base_position: string;
+  owner: string;
+  owner_name: string | null;
+  amount_usdc: number;
+};
+
+/** A closed cycle's public top 20, plus the asking creator's own standing. */
+export type Leaderboard = {
+  cycle_id: string;
+  paid_creators: number;
+  paid_places: number;
+  creators: LeaderboardCreator[];
+  scenes: LeaderboardScene[];
+  /** The `address` asked about; `null` when none was given or it wasn't paid in the cycle. */
+  me: LeaderboardCreator | null;
+};
+
 export type Payout = {
   cycle_id: string;
   start_date: string;

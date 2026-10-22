@@ -2,16 +2,19 @@ import type {
   CreatorEligibility,
   Cycle,
   Enrollment,
+  Leaderboard,
   Payout,
   PayoutWallet,
   PlaceEligibility,
 } from './contract';
 import { CreatorIneligibleReason, OptInReason, PayoutReason, PayoutStatus } from './contract';
 import { CLOSED_CYCLES, CURRENT_CYCLE } from './cycles';
-import { hashUnit } from './hash';
+import { hashHex, hashUnit } from './hash';
+import { creatorStanding, leaderboardFor } from './mockLeaderboard';
 import type { FundPlaceKey } from './places';
 import { parseFundPlaceKey } from './places';
 import { setBannerDismissed } from './preferences';
+import { PROGRAM } from './program';
 
 /**
  * Stand-in for the Creator Fund backoffice, so every surface can be exercised
@@ -129,25 +132,15 @@ function placeEligibility(key: FundPlaceKey, title: string | null): PlaceEligibi
   };
 }
 
-function mockTxHash(seed: string) {
-  let hex = '';
-  for (let i = 0; hex.length < 64; i++) {
-    hex += Math.floor(hashUnit(`${seed}:${i}`) * 0xffffffff)
-      .toString(16)
-      .padStart(8, '0');
-  }
-  return `0x${hex.slice(0, 64)}`;
-}
-
-/** One row per closed cycle. Amounts follow % Share's long tail: mostly small, some zero. */
+/** One row per closed cycle, from the same standing the leaderboard shows. */
 function payoutsFor(address: string, wallet: string | null): Payout[] {
   return CLOSED_CYCLES.map(cycle => {
-    const roll = hashUnit(`${address}:${cycle.id}`);
-    const amount = roll < 0.15 ? 0 : roll < 0.25 ? 3.2 : Math.round(roll * roll * 42000) / 100;
+    const standing = creatorStanding(address, cycle);
+    const amount = standing?.amount ?? 0;
     const status =
       amount === 0
         ? PayoutStatus.NOT_QUALIFIED
-        : amount < 5
+        : amount < PROGRAM.minPayoutUsdc
           ? PayoutStatus.BELOW_MINIMUM
           : PayoutStatus.PAID;
     const paid = status === PayoutStatus.PAID;
@@ -159,9 +152,9 @@ function payoutsFor(address: string, wallet: string | null): Payout[] {
       status,
       // Under the minimum a cycle pays 0; the status says why.
       amount_usdc: paid ? amount : 0,
-      qualified_places: amount === 0 ? 0 : 1 + Math.floor(roll * 3),
+      qualified_places: standing?.paidPlaces ?? 0,
       wallet: paid ? (wallet ?? address) : null,
-      tx_hash: paid ? mockTxHash(`${address}:${cycle.id}`) : null,
+      tx_hash: paid ? `0x${hashHex(`${address}:${cycle.id}`, 64)}` : null,
       paid_at: paid ? `${cycle.end_date}T00:00:00.000Z` : null,
     };
   });
@@ -178,6 +171,8 @@ export type CreatorFundApi = {
   setPayoutWallet(address: string, wallet: string): Promise<PayoutWallet>;
   getPayouts(address: string): Promise<Payout[]>;
   getCurrentCycle(): Promise<Cycle>;
+  /** Public. With `address`, the answer also carries that creator's own standing. */
+  getLeaderboard(cycleId: string, address?: string): Promise<Leaderboard>;
 };
 
 export const mockBackoffice: CreatorFundApi = {
@@ -236,6 +231,13 @@ export const mockBackoffice: CreatorFundApi = {
 
   async getCurrentCycle() {
     return CURRENT_CYCLE;
+  },
+
+  async getLeaderboard(cycleId, address) {
+    await delay(400);
+    const cycle = CLOSED_CYCLES.find(closed => closed.id === cycleId);
+    if (!cycle) throw new Error(`Cycle ${cycleId} isn't published`);
+    return leaderboardFor(cycle, address);
   },
 };
 

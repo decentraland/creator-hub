@@ -8,6 +8,7 @@ import type {
   CreatorEligibility,
   Enrollment,
   FundPlaceKey,
+  Leaderboard,
   Payout,
   PayoutWallet,
   PlaceEligibility,
@@ -101,6 +102,15 @@ export const fetchPayouts = createAsyncThunk(
   async ({ address }: { address: string }) => creatorFundApi.getPayouts(address),
 );
 
+/** Public; with `address` it also answers where that creator placed. */
+export const fetchLeaderboard = createAsyncThunk(
+  'creatorFund/fetchLeaderboard',
+  async ({ cycleId, address }: { cycleId: string; address?: string }) =>
+    creatorFundApi.getLeaderboard(cycleId, address),
+);
+
+const leaderboardKey = (cycleId: string, address?: string) => `${cycleId}|${address ?? ''}`;
+
 export const dismissBanner = createAsyncThunk('creatorFund/dismissBanner', async () =>
   setBannerDismissed(true),
 );
@@ -133,6 +143,9 @@ export type CreatorFundState = {
   places: Partial<Record<FundPlaceKey, PlaceEligibility>>;
   creatorPlaces: AnalyticsPlace[];
   creatorPlacesStatus: Status;
+  /** Keyed by cycle and asking wallet: the same cycle answers differently for each creator. */
+  leaderboards: Partial<Record<string, Leaderboard>>;
+  leaderboardStatus: Status;
   bannerDismissed: boolean;
   /** The Manage page's "In Creator Fund" filter. */
   showInFundOnly: boolean;
@@ -154,6 +167,8 @@ const initialState = (): CreatorFundState => ({
   places: {},
   creatorPlaces: [],
   creatorPlacesStatus: 'idle',
+  leaderboards: {},
+  leaderboardStatus: 'idle',
   bannerDismissed: isBannerDismissed(),
   showInFundOnly: false,
   simulated: mockControls.getSimulatedCreator(),
@@ -256,6 +271,18 @@ const slice = createSlice({
         state.payoutsStatus = 'failed';
         state.error = action.error.message ?? null;
       })
+      .addCase(fetchLeaderboard.pending, state => {
+        state.leaderboardStatus = 'loading';
+      })
+      .addCase(fetchLeaderboard.fulfilled, (state, action) => {
+        const { cycleId, address } = action.meta.arg;
+        state.leaderboards[leaderboardKey(cycleId, address)] = action.payload;
+        state.leaderboardStatus = 'succeeded';
+      })
+      .addCase(fetchLeaderboard.rejected, (state, action) => {
+        state.leaderboardStatus = 'failed';
+        state.error = action.error.message ?? null;
+      })
       .addCase(dismissBanner.fulfilled, state => {
         state.bannerDismissed = true;
       })
@@ -271,6 +298,8 @@ const slice = createSlice({
         places: state.places,
         creatorPlaces: state.creatorPlaces,
         creatorPlacesStatus: state.creatorPlacesStatus,
+        leaderboards: state.leaderboards,
+        leaderboardStatus: state.leaderboardStatus,
       }));
   },
 });
@@ -292,7 +321,13 @@ function getPlaceFundStatus(state: AppState, key: FundPlaceKey): PlaceFundStatus
 const getPlaceEligibility = (state: AppState, key: FundPlaceKey): PlaceEligibility | undefined =>
   state.creatorFund.places[key];
 
-export const selectors = { getPlaceFundStatus, getPlaceEligibility };
+const getLeaderboard = (
+  state: AppState,
+  cycleId: string,
+  address?: string,
+): Leaderboard | undefined => state.creatorFund.leaderboards[leaderboardKey(cycleId, address)];
+
+export const selectors = { getPlaceFundStatus, getPlaceEligibility, getLeaderboard };
 
 export const actions = {
   ...slice.actions,
@@ -303,6 +338,7 @@ export const actions = {
   fetchCreatorPlaces,
   savePayoutWallet,
   fetchPayouts,
+  fetchLeaderboard,
   dismissBanner,
   simulateCreator,
   resetDemo,

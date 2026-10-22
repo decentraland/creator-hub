@@ -1,0 +1,153 @@
+.Leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 16px;
+  background-color: var(--card);
+}
+
+.Leaderboard .Muted {
+  color: var(--text-on-secondary);
+}
+
+.Leaderboard .LeaderboardHeader .MuiTypography-h5 {
+  font-weight: 700;
+}
+
+.Leaderboard .LeaderboardBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--dark-gray);
+}
+
+/* Uppercased in CSS, like the Analytics tabs, so the accessible name keeps its case. */
+.Leaderboard .LeaderboardBar .MuiTab-root {
+  text-transform: uppercase;
+}
+
+.Leaderboard .CyclePicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+.Leaderboard .CyclePicker .MuiTypography-root {
+  color: var(--secondary-text);
+  white-space: nowrap;
+}
+
+/* Fixed layout: switching boards or cycles must not re-size the columns. */
+.Leaderboard .LeaderboardTable {
+  table-layout: fixed;
+}
+
+.Leaderboard .LeaderboardTable .MuiTableCell-root {
+  border-bottom: 1px solid var(--divider);
+  padding: 10px 16px;
+}
+
+.Leaderboard .LeaderboardTable .MuiTableHead-root .MuiTableCell-root {
+  color: var(--secondary-text);
+  font-weight: 600;
+}
+
+.Leaderboard .LeaderboardTable .MuiTableHead-root .MuiTableCell-root:nth-child(1) {
+  width: 80px;
+}
+
+.Leaderboard .LeaderboardTable .MuiTableHead-root .MuiTableCell-root:nth-child(3) {
+  width: 22%;
+}
+
+.Leaderboard .LeaderboardTable .MuiTableHead-root .MuiTableCell-root:nth-child(4) {
+  width: 18%;
+}
+
+.Leaderboard .Rank {
+  font-weight: 600;
+  color: var(--text-on-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.Leaderboard .Rank.Podium {
+  color: var(--dcl);
+  font-weight: 700;
+}
+
+.Leaderboard .CreatorName .NameLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Leaderboard .CreatorName .MuiTypography-body2,
+.Leaderboard .SceneName .MuiTypography-body2 {
+  font-weight: 600;
+}
+
+.Leaderboard .Address {
+  display: block;
+  font-family: var(--font-monospace);
+  color: var(--text-on-secondary);
+}
+
+.Leaderboard .SceneName {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.Leaderboard .SceneName .Thumbnail {
+  width: 56px;
+  height: 32px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.Leaderboard .Owner {
+  color: var(--text-on-secondary);
+}
+
+.Leaderboard .Amount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.Leaderboard .YouChip {
+  height: 20px;
+  font-weight: 700;
+  background-color: var(--dcl);
+  color: var(--text-on-primary);
+}
+
+.Leaderboard .LeaderboardTable .Me .MuiTableCell-root {
+  background-color: var(--transparent-gray-dark);
+}
+
+.Leaderboard .LeaderboardTable .Me .MuiTableCell-root:first-of-type {
+  box-shadow: inset 3px 0 0 var(--dcl);
+}
+
+.Leaderboard .LeaderboardTable .Gap .MuiTableCell-root {
+  padding: 4px 16px;
+  text-align: center;
+  color: var(--secondary-text);
+  letter-spacing: 4px;
+}
+
+.Leaderboard .LeaderboardTable .Note .MuiTableCell-root {
+  border-bottom: none;
+  color: var(--text-on-secondary);
+}
+
+.Leaderboard .NoteContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}

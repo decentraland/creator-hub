@@ -6,4 +6,6 @@ export const PROGRAM = {
   poolUsdc: 10_000,
   minPlayers: 10,
   minPayoutUsdc: 5,
+  /** Payouts per creator and per scene: the top 20 are public, rank and amount only. */
+  leaderboardSize: 20,
 } as const;

@@ -24,6 +24,7 @@ import { formatCycleDate, formatWholeUsdc } from '../CreatorFund/utils';
 
 import { CycleSummary } from './CycleSummary';
 import { FundPlaces } from './FundPlaces';
+import { Leaderboard } from './Leaderboard';
 import { PastPayouts } from './PastPayouts';
 import { PayoutWallet } from './PayoutWallet';
 import { PocMenu } from './PocMenu';
@@ -157,35 +158,38 @@ export function CreatorFundPage() {
         </Box>
 
         {!isSignedIn && !isSigningIn ? (
-          <SignInCard
-            title={t('creator_fund.page.sign_in.title')}
-            onClickSignIn={signIn}
-          />
+          <>
+            <SignInCard
+              title={t('creator_fund.page.sign_in.title')}
+              onClickSignIn={signIn}
+            />
+            {/* Public: the leaderboard needs no wallet. */}
+            <Leaderboard onJoin={signIn} />
+          </>
         ) : !isLoaded ? (
           <Loader size={70} />
         ) : (
           <>
+            {isEnrolled && wallet && <CycleSummary address={wallet} />}
+            <Leaderboard onJoin={handleJoin} />
             {isEnrolled && wallet && (
-              <>
-                <CycleSummary address={wallet} />
-                <Box className="Payouts">
-                  <Typography variant="h5">{t('creator_fund.payouts.title')}</Typography>
-                  <PayoutWallet
-                    key={fund.payoutWallet?.updated_at ?? 'none'}
-                    ref={walletInputRef}
+              <Box className="Payouts">
+                <Typography variant="h5">{t('creator_fund.payouts.title')}</Typography>
+                <PayoutWallet
+                  key={fund.payoutWallet?.updated_at ?? 'none'}
+                  ref={walletInputRef}
+                />
+                <Box className="History">
+                  <Typography variant="subtitle1">
+                    {t('creator_fund.payouts.history.title')}
+                  </Typography>
+                  <PastPayouts
+                    payouts={fund.payouts}
+                    isLoading={fund.payoutsStatus === 'loading'}
+                    isFailed={fund.payoutsStatus === 'failed'}
                   />
-                  <Box className="History">
-                    <Typography variant="subtitle1">
-                      {t('creator_fund.payouts.history.title')}
-                    </Typography>
-                    <PastPayouts
-                      payouts={fund.payouts}
-                      isLoading={fund.payoutsStatus === 'loading'}
-                      isFailed={fund.payoutsStatus === 'failed'}
-                    />
-                  </Box>
                 </Box>
-              </>
+              </Box>
             )}
             <FundPlaces
               places={fund.creatorPlaces}
