@@ -44,5 +44,5 @@
 }
 
 .Preferences .panel .preference-row label {
-  color: var(--secondary-text);
+  color: var(--sub-text);
 }

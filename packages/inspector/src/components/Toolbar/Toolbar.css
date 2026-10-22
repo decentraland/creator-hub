@@ -29,31 +29,11 @@
   transform: translateY(2px);
 }
 
-.Toolbar .edit-scene {
-  margin: 0px;
-}
-
 .Toolbar .edit-scene svg,
 .Toolbar .scene-info svg {
   width: 18px;
   height: 18px;
   transform: translateY(2px);
-}
-
-.Toolbar .edit-scene:not(:last-child) {
-  margin-right: 0px;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
-}
-
-.Toolbar .scene-info:not(:first-child) {
-  margin-left: 1px;
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
-}
-
-.Toolbar .scene-info.active {
-  background-color: var(--primary-main) !important;
 }
 
 .Toolbar .CameraModeWrap {
@@ -140,6 +120,159 @@
   align-items: center;
 }
 
-/* (Mode switcher moved out — it is now the tab band at the top of the LEFT
-   panel, see `components/ModeSwitcher`. It used to live here as `.mode-switch`,
-   then briefly as a centred strip above this toolbar.) */
+.Toolbar:not(.ui-designer-toolbar) {
+  box-sizing: border-box;
+  height: 36px;
+  padding: 0 4px 0 10px;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--palette-neutral-onyx);
+}
+
+.Toolbar:not(.ui-designer-toolbar) .RuntimeControls {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .RightContent {
+  flex-grow: 0;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--palette-neutral-onyx);
+  border-radius: 6px;
+  background-color: var(--tree-bg-color);
+  color: var(--palette-neutral-gray4);
+  opacity: 1;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton svg {
+  width: 16px;
+  height: 16px;
+  transform: none;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.edit-scene svg {
+  width: 12px;
+  height: 12px;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.scene-info svg,
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.save svg {
+  width: 13px;
+  height: 13px;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.babylonjs-inspector svg {
+  width: 14px;
+  height: 14px;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Preferences {
+  display: flex;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton:hover:not(:disabled) {
+  position: relative;
+  z-index: 1;
+  background-color: var(--palette-whiteTransparent-subtle);
+  color: var(--palette-neutral-softWhite);
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+  border-color: var(--palette-system-blueDark2);
+  background-color: var(--palette-system-blueDark2);
+  color: var(--palette-neutral-softWhite);
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--palette-system-blueDark3);
+  background-color: var(--palette-system-blueDark3);
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton:disabled {
+  border-color: var(--palette-neutral-onyx);
+  background-color: var(--tree-bg-color);
+  color: var(--gray-0);
+  cursor: default;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton:focus-visible {
+  position: relative;
+  z-index: 2;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.undo {
+  border-radius: 6px 0 0 6px;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.redo {
+  margin-left: -7px;
+  border-radius: 0 6px 6px 0;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .gizmo {
+  height: 26px;
+  margin: 0;
+  border-radius: 0;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .gizmo + .gizmo {
+  margin-left: -1px;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .gizmo.free {
+  border-radius: 6px 0 0 6px;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .gizmo.scale {
+  border-radius: 0 6px 6px 0;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .ToolbarButton.gizmo[aria-pressed="true"] {
+  border-color: var(--palette-neutral-onyx);
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .open-panel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 0 0 2px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  align-self: center;
+  background: none;
+  color: var(--palette-neutral-gray4);
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .open-panel svg {
+  width: 14px;
+  height: 14px;
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .open-panel:hover {
+  background-color: var(--palette-whiteTransparent-subtle);
+  color: var(--palette-neutral-softWhite);
+}
+
+.Toolbar:not(.ui-designer-toolbar) .Gizmos .open-panel:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}

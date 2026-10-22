@@ -2,23 +2,22 @@
   display: flex;
 }
 
-.Snap>.label {
+.Snap > .label {
   flex: none;
   margin-right: 8px;
-  color: var(--secondary-text);
+  color: var(--sub-text);
 }
 
-.Snap>input {
+.Snap > input {
   flex: 1 1 auto;
   min-width: 0;
   text-align: right;
   background: none;
-  color: var(--text);
+  color: var(--title);
   border: none;
-  outline: none;
 }
 
-.Snap>input:disabled {
-  user-select: none;
-  color: var(--secondary-text);
+.Snap > input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }

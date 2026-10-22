@@ -194,37 +194,6 @@
   margin-left: -1px;
 }
 
-.ui-designer-toolbar .gizmo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ui-designer-toolbar .gizmo::before {
-  content: "";
-  width: 14px;
-  height: 14px;
-  background-color: currentColor;
-  mask-position: center;
-  mask-repeat: no-repeat;
-}
-
-.ui-designer-toolbar .gizmo.free::before {
-  mask-image: url("../Toolbar/Gizmos/icons/free.svg");
-}
-
-.ui-designer-toolbar .gizmo.position::before {
-  mask-image: url("../Toolbar/Gizmos/icons/position.svg");
-}
-
-.ui-designer-toolbar .gizmo.rotation::before {
-  mask-image: url("../Toolbar/Gizmos/icons/rotation.svg");
-}
-
-.ui-designer-toolbar .gizmo.scale::before {
-  mask-image: url("../Toolbar/Gizmos/icons/scale.svg");
-}
-
 .ui-designer-toolbar .open-panel {
   display: inline-flex;
   align-items: center;

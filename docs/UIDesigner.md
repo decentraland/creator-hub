@@ -67,11 +67,17 @@ Canvas drag and resize snap to `DRAG_SNAP_GRID` (10 logical px). The toolbar's S
 
 ## Scene-run controls and mode sync
 
-The 2D toolbar mirrors the 3D scene controls — a Play/Pause toggle plus an always-visible Stop — and they exist only under Bevy (`sdk.renderer.sceneRun`).
+Both toolbars carry scene-run controls, only under Bevy (`sdk.renderer.sceneRun`), and the two bars use different models:
+
+- **3D** follows Figma's RuntimeControls: [Play][Pause, disabled] when stopped, [Stop][Pause] while running, and [Stop][Pause pressed] while paused. Each slot is one element in a fixed position, so keyboard focus stays put when slot 1 swaps between Play and Stop.
+- **2D** keeps a Play/Pause toggle plus an always-visible Stop.
+
+So the same paused scene reads [Stop][Pause pressed] in 3D and [Play][Stop] in 2D.
 
 The subtlety is **run intent**. `sceneRun` exposes only a boolean `isRunning()`, which can't distinguish "paused for editing but was running" from "stopped." So a separate `sceneRunIntent` (`redux/ui`) records what the user wants:
 
 - Both toolbars set `sceneRunIntent` on Play, Pause, and Stop.
+- `sceneRunStarted` (`redux/ui`) is the bit the 3D model adds: "has the scene run since the last Stop". Play sets it, Pause leaves it, and Stop clears it through `setSceneRunIntent({ running: false, reset: true })`, which both Stop buttons dispatch. It lives in Redux because the 3D toolbar unmounts while 2D is open. A scene runtime error freezes the scene without a Stop, so 3D then shows paused.
 - `useSyncSceneRunWithMode` freezes the scene when 2D opens (editing needs a static viewport, because the renderer is only CSS-hidden in 2D) and resumes it when 3D returns, but only if the intent was to run.
 - The 2D toolbar displays the intent, so switching to 2D while a scene runs shows **Pause** (it's still your running scene, just frozen), not Play as if it never ran.
 
