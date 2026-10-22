@@ -5,6 +5,8 @@
 
 import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
 
+export { getParentPath } from '../../lib/data-layer/host/fs-utils';
+
 /**
  * The scene's own folder (`assets/scene`, holding `main.composite`) is listed like any other
  * because `.composite` is a catalogued extension, but the build and the preview read it from
@@ -17,11 +19,6 @@ export function isProtectedPath(path: string): boolean {
 export function getBaseName(path: string): string {
   const idx = path.lastIndexOf('/');
   return idx === -1 ? path : path.slice(idx + 1);
-}
-
-export function getParentPath(path: string): string {
-  const idx = path.lastIndexOf('/');
-  return idx === -1 ? '' : path.slice(0, idx);
 }
 
 export function joinPath(parent: string, name: string): string {

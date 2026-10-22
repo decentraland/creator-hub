@@ -1,5 +1,5 @@
 import type { Storage } from '../logic/storage/types';
-import { DIRECTORY } from './host/fs-utils';
+import { DIRECTORY, getParentPath } from './host/fs-utils';
 import type { DataLayerRpcClient } from './types';
 
 type RemoveAssetsClient = Pick<DataLayerRpcClient, 'removeAssets' | 'removeAsset'>;
@@ -81,21 +81,21 @@ async function listFoldersDeepestFirst(storage: FolderStorage, path: string): Pr
   return [...below.flat(), path];
 }
 
-const parentOf = (path: string) => path.slice(0, Math.max(0, path.lastIndexOf('/')));
+async function removeIfEmpty(storage: FolderStorage, path: string): Promise<boolean> {
+  const entries = await storage.list(path).catch(() => undefined);
+  if (!entries || entries.length) return false;
+  return storage.rmdir(path).then(
+    () => true,
+    () => false,
+  );
+}
 
 /** Removes the folders that removing `files` left empty, up to but not including `assets`. */
 export async function removeEmptiedFolders(storage: FolderStorage, files: string[]): Promise<void> {
-  for (const file of files) {
-    for (
-      let folder = parentOf(file);
-      folder.startsWith(`${DIRECTORY.ASSETS}/`);
-      folder = parentOf(folder)
-    ) {
-      const removed = await storage.rmdir(folder).then(
-        () => true,
-        () => false,
-      );
-      if (!removed) break;
+  for (const start of new Set(files.map(getParentPath))) {
+    let folder = start;
+    while (folder.startsWith(`${DIRECTORY.ASSETS}/`) && (await removeIfEmpty(storage, folder))) {
+      folder = getParentPath(folder);
     }
   }
 }
@@ -104,7 +104,7 @@ export async function removeEmptiedFolders(storage: FolderStorage, files: string
 export async function removeEmptyFolders(storage: FolderStorage, folders: string[]): Promise<void> {
   for (const folder of folders) {
     for (const path of await listFoldersDeepestFirst(storage, folder)) {
-      await storage.rmdir(path).catch(() => undefined);
+      await removeIfEmpty(storage, path);
     }
   }
 }

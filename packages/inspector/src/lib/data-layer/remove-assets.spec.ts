@@ -1,3 +1,5 @@
+import { createInMemoryStorage } from '../logic/storage/in-memory';
+import type { Storage } from '../logic/storage/types';
 import {
   removeAssetFiles,
   removeEmptiedFolders,
@@ -252,6 +254,36 @@ describe('folder cleanup', () => {
       it('should leave the assets folder', async () => {
         await removeEmptiedFolders(storage, ['assets/logo.png']);
         expect([...folders]).toEqual(['assets']);
+      });
+    });
+  });
+
+  describe('when the storage removes folders recursively, like the in-memory one', () => {
+    let memory: Storage;
+
+    beforeEach(() => {
+      memory = createInMemoryStorage({
+        'assets/props/rocks/boulder.glb': Buffer.from('in use'),
+        'assets/props/tree.glb': Buffer.from('in use'),
+      });
+    });
+
+    describe('and the removed file leaves its folder with other files', () => {
+      it('should keep every other file', async () => {
+        await removeEmptiedFolders(memory, ['assets/props/rocks/pebble.glb']);
+        expect(
+          await Promise.all([
+            memory.exists('assets/props/rocks/boulder.glb'),
+            memory.exists('assets/props/tree.glb'),
+          ]),
+        ).toEqual([true, true]);
+      });
+    });
+
+    describe('and a deleted folder still holds a file', () => {
+      it('should keep that file', async () => {
+        await removeEmptyFolders(memory, ['assets/props']);
+        expect(await memory.exists('assets/props/rocks/boulder.glb')).toBe(true);
       });
     });
   });

@@ -17,7 +17,9 @@ import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
 import { CopyPathIcon, NewFolderIcon } from '../Icons/ContextMenu';
 import Search from '../Search';
+import { getStorage } from '../../lib/data-layer/client/storage';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { removeEmptyFolders } from '../../lib/data-layer/remove-assets';
 import { getSceneClient } from '../../lib/rpc/scene';
 import { copyBuiltInEmoteName } from '../../lib/logic/built-in-emotes';
 import { getDataLayerInterface, removeAssets } from '../../redux/data-layer';
@@ -183,6 +185,13 @@ function ProjectView({ folders, thumbnails }: Props) {
     [virtualFolders, realTree],
   );
 
+  useEffect(() => {
+    setVirtualFolders(current => {
+      const stillEmpty = current.filter(path => !realTree.has(path));
+      return stillEmpty.length === current.length ? current : stillEmpty;
+    });
+  }, [realTree]);
+
   const selectionSet = useMemo(() => new Set(selection), [selection]);
   /** What an action on `path` applies to: the whole selection when `path` is part of it. */
   const getTargets = useCallback(
@@ -278,6 +287,12 @@ function ProjectView({ folders, thumbnails }: Props) {
     const isRemoved = (path: string) =>
       folders.some(folder => path === folder || path.startsWith(folder + '/'));
     setVirtualFolders(current => current.filter(path => !isRemoved(path)));
+  }, []);
+
+  /** Drops the empty folder an explorer-only rename or move left on disk, if there is one. */
+  const removeFromDisk = useCallback((folder: string) => {
+    const storage = getStorage();
+    if (storage) void removeEmptyFolders(storage, [withAssetDir(folder)]);
   }, []);
 
   const keepFolders = useCallback((folders: string[]) => {
@@ -460,13 +475,16 @@ function ProjectView({ folders, thumbnails }: Props) {
           newName,
           getBaseName(path),
         );
-        if (newPath && newPath !== path) followRename(path, newPath);
+        if (newPath && newPath !== path) {
+          followRename(path, newPath);
+          removeFromDisk(path);
+        }
         return;
       }
       const newPath = await operations.rename(path, newName);
       if (newPath) followRename(path, newPath);
     },
-    [operations, followRename, isVirtualFolder],
+    [operations, followRename, isVirtualFolder, removeFromDisk],
   );
 
   /** Copies or moves `paths`; empty folders only exist in the explorer, so they move here. */
@@ -486,6 +504,7 @@ function ProjectView({ folders, thumbnails }: Props) {
         if (options.move) {
           if (operations.getSiblingNames(destination).includes(getBaseName(path))) continue;
           followRename(path, newPath);
+          removeFromDisk(path);
         } else {
           setVirtualFolders(current => [...current, newPath]);
         }
@@ -500,7 +519,7 @@ function ProjectView({ folders, thumbnails }: Props) {
       }
       return created;
     },
-    [operations, isVirtualFolder, followRename, keepFolders, fullTree],
+    [operations, isVirtualFolder, followRename, removeFromDisk, keepFolders, fullTree],
   );
 
   const handleDuplicate = useCallback(
