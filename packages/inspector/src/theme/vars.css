@@ -33,6 +33,8 @@
   --palette-whiteTransparent-backdrop: rgba(255, 255, 255, 0.6);
   --palette-primary-light: #ff6280;
   --palette-neutral-gray2: #716b7c;
+  --palette-neutral-gray4: #cfcdd4;
+  --palette-neutral-softWhite: #fcfcfc;
   --palette-neutral-onyx: #35333b;
   --palette-system-blueDark2: #244b7d;
   --palette-system-blueDark3: #243852;
@@ -179,8 +181,8 @@
      identical instead of near-miss different. */
   --ui-designer-panel-bg: var(--base-19);
   --ui-designer-control-bg: #35333b;
-  --ui-designer-text: #fcfcfc; /* Neutrals/Snow — labels, group titles */
-  --ui-designer-text-value: #cfcdd4; /* Neutrals/Gray — value inside a field */
+  --ui-designer-text: var(--palette-neutral-softWhite);
+  --ui-designer-text-value: var(--palette-neutral-gray4);
   --ui-designer-text-muted: #a09ba8; /* Neutrals/Silver — hints, secondary */
   --ui-designer-control-border: var(--palette-whiteTransparent-subtle);
   /* One step up, for a border that has to out-weigh another White 10 stroke
