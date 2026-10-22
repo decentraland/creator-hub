@@ -139,8 +139,18 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
                 {...inputProps}
               />
               <MoreOptionsMenu>
-                <Button onClick={handleRemove(value)}>Remove State</Button>
                 <Button
+                  variant="contained"
+                  color="secondary"
+                  size="small"
+                  onClick={handleRemove(value)}
+                >
+                  Remove State
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  size="small"
                   onClick={handleDefault(value)}
                   disabled={isPartial}
                 >

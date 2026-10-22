@@ -1,14 +1,19 @@
 .Button {
   border: none;
   color: #fff;
-  background-color: #4b4852;
-  border-radius: 4px;
+  background-color: var(--palette-whiteTransparent-subtle);
+  border-radius: var(--shape-borderRadius);
   cursor: pointer;
-  padding: 6px;
+  padding: 6px 10px;
+  line-height: 18px;
 }
 
 .Button:hover:not(:disabled) {
-  background-color: #6c6974;
+  background-color: var(--palette-whiteTransparent-soft);
+}
+
+.Button:active:not(:disabled) {
+  background-color: var(--palette-whiteTransparent-subtle);
 }
 
 .Button:focus-visible {
@@ -16,18 +21,18 @@
   outline-offset: 2px;
 }
 
-.Button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 .Button.active {
-  background-color: #6c6974;
+  background-color: var(--palette-whiteTransparent-soft);
 }
 
-.Button.big {
-  height: var(--controlHeight-large);
-  padding: var(--uid-space-3) var(--uid-space-6);
+.Button:disabled {
+  cursor: default;
+  opacity: 0.2;
+  background-color: var(--palette-whiteTransparent-subtle);
+}
+
+.Button.medium,
+.Button.large {
   border-radius: var(--shape-borderRadiusLarge);
   font-family: var(--font-family);
   font-size: 16px;
@@ -36,37 +41,74 @@
   text-transform: uppercase;
 }
 
-.Button.danger {
+.Button.medium {
+  height: var(--controlHeight-medium);
+  padding: var(--uid-space-2) var(--uid-space-6);
+}
+
+.Button.large {
+  height: var(--controlHeight-large);
+  padding: var(--uid-space-3) var(--uid-space-6);
+}
+
+.Button.primary {
   background-color: var(--primary-main);
 }
 
-.Button.danger:hover,
-.Button.danger.active {
+.Button.primary:hover,
+.Button.primary.active {
   background-color: var(--palette-primary-light);
 }
 
-.Button.dark {
-  background-color: var(--base-20);
-  border: 1px solid var(--base-15);
+.Button.primary:active:not(:disabled) {
+  background-color: var(--primary-dark);
 }
 
-.Button.dark:hover,
-.Button.dark.active {
-  background-color: var(--base-15);
+.Button.primary:disabled {
+  background-color: var(--primary-main);
 }
 
-.Button.blue {
+.Button.info {
   background-color: var(--accent-blue-05);
   border: 0;
 }
 
-.Button.blue:hover,
-.Button.blue.active {
+.Button.info:hover,
+.Button.info.active {
   background-color: var(--accent-blue-07);
 }
 
-.Button.blue.big {
+.Button.info.large {
   font-weight: 700;
+}
+
+.Button.info:active:not(:disabled) {
+  background-color: var(--accent-blue-08);
+}
+
+.Button.info:disabled {
+  background-color: var(--accent-blue-05);
+}
+
+.Button.outlined {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--palette-whiteTransparent-blurry);
+}
+
+.Button.outlined:hover,
+.Button.outlined.active {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ui-designer-text);
+}
+
+.Button.outlined:active:not(:disabled) {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--palette-whiteTransparent-backdrop);
+}
+
+.Button.outlined:disabled {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--palette-whiteTransparent-blurry);
 }
 
 .Button.text {
@@ -92,4 +134,26 @@
 .Button.text svg {
   width: 16px;
   height: 16px;
+}
+
+.Button.text:active:not(:disabled) {
+  background: none;
+  color: var(--palette-whiteTransparent-backdrop);
+}
+
+.Button.text.primary {
+  color: var(--primary-main);
+}
+
+.Button.text.primary:hover:not(:disabled),
+.Button.text.primary.active:not(:disabled) {
+  color: var(--palette-primary-light);
+}
+
+.Button.text.primary:active:not(:disabled) {
+  color: var(--primary-main);
+}
+
+.Button.text:disabled {
+  background: none;
 }

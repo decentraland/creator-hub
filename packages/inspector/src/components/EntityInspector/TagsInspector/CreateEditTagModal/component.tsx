@@ -79,15 +79,18 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag, onT
 
       <div className="actions">
         <Button
-          size="big"
-          type="danger"
+          variant="contained"
+          color="primary"
+          size="large"
           onClick={editingTag ? handleSaveTag : handleCreateTag}
           disabled={isDuplicatedTag}
         >
           {editingTag ? 'Save tag' : 'Create tag'}
         </Button>
         <Button
-          size="big"
+          variant="contained"
+          color="secondary"
+          size="large"
           onClick={onClose}
         >
           Cancel

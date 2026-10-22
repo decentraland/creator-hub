@@ -1,9 +1,13 @@
-type Button = React.DetailedHTMLProps<
+type NativeButton = React.DetailedHTMLProps<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   HTMLButtonElement
 >;
 
-export type PropTypes = Omit<Button, 'type' | 'size'> & {
-  type?: 'danger' | 'dark' | 'blue' | 'etc' | 'text';
-  size?: 'big' | 'etc';
+export type PropTypes = Omit<NativeButton, 'color'> & {
+  /** @default 'text' */
+  variant?: 'contained' | 'outlined' | 'text';
+  /** @default 'primary' */
+  color?: 'primary' | 'secondary' | 'info';
+  /** @default 'medium' */
+  size?: 'small' | 'medium' | 'large';
 };

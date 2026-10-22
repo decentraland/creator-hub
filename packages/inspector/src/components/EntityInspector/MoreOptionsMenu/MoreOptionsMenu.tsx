@@ -61,6 +61,9 @@ export const MoreOptionsMenu = ({
       ref={anchorRef}
     >
       <Button
+        variant="contained"
+        color="secondary"
+        size="small"
         className="MoreOptionsButton"
         onClick={handleShowMoreOptions}
       >

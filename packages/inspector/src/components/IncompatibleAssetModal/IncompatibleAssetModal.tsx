@@ -51,7 +51,14 @@ const IncompatibleAssetModal: React.FC<Props> = ({
       </div>
 
       <div className="IncompatibleAssetModalFooter">
-        <Button onClick={onClose}>Close</Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          size="small"
+          onClick={onClose}
+        >
+          Close
+        </Button>
       </div>
     </Modal>
   );
