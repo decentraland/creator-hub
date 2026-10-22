@@ -65,6 +65,9 @@ describe('ProjectAssetExplorer/file-ops', () => {
       expect(map('a/b')).toBe('a/c');
       expect(map('a/b/x/y.glb')).toBe('a/c/x/y.glb');
     });
+    it('should ignore letter case, as the explorer does', () => {
+      expect(map('A/B/x.glb')).toBe('a/c/x.glb');
+    });
     it('should ignore unrelated paths, including prefix siblings', () => {
       expect(map('a/bb/y.glb')).toBeUndefined();
       expect(map('z')).toBeUndefined();
@@ -215,7 +218,8 @@ describe('ProjectAssetExplorer/file-ops', () => {
             params: {
               openSound: { type: 'string', optional: true, value: 'open.mp3' },
               closeSound: { type: 'string', value: 'sounds/close.mp3' },
-              hoverText: { type: 'string', value: 'Open / Close' },
+              hoverText: { type: 'string', value: 'Open // Close' },
+              url: { type: 'string', value: 'https://discord.com' },
               idleAnimation: { type: 'string', value: '' },
               speed: { type: 'number', value: 2 },
             },
@@ -250,12 +254,49 @@ describe('ProjectAssetExplorer/file-ops', () => {
     });
 
     describe('when the file moves outside the script folder', () => {
-      it('should write a path that climbs out of the script folder', () => {
-        const next = replaceAssetReferences(
+      let unreachable: string[];
+      let next: typeof script;
+
+      beforeEach(() => {
+        unreachable = [];
+        next = replaceAssetReferences(
           script,
           createPathMapper('assets/chest/open.mp3', 'assets/sfx/open.mp3'),
+          path => unreachable.push(path),
         );
-        expect(paramsOf(next).openSound.value).toBe('../sfx/open.mp3');
+      });
+
+      it('should keep the parameter, since the script only reads files inside its folder', () => {
+        expect(next).toBe(script);
+      });
+
+      it('should report the file the parameter can no longer point at', () => {
+        expect(unreachable).toEqual(['assets/sfx/open.mp3']);
+      });
+    });
+
+    describe('when the parameter names the file with different letter case', () => {
+      it('should follow the rename, as the explorer looks files up ignoring case', () => {
+        const next = replaceAssetReferences(
+          script,
+          createPathMapper('assets/chest/OPEN.MP3', 'assets/chest/open2.mp3'),
+        );
+        expect(paramsOf(next).openSound.value).toBe('open2.mp3');
+      });
+    });
+
+    describe('when the script sits at the root', () => {
+      it('should write the new name without climbing out', () => {
+        const rootScript = {
+          value: [
+            {
+              path: 'Chest.ts',
+              layout: JSON.stringify({ params: { sound: { type: 'string', value: 'open.mp3' } } }),
+            },
+          ],
+        };
+        const next = replaceAssetReferences(rootScript, createPathMapper('open.mp3', 'open2.mp3'));
+        expect(JSON.parse(next.value[0].layout).params.sound.value).toBe('open2.mp3');
       });
     });
 
