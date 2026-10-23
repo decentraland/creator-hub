@@ -4,7 +4,8 @@ import { AssetPreview } from '../AssetPreview';
 import { getDataLayerInterface, saveThumbnail } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { transformBase64ResourceToBinary, withAssetDir } from '../../lib/data-layer/host/fs-utils';
-import { getBaseName, getGltfResourceUris, getParentPath, joinPath } from './file-ops';
+import { getGltfResourceUris } from '../../lib/utils/gltf';
+import { getBaseName, getParentPath, isOutsideAssets, joinPath, normalizePath } from './file-ops';
 
 type Props = {
   /** Model paths (relative to `assets/`) that have no thumbnail yet, in priority order. */
@@ -15,22 +16,20 @@ type Props = {
 
 type Job = { path: string; file: File; resources: File[] };
 
-/** Files a .gltf references by relative URI (buffers and images); a .glb is self contained. */
-function getGltfResourcePaths(path: string, content: Uint8Array): string[] {
-  if (!path.toLowerCase().endsWith('.gltf')) return [];
-  return getGltfResourceUris(content).map(uri => joinPath(getParentPath(path), uri));
-}
-
 async function loadJob(path: string): Promise<Job> {
   const dataLayer = getDataLayerInterface();
   if (!dataLayer) throw new Error('Data layer is not available');
   const { content } = await dataLayer.getFile({ path: withAssetDir(path) });
   const resources: File[] = [];
-  for (const resourcePath of getGltfResourcePaths(path, content)) {
-    const resource = await dataLayer.getFile({ path: withAssetDir(resourcePath) });
-    // the preview resolves relative URIs by the name used in the gltf
-    const relativeName = resourcePath.slice(getParentPath(path).length).replace(/^\//, '');
-    resources.push(new File([resource.content], relativeName));
+  for (const uri of getGltfResourceUris(content)) {
+    const resourcePath = normalizePath(joinPath(getParentPath(path), uri));
+    if (isOutsideAssets(resourcePath)) continue;
+    try {
+      const resource = await dataLayer.getFile({ path: withAssetDir(resourcePath) });
+      resources.push(new File([resource.content], uri));
+    } catch (error) {
+      console.warn(`Could not read ${resourcePath} for the thumbnail of ${path}:`, error);
+    }
   }
   return { path, file: new File([content], getBaseName(path)), resources };
 }

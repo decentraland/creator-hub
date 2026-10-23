@@ -96,7 +96,7 @@ describe('Init RPC Methods', () => {
       await methods.importAsset({ content, basePath: 'assets', assetPackageName: '' });
     }
 
-    it('should remove the files, prune the folders left empty and undo them in one step', async () => {
+    it('should remove the files and undo them in one step', async () => {
       const mocked = await mockedRpcInit();
       const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
       await importBatch(methods);
@@ -110,12 +110,47 @@ describe('Init RPC Methods', () => {
 
       expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(false);
       expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(false);
-      const assetsDir = await mocked.fs.readdir('assets');
-      expect(assetsDir.map($ => $.name)).not.toContain('Batch');
 
       await methods.undo({});
       expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(true);
       expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+    });
+
+    it('should leave the folders the files were in, even when they end up empty', async () => {
+      const mocked = await mockedRpcInit();
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+      const rmdir = vi.spyOn(mocked.fs, 'rmdir');
+
+      await methods.removeAssets({ paths: ['assets/Batch/a.glb', 'assets/Batch/sub/b.glb'] });
+
+      expect(rmdir).not.toHaveBeenCalled();
+    });
+
+    it('should report the files it could not remove and keep the rest undoable', async () => {
+      const mocked = await mockedRpcInit();
+      const rm = mocked.fs.rm;
+      mocked.fs.rm = async (path: string) =>
+        path.endsWith('sub/b.glb') ? Promise.reject(new Error('EBUSY')) : rm(path);
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+
+      const result = await methods.removeAssets({
+        paths: ['assets/Batch/a.glb', 'assets/Batch/sub/b.glb', 'assets/Batch/missing.glb'],
+      });
+      await settle();
+
+      expect(result).toEqual({
+        success: ['assets/Batch/a.glb', 'assets/Batch/missing.glb'],
+        failed: ['assets/Batch/sub/b.glb'],
+      });
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(false);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+
+      await methods.undo({});
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(true);
     });
 
     it('should undo a move (import followed by removal) as a single step', async () => {

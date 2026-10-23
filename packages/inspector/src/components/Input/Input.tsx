@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import { PropTypes } from './types';
+import type { PropTypes } from './types';
 
 import './Input.css';
 
@@ -81,7 +81,6 @@ const Input = ({
       placeholder={placeholder}
       value={stateValue}
       onChange={handleTextChange}
-      // Keeps a right click on the text out of the context menu of the row being edited.
       onContextMenu={stopPropagation}
       disabled={disabled}
     />

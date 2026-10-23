@@ -5,6 +5,8 @@
 
 import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
 
+export { getParentPath } from '../../lib/data-layer/host/fs-utils';
+
 /**
  * The scene's own folder (`assets/scene`, holding `main.composite`) is listed like any other
  * because `.composite` is a catalogued extension, but the build and the preview read it from
@@ -19,11 +21,6 @@ export function getBaseName(path: string): string {
   return idx === -1 ? path : path.slice(idx + 1);
 }
 
-export function getParentPath(path: string): string {
-  const idx = path.lastIndexOf('/');
-  return idx === -1 ? '' : path.slice(0, idx);
-}
-
 export function joinPath(parent: string, name: string): string {
   return parent ? `${parent}/${name}` : name;
 }
@@ -34,7 +31,7 @@ export function joinPath(parent: string, name: string): string {
  */
 export function normalizePath(path: string): string {
   const parts: string[] = [];
-  for (const part of path.split('/')) {
+  for (const part of path.split(/[\\/]/)) {
     if (!part || part === '.') continue;
     if (part === '..' && parts.length && parts[parts.length - 1] !== '..') parts.pop();
     else parts.push(part);
@@ -42,22 +39,18 @@ export function normalizePath(path: string): string {
   return parts.join('/');
 }
 
-/**
- * The files a `.gltf` references by a relative URI (its buffers and images), relative to the
- * model's own folder. A `.glb` embeds them, and remote or inline data needs no file.
- */
-export function getGltfResourceUris(content: Uint8Array): string[] {
-  try {
-    const json = JSON.parse(new TextDecoder().decode(content));
-    const uris: unknown[] = [...(json.buffers ?? []), ...(json.images ?? [])].map(
-      (item: { uri?: unknown }) => item?.uri,
-    );
-    return uris
-      .filter((uri): uri is string => typeof uri === 'string' && !/^(data:|https?:)/i.test(uri))
-      .map(uri => decodeURIComponent(uri));
-  } catch {
-    return [];
-  }
+/** Whether a `normalizePath` result is empty, climbs above the assets folder or names a drive. */
+export function isOutsideAssets(path: string): boolean {
+  return !path || path === '..' || path.startsWith('../') || path.includes(':');
+}
+
+/** The names `paths` take directly inside `folder` (a file, or the first folder on the way). */
+export function namesBelow(folder: string, paths: string[]): string[] {
+  const prefix = folder ? folder + '/' : '';
+  const names = paths
+    .filter(path => path.startsWith(prefix))
+    .map(path => path.slice(prefix.length).split('/')[0]);
+  return Array.from(new Set(names));
 }
 
 /** Splits `model.final.glb` into `{ base: 'model.final', ext: '.glb' }`. Folders pass `isFolder`. */
@@ -76,7 +69,7 @@ export function validateName(name: string, siblings: Iterable<string>, current?:
   if (/[\\/:*?"<>|]/.test(trimmed)) return 'The name contains invalid characters';
   if (trimmed !== current) {
     for (const sibling of siblings) {
-      if (sibling.toLowerCase() === trimmed.toLowerCase()) {
+      if (sibling !== current && sibling.toLowerCase() === trimmed.toLowerCase()) {
         return `"${trimmed}" already exists in this folder`;
       }
     }
@@ -174,41 +167,6 @@ export function collectAssetReferences(value: unknown, into: string[] = []): str
     }
   }
   return into;
-}
-
-export function guessMimeType(name: string): string {
-  const ext = splitName(name).ext.toLowerCase();
-  switch (ext) {
-    case '.png':
-      return 'image/png';
-    case '.jpg':
-    case '.jpeg':
-      return 'image/jpeg';
-    default:
-      return 'application/octet-stream';
-  }
-}
-
-/** Copies text to the clipboard, falling back to a hidden textarea where the async API is blocked. */
-export async function copyTextToClipboard(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    try {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      const ok = document.execCommand('copy');
-      document.body.removeChild(textarea);
-      return ok;
-    } catch {
-      return false;
-    }
-  }
 }
 
 /** Drops the paths that are inside another path of the list: the ancestor already covers them. */

@@ -15,6 +15,7 @@ const mapError = {
   [ErrorType.Redo]: 'Redo failed.',
   [ErrorType.ImportAsset]: 'Failed to import new asset.',
   [ErrorType.RemoveAsset]: 'Failed to remove asset.',
+  [ErrorType.PartialRemoveAsset]: 'Some assets could not be removed.',
   [ErrorType.SaveThumbnail]: 'Failed to save thumbnail.',
   [ErrorType.GetThumbnails]: 'Failed to get thumbnails.',
   [ErrorType.CreateCustomAsset]: 'Failed to create custom item.',

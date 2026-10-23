@@ -8,7 +8,7 @@ import { CrdtMessageType } from '@dcl/ecs';
 import type { FileSystemInterface } from '../types';
 import upsertAsset from './upsert-asset';
 import { findPrevValue } from './utils/component';
-import { UndoRedoArray } from './utils/undo-redo-array';
+import { DEFAULT_UNDO_MAX_SIZE, UndoRedoArray } from './utils/undo-redo-array';
 import { isFileInAssetDir, withAssetDir } from './fs-utils';
 import {
   type StateProvider,
@@ -136,7 +136,7 @@ export class UndoRedoProvider implements StateProvider {
 
     this.options = {
       maxEntries: options.maxEntries ?? 1024,
-      maxSize: options.maxSize ?? 1024 * 1024 * 100, // 100MB default
+      maxSize: options.maxSize ?? DEFAULT_UNDO_MAX_SIZE,
       enableValidation: options.enableValidation ?? true,
       enableStateVerification: options.enableStateVerification ?? false, // off by default for performance
       persistToStorage: options.persistToStorage ?? false,

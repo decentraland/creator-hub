@@ -2,10 +2,11 @@ import {
   collectAssetReferences,
   createPathMapper,
   getBaseName,
-  getGltfResourceUris,
   getRange,
   getParentPath,
   getUniqueCopyName,
+  isOutsideAssets,
+  namesBelow,
   isProtectedPath,
   normalizePath,
   pruneNestedPaths,
@@ -39,6 +40,8 @@ describe('ProjectAssetExplorer/file-ops', () => {
     it('should accept the current name and free names', () => {
       expect(validateName('a.glb', ['a.glb'], 'a.glb')).toBeUndefined();
       expect(validateName('b.glb', ['a.glb'], 'a.glb')).toBeUndefined();
+      expect(validateName('tree.glb', ['Tree.glb', 'b.glb'], 'Tree.glb')).toBeUndefined();
+      expect(validateName('B.glb', ['Tree.glb', 'b.glb'], 'Tree.glb')).toBeDefined();
     });
   });
 
@@ -124,20 +127,32 @@ describe('ProjectAssetExplorer/file-ops', () => {
       expect(normalizePath('Models/../../t.png')).toBe('../t.png');
       expect(normalizePath('a//b')).toBe('a/b');
     });
+    it('should treat backslashes as separators', () => {
+      expect(normalizePath('Models/..\\..\\.env')).toBe('../.env');
+      expect(normalizePath('Models\\tex\\t.png')).toBe('Models/tex/t.png');
+    });
   });
 
-  describe('getGltfResourceUris', () => {
-    const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
-    it('should list relative buffer and image uris, decoded', () => {
-      const content = encode({
-        buffers: [{ uri: 'model.bin' }, { uri: 'data:application/octet-stream;base64,AAA' }],
-        images: [{ uri: '../textures/my%20tex.png' }, { uri: 'https://cdn/x.png' }, {}],
-      });
-      expect(getGltfResourceUris(content)).toEqual(['model.bin', '../textures/my tex.png']);
+  describe('isOutsideAssets', () => {
+    it('should flag normalized paths that climb above the assets folder', () => {
+      expect(isOutsideAssets('')).toBe(true);
+      expect(isOutsideAssets('..')).toBe(true);
+      expect(isOutsideAssets('../.env')).toBe(true);
+      expect(isOutsideAssets('models/tree.bin')).toBe(false);
+      expect(isOutsideAssets('..hidden/tree.bin')).toBe(false);
     });
-    it('should return nothing for binary or invalid content', () => {
-      expect(getGltfResourceUris(new Uint8Array([0x67, 0x6c, 0x54, 0x46]))).toEqual([]);
-      expect(getGltfResourceUris(encode({ asset: {} }))).toEqual([]);
+    it('should flag drive-qualified paths', () => {
+      expect(isOutsideAssets('C:/Users/me/.env')).toBe(true);
+      expect(isOutsideAssets('models/c:t.png')).toBe(true);
+    });
+  });
+
+  describe('namesBelow', () => {
+    it('should list the names the written paths take directly inside a folder', () => {
+      expect(
+        namesBelow('b', ['b/m.gltf', 'b/t.png', 'b/textures/w.png', 'bb/x.png', 'c/t.png']),
+      ).toEqual(['m.gltf', 't.png', 'textures']);
+      expect(namesBelow('', ['m.gltf', 'textures/w.png'])).toEqual(['m.gltf', 'textures']);
     });
   });
 
