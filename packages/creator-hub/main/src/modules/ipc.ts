@@ -18,6 +18,7 @@ import * as ai from './ai';
 import * as aiCli from './ai-cli';
 import * as aiWindow from './ai-window';
 import * as consoleWindow from './console-window';
+import * as mcpDiscovery from './mcp-discovery';
 import {
   captureViewport,
   ensureSceneMcpServer,
@@ -113,7 +114,12 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
 
   // config
   handle('config.getConfig', () => config.getConfig());
-  handle('config.writeConfig', (_event, _config) => config.writeConfig(_config));
+  handle('config.writeConfig', async (_event, _config) => {
+    await config.writeConfig(_config);
+    // Publishing the MCP server for external agents follows the setting, so a flip takes
+    // effect at once (and withdraws the files when turned off). Best-effort, off the write path.
+    void mcpDiscovery.syncExposeMcpServer(_config.settings.exposeMcpServer);
+  });
 
   // bin
   handle('bin.install', () => bin.install());
@@ -172,6 +178,10 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     const { url, token } = await ensureSceneMcpServer();
     return { url, token };
   });
+  // The editor window reports which scene it has open, so the MCP server targets it and
+  // its connection details are written into the scene for external agents (mcp-discovery).
+  handle('ai.sceneOpened', (_event, path) => mcpDiscovery.sceneOpened(path));
+  handle('ai.sceneClosed', async (_event, path) => mcpDiscovery.sceneClosed(path));
   // Detached AI window (#1504): lifecycle + the mirror/command relay between the two
   // renderer windows (see ai-window.ts).
   handle('ai.openWindow', (_event, locale) => aiWindow.openAiWindow(locale));

@@ -25,6 +25,7 @@ import { stopAllProjectWatchers } from '/@/modules/project-watcher';
 import { killInspectorServer } from '/@/modules/inspector';
 import { aiStop } from '/@/modules/ai';
 import { stopSceneMcpServer } from '/@/modules/scene-mcp';
+import { clearMcpDiscovery, initMcpDiscovery } from '/@/modules/mcp-discovery';
 import { stopExplorerGateway } from '/@/modules/explorer-gateway';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
@@ -149,6 +150,7 @@ app
       },
     });
     log.info('[IPC] Ready');
+    initMcpDiscovery();
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
     await addEditorsPathsToConfig();
@@ -190,6 +192,7 @@ export async function killAll() {
   killInspectorServer();
   aiStop(); // reap any in-flight AI CLI turn (synchronous kill of its process group)
   stopSceneMcpServer(); // close the localhost MCP server
+  clearMcpDiscovery(); // and stop advertising it to external agents
   promises.push(killAllUtilityProcesses());
 
   // Cap cleanup here so every quit path inherits the bound — before-quit,

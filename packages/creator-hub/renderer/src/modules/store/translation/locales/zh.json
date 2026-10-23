@@ -582,7 +582,7 @@
         },
         "mcp_server": {
           "label": "公开 AI 助手 MCP 服务器",
-          "help": "让 Creator Hub 之外运行的 AI 代理控制打开的场景。将此内容粘贴到该代理的 MCP 配置中。",
+          "help": "让 Creator Hub 之外运行的 AI 代理控制打开的场景。开启后，Creator Hub 会把连接信息写入你打开的每个场景（.mcp.json，在场景文件夹中启动的 Claude Code 会自动读取）以及其应用数据文件夹中的 mcp-server.json，外部代理无需复制任何内容即可连接。你也可以手动将此内容粘贴到代理的 MCP 配置中。",
           "copy": "复制配置",
           "copied": "已复制！",
           "note": "仅限本地。每次重启 Creator Hub 时 URL 和令牌都会改变。"

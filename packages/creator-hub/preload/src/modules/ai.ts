@@ -89,6 +89,15 @@ export async function getMcpServerInfo(): Promise<{ url: string; token: string }
   return invoke('ai.getMcpServerInfo');
 }
 
+// Tell main which scene the editor has open (see 'ai.sceneOpened' in /shared/types/ipc).
+export async function sceneOpened(path: string): Promise<void> {
+  return invoke('ai.sceneOpened', path);
+}
+
+export async function sceneClosed(path: string): Promise<void> {
+  return invoke('ai.sceneClosed', path);
+}
+
 // AI sign-in without a CLI (#1531). Installs the official CLI on demand (if needed) and
 // drives its subscription login; steps (progress + the browser URL) arrive via `onEvent`,
 // and the promise settles when the flow completes or fails. The channel subscription is
