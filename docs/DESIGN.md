@@ -45,7 +45,7 @@ All tokens are CSS custom properties on `:root` in **`packages/inspector/src/the
 | `--sub-text`     | `#ffffffcf` | Secondary text on dark            |
 | `--text-primary` | `#000000de` | Text **on light surfaces**        |
 
-The UI Designer names its own three steps, from the Figma's Neutrals ramp: `--ui-designer-text` `#fcfcfc` (labels, group titles), `--ui-designer-text-value` `#cfcdd4` (the value inside a field), `--ui-designer-text-muted` `#a09ba8` (hints, secondary). Glyphs take `--ui-designer-glyph` (an alias of `--palette-neutral-gray2` `#716b7c`), or `--ui-designer-glyph-on-control` when they sit on a field fill instead of the frame — see the contrast note in `vars.css`.
+The UI Designer names its own three steps, from the Figma's Neutrals ramp: `--ui-designer-text` (→ `--palette-neutral-softWhite` `#fcfcfc`; labels, group titles), `--ui-designer-text-value` (→ `--palette-neutral-gray4` `#cfcdd4`; the value inside a field), `--ui-designer-text-muted` (→ `--palette-neutral-gray3` `#a09ba8`; hints, secondary). Code outside the UI Designer (the 3D toolbar) uses the `--palette-neutral-*` names directly. Glyphs take `--ui-designer-glyph` (an alias of `--palette-neutral-gray2` `#716b7c`), or `--ui-designer-glyph-on-control` when they sit on a field fill instead of the frame — see the contrast note in `vars.css`.
 
 `UIDesigner.css` repoints `--gray-0`, `--title` and `--sub-text` to those tokens **inside** `.ui-designer` / the two rails, so every shared control in the designer takes the design's surface and foreground without per-selector overrides. The 3D EntityInspector keeps the global values.
 
@@ -73,13 +73,16 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--palette-system-blueDark2` | `#244b7d` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1); the selected toggle fill through `--ui-designer-control-active-bg` |
 | `--palette-system-blueDark3` | `#243852` | Figma System/Blue Dark 3: the fill of a selected toggle under the pointer (Snow glyph 11.61:1). Darker than Blue Dark 2 on purpose, as Figma draws it |
 | `--palette-neutral-gray2` | `#716b7c` | Figma Neutrals/Cloudy Sky (ui2 `neutral.gray2`): the `RangeField` track; `--ui-designer-glyph` aliases it |
+| `--palette-neutral-gray3` | `#a09ba8` | Figma Neutrals/Silver (ui2 `neutral.gray3`): the camera button's icon stroke (4.59:1 on Onix); `--ui-designer-text-muted` aliases it |
+| `--palette-neutral-gray4` | `#cfcdd4` | Figma Neutrals/Gray (ui2 `neutral.gray4`): the 3D toolbar's resting glyph (11.55:1 on Shadow); `--ui-designer-text-value` aliases it |
+| `--palette-neutral-softWhite` | `#fcfcfc` | Figma Neutrals/Snow (ui2 `neutral.softWhite`): the 3D toolbar's hover and selected glyph; `--ui-designer-text` aliases it, and `--focus-ring` reads it through that alias |
 | `--palette-neutral-onyx` | `#35333b` | Figma Neutrals/Onyx: the 1px border of an unselected UI Designer tab toggle, at rest, on hover and disabled (1.27:1 against the panel: an edge, not the state cue) |
 
 Figma's Neutrals swatches name `#35333b` **Onix** and `#25212a` **Charcoal**. The two `vars.css` trailing comments that called `#35333b` Charcoal are deleted; the two block comments above the UI Designer control tokens still say Charcoal for it — read Onix.
 
 #### Icon buttons and toggles
 
-Every icon control in the UI Designer, toolbar included, takes one of three rules (user decision, October 22, 2026; it overrides the `UI Editor Buttons` sets where they differ, see the ✱ deviations in that section under Component specs). Each control keeps its own size, padding, radius and border; the rules own colour and fill. Glyphs paint `currentColor`. A checkbox is separate. The UI Designer rails and the MobileHUD panel draw Checkbox Terciary: an outline box with a Snow tick and no fill (`CheckboxField color="tertiary"`), see Checkbox Terciary. The 3D panels draw Checkbox Primary (`color="primary"`, the default).
+Every icon control in the UI Designer panels and canvas takes one of three rules (user decision, October 22, 2026; it overrides the `UI Editor Buttons` sets where they differ, see the ✱ deviations in that section under Component specs). The 2D toolbar left these rules for the `ToolbarButton` set and the Viewport Toolbar's 2D variant (user decision October 23, 2026; shipped in `73a26ea5f`). The toolbar mentions below are history: the toolbar is no longer styled by them.
 
 - **Icon button** (any icon control that is not a toggle: trash, help, bind link, add, copy, the toolbar's save / undo / redo): Silver `--ui-designer-text-muted` glyph and no container at rest; on hover a Snow `--ui-designer-text` glyph on a White 10 `--palette-whiteTransparent-subtle` container, 4px radius.
 - **Tab toggle** (one choice out of a set: TextAlign, Flow direction, the canvas device pair, the device-variant tabs, the interaction-state tabs, the fill-mode chips, the 2D toolbar gizmos): unselected is a Silver glyph, no fill and a 1px `--palette-neutral-onyx` border; unselected + hover is Snow on White 10 with the same Onyx border; selected is a Snow glyph on `--ui-designer-control-active-bg` (Blue Dark 2); selected + hover is Snow on `--palette-system-blueDark3`; disabled is a White 20 glyph with the Onyx border. A selected tab toggle shows no Onyx: its 1px border takes the fill colour, so the box never changes size.
@@ -336,10 +339,10 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Figma | Value | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) | Status |
 | --- | --- | --- | --- | --- |
 | Neutrals/White | `#FFFFFF` | `--white`, `--base-01` | `--white`, `--text` · ui2 `neutral.white` | match |
-| Neutrals/Snow | `#FCFCFC` | `--ui-designer-text` | ui2 `neutral.softWhite` | match |
+| Neutrals/Snow | `#FCFCFC` | `--palette-neutral-softWhite` (aliased by `--ui-designer-text`) | ui2 `neutral.softWhite` | match |
 | Neutrals/Pearl | `#ECEBED` | — | ui2 `neutral.gray5` | missing in inspector |
-| Neutrals/Gray | `#CFCDD4` | `--ui-designer-text-value` | ui2 `neutral.gray4` | match |
-| Neutrals/Silver | `#A09BA8` | `--ui-designer-text-muted`, `--neutral-grey-3` | `--dcl-silver`, `--clear-divider` · ui2 `neutral.gray3` | match |
+| Neutrals/Gray | `#CFCDD4` | `--palette-neutral-gray4` (aliased by `--ui-designer-text-value`) | ui2 `neutral.gray4` | match |
+| Neutrals/Silver | `#A09BA8` | `--palette-neutral-gray3` (aliased by `--ui-designer-text-muted`), `--neutral-grey-3` | `--dcl-silver`, `--clear-divider` · ui2 `neutral.gray3` | match |
 | Neutrals/Cloudy Sky | `#716B7C` | `--palette-neutral-gray2` (aliased by `--ui-designer-glyph`) | `--dropdown` · ui2 `neutral.gray2` | match |
 | Neutrals/Graffito | `#5E5B67` | — | `--light-gray` · ui2 `neutral.gray1` | missing in inspector |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` · ui2 `neutral.gray0` | match |
@@ -1055,14 +1058,40 @@ Set [`21004:3194`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 
 ### ToolbarButton (Buttons)
 
-Set [`21005:3408`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21005-3408), 3 variants (`Active` × `Selected`, plus a `Disabled` boolean property). 26 × 26, no radius; `Icon` 24 × 24 at 1 / 1 over a `Rectangle` 26 × 26. Code: inspector `Toolbar/ToolbarButton` (min-width 32, height 30, `--gray-0` fill, 4px radius, hover `--base-19`, active `--selected-item`; the UI Designer toolbar overrides `--selected-item` to `#244B7D` in `UIDesigner.css`, which is Blue Dark 2) — matches the selected colour, drift on size, radius and fill; Creator Hub none. The UI Designer 2D toolbar deviates (✱, user decision October 22, 2026; see UI Editor Buttons): no rest container, the icon-button, tab-toggle (gizmos) and single-toggle (Run, Scene Info) rules scoped under `.ui-designer-toolbar`; the 3D toolbar keeps this set.
+Set [`21005:3408`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21005-3408), **11 variants** (re-read October 23, 2026 afternoon):
+
+- **Properties:** `Type` (Default / Selected / Blocked) × `Hover Main` × `Hover Chevron` × `Chevron` (False: a 26 × 26 button; True: a 46 × 26 split button).
+- **Single button:** `Icon` 24 × 24 at 1 / 1 over a `Rectangle` 26 × 26.
+- **Split button** (`21719:55703`): the main cell, a 1px White 20 `Line 953` at x 26, then a 20-wide chevron cell holding an 8px `arrow-down` in White 60.
+- **Glyph artwork:** small inside the 24px frame (8.4–12px: undo 10 × 9.4, select 10, move 12, rotate 12 × 12.9, scale 12.3 × 11.3, play 9 × 11, pause 10 × 11, stop 10, edit and save 12).
+- **Frames:** in the Viewport Toolbar every instance sits in a frame (6px radius, 1px Onix border, Onix fill), which gives the visible corners and edge.
+
+Code: inspector `Toolbar/ToolbarButton`, one look for both bars (user decisions October 23, 2026).
+
+- **Box:** 26 × 26, 1px `--palette-neutral-onyx` border, 6px radius, `--tree-bg-color` (Shadow) fill, `--palette-neutral-gray4` glyph.
+- **Glyphs:** Figma's own artwork as `currentColor` svgs at their 24px frame (`Toolbar/icons.tsx`).
+- **State hook:** `aria-pressed` on toggles.
+  - A selected cell inside a joined group (the gizmos, the Snap split) keeps the group's Onix edge.
+  - A standalone selected button (Interact) takes its fill colour as its border.
+  - Mute shows its state by a glyph swap, with no fill.
+  - RuntimeControls' Pause is not a toggle: a `running` class gives it the Selected look while the scene runs (see RuntimeControls).
+- **Split button** (Snap): two buttons in one frame, the toggle and a chevron button named "Snap increments", with a White 20 seam between them. The chevron cell is Figma's 20 × 26, below the 24px hit-target floor (✱, user decision October 23, 2026).
+
+**Current state:**
+
+- `f6d320189` (layer 3a3) ships every state above in both bars: the box, selected, disabled, focus, Figma's Charcoal hover, the glyphs and the Snap split button.
+
+Creator Hub: none.
 
 | Variant | State | Rectangle | Icon | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
-| Off / Off | disabled | Shadow `#161518` | Pale Black | 1.79:1 — disabled, exempt | `aria-disabled="true"` |
-| On / Off | default | Shadow | Gray | 11.55:1 | `<button aria-pressed="false" aria-label>` |
-| On / On | selected | Blue Dark 2 (`#244B7D`) | Snow | Snow on Blue Dark 2 8.61:1; fill vs Shadow 2.06:1 — below 3:1, the glyph colour change carries it | `aria-pressed="true"` |
-| any | ✱ hover / focus | — | — | — | not drawn; 26px target clears 24px |
+| Blocked | disabled | Shadow `#161518` | Pale Black `--gray-0` | 1.79:1, disabled, exempt | native `disabled` |
+| Default | default | Shadow | Gray `--palette-neutral-gray4` | 11.55:1; Onix edge 1.46:1 | `<button>` named by `aria-label` or `title`; a toggle adds `aria-pressed="false"` |
+| Default, `Hover Main` | hover | Charcoal `#25212A` → `--base-19` (`#242129`, the documented 1/255 deviation) | Gray (unchanged) | 10.07:1; fill vs Shadow 1.15:1 (a subtle cue, as drawn) | — |
+| Selected | selected | Blue Dark 2 `--palette-system-blueDark2` | Snow `--palette-neutral-softWhite` | Snow on Blue Dark 2 8.61:1; fill vs Shadow 2.06:1, below 3:1, so the glyph colour change carries it; a grouped cell's Onix edge on Blue Dark 2 1.41:1 (an edge, not the cue) | `aria-pressed="true"` |
+| Selected, `Hover Main` | selected + hover | Blue Dark 3 `--palette-system-blueDark3` | Snow | 11.61:1 | — |
+| `Chevron=True` | rest / `Hover Chevron` | chevron cell Shadow / Charcoal → `--base-19` | `arrow-down` White 60 → `#a2a1a3` | 7.07:1 | a separate `<button aria-label="Snap increments" aria-expanded>` |
+| ✱ focus | not drawn | as state | as state | 2px `--focus-ring` (Snow) at 1px offset: 17.73:1 on Shadow | `:focus-visible`; 26px targets clear 24px. The 20-wide chevron cell doesn't: ✱ accepted (user decision October 23, 2026) |
 
 ### Switch (Buttons)
 
@@ -1464,7 +1493,7 @@ Joined tab toggles (TextAlign, Flow direction, the device pair, the device-varia
 | Segmented seams | `ToggleTabs` slot: a Charcoal frame with a 1px Onix border around unjoined `ToggleTab` cells | cells overlap by 1px (one-pixel seams), outer radii on the first and last cell, no wrapper border |
 | Lock and eye | Gray `#CFCDD4` glyph in every state, White 10 hover; no selected fill | single-toggle rule: Silver with no border at rest, Snow on White 10 on hover, Snow on Blue Dark 2 when pressed, Blue Dark 3 when pressed + hover |
 | Interaction-state chip | `Interactions` set: active chip Blue Dark 3 `#243852` | Blue Dark 2, Blue Dark 3 on hover |
-| UI Designer toolbar | `ToolbarButton` / `RuntimeControls`: a filled rest container | no rest container (icon-button, tab-toggle and single-toggle rules, scoped under `.ui-designer-toolbar`; the 3D toolbar keeps the set) |
+| UI Designer toolbar (retired in `73a26ea5f`, user decision October 23, 2026) | `ToolbarButton` / `RuntimeControls`: a filled rest container | no rest container (icon-button, tab-toggle and single-toggle rules, scoped under `.ui-designer-toolbar`; the 3D toolbar keeps the set) |
 | Help and bind link hover | HelpCTA and AddVariant draw no container; HelpCTA rests Cloudy Sky | White 10 container on hover; Help rests Silver |
 | DeleteCTA hover glyph | `Neutrals/White` `#FFFFFF` | Snow `#FCFCFC` (3/255) |
 | Canvas node-bar Delete hover | — (DeleteCTA) | the red danger hover is dropped |
@@ -1686,21 +1715,99 @@ Page `20506:34918`; board `Frame 1` `21221:39035` (title "Viewport" `21221:39108
 
 ### Toolbar (Viewport Toolbar)
 
-Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar") with `<Toolbar>`, a camera menu and `<RuntimeControls>`. Set [`21028:42986`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-42986), 2 variants (`Property 1` = 2D `21028:42987` / 3D), 1332 × 132 with dashed chrome. A 2D variant is Fixed 1292 × 36, fill Shadow `#161518`, 1px Onix bottom border; `LeftSide` / `RigthSide` (sic) tool groups of `ToolbarButton` instances (undo, redo, select, move, rotate, scale, …), the centred `RuntimeControls`, and `Edit`, `Save`, a divider and `Kebab` on the right. 3D adds the camera tools and a "Player" dropdown whose menu is `Menu` + `Menu-Entry` (Free ✓ / Player / rule / "Invert Camera Rotation" checkbox). The `ToolbarButton` (Buttons) states apply unchanged (26 × 26; `Active` × `Selected`, `Disabled`). Code: inspector `UIDesigner/Toolbar/UIDesignerToolbar.tsx` and `Tools.tsx` (the 2D toolbar) and `components/Toolbar` (3D) — the 36px height and Shadow fill are the open check.
+Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar").
+
+- **Frames:** `<Toolbar>`, `<RuntimeControls>`, `<AudioControl>` and `<Menus>`.
+- **Set:** [`21028:42986`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-42986), 2 variants (`Property 1` = 2D `21028:42987` / 3D `21023:11108`), each Fixed 1292 × 36, fill Shadow `#161518`, 1px Onix bottom border.
+- **Group names:** the groups are named against their position: `RigthSide` is the left group, `LeftSide` the right one.
+- **Read history:** 2D October 23, 2026 (unchanged since). 3D re-read on the afternoon of October 23, 2026, after a redesign; re-read again at 16:53 CEST that day, after a reorder that moved the camera button ahead of Interact and Mute (the file was being edited during both reads).
+
+- **`RigthSide`** (the left group; 3D `21023:11116` Hug 374, 2D `21028:42995` Hug 166): Top 5, Left 10, gap 6. Its frames have a 6px radius, a 1px Onix border, an Onix fill and a 1px gap between cells. It holds:
+  - undo / redo, 53 × 26 (3D `Back/Forward` `21023:11117`, 2D `Tools` `21028:42996`);
+  - four gizmos, 107 × 26 (3D `Tools` `21023:11120`, 2D `Tools` `21028:42999`; in 2D, rotate is `Disabled`);
+  - **3D only.** `Snap` `21719:56439`: a 46 × 26 split `ToolbarButton` (`Chevron=True`) in a `Tools` frame. The Snap toggle (grid and magnet glyph), a White 20 seam, then a chevron that opens the snap menu;
+  - **3D only.** `CameraSettings` `21023:11130` (Fixed 86 × 26) → `CameraButton` `21023:11131`: Hug 88.12 × 26, 6px radius, a 1.06px border, **Shadow fill**, padding 0 / 8 / 0 / 4, gap 4. It holds an 18 × 18 `Camera` icon (Silver outline), the label "Player" (Inter 400 12px / 100%, Gray `#CFCDD4`) and an 8 × 8 `arrow-down` (White 60);
+  - **3D only.** `Interact` `21023:11128`: 26 × 26;
+  - **3D only.** `Sound` `21723:57310`: Mute, a framed 26 × 26 `ToolbarButton`. Its states are drawn in `<AudioControl>` (`21723:57634`): **On** is a speaker with waves, **Off** a speaker with an ×, both Gray on a Shadow cell (re-read the evening of October 23, 2026: the Off cell gained its Shadow fill and its glyph went from Snow to Gray). Neither has a selected fill.
+- **3D left-group x positions** (in the 1292 bar): undo / redo 10–63, gizmos 69–176, Snap 182–228, camera 234–320, Interact 326–352, Mute 358–384.
+- **`RuntimeControls`** (3D `21028:33543`, 2D `21028:43015`): `Preview=Off`, Left 618, 55 wide, gap 3, so it sits at the true bar centre (645.5 of 1292).
+- **`LeftSide`** (the right group; 3D `21023:11109`, 2D `21028:42988`): Left 1202, gap 6, padding-right 4. It holds the `Edit` and `Save` frames (26 × 26, 6px radius, a 1px Onix border and fill), a `Div` (a 24px White 10 vertical rule) and a 16 × 16 `Kebab` (three Snow dots, no frame).
+- **`<Menus>` `21719:56867`** (the open menus, each a 0.71-scaled `Menu`: Fixed 176, Onix, a 0.71px White 10 border, radius 8.52, padding 7.1, drop shadow `0 2.84 5.68` Black 40):
+  - **Snap menu** `21719:56868`:
+    - Position / Rotation / Scale rows (168 × 26, padding 0 / 7.1, Inter 400 12 Gray labels);
+    - each with an `Input` 50 × 20, radius 6, a 1px White 40 border, Onix fill;
+    - a White 10 rule;
+    - an "Align to World" checkbox row.
+  - **Camera menu** `21719:56872`: Free ✓, Player, a rule, an "Invert Camera Rotation" checkbox row. Its trigger is drawn Onix-filled, unlike the bar's `CameraButton`; the bar instance is the source (✱, G10).
+  - **⋮ menu** `21722:57105` (named "CameraSettings", sic): one "Enable Autosave" checkbox row.
+
+**Final design** (user decisions October 22–23, 2026; layers 3a3 and 3a4):
+
+- **Bar:** 36px tall with a 1px `--palette-neutral-onyx` bottom border, insets 10 / 4, 6px gaps.
+- **Groups:** each joined group's cells carry their own 1px Onix border and overlap by 1px, so seams are single pixels and groups come out 51 / 103px wide (✱; the code has no frame wrappers).
+- **3D, left to right:** undo / redo, gizmos, the **Snap split button**, the **camera button**, Interact, **Mute**. Tab order follows the same order (DOM order, no `tabindex`).
+  - **Snap split:** 46 wide; the "Snap increments" chevron always shows, 20 × 26 (✱ below the 24px floor, accepted).
+  - **Snap menu:** hangs from the Snap toggle's left edge; bordered Position / Rotation / Scale fields, a White 10 rule inset with the rows (the documented menu-divider deviation), an "Align to World" checkbox (`CheckboxField color="tertiary"`, 16px box, 12px Gray label like the rows above). There is no separate Align toggle.
+  - **Mute:** framed, a Shadow cell and a Gray glyph in both states; the glyph swap and `aria-pressed` carry the state.
+  - **Camera button:** Shadow fill + 1px Onix border, icon stroke `--palette-neutral-gray3`, accessible name "Camera mode". Its menu has the "Invert Camera Rotation" checkbox.
+- **2D:** undo / redo and gizmos; **no snap control** (as `21028:42987` draws it; snapping still works).
+- **RuntimeControls:** at the **true bar centre**, as Figma draws them. When the left controls leave no room, they fall back to sit right after the last left control: Mute under Bevy, the Snap chevron under Babylon. The code wraps the left controls in `LeftContent` and the right ones in `RightContent`, equal flexible halves around the run controls. `RightContent` carries `padding-left: 6px`, which cancels the bar's 10 / 4 inset asymmetry; without it the run controls would land 3px right of centre (✱, accepted in Validate 3a4 round 1).
+- **Right side:** Edit ("Edit Scene"), Save, the rule and a ⋮ named "More options".
+  - **Save** is hidden while auto-save is on and shown while it is off.
+  - **2D has no Save** (✱): code-as-source writes every edit to its file.
+  - **2D Edit** switches to 3D and selects the scene root.
+- **⋮ menu** (the Menu-Entry look), in both bars under every renderer (✱: Figma draws only "Enable Autosave"):
+  - **3D, always:** "Enable Autosave" (checkable), and Scene Info when the scene has scene info.
+  - **3D, only while the Babylon renderer is active:** "Invert Camera Rotation" (Babylon has no camera menu) and Inspector.
+  - **2D:** Scene Info when the scene has scene info; the ⋮ is hidden when it would be empty.
+  - **Preferences** is removed.
+- **Hover:** Figma's Charcoal (→ `--base-19`) with the glyph unchanged, in both bars; the split button's chevron cell hovers on its own.
+- **Focus:** Snow `--focus-ring` on every control of both bars.
+
+**Decisions** (the record for this toolbar; grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-23 | Figma moved the 3D camera button while it was being read (16:35 → 16:53 CEST). Is the 16:53 layout settled? | Yes. Re-read the board before the final screenshots |
+| 2026-10-23 | Apply the new 3D order exactly as drawn? | Yes: undo / redo · gizmos · Snap · camera · Interact · Mute, with tab order following |
+| 2026-10-23 | Where do the run controls go? | The true bar centre. When there is no room, right after the last left control (Mute under Bevy, Snap under Babylon). This retires the earlier "centred in the free space" deviation (✱7) |
+| 2026-10-23 | Does the 2D bar change with the reorder? | No: `21028:42987` is unchanged |
+| 2026-10-23 | Below a window of about 890 the 3D bar's content no longer fits and the right group clips. What should happen? | Creator Hub enforces a minimum window width so the 3D toolbar never clips: **1080px** (`minWidth` in `main`). Measured needs: the 3D toolbar 901 with Save shown; Creator Hub's top nav 1071 signed out, 1059 signed in |
+| 2026-10-23 | The camera trigger (`role="combobox"`) has no accessible name. What is it called? | "Camera mode" (`aria-label`; a new, user-approved string) |
+
+**Current state** (layer 3a4 on top of `f6d320189`): matches the final design above. Measured in Creator Hub:
+
+- At a 1440 window both bars centre the run controls exactly (0.00px off).
+- From a 1200 window down, the 3D run controls sit 6px after Mute.
+- Creator Hub's 1080px minimum window width keeps the 3D bar clear of clipping; its content needs 901.
 
 | Variant | Fill | Border | Contrast | A11y |
 | --- | --- | --- | --- | --- |
-| 2D | Shadow `#161518` | 1px Onix bottom | Snow 17.73:1; border 1.46:1 | `role="toolbar"` with arrow-key roving focus |
+| 2D (`21028:42987`) | Shadow `#161518`, Fixed 1292 × 36 | 1px Onix bottom | Snow 17.73:1; border 1.46:1 | `role="toolbar"` with arrow-key roving focus (not implemented in either bar yet, G31) |
 | 3D (`21023:11108`) | Shadow `#161518`, Fixed 1292 × 36 | 1px Onix bottom | identical to 2D: Snow 17.73:1; border 1.46:1 | the camera menu: `aria-haspopup="menu"` |
 
 ### RuntimeControls (Viewport Toolbar)
 
-Set [`21028:16521`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16521), 2 variants (`Preview` Off / On), 93 × 109 with dashed chrome. A Hug 55 × 26 row, gap 3, of two `ToolbarButton` instances (Play, Pause): each sits in a 26 × 26, 6px-radius frame and carries `Active` and `Selected` properties (and `Disabled`). Code: the Play / Pause run controls in `UIDesignerToolbar.tsx` (scene-run intent — see [`UIDesigner.md`](UIDesigner.md)).
+Set [`21028:16521`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16521), 2 variants (`Preview` Off / On), 93 × 109 with dashed chrome.
 
-| Preview | Play | Pause | A11y |
+- **Layout:** a Hug 55 × 26 row, gap 3, of two `ToolbarButton` instances in 26 × 26, 6px-radius frames (layers `Play` and `Pause`).
+- **Stop:** in `Preview=On`, the `Play` slot holds a **Stop** (square) glyph.
+- **Labels:** the board labels the rows **"Default"** (Off) and **"Play"** (On, Group 3 `21723:57629`): `Preview=On` is the running scene, with Pause shown selected.
+- **Figma-side:** the `Disabled` property on `Preview=Off`'s Pause doesn't change its look (G10).
+
+**Final design** (user decision October 23, 2026; layer 3a3), both bars: one centred group; 2D's Play still leaves 2D before it runs the scene (see [`UIDesigner.md`](UIDesigner.md)).
+
+- **Slots:** slot 1 is Play / Stop; slot 2 is Pause, a plain button (no `aria-pressed`) whose name flips "Pause scene" ↔ "Resume scene".
+- **Stopped:** `Preview=Off`, Pause disabled.
+- **Running:** `Preview=On`: slot 1 Stop, Pause Blue Dark 2 + Snow (a `running` class; hover Blue Dark 3), named "Pause scene".
+- **Paused:** slot 1 Stop, Pause in the rest look (Shadow, Gray), named "Resume scene".
+
+**Current state:** as above, placed at the true bar centre (see the Toolbar decisions).
+
+| Preview | Play slot | Pause slot | A11y |
 | --- | --- | --- | --- |
-| Off (`21028:16522`) | frame Onix fill + 1px Onix border; `Active` On, `Selected` Off | frame Onix fill + 1px Onix border; `Active` Off, `Selected` Off, `Disabled` true | Play `aria-label="Play scene"`; Pause `aria-disabled="true"` |
-| On | unchanged: frame Onix fill + 1px Onix border; `Active` On, `Selected` Off | frame has no fill and no border; `Active` On, `Selected` On (enabled and selected — the `ToolbarButton` Selected fill) | Pause `aria-pressed="true"`; Figma draws no stop state for Play ✱ |
+| Off (`21028:16522`) | Play glyph; frame Onix fill + 1px Onix border; `Active` On, `Selected` Off | frame Onix fill + 1px Onix border; `Active` Off, `Selected` Off, `Disabled` true | slot 1 `aria-label="Run scene"`; Pause native `disabled` |
+| On (`21028:16527`) | **Stop** glyph (Gray); frame Onix fill + 1px Onix border; `Active` On, `Selected` Off | frame has no fill and no border; `Active` On, `Selected` On (Blue Dark 2, Snow) | slot 1 named for Stop; Pause named "Pause scene", no `aria-pressed`; Snow on Blue Dark 2 8.61:1 |
 
 ---
 

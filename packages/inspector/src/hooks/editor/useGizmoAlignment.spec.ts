@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { act } from 'react-dom/test-utils';
 import { renderHook } from '@testing-library/react';
 import mitt from 'mitt';
@@ -94,6 +95,47 @@ describe('useGizmoAlignment', () => {
       gizmoManagerEvents.emit('*');
       expect(gizmoManagerMock.isWorldAligned).toHaveBeenCalled();
       expect(gizmoManagerMock.isWorldAlignmentDisabled).toHaveBeenCalled();
+    });
+  });
+  describe('When the hook remounts', () => {
+    let aligned: boolean;
+
+    beforeEach(() => {
+      aligned = true;
+      gizmoManagerMock.isWorldAlignmentDisabled.mockReturnValue(false);
+      gizmoManagerMock.isWorldAligned.mockImplementation(() => aligned);
+      gizmoManagerMock.setWorldAligned.mockImplementation((value: boolean) => {
+        aligned = value;
+        gizmoManagerEvents.emit('change');
+      });
+      useSdkMock.mockImplementation(cb => {
+        useEffect(() => cb?.(sdkMock), []);
+        return sdkMock;
+      });
+    });
+
+    afterEach(() => {
+      gizmoManagerMock.isWorldAligned.mockReset().mockReturnValue(true);
+      gizmoManagerMock.setWorldAligned.mockReset();
+      useSdkMock.mockImplementation(cb => {
+        cb && cb(sdkMock);
+        return sdkMock;
+      });
+    });
+
+    it("should keep the renderer's world-aligned value", () => {
+      renderHook(() => useGizmoAlignment()).unmount();
+      const { result } = renderHook(() => useGizmoAlignment());
+      expect(aligned).toBe(true);
+      expect(result.current.isGizmoWorldAligned).toBe(true);
+      expect(gizmoManagerMock.setWorldAligned).not.toHaveBeenCalled();
+    });
+
+    it('should write a toggle to the renderer and mirror it', () => {
+      const { result } = renderHook(() => useGizmoAlignment());
+      act(() => result.current.setGizmoWorldAligned(false));
+      expect(aligned).toBe(false);
+      expect(result.current.isGizmoWorldAligned).toBe(false);
     });
   });
 });

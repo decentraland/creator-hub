@@ -1,59 +1,177 @@
 .Toolbar {
   display: flex;
-  background-color: var(--tree-bg-color);
-  padding: 8px;
+  box-sizing: border-box;
   width: 100%;
+  height: 36px;
+  padding: 0 4px 0 10px;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--palette-neutral-onyx);
+  background-color: var(--tree-bg-color);
 }
 
-.Toolbar .undo svg,
-.Toolbar .redo svg,
-.Toolbar .save svg {
-  transform: translateY(2px);
+.Toolbar .LeftContent,
+.Toolbar .RightContent {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 6px;
 }
 
-.Toolbar .undo {
-  margin: 0px;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
+.Toolbar .RightContent {
+  justify-content: flex-end;
+  padding-left: 6px;
 }
 
-.Toolbar .redo {
-  margin-left: 1px;
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
+.Toolbar .RuntimeControls {
+  display: flex;
+  gap: 3px;
 }
 
-.Toolbar .babylonjs-inspector svg {
-  width: 18px;
-  height: 18px;
-  transform: translateY(2px);
+.Toolbar .ToolbarButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--palette-neutral-onyx);
+  border-radius: 6px;
+  background-color: var(--tree-bg-color);
+  color: var(--palette-neutral-gray4);
+  cursor: pointer;
 }
 
-.Toolbar .edit-scene {
-  margin: 0px;
+.Toolbar .ToolbarButton svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
 }
 
-.Toolbar .edit-scene svg,
-.Toolbar .scene-info svg {
-  width: 18px;
-  height: 18px;
-  transform: translateY(2px);
+.Toolbar .ToolbarButton:hover:not(:disabled) {
+  position: relative;
+  z-index: 1;
+  background-color: var(--base-19);
 }
 
-.Toolbar .edit-scene:not(:last-child) {
-  margin-right: 0px;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
+.Toolbar .ToolbarButton[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+  border-color: var(--palette-system-blueDark2);
+  background-color: var(--palette-system-blueDark2);
+  color: var(--palette-neutral-softWhite);
 }
 
-.Toolbar .scene-info:not(:first-child) {
-  margin-left: 1px;
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
+.Toolbar .ToolbarButton[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--palette-system-blueDark3);
+  background-color: var(--palette-system-blueDark3);
 }
 
-.Toolbar .scene-info.active {
-  background-color: var(--primary-main) !important;
+.Toolbar .ToolbarButton:disabled {
+  border-color: var(--palette-neutral-onyx);
+  background-color: var(--tree-bg-color);
+  color: var(--gray-0);
+  cursor: default;
+}
+
+.Toolbar .ToolbarButton:focus-visible {
+  position: relative;
+  z-index: 3;
+}
+
+.Toolbar .ToolbarButton.undo {
+  border-radius: 6px 0 0 6px;
+}
+
+.Toolbar .ToolbarButton.redo {
+  margin-left: -7px;
+  border-radius: 0 6px 6px 0;
+}
+
+.Toolbar .Gizmos .gizmo {
+  border-radius: 0;
+}
+
+.Toolbar .Gizmos .gizmo + .gizmo {
+  margin-left: -1px;
+}
+
+.Toolbar .Gizmos .gizmo.free {
+  border-radius: 6px 0 0 6px;
+}
+
+.Toolbar .Gizmos .gizmo.scale {
+  border-radius: 0 6px 6px 0;
+}
+
+.Toolbar .Gizmos .ToolbarButton.snap {
+  margin-left: 6px;
+  border-radius: 6px 0 0 6px;
+}
+
+.Toolbar .Gizmos .ToolbarButton.gizmo[aria-pressed="true"],
+.Toolbar .Gizmos .ToolbarButton.snap[aria-pressed="true"] {
+  border-color: var(--palette-neutral-onyx);
+}
+
+.Toolbar .Gizmos .snap-menu {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 20px;
+  height: 26px;
+  margin-left: -1px;
+  padding: 0;
+  border: 1px solid var(--palette-neutral-onyx);
+  border-left-color: var(--palette-whiteTransparent-soft);
+  border-radius: 0 6px 6px 0;
+  background-color: var(--tree-bg-color);
+  color: var(--palette-whiteTransparent-backdrop);
+  cursor: pointer;
+}
+
+.Toolbar .Gizmos .snap-menu svg {
+  width: 8px;
+  height: 8px;
+}
+
+.Toolbar .Gizmos .snap-menu:hover {
+  background-color: var(--base-19);
+}
+
+.Toolbar .Gizmos .snap-menu:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.Toolbar .ToolbarButton.mute[aria-pressed="true"] {
+  border-color: var(--palette-neutral-onyx);
+  background-color: var(--tree-bg-color);
+  color: var(--palette-neutral-gray4);
+}
+
+.Toolbar .ToolbarButton.mute[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--palette-neutral-onyx);
+  background-color: var(--base-19);
+}
+
+.Toolbar .ToolbarButton.scene-pause.running {
+  position: relative;
+  z-index: 1;
+  border-color: var(--palette-system-blueDark2);
+  background-color: var(--palette-system-blueDark2);
+  color: var(--palette-neutral-softWhite);
+}
+
+.Toolbar .ToolbarButton.scene-pause.running:hover:not(:disabled) {
+  border-color: var(--palette-system-blueDark3);
+  background-color: var(--palette-system-blueDark3);
 }
 
 .Toolbar .CameraModeWrap {
@@ -62,8 +180,6 @@
   align-items: center;
 }
 
-/* CSS-only tooltip above the pill (matches the design). Hidden until the wrap is
-   hovered; pointer-events off so it never blocks the dropdown click. */
 .Toolbar .CameraModeTooltip {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -94,37 +210,52 @@
 }
 
 .Toolbar .camera-mode {
-  margin: 0 8px;
+  box-sizing: border-box;
   width: auto;
-  height: 30px;
-  border: none;
+  height: 26px;
+  margin: 0;
+  padding: 0 8px 0 4px;
+  gap: 4px;
+  border: 1px solid var(--palette-neutral-onyx);
+  border-radius: 6px;
+  background-color: var(--tree-bg-color);
 }
 
 .Toolbar .camera-mode:hover {
   background-color: var(--base-19);
 }
 
+.Toolbar .camera-mode:focus-visible {
+  outline-offset: 1px;
+}
+
 .Toolbar .camera-mode > svg:first-child {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  color: var(--palette-neutral-gray3);
 }
 
 .Toolbar .CameraModeLabel {
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 400;
   line-height: 1;
+  color: var(--palette-neutral-gray4);
 }
 
 .Toolbar .camera-mode .CameraModeChevron {
-  width: 16px;
-  height: 16px;
-  opacity: 0.7;
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
+  color: var(--palette-whiteTransparent-backdrop);
 }
 
-/* Two short options (Free / Player). The active one shows a checkmark leftIcon;
-   the other a same-width spacer so the labels line up. */
 .OptionList.camera-mode {
-  min-width: 140px;
-  padding-bottom: 8px;
+  min-width: 176px;
+}
+
+.OptionList.camera-mode .OptionContainer.invert-rotation {
+  margin-top: 4px;
+  border-top: 1px solid var(--palette-whiteTransparent-subtle);
 }
 
 .CheckSpacer {
@@ -133,13 +264,35 @@
   height: 16px;
 }
 
-.Toolbar .RightContent {
+.Toolbar .ToolbarMore {
   display: flex;
-  flex-grow: 1;
-  justify-content: flex-end;
   align-items: center;
+  height: 24px;
+  padding-left: 6px;
+  border-left: 1px solid var(--palette-whiteTransparent-subtle);
 }
 
-/* (Mode switcher moved out — it is now the tab band at the top of the LEFT
-   panel, see `components/ModeSwitcher`. It used to live here as `.mode-switch`,
-   then briefly as a centred strip above this toolbar.) */
+.Toolbar .toolbar-more {
+  box-sizing: border-box;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--palette-neutral-softWhite);
+}
+
+.Toolbar .toolbar-more svg {
+  width: 16px;
+  height: 16px;
+}
+
+.Toolbar .toolbar-more:hover {
+  background-color: var(--base-19);
+}
+
+.Toolbar .toolbar-more:focus-visible {
+  outline-offset: 1px;
+}

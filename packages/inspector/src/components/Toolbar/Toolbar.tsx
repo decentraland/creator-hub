@@ -1,21 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  BiUndo,
-  BiRedo,
-  BiSave,
-  BiBadgeCheck,
-  BiVideo,
-  BiChevronDown,
-  BiPlay,
-  BiPause,
-  BiStop,
-  BiJoystick,
-  BiVolumeFull,
-  BiVolumeMute,
-} from 'react-icons/bi';
-import { RiListSettingsLine } from 'react-icons/ri';
-import { FaPencilAlt } from 'react-icons/fa';
-import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
 import { IoCheckmark as CheckIcon } from 'react-icons/io5';
 import cx from 'classnames';
 
@@ -27,9 +10,10 @@ import {
   selectCanRedo,
   selectCanUndo,
   selectSceneInfo,
+  setInspectorPreferences,
 } from '../../redux/data-layer';
 import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
-import { setSceneRunIntent } from '../../redux/ui';
+import { getSceneRunStarted, setSceneRunIntent } from '../../redux/ui';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import {
@@ -44,13 +28,32 @@ import {
   UNDO_ALT,
   useHotkey,
 } from '../../hooks/useHotkey';
+import { getConfig } from '../../lib/logic/config';
 import type { EditorCameraMode } from '../../lib/renderer/types';
 import { Dropdown } from '../ui';
+import type { Props as OptionProps } from '../ui/Dropdown/Option/types';
 import { Gizmos } from './Gizmos';
-import { Preferences } from './Preferences';
+import {
+  CameraIcon,
+  ChevronDownIcon,
+  EditIcon,
+  InteractIcon,
+  PauseIcon,
+  PlayIcon,
+  RedoIcon,
+  SaveIcon,
+  SoundOffIcon,
+  SoundOnIcon,
+  StopIcon,
+  UndoIcon,
+} from './icons';
+import { MoreOptions, checkboxIcon as checkbox } from './MoreOptions';
 import { ToolbarButton } from './ToolbarButton';
 
 import './Toolbar.css';
+
+const RUN_LABEL = 'Run scene';
+const STOP_LABEL = 'Stop and reset scene to its initial state';
 
 const Toolbar = withSdk(({ sdk }) => {
   const canSave = useAppSelector(selectCanSave);
@@ -65,15 +68,10 @@ const Toolbar = withSdk(({ sdk }) => {
   const showSceneInfoButton = !!sceneInfoContent;
   const isSceneInfoPanelOpen = !!uiState?.sceneInfoPanelVisible;
 
-  // TODO: Remove withSdk
   const handleInspector = useCallback(() => {
     sdk.renderer.debug?.toggle();
   }, [sdk]);
 
-  // Editor camera toggle — only for renderers whose native camera isn't already a
-  // free editor camera (Bevy exposes `editorCamera`; Babylon omits it). Tracks the
-  // mode so the button reflects on/off, and stays in sync if the mode changes
-  // elsewhere.
   const editorCamera = sdk.renderer.editorCamera;
   const [cameraMode, setCameraMode] = useState<EditorCameraMode>(
     editorCamera?.getMode() ?? 'avatar',
@@ -96,16 +94,15 @@ const Toolbar = withSdk(({ sdk }) => {
     [editorCamera],
   );
 
-  // Scene run/freeze toggle — only for renderers that execute the scene's SDK7
-  // code (Bevy exposes `sceneRun`; Babylon omits it). The editor default is
-  // frozen (static); this runs it live so the user can test it.
   const sceneRun = sdk.renderer.sceneRun;
+  const sceneRunStarted = useAppSelector(getSceneRunStarted);
   const [sceneRunning, setSceneRunning] = useState<boolean>(sceneRun?.isRunning() ?? false);
   useEffect(() => {
     if (!sceneRun) return;
     setSceneRunning(sceneRun.isRunning());
     return sceneRun.onRunChange(setSceneRunning);
   }, [sceneRun]);
+  const sceneRunPaused = sceneRunStarted && !sceneRunning;
   const handleToggleSceneRun = useCallback(() => {
     if (!sceneRun) return;
     const next = !sceneRun.isRunning();
@@ -113,14 +110,10 @@ const Toolbar = withSdk(({ sdk }) => {
     sceneRun.setRunning(next);
   }, [dispatch, sceneRun]);
   const handleResetScene = useCallback(() => {
-    dispatch(setSceneRunIntent({ running: false }));
+    dispatch(setSceneRunIntent({ running: false, reset: true }));
     void sceneRun?.reset();
   }, [dispatch, sceneRun]);
 
-  // "Interact" toggle — only for renderers whose viewport editing is a scene-side
-  // interception that can be turned off (Bevy exposes `interaction`; Babylon omits
-  // it). OFF (default) = clicks edit (select/move); ON = clicks reach the running
-  // scene so mechanics can be tested (#1458).
   const interaction = sdk.renderer.interaction;
   const [editingEnabled, setEditingEnabled] = useState<boolean>(
     interaction?.isEditingEnabled() ?? true,
@@ -135,8 +128,6 @@ const Toolbar = withSdk(({ sdk }) => {
     interaction.setEditingEnabled(!interaction.isEditingEnabled());
   }, [interaction]);
 
-  // "Mute" toggle — only for renderers that play the scene's audio (Bevy exposes
-  // `audio`; Babylon omits it). Silences a looping sound while editing (#1569).
   const audio = sdk.renderer.audio;
   const [muted, setMuted] = useState<boolean>(audio?.isMuted() ?? false);
   useEffect(() => {
@@ -159,143 +150,189 @@ const Toolbar = withSdk(({ sdk }) => {
   useHotkey([UNDO, UNDO_ALT], handleUndo);
   useHotkey([REDO, REDO_2, REDO_ALT, REDO_ALT_2], handleRedo);
 
+  const invertRotation = !!preferences?.freeCameraInvertRotation;
+  const handleToggleInvertRotation = useCallback(() => {
+    dispatch(setInspectorPreferences({ freeCameraInvertRotation: !invertRotation }));
+    sdk.renderer.camera.setInvertRotation(!invertRotation);
+  }, [dispatch, sdk, invertRotation]);
+  const handleToggleAutosave = useCallback(() => {
+    dispatch(setInspectorPreferences({ autosaveEnabled: !isAutosaveEnabled }));
+  }, [dispatch, isAutosaveEnabled]);
+
   const handleEditScene = useCallback(async () => {
     sdk.operations.updateSelectedEntity(sdk.engine.RootEntity, false);
     await sdk.operations.dispatch();
   }, [sdk]);
 
+  const invertRotationOption: OptionProps = {
+    value: 'invert-rotation',
+    label: 'Invert Camera Rotation',
+    className: 'invert-rotation',
+    leftIcon: checkbox(invertRotation),
+    selected: invertRotation,
+    onClick: handleToggleInvertRotation,
+  };
+
+  const isBabylon = getConfig().renderer !== 'bevy';
+  const moreOptions: OptionProps[] = [
+    {
+      value: 'autosave',
+      label: 'Enable Autosave',
+      leftIcon: checkbox(isAutosaveEnabled),
+      selected: isAutosaveEnabled,
+      onClick: handleToggleAutosave,
+    },
+    ...(showSceneInfoButton
+      ? [
+          {
+            value: 'scene-info',
+            label: 'Scene Info',
+            leftIcon: checkbox(isSceneInfoPanelOpen),
+            selected: isSceneInfoPanelOpen,
+            onClick: handleToggleSceneInfo,
+          },
+        ]
+      : []),
+    ...(isBabylon
+      ? [
+          invertRotationOption,
+          {
+            value: 'inspector',
+            label: 'Inspector',
+            leftIcon: <span className="CheckSpacer" />,
+            onClick: handleInspector,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <div className="Toolbar">
-      {!isAutosaveEnabled && (
+      <div className="LeftContent">
         <ToolbarButton
-          className="save"
-          onClick={canSave ? handleSaveClick : undefined}
-          title={canSave ? 'Save changes' : 'All changes saved'}
+          className="undo"
+          title="Undo"
+          disabled={!canUndo}
+          onClick={canUndo ? handleUndo : undefined}
         >
-          {canSave ? <BiSave /> : <BiBadgeCheck />}
+          <UndoIcon />
         </ToolbarButton>
-      )}
-      <ToolbarButton
-        className="undo"
-        title="Undo"
-        disabled={!canUndo}
-        onClick={canUndo ? handleUndo : undefined}
-      >
-        <BiUndo />
-      </ToolbarButton>
-      <ToolbarButton
-        className="redo"
-        title="Redo"
-        disabled={!canRedo}
-        onClick={canRedo ? handleRedo : undefined}
-      >
-        <BiRedo />
-      </ToolbarButton>
-      <Gizmos />
-      {editorCamera && (
-        <div className="CameraModeWrap">
-          {/* CSS-only tooltip (a hover React-state tooltip would remount the
-              dropdown and eat its click). Matches the design's title + hint. */}
-          <div className="CameraModeTooltip">
-            <strong>Camera Toggle</strong>
-            <span>Select if you prefer to move the camera freely or through the player.</span>
+        <ToolbarButton
+          className="redo"
+          title="Redo"
+          disabled={!canRedo}
+          onClick={canRedo ? handleRedo : undefined}
+        >
+          <RedoIcon />
+        </ToolbarButton>
+        <Gizmos />
+        {editorCamera && (
+          <div className="CameraModeWrap">
+            <div className="CameraModeTooltip">
+              <strong>Camera Toggle</strong>
+              <span>Select if you prefer to move the camera freely or through the player.</span>
+            </div>
+            <Dropdown
+              className="camera-mode"
+              aria-label="Camera mode"
+              value={cameraMode}
+              trigger={
+                <>
+                  <CameraIcon />
+                  <span className="CameraModeLabel">
+                    {cameraMode === 'free' ? 'Free' : 'Player'}
+                  </span>
+                  <span className="CameraModeChevron">
+                    <ChevronDownIcon />
+                  </span>
+                </>
+              }
+              options={[
+                {
+                  value: 'free',
+                  label: 'Free',
+                  leftIcon:
+                    cameraMode === 'free' ? <CheckIcon /> : <span className="CheckSpacer" />,
+                  onClick: () => handleSetCameraMode('free'),
+                },
+                {
+                  value: 'avatar',
+                  label: 'Player',
+                  leftIcon:
+                    cameraMode === 'avatar' ? <CheckIcon /> : <span className="CheckSpacer" />,
+                  onClick: () => handleSetCameraMode('avatar'),
+                },
+                invertRotationOption,
+              ]}
+            />
           </div>
-          <Dropdown
-            className="camera-mode"
-            value={cameraMode}
-            trigger={
-              <>
-                <BiVideo />
-                <span className="CameraModeLabel">{cameraMode === 'free' ? 'Free' : 'Player'}</span>
-                <BiChevronDown className="CameraModeChevron" />
-              </>
+        )}
+        {interaction && (
+          <ToolbarButton
+            className="interact"
+            aria-pressed={!editingEnabled}
+            aria-label="Interact with the scene"
+            onClick={handleToggleInteract}
+            title={
+              editingEnabled
+                ? 'Interact with the scene — turn off editing so clicks reach the running scene'
+                : 'Interacting with the scene — click to re-enable editing'
             }
-            options={[
-              {
-                value: 'free',
-                label: 'Free',
-                // A custom trigger suppresses the Dropdown's built-in selected
-                // checkmark, so surface it via leftIcon (a spacer keeps the labels
-                // aligned when the option isn't the active one).
-                leftIcon: cameraMode === 'free' ? <CheckIcon /> : <span className="CheckSpacer" />,
-                onClick: () => handleSetCameraMode('free'),
-              },
-              {
-                value: 'avatar',
-                label: 'Player',
-                leftIcon:
-                  cameraMode === 'avatar' ? <CheckIcon /> : <span className="CheckSpacer" />,
-                onClick: () => handleSetCameraMode('avatar'),
-              },
-            ]}
-          />
+          >
+            <InteractIcon />
+          </ToolbarButton>
+        )}
+        {audio && (
+          <ToolbarButton
+            className="mute"
+            aria-pressed={muted}
+            aria-label="Mute scene audio"
+            onClick={handleToggleMute}
+            title={muted ? 'Unmute scene audio' : 'Mute scene audio'}
+          >
+            {muted ? <SoundOffIcon /> : <SoundOnIcon />}
+          </ToolbarButton>
+        )}
+      </div>
+      {sceneRun && (
+        <div className="RuntimeControls">
+          <ToolbarButton
+            className={sceneRunStarted ? 'scene-reset' : 'scene-run'}
+            aria-label={sceneRunStarted ? STOP_LABEL : RUN_LABEL}
+            title={sceneRunStarted ? STOP_LABEL : RUN_LABEL}
+            onClick={sceneRunStarted ? handleResetScene : handleToggleSceneRun}
+          >
+            {sceneRunStarted ? <StopIcon /> : <PlayIcon />}
+          </ToolbarButton>
+          <ToolbarButton
+            className={cx('scene-pause', { running: sceneRunStarted && sceneRunning })}
+            aria-label={sceneRunPaused ? 'Resume scene' : 'Pause scene'}
+            title={sceneRunPaused ? 'Resume scene' : 'Pause scene'}
+            disabled={!sceneRunStarted}
+            onClick={handleToggleSceneRun}
+          >
+            <PauseIcon />
+          </ToolbarButton>
         </div>
       )}
-      {sceneRun && (
-        <>
-          <ToolbarButton
-            className={cx('scene-run', { active: sceneRunning })}
-            onClick={handleToggleSceneRun}
-            title={sceneRunning ? 'Pause scene' : 'Run scene'}
-          >
-            {sceneRunning ? <BiPause /> : <BiPlay />}
-          </ToolbarButton>
-          <ToolbarButton
-            className="scene-reset"
-            onClick={handleResetScene}
-            title="Stop and reset scene to its initial state"
-          >
-            <BiStop />
-          </ToolbarButton>
-        </>
-      )}
-      {interaction && (
-        <ToolbarButton
-          className={cx('interact', { active: !editingEnabled })}
-          onClick={handleToggleInteract}
-          title={
-            editingEnabled
-              ? 'Interact with the scene — turn off editing so clicks reach the running scene'
-              : 'Interacting with the scene — click to re-enable editing'
-          }
-        >
-          <BiJoystick />
-        </ToolbarButton>
-      )}
-      {audio && (
-        <ToolbarButton
-          className={cx('mute', { active: muted })}
-          onClick={handleToggleMute}
-          title={muted ? 'Unmute scene audio' : 'Mute scene audio'}
-        >
-          {muted ? <BiVolumeMute /> : <BiVolumeFull />}
-        </ToolbarButton>
-      )}
-      <Preferences />
-      <ToolbarButton
-        className="babylonjs-inspector"
-        onClick={handleInspector}
-        title="Inspector"
-      >
-        <RiListSettingsLine />
-      </ToolbarButton>
       <div className="RightContent">
         <ToolbarButton
           className="edit-scene"
           onClick={handleEditScene}
           title="Edit Scene"
         >
-          <FaPencilAlt />
+          <EditIcon />
         </ToolbarButton>
-        {showSceneInfoButton && (
+        {!isAutosaveEnabled && (
           <ToolbarButton
-            className={cx('scene-info', { active: isSceneInfoPanelOpen })}
-            onClick={handleToggleSceneInfo}
-            title="Scene Info"
+            className="save"
+            onClick={canSave ? handleSaveClick : undefined}
+            title={canSave ? 'Save changes' : 'All changes saved'}
           >
-            <InfoIcon />
+            <SaveIcon />
           </ToolbarButton>
         )}
+        <MoreOptions options={moreOptions} />
       </div>
     </div>
   );

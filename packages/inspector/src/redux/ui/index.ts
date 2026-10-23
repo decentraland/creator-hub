@@ -18,6 +18,7 @@ export interface UiState {
   uiDesignerTool: UIDesignerTool;
   uiDesignerSnapEnabled: boolean;
   sceneRunIntent: boolean;
+  sceneRunStarted: boolean;
 }
 
 export const initialState: UiState = {
@@ -34,6 +35,7 @@ export const initialState: UiState = {
   uiDesignerTool: UIDesignerTool.FREE,
   uiDesignerSnapEnabled: true,
   sceneRunIntent: false,
+  sceneRunStarted: false,
 };
 
 export const appState = createSlice({
@@ -91,8 +93,13 @@ export const appState = createSlice({
     setUIDesignerSnap: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
       state.uiDesignerSnapEnabled = payload.enabled;
     },
-    setSceneRunIntent: (state, { payload }: PayloadAction<{ running: boolean }>) => {
+    setSceneRunIntent: (
+      state,
+      { payload }: PayloadAction<{ running: boolean; reset?: boolean }>,
+    ) => {
       state.sceneRunIntent = payload.running;
+      if (payload.running) state.sceneRunStarted = true;
+      if (payload.reset) state.sceneRunStarted = false;
     },
   },
 });
@@ -133,6 +140,7 @@ export const getUIDesignerTool = (state: RootState): UIDesignerTool => state.ui.
 export const getUIDesignerSnapEnabled = (state: RootState): boolean =>
   state.ui.uiDesignerSnapEnabled;
 export const getSceneRunIntent = (state: RootState): boolean => state.ui.sceneRunIntent;
+export const getSceneRunStarted = (state: RootState): boolean => state.ui.sceneRunStarted;
 
 // Reducer
 export default appState.reducer;
