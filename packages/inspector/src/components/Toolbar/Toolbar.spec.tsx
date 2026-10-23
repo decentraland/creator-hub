@@ -177,7 +177,7 @@ describe('3D toolbar', () => {
         'Scaling tool',
         'Snap',
         'Snap increments',
-        'Player',
+        'Camera mode',
         'Interact with the scene',
         'Mute scene audio',
         'Run scene',
@@ -296,6 +296,15 @@ describe('3D toolbar', () => {
       fireEvent.click(button('Mute scene audio'));
       expect(button('Mute scene audio').title).toBe('Unmute scene audio');
       expect(glyph()).not.toBe(unmuted);
+    });
+
+    it('should name the camera trigger "Camera mode" and open the camera menu', () => {
+      renderToolbar();
+      const trigger = screen.getByRole('combobox', { name: 'Camera mode' });
+      expect(trigger.getAttribute('aria-expanded')).toBe('false');
+      fireEvent.click(trigger);
+      expect(trigger.getAttribute('aria-expanded')).toBe('true');
+      expect(menuItems()).toEqual(['Free', 'Player', 'Invert Camera Rotation']);
     });
 
     it('should offer Invert Camera Rotation in the camera menu', () => {
