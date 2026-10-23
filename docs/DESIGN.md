@@ -1749,7 +1749,7 @@ Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar"
   - **Snap split:** 46 wide; the "Snap increments" chevron always shows, 20 × 26 (✱ below the 24px floor, accepted).
   - **Snap menu:** hangs from the Snap toggle's left edge; bordered Position / Rotation / Scale fields, a White 10 rule inset with the rows (the documented menu-divider deviation), an "Align to World" checkbox (`CheckboxField color="tertiary"`, 16px box, 12px Gray label like the rows above). There is no separate Align toggle.
   - **Mute:** framed, a Shadow cell and a Gray glyph in both states; the glyph swap and `aria-pressed` carry the state.
-  - **Camera button:** Shadow fill + 1px Onix border, icon stroke `--palette-neutral-gray3`. Its menu has the "Invert Camera Rotation" checkbox.
+  - **Camera button:** Shadow fill + 1px Onix border, icon stroke `--palette-neutral-gray3`, accessible name "Camera mode". Its menu has the "Invert Camera Rotation" checkbox.
 - **2D:** undo / redo and gizmos; **no snap control** (as `21028:42987` draws it; snapping still works).
 - **RuntimeControls:** at the **true bar centre**, as Figma draws them. When the left controls leave no room, they fall back to sit right after the last left control: Mute under Bevy, the Snap chevron under Babylon. The code wraps the left controls in `LeftContent` and the right ones in `RightContent`, equal flexible halves around the run controls. `RightContent` carries `padding-left: 6px`, which cancels the bar's 10 / 4 inset asymmetry; without it the run controls would land 3px right of centre (✱, accepted in Validate 3a4 round 1).
 - **Right side:** Edit ("Edit Scene"), Save, the rule and a ⋮ named "More options".
@@ -1772,12 +1772,14 @@ Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar"
 | 2026-10-23 | Apply the new 3D order exactly as drawn? | Yes: undo / redo · gizmos · Snap · camera · Interact · Mute, with tab order following |
 | 2026-10-23 | Where do the run controls go? | The true bar centre. When there is no room, right after the last left control (Mute under Bevy, Snap under Babylon). This retires the earlier "centred in the free space" deviation (✱7) |
 | 2026-10-23 | Does the 2D bar change with the reorder? | No: `21028:42987` is unchanged |
+| 2026-10-23 | Below a window of about 890 the 3D bar's content no longer fits and the right group clips. What should happen? | Creator Hub enforces a minimum window width so the 3D toolbar never clips: **1080px** (`minWidth` in `main`). Measured needs: the 3D toolbar 901 with Save shown; Creator Hub's top nav 1071 signed out, 1059 signed in |
+| 2026-10-23 | The camera trigger (`role="combobox"`) has no accessible name. What is it called? | "Camera mode" (`aria-label`; a new, user-approved string) |
 
 **Current state** (layer 3a4 on top of `f6d320189`): matches the final design above. Measured in Creator Hub:
 
 - At a 1440 window both bars centre the run controls exactly (0.00px off).
 - From a 1200 window down, the 3D run controls sit 6px after Mute.
-- Below a window of about 890 the bar's content no longer fits, and the right group, ⋮ first, is clipped. That predates 3a4: the content is as wide at `f6d320189`, and the main window has no minimum width.
+- Creator Hub's 1080px minimum window width keeps the 3D bar clear of clipping; its content needs 901.
 
 | Variant | Fill | Border | Contrast | A11y |
 | --- | --- | --- | --- | --- |
