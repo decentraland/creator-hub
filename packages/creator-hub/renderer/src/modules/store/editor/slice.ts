@@ -46,6 +46,8 @@ export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
+    // Main stops the previous CLI, so a retry of the previous deployment must not start another.
+    dispatch(deploymentActions.markDeploymentReplaced({ path: opts.path }));
     const server = await editor.publishScene({ ...opts, language: translation.locale });
     const { supportsDeployResource, hasCancelToken } = registerDeployServer(server);
     await dispatch(

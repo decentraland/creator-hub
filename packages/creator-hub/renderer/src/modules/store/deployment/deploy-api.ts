@@ -44,11 +44,18 @@ const FINAL_PHASES: DeployPhase[] = ['deployed', 'failed', 'cancelled'];
 
 export const isFinalPhase = (phase: DeployPhase) => FINAL_PHASES.includes(phase);
 
+const DEPLOY_PHASES: readonly DeployPhase[] = [
+  'awaiting-signature',
+  'undeploying',
+  'uploading',
+  ...FINAL_PHASES,
+];
+
 const isDeployState = (value: unknown): value is DeployState =>
   typeof value === 'object' &&
   value !== null &&
   'phase' in value &&
-  typeof value.phase === 'string';
+  DEPLOY_PHASES.some(phase => phase === value.phase);
 
 type ServerSentEvent = { event: string; data: string };
 

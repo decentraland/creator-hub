@@ -999,6 +999,39 @@ describe('deploy', () => {
     });
   });
 
+  describe('when a deploy starts while the previous one is still starting', () => {
+    let stopFirst: ReturnType<typeof vi.fn>;
+    let stopSecond: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      stopFirst = vi.fn();
+      stopSecond = vi.fn();
+      let releaseFirst: () => void = () => undefined;
+      mocks.runSdkCommand
+        .mockImplementationOnce(
+          () =>
+            new Promise(resolve => {
+              releaseFirst = () => resolve({ stop: stopFirst });
+            }),
+        )
+        .mockResolvedValueOnce({ stop: stopSecond });
+      const options = { path: `/scenes/scene-${++sceneCount}`, chainId: 1, wallet: '0xabc' };
+      const first = deploy(options);
+      const second = deploy(options);
+      await vi.waitFor(() => expect(mocks.runSdkCommand).toHaveBeenCalledTimes(1));
+      releaseFirst();
+      await Promise.all([first, second]);
+    });
+
+    it('should stop the first CLI before starting the second, leaving none untracked', () => {
+      expect({
+        firstStops: stopFirst.mock.calls.length,
+        secondStops: stopSecond.mock.calls.length,
+        starts: mocks.runSdkCommand.mock.calls.length,
+      }).toEqual({ firstStops: 1, secondStops: 0, starts: 2 });
+    });
+  });
+
   describe('when the CLI predates the deploy resource', () => {
     beforeEach(async () => {
       await run();

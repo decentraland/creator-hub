@@ -7,7 +7,7 @@ import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { FeatureFlag, fetchFeatureFlags } from '../featureFlags';
 import { DeploymentError } from '../../../lib/deploy';
-import { cancelDeployment, executeDeployment, initializeDeployment } from './slice';
+import { actions, cancelDeployment, executeDeployment, initializeDeployment } from './slice';
 
 const TEST_PATH = '/test/path';
 const TEST_WALLET = '0x123';
@@ -1134,6 +1134,57 @@ describe('deployment slice', () => {
           await store.dispatch(cancelDeployment(TEST_PATH));
           return { port: TEST_PORT + 1, supportsDeployResource: true, deployToken: 'token-2' };
         });
+        store = await initResourceDeploymentStore(true);
+        const running = store.dispatch(executeDeployment(TEST_PATH));
+        await advanceRetryTimers(1);
+        result = await running;
+      });
+
+      it('should reject with a cancelled outcome', () => {
+        expect(result.error.name).toBe('DEPLOYMENT_CANCELLED');
+      });
+
+      it('should not deploy through the new CLI', () => {
+        expect(deployWithProgress).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('when the user starts publishing again while a retry waits', () => {
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockRejectedValue(new Error('Deployment failed'));
+        store = await initResourceDeploymentStore(true);
+        const running = store.dispatch(executeDeployment(TEST_PATH));
+        await vi.advanceTimersByTimeAsync(0);
+        store.dispatch(actions.markDeploymentReplaced({ path: TEST_PATH }));
+        await advanceRetryTimers(1);
+        await running;
+      });
+
+      it('should not start a CLI that would stop the new one', () => {
+        expect(editor.publishScene).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when a cancel is accepted while the next CLI is being probed', () => {
+      let result: Awaited<ReturnType<ReturnType<typeof executeDeployment>>>;
+
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        vi.mocked(requestDeploymentCancel).mockResolvedValue(null);
+        vi.mocked(deployWithProgress).mockRejectedValueOnce(new Error('Deployment failed'));
+        vi.mocked(editor.publishScene).mockResolvedValue({
+          port: TEST_PORT + 1,
+          supportsDeployResource: true,
+          deployToken: 'token-2',
+        });
+        vi.mocked(isDeployResourceAvailable)
+          .mockResolvedValueOnce(true)
+          .mockImplementationOnce(async () => {
+            await store.dispatch(cancelDeployment(TEST_PATH));
+            return true;
+          });
         store = await initResourceDeploymentStore(true);
         const running = store.dispatch(executeDeployment(TEST_PATH));
         await advanceRetryTimers(1);

@@ -262,4 +262,29 @@ describe('editor slice publish', () => {
       );
     });
   });
+
+  describe('when the user publishes again over an earlier deployment', () => {
+    let replacedWhenMainStarts: boolean | undefined;
+
+    beforeEach(async () => {
+      vi.mocked(editor.publishScene).mockResolvedValue({
+        port: 4100,
+        supportsDeployResource: true,
+      });
+      await publish();
+      vi.mocked(editor.publishScene).mockImplementation(async () => {
+        replacedWhenMainStarts = store.getState().deployment.deployments[TEST_PATH]?.replaced;
+        return { port: 4101, supportsDeployResource: true };
+      });
+      await publish();
+    });
+
+    it('should mark the earlier deployment as replaced before main starts the new CLI', () => {
+      expect(replacedWhenMainStarts).toBe(true);
+    });
+
+    it('should start the new deployment unmarked', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.replaced).toBeUndefined();
+    });
+  });
 });

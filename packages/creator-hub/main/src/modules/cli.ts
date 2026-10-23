@@ -690,7 +690,17 @@ async function runCommand(path: string, command: string, args: string[]) {
   return runSdkCommand(components, command, args);
 }
 
-export async function deploy({
+// The deploy start in flight. The next one waits for it, so it stops that CLI once it's tracked in
+// `deployServer` instead of leaving it running untracked.
+let deployStart: Promise<unknown> = Promise.resolve();
+
+export function deploy(options: DeployOptions): Promise<DeployServer> {
+  const start = deployStart.catch(() => undefined).then(() => startDeploy(options));
+  deployStart = start;
+  return start;
+}
+
+async function startDeploy({
   path,
   target,
   targetContent,

@@ -552,6 +552,21 @@ describe('deployWithProgress', () => {
     });
   });
 
+  describe('when the CLI accepts the deployment but answers an unknown phase', () => {
+    beforeEach(async () => {
+      mockServer({ POST: [() => jsonResponse(202, { ...uploading(0), phase: 'warming-up' })] });
+      await run();
+    });
+
+    it('should throw an error that keeps the deployment from being retried', () => {
+      expect(isDeploymentError(error, 'DEPLOY_STATE_LOST')).toBe(true);
+    });
+
+    it('should fail fast instead of following a state that can never end', () => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('when the CLI accepts the deployment but answers without a state', () => {
     beforeEach(async () => {
       mockServer({ POST: [() => jsonResponse(202, null)] });

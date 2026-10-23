@@ -77,6 +77,8 @@ export interface Deployment {
   cancelRequested?: boolean;
   /** The CLI accepted the user's cancel request, so a failure must not be retried. */
   cancelAccepted?: boolean;
+  /** The user started publishing again: main is about to stop this deployment's CLI. */
+  replaced?: boolean;
   /** The `executeDeployment` run that owns this deployment; others' outcomes are ignored. */
   executeRequestId?: string;
   createdAt: number;
@@ -153,7 +155,8 @@ const updateDeploymentTarget = createAsyncThunk(
       language: translation.locale,
     });
     // The user published again meanwhile: the token and target belong to the newer deployment.
-    if (getState().deployment.deployments[path]?.id !== deploymentId) {
+    const current = getState().deployment.deployments[path];
+    if (current?.id !== deploymentId || current.replaced) {
       return rejectWithValue(
         new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus()),
       );
@@ -184,12 +187,20 @@ export const deploy = createAsyncThunk(
     const onState = (state: DeployState) =>
       dispatch(actions.updateDeploymentProgress({ path, deploymentId, state }));
 
-    // Whether the loop must stop retrying, read again after every await of the retry path.
+    // Whether the loop must stop, read again after every await that can let a cancel or a new
+    // publish in: before each request to a CLI and before building the next one.
     const getStopReason = () => {
       const current = getState().deployment.deployments[path];
-      if (current?.id !== deploymentId) return { superseded: true as const };
+      if (current?.id !== deploymentId || current.replaced) return { superseded: true as const };
       return current.cancelAccepted ? { cancelled: current.componentsStatus } : null;
     };
+    const rejectStopped = (
+      stop: NonNullable<ReturnType<typeof getStopReason>>,
+      error: unknown = new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus()),
+    ) =>
+      rejectWithValue(
+        'superseded' in stop ? error : new DeploymentError('DEPLOYMENT_CANCELLED', stop.cancelled),
+      );
 
     let currentUrl = deployment.url;
     let currentInfo = info;
@@ -200,7 +211,10 @@ export const deploy = createAsyncThunk(
         // Each retry runs a new CLI, so read its support from the state. The static check can
         // be wrong (a hand-patched CLI), so the resource is also probed before using it.
         const { supportsDeployResource } = getState().deployment.deployments[path];
-        if (supportsDeployResource && (await isDeployResourceAvailable(currentUrl))) {
+        const useResource = supportsDeployResource && (await isDeployResourceAvailable(currentUrl));
+        const stopBeforeDeploy = getStopReason();
+        if (stopBeforeDeploy) return rejectStopped(stopBeforeDeploy);
+        if (useResource) {
           await deployWithProgress(currentUrl, payload, onState);
         } else {
           await deployFn(currentUrl, payload);
@@ -211,13 +225,13 @@ export const deploy = createAsyncThunk(
       } catch (error: any) {
         retries--;
 
+        // A newer publish took over the path (deploying again would start a CLI over its one), or
+        // the user cancelled and a CLI that failed meanwhile must not be retried elsewhere.
+        const stop = getStopReason();
+        if (stop) return rejectStopped(stop, error);
+
         const currentDeployment = getState().deployment.deployments[path];
-        // A newer deployment took over the path: deploying again would start a CLI over its one.
-        if (currentDeployment?.id !== deploymentId) {
-          return rejectWithValue(error);
-        }
-        // The user cancelled: a CLI that failed meanwhile must not be retried on another catalyst.
-        if (isDeploymentError(error, 'DEPLOYMENT_CANCELLED') || currentDeployment.cancelAccepted) {
+        if (isDeploymentError(error, 'DEPLOYMENT_CANCELLED')) {
           return rejectWithValue(
             new DeploymentError('DEPLOYMENT_CANCELLED', currentDeployment.componentsStatus),
           );
@@ -271,13 +285,7 @@ export const deploy = createAsyncThunk(
 
         // The answer to a cancel sent just before the failure may only arrive now.
         const stopAfterDelay = getStopReason();
-        if (stopAfterDelay) {
-          return rejectWithValue(
-            'superseded' in stopAfterDelay
-              ? error
-              : new DeploymentError('DEPLOYMENT_CANCELLED', stopAfterDelay.cancelled),
-          );
-        }
+        if (stopAfterDelay) return rejectStopped(stopAfterDelay, error);
 
         const selectedServer = getAvailableCatalystServer(triedServers, chainId);
         triedServers.add(selectedServer);
@@ -288,13 +296,7 @@ export const deploy = createAsyncThunk(
 
         // Or while the next CLI was being built.
         const stopAfterTarget = getStopReason();
-        if (stopAfterTarget) {
-          return rejectWithValue(
-            'superseded' in stopAfterTarget
-              ? error
-              : new DeploymentError('DEPLOYMENT_CANCELLED', stopAfterTarget.cancelled),
-          );
-        }
+        if (stopAfterTarget) return rejectStopped(stopAfterTarget, error);
 
         currentUrl = result.url;
         currentInfo = result.info;
@@ -465,6 +467,11 @@ const deploymentSlice = createSlice({
         deployment.cancelRequested = deployState.cancelRequested ?? false;
         deployment.lastUpdated = Date.now();
       }
+    },
+    /** Marks the path's deployment as replaced by a publish the user just started. */
+    markDeploymentReplaced: (state, action: PayloadAction<{ path: string }>) => {
+      const deployment = state.deployments[action.payload.path];
+      if (deployment) deployment.replaced = true;
     },
     removeDeployment: (state, action: PayloadAction<{ path: string }>) => {
       const { path } = action.payload;
