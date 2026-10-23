@@ -234,6 +234,7 @@ const Toolbar = withSdk(({ sdk }) => {
             </div>
             <Dropdown
               className="camera-mode"
+              aria-label="Camera mode"
               value={cameraMode}
               trigger={
                 <>
