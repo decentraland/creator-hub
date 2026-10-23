@@ -1,12 +1,11 @@
-/* Rendered in a portal on document.body and placed by usePopoverPosition, so the menu escapes
-   the scroll/overflow clipping of whichever panel the field lives in. */
 .OptionList {
   position: fixed;
   display: flex;
   flex-direction: column;
-  padding-top: 8px;
-  background: var(--gray-0);
-  border-radius: 4px;
+  padding: var(--uid-space-1) 0;
+  background: var(--ui-designer-control-bg);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--shape-borderRadiusLarge);
   z-index: 1000;
   user-select: none;
   max-height: 132px;
@@ -24,7 +23,9 @@
   padding: 0px 7px 6px 7px;
 }
 
-.OptionList.searchable > .OptionListSearch.Text.Field > .InputContainer:not(.hovered):not(.focused) {
+.OptionList.searchable
+  > .OptionListSearch.Text.Field
+  > .InputContainer:not(.hovered):not(.focused) {
   border-color: var(--base-12);
 }
 

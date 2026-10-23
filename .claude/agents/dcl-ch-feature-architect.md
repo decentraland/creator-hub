@@ -31,7 +31,7 @@ Ask everything in **one** message, and don't start until the user answers:
 
 ## 2. Plan
 
-Write a numbered plan. Tag each step `[Sequential]` or `[Parallel]`, and name its specialist, its inputs (for example a tarball path from an earlier step), and its completion gate. A Figma-driven UI change is three steps: `[Sequential]` designer spec, `[Parallel]` inspector and/or creator-hub implementation, `[Sequential]` designer validation. Before you show it, list the real decision points (API shape, user-facing names, persistence location) and ask about them. Names users see are always the user's call. Wait for approval, and when the plan changes, revise the plan rather than the code.
+Write a numbered plan. Tag each step `[Sequential]` or `[Parallel]`, and name its specialist, its inputs (for example a tarball path from an earlier step), and its completion gate. Split Figma-driven UI work into units, small to big: one Figma component set per unit and per PR, primitives before the composites that use them, and one assembly unit per surface validated against the board that draws every variant (`.ai/skills/figma/SKILL.md` §8). Stack them in that order. Each unit opens with the designer's **Match** pass, whose questions you put to the user in one message before any spec, and closes with the user's sign-off on the Before | After | Figma set. The designer records every answer in `docs/DESIGN.md`. Between those, each unit is a loop: `[Sequential]` designer spec, `[Parallel]` inspector and/or creator-hub implementation, `[Sequential]` designer validation against Figma itself (`.ai/skills/figma/SKILL.md` §8). Validation classes each mismatch and you route it: code drift back to the same implementer, doc drift to the designer, Figma silent or defective to the user. Repeat implementation and validation until nothing is left unexplained, and ask the user after three rounds. Before you show it, list the real decision points (API shape, user-facing names, persistence location) and ask about them. Names users see are always the user's call. Wait for approval, and when the plan changes, revise the plan rather than the code.
 
 ## 3. Delegate
 
@@ -40,13 +40,13 @@ Call each specialist with the Agent tool. Every handoff contains:
 1. **What** to implement, with the acceptance criteria.
 2. **Scope**: the layer, and any upstream artifact it consumes (an exact tarball path from `.local-packages/`, or a PR number).
 3. **Branch**: create it, or reuse it if it exists.
-4. **Context**: what the other layers changed, including the public API or prop names it must match. For UI work, paste the designer's spec, or its path, verbatim.
+4. **Context**: what the other layers changed, including the public API or prop names it must match. For UI work, paste the designer's spec, or its path, verbatim. Restate every user decision the work depends on, with its current value, rather than "see the spec". A message queued behind a later decision otherwise reverts it.
 5. **Gate**: the specialist's own completion gate, plus any extra check this feature needs.
 6. **No commits**: specialists edit and verify, then list their changed paths. You commit, in step 5 below. Parallel specialists share one working tree, and the pre-commit hook stages whole-tree rewrites, so their commits would capture each other's work.
 
-Pick the model per job with the Agent tool's `model` override (it wins over the agent file): `inherit`, the default, for judgment-heavy work — a designer Spec or Validate against Figma, any implementation; `sonnet` for a browser-extraction run that follows the figma skill's recorded procedure, and for screenshot capture (reaching states and shooting before/after pairs); `haiku` for a mechanical harvest.
+Pick the model per job with the Agent tool's `model` override (it wins over the agent file): `inherit`, the default, for judgment-heavy work — a designer Spec or Validate against Figma, any implementation; `sonnet` for a browser-extraction run that follows the figma skill's recorded procedure, and for screenshot capture (reaching states and shooting before/after pairs); `haiku` for a mechanical harvest. A screenshot brief says **Before** and **After**, never base and head: image captions, file suffixes (`-before` / `-after`), triptych columns (before | after | Figma) and PR headings.
 
-Run `[Parallel]` steps in a single message. Don't start a step until its upstream specialist has returned its handoff block with a passing gate. If a gate fails, send the failure back to the same specialist rather than fixing it yourself.
+Check a busy specialist's liveness in `~/.claude/heartbeats/creator-hub.log` before you message it: the committed `PostToolUse` hook (`.ai/hooks/heartbeat/hook.py`) appends a line per tool call made by any `dcl-*` agent (time, agent type, session id, tool, cwd). A session silent for ten minutes is the one to look at; a message to a working agent only interrupts it. Run `[Parallel]` steps in a single message. Don't start a step until its upstream specialist has returned its handoff block with a passing gate. If a gate fails, send the failure back to the same specialist rather than fixing it yourself.
 
 ## 4. Cross-layer verification
 
@@ -56,7 +56,7 @@ Before you ship, confirm each of these yourself and report evidence, not assuran
 - If a component, schema, or placeholder changed, both ingest paths resolve it: the inspector's `lib/sdk/operations/add-asset/` and asset-packs' runtime `src/add-child.ts` (CLAUDE.md → "Asset-pack composite placeholders").
 - The scene resolves local builds: the check in step 4 of the runbook prints `0.1.0` for both the inspector and asset-packs.
 - The scene builds, and the Creator Hub preview starts it.
-- For Figma-driven UI work, the designer's validation handoff is the evidence; include its screenshot pairs. A screenshot is the ground truth, not computed styles.
+- For Figma-driven UI work, the designer's validation handoff is the evidence; include its before | after | Figma triptychs, standalone and inside Creator Hub. A screenshot is the ground truth, not computed styles.
 
 ## 5. Ship
 

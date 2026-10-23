@@ -234,7 +234,7 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
       <button
         ref={anchorRef}
         type="button"
-        className="ui-designer-bindable-link ui-designer-mixed-link"
+        className="ui-designer-bindable-link ui-designer-mixed-link ui-designer-icon-btn"
         onMouseDown={e => {
           e.preventDefault();
           saveSelection();

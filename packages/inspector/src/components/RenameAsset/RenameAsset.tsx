@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { Container } from '../Container';
-import { Block } from '../Block';
 import { TextField } from '../ui/TextField';
 import { Button } from '../Button';
 import { useAppDispatch } from '../../redux/hooks';
@@ -40,21 +39,27 @@ const RenameAsset: React.FC<PropTypes> = ({ assetId, currentName }) => {
         <div className="file-container">
           <CustomAssetIcon />
           <div className="column">
-            <Block label="Item name">
-              <TextField
-                autoSelect
-                value={name}
-                onChange={handleNameChange}
-              />
-            </Block>
+            <TextField
+              size="large"
+              label="Item name"
+              autoSelect
+              value={name}
+              onChange={handleNameChange}
+            />
             <div className="button-container">
               <Button
+                size="big"
+                type="danger"
                 onClick={handleSave}
-                className="rename"
               >
                 Rename
               </Button>
-              <Button onClick={handleCancel}>Cancel</Button>
+              <Button
+                size="big"
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </div>

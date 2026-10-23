@@ -49,7 +49,7 @@
 }
 
 .ui-designer-callback-trigger:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -57,35 +57,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.ui-designer-callback-clear {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ui-designer-text-muted);
-  cursor: pointer;
-}
-
-.ui-designer-callback-clear:hover {
-  color: var(--ui-designer-text);
-}
-
-.ui-designer-callback-clear:focus-visible {
-  outline: 2px solid var(--border-focused);
-  outline-offset: 1px;
-}
-
-.ui-designer-callback-clear svg {
-  width: 13px;
-  height: 13px;
 }
 
 .ui-designer-callback-menu {
@@ -124,7 +95,7 @@
 .ui-designer-callback-add-trigger:focus-visible {
   outline: none;
   background: var(--ui-designer-control-accent-21);
-  box-shadow: inset 0 0 0 1px var(--border-focused);
+  box-shadow: inset 0 0 0 1px var(--ui-designer-control-accent);
 }
 
 .ui-designer-callback-option.selected {
@@ -212,6 +183,6 @@
 }
 
 .ui-designer-callback-add-confirm:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }

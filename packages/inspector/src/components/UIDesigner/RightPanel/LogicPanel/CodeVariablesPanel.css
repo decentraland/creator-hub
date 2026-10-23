@@ -113,26 +113,6 @@
   min-width: 40px;
 }
 
-.ui-designer-code-variable-delete {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  border-radius: var(--ui-designer-radius-field);
-  background: transparent;
-  color: var(--ui-designer-text-muted);
-  cursor: pointer;
-}
-
-.ui-designer-code-variable-delete svg {
-  width: 13px;
-  height: 13px;
-}
-
 .ui-designer-code-variables-add {
   display: flex;
   gap: var(--uid-space-1);
@@ -154,14 +134,6 @@
   line-height: 1;
   border-radius: var(--ui-designer-radius-field);
   border: 1px solid var(--ui-designer-control-border);
-  background: transparent;
-  color: var(--ui-designer-text);
-  cursor: pointer;
-}
-
-.ui-designer-code-add:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 .ui-designer-code-open-component {
@@ -179,18 +151,7 @@
   background: var(--ui-designer-control-accent-21);
 }
 
-.ui-designer-code-variable-delete:hover {
-  background: var(--ui-designer-control-accent-21);
-  color: var(--ui-designer-text);
-}
-
-.ui-designer-code-add:hover:not(:disabled) {
-  background: var(--ui-designer-control-accent-21);
-}
-
-.ui-designer-code-variable-delete:focus-visible,
-.ui-designer-code-add:focus-visible,
 .ui-designer-code-open-component:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }

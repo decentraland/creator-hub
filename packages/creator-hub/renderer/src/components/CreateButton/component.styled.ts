@@ -11,14 +11,6 @@ const StyledButtonRow = styled('div')(() => ({
   overflow: 'hidden',
 }));
 
-// decentraland-ui2's theme overrides Button's radius via a 3-class compound selector
-// (.css-hash.MuiButton-sizeMedium.MuiButton-containedPrimary), a global adjacent-
-// sibling rule (.MuiButton-root + .MuiButton-root) adds a 10px gap between any two
-// buttons in a row, and an even more specific hover rule
-// (.css-hash.MuiButton-sizeMedium.MuiButton-containedPrimary:not(.Mui-disabled):not(.Mui-focusVisible):hover)
-// sets the hover background. All three outrank a plain single-class override, so `&&&`
-// (three chained classes) is needed for the base styles and `&&&&&&:hover` (six chained
-// classes) for hover specifically, to actually win.
 const StyledLabelButton = styled(Button)(({ theme }) => ({
   '&&&': {
     width: 130,
@@ -35,7 +27,7 @@ const StyledLabelButton = styled(Button)(({ theme }) => ({
     boxShadow: 'none',
   },
   '&&&&&&:hover': {
-    backgroundColor: '#F70038',
+    backgroundColor: 'var(--primary-hover)',
     boxShadow: 'none',
   },
 }));
@@ -53,7 +45,7 @@ const StyledToggleButton = styled(Button)(({ theme }) => ({
     boxShadow: 'none',
   },
   '&&&&&&:hover': {
-    backgroundColor: '#F70038',
+    backgroundColor: 'var(--primary-hover)',
     boxShadow: 'none',
   },
 }));

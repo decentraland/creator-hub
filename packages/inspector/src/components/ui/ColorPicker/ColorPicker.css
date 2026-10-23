@@ -22,7 +22,3 @@
   width: 14px;
   border-radius: 50%;
 }
-
-.Dropdown > .DropdownOptions > .OptionContainer.selected > .OptionContent > .LeftContent > .ColorPreview {
-  border: 0.5px solid var(--base-14);
-}

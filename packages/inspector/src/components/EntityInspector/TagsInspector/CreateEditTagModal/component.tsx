@@ -67,6 +67,7 @@ const CreateEditTagModal = withSdk<Props>(({ open, onClose, sdk, editingTag, onT
         <h2 className="title">{editingTag ? 'Edit tag' : 'Create tag'}</h2>
         <div>
           <TextField
+            size="large"
             label="Tag name"
             autoSelect
             value={editingTag || ''}
