@@ -100,17 +100,30 @@ const Container: React.FC<React.PropsWithChildren<Props>> = props => {
         {hasMenu && (
           <MoreOptionsMenu className="ContainerMenu">
             {clipboardEnabled ? (
-              <Button onClick={onCopyValues}>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={onCopyValues}
+              >
                 <CopyIcon /> Copy values
               </Button>
             ) : null}
             {clipboardEnabled ? (
-              <Button onClick={onPasteValues}>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={onPasteValues}
+              >
                 <PasteIcon /> Paste values
               </Button>
             ) : null}
             {props.onRemoveContainer ? (
               <Button
+                variant="contained"
+                color="secondary"
+                size="small"
                 className="RemoveButton"
                 onClick={props.onRemoveContainer}
               >

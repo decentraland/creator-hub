@@ -25,6 +25,7 @@
   --disabled-bg-color: #323036;
 
   --controlHeight-small: 26px;
+  --controlHeight-medium: 40px;
   --controlHeight-large: 46px;
   --shape-borderRadius: 6px;
   --shape-borderRadiusLarge: 12px;
@@ -159,10 +160,6 @@
      trio below. Always composited on --base-20, so contrast is fixed and
      verifiable. The steps repeat the rgb triple because CSS cannot derive rgba()
      from a hex token.
-
-     Deliberately NOT --primary-main: pink/red is reserved for CTAs and main
-     buttons (.Button.danger, the callback confirm), so a panel control painted
-     with it competes with the one thing on screen that should read as the action.
 
      Do NOT reuse the cyan alphas above — they are solved for a different
      luminance (cyan 0.502 vs this blue 0.419). Named for their real alpha:

@@ -87,10 +87,6 @@
   stroke-width: 3;
 }
 
-.Assets .Assets-buttons .Assets-buttons-left .import-button:hover {
-  background-color: var(--base-19);
-}
-
 .Assets .Assets-buttons .Assets-buttons-left .icon-item {
   width: 25px;
   height: 25px;

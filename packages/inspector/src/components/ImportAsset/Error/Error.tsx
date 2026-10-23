@@ -56,16 +56,19 @@ export function Error({
       >
         {!!secondaryAction && (
           <Button
+            variant="contained"
+            color="secondary"
+            size="large"
             onClick={secondaryAction.onClick}
-            size="big"
           >
             {secondaryAction.name}
           </Button>
         )}
         <Button
+          variant="contained"
+          color="primary"
+          size="large"
           onClick={primaryAction.onClick}
-          type="danger"
-          size="big"
         >
           {primaryAction.name}
         </Button>

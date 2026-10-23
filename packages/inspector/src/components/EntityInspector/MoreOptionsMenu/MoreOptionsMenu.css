@@ -27,7 +27,6 @@
   box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.4);
 }
 
-/* legacy children (Button-based) support */
 .MoreOptionsContent .Button {
   display: flex;
   align-items: center;
@@ -42,4 +41,8 @@
 
 .MoreOptionsContent .Button:hover:not(:disabled) {
   background-color: var(--primary-main);
+}
+
+.MoreOptionsContent .Button:disabled {
+  opacity: 0.5;
 }

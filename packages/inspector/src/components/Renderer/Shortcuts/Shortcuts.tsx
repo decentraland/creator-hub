@@ -44,14 +44,29 @@ const Shortcuts: React.FC<Props> = ({ viewport, onResetCamera, onZoomIn, onZoomO
   return (
     <div className="Shortcuts">
       <div className="Buttons">
-        <Button onClick={onResetCamera}>
+        <Button
+          variant="contained"
+          color="secondary"
+          size="small"
+          onClick={onResetCamera}
+        >
           <ResetCameraIcon size={ICON_SIZE} />
         </Button>
         <div className="ZoomButtons">
-          <Button onClick={onZoomIn}>
+          <Button
+            variant="contained"
+            color="secondary"
+            size="small"
+            onClick={onZoomIn}
+          >
             <ZoomInIcon size={ICON_SIZE} />
           </Button>
-          <Button onClick={onZoomOut}>
+          <Button
+            variant="contained"
+            color="secondary"
+            size="small"
+            onClick={onZoomOut}
+          >
             <ZoomOutIcon size={ICON_SIZE} />
           </Button>
         </div>
@@ -59,6 +74,9 @@ const Shortcuts: React.FC<Props> = ({ viewport, onResetCamera, onZoomIn, onZoomO
           text="View Shortcuts"
           trigger={
             <Button
+              variant="contained"
+              color="secondary"
+              size="small"
               className={cx({ Active: showShortcuts })}
               onClick={handleToggleShortcutsOverlay}
             >
