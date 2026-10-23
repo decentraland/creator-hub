@@ -83,4 +83,59 @@ describe('Init RPC Methods', () => {
 
     await mocked.engine.update(1);
   });
+
+  describe('removeAssets', () => {
+    // file undo entries are committed after a short window (undo-redo-provider deferred mode)
+    const settle = () => new Promise(resolve => setTimeout(resolve, 150));
+
+    async function importBatch(methods: Awaited<ReturnType<typeof initRpcMethods>>) {
+      const content = new Map<string, Uint8Array>([
+        ['Batch/a.glb', new Uint8Array([1])],
+        ['Batch/sub/b.glb', new Uint8Array([2])],
+      ]);
+      await methods.importAsset({ content, basePath: 'assets', assetPackageName: '' });
+    }
+
+    it('should remove the files, prune the folders left empty and undo them in one step', async () => {
+      const mocked = await mockedRpcInit();
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+
+      await methods.removeAssets({
+        paths: ['assets/Batch/a.glb', 'assets/Batch/sub/b.glb', 'assets/Batch/missing.glb'],
+      });
+      await settle();
+
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(false);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(false);
+      const assetsDir = await mocked.fs.readdir('assets');
+      expect(assetsDir.map($ => $.name)).not.toContain('Batch');
+
+      await methods.undo({});
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(true);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+    });
+
+    it('should undo a move (import followed by removal) as a single step', async () => {
+      const mocked = await mockedRpcInit();
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+
+      const moved = new Map<string, Uint8Array>([['Moved/a.glb', new Uint8Array([1])]]);
+      await methods.importAsset({ content: moved, basePath: 'assets', assetPackageName: '' });
+      await methods.removeAssets({ paths: ['assets/Batch/a.glb'] });
+      await settle();
+
+      expect(await mocked.fs.existFile('assets/Moved/a.glb')).toBe(true);
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(false);
+
+      await methods.undo({});
+      expect(await mocked.fs.existFile('assets/Moved/a.glb')).toBe(false);
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(true);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+    });
+  });
 });

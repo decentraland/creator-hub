@@ -58,6 +58,7 @@ import { checkAssetCompatibility } from '../../lib/sdk/operations/add-asset/comp
 import type { IncompatibleComponent } from '../../lib/sdk/operations/add-asset/compatibility';
 import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
 import { Warnings } from '../Warnings';
+import { isAssetExplorerActive } from '../../lib/utils/asset-explorer-region';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
 import { TransformInput } from './TransformInput';
@@ -123,14 +124,15 @@ const Renderer: React.FC = () => {
   const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
 
   const deleteSelectedEntities = useCallback(() => {
-    if (!sdk || isUIDesignerOpen) return;
+    // Delete/copy/paste belong to the Local Assets tab while it is active
+    if (!sdk || isUIDesignerOpen || isAssetExplorerActive()) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
     selectedEntitites.forEach(entity => sdk.operations.removeEntity(entity));
     void sdk.operations.dispatch();
   }, [sdk, isUIDesignerOpen]);
 
   const duplicateSelectedEntities = useCallback(() => {
-    if (!sdk || isUIDesignerOpen) return;
+    if (!sdk || isUIDesignerOpen || isAssetExplorerActive()) return;
     sdk.renderer.camera.setControlEnabled(false);
     const selectedEntitites = sdk.operations.getSelectedEntities();
     const preferredGizmo =
@@ -151,13 +153,13 @@ const Renderer: React.FC = () => {
   }, [sdk, isUIDesignerOpen]);
 
   const copySelectedEntities = useCallback(() => {
-    if (!sdk || isUIDesignerOpen) return;
+    if (!sdk || isUIDesignerOpen || isAssetExplorerActive()) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
     setCopyEntities([...selectedEntitites]);
   }, [sdk, setCopyEntities, isUIDesignerOpen]);
 
   const pasteSelectedEntities = useCallback(() => {
-    if (!sdk || isUIDesignerOpen) return;
+    if (!sdk || isUIDesignerOpen || isAssetExplorerActive()) return;
     const selectedEntities = sdk.operations.getSelectedEntities();
     const preferredGizmo =
       selectedEntities.length > 0

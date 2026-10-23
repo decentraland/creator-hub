@@ -272,6 +272,24 @@ export async function initRpcMethods(
       });
     },
 
+    // One undo entry for the whole batch, and the folders left empty go away with their files.
+    async removeAssets(req) {
+      return stateManager.executeTransaction('external', async () => {
+        const undoAcc: FileOperation[] = [];
+        for (const filePath of req.paths) {
+          if (!(await fs.existFile(filePath))) continue;
+          const prevValue = await fs.readFile(filePath);
+          await fs.rm(filePath);
+          undoAcc.push({ prevValue, newValue: null, path: filePath });
+          await removeEmptyDirectoryRecursive(fs, fs.dirname(filePath));
+        }
+        if (undoAcc.length > 0) {
+          undoRedoProvider.addUndoFile(undoAcc);
+        }
+        return {};
+      });
+    },
+
     async save() {
       await compositeProvider.saveComposite(true);
       return {};

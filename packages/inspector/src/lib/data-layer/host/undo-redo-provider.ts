@@ -41,6 +41,20 @@ export type FileOperation = {
 };
 
 export type UndoRedo = UndoRedoFile | UndoRedoCrdt | UndoRedoComposite;
+
+/** Appends `incoming` to `existing`; a path touched twice keeps its first `prevValue` and last `newValue`. */
+export function mergeFileOperations(
+  existing: FileOperation[],
+  incoming: FileOperation[],
+): FileOperation[] {
+  const merged = existing.map(operation => ({ ...operation }));
+  for (const operation of incoming) {
+    const previous = merged.find($ => $.path === operation.path);
+    if (previous) previous.newValue = operation.newValue;
+    else merged.push({ ...operation });
+  }
+  return merged;
+}
 export type UndoRedoOp = CrdtOperation | FileOperation;
 export type UndoRedoGetter = <T extends UndoRedoOp>(op: T) => T['newValue'];
 
@@ -755,7 +769,12 @@ export class UndoRedoProvider implements StateProvider {
       clearTimeout(this.deferredTimeout);
     }
 
-    this.deferredFileOperations = fileOperations;
+    // File operations that land inside the window belong to the same user action (a move is an
+    // import followed by a removal), so they join the pending entry instead of replacing it.
+    this.deferredFileOperations = mergeFileOperations(
+      this.deferredFileOperations ?? [],
+      fileOperations,
+    );
 
     this.deferredTimeout = setTimeout(() => {
       if (this.deferredFileOperations) {
