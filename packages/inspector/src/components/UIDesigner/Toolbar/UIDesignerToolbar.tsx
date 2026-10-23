@@ -84,23 +84,25 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
 
   return (
     <div className="Toolbar ui-designer-toolbar">
-      <ToolbarButton
-        className="undo"
-        title="Undo"
-        disabled={!canUndo}
-        onClick={canUndo ? handleUndo : undefined}
-      >
-        <UndoIcon />
-      </ToolbarButton>
-      <ToolbarButton
-        className="redo"
-        title="Redo"
-        disabled={!canRedo}
-        onClick={canRedo ? handleRedo : undefined}
-      >
-        <RedoIcon />
-      </ToolbarButton>
-      <Tools />
+      <div className="LeftContent">
+        <ToolbarButton
+          className="undo"
+          title="Undo"
+          disabled={!canUndo}
+          onClick={canUndo ? handleUndo : undefined}
+        >
+          <UndoIcon />
+        </ToolbarButton>
+        <ToolbarButton
+          className="redo"
+          title="Redo"
+          disabled={!canRedo}
+          onClick={canRedo ? handleRedo : undefined}
+        >
+          <RedoIcon />
+        </ToolbarButton>
+        <Tools />
+      </div>
       {sceneRun && (
         <div className="RuntimeControls">
           <ToolbarButton
