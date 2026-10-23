@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
+import type { AnyAction, Middleware } from '@reduxjs/toolkit';
 import { configureStore } from '@reduxjs/toolkit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import uiReducer from '../../redux/ui';
+import { save, setInspectorPreferences } from '../../redux/data-layer';
+import { snapManager } from '../../lib/babylon/decentraland/snap-manager';
 import { GizmoType } from '../../lib/utils/gizmo';
 import Toolbar from './Toolbar';
 
@@ -32,45 +35,59 @@ vi.mock('../../hooks/sdk/useComponentValue', () => ({
   useComponentValue: () => useState({ gizmo: GizmoType.FREE }),
 }));
 
-function createSwitch(initial: boolean) {
+function createSwitch<T>(initial: T) {
   let value = initial;
-  const listeners = new Set<(next: boolean) => void>();
-  const set = vi.fn((next: boolean) => {
+  const listeners = new Set<(next: T) => void>();
+  const set = vi.fn((next: T) => {
     value = next;
     listeners.forEach(listener => listener(next));
   });
   const get = () => value;
-  const subscribe = (listener: (next: boolean) => void) => {
+  const subscribe = (listener: (next: T) => void) => {
     listeners.add(listener);
     return () => listeners.delete(listener);
   };
   return { get, set, subscribe };
 }
 
-function createSdk() {
+type Renderer = 'bevy' | 'babylon';
+
+function createSdk(renderer: Renderer) {
   const run = createSwitch(false);
   const editing = createSwitch(true);
   const mute = createSwitch(false);
+  const camera = createSwitch<'free' | 'avatar'>('avatar');
+  const aligned = createSwitch(false);
   const noop = () => () => {};
+  const bevyOnly = renderer === 'bevy';
   return {
     renderer: {
-      sceneRun: {
-        isRunning: run.get,
-        setRunning: run.set,
-        onRunChange: run.subscribe,
-        reset: vi.fn(async () => run.set(false)),
-      },
-      interaction: {
-        isEditingEnabled: editing.get,
-        setEditingEnabled: editing.set,
-        onEditingChange: editing.subscribe,
-      },
-      audio: { isMuted: mute.get, setMuted: mute.set, onMuteChange: mute.subscribe },
+      sceneRun: bevyOnly
+        ? {
+            isRunning: run.get,
+            setRunning: run.set,
+            onRunChange: run.subscribe,
+            reset: vi.fn(async () => run.set(false)),
+          }
+        : undefined,
+      interaction: bevyOnly
+        ? {
+            isEditingEnabled: editing.get,
+            setEditingEnabled: editing.set,
+            onEditingChange: editing.subscribe,
+          }
+        : undefined,
+      audio: bevyOnly
+        ? { isMuted: mute.get, setMuted: mute.set, onMuteChange: mute.subscribe }
+        : undefined,
+      editorCamera: bevyOnly
+        ? { getMode: camera.get, setMode: camera.set, onModeChange: camera.subscribe }
+        : undefined,
       spawnPoints: { getSelectedIndex: () => null, onSelectionChange: noop },
       gizmos: {
-        isWorldAligned: () => false,
+        isWorldAligned: aligned.get,
         isWorldAlignmentDisabled: () => false,
-        setWorldAligned: vi.fn(),
+        setWorldAligned: aligned.set,
         onChange: noop,
       },
       debug: { toggle: vi.fn() },
@@ -82,66 +99,86 @@ function createSdk() {
   };
 }
 
-function renderToolbar() {
+type Options = {
+  renderer?: Renderer;
+  autosaveEnabled?: boolean;
+  canSave?: boolean;
+  sceneInfo?: boolean;
+};
+
+function renderToolbar({
+  renderer = 'bevy',
+  autosaveEnabled = true,
+  canSave = false,
+  sceneInfo = true,
+}: Options = {}) {
+  mocks.sdk = createSdk(renderer);
+  const actions: AnyAction[] = [];
+  const record: Middleware = () => next => action => {
+    actions.push(action as AnyAction);
+    return next(action);
+  };
   const store = configureStore({
     reducer: {
       ui: uiReducer,
-      app: () => ({ canSave: false, preferences: { autosaveEnabled: true } }),
+      app: () => ({
+        canSave,
+        preferences: { autosaveEnabled, freeCameraInvertRotation: false },
+      }),
       dataLayer: () => ({
         undoRedoState: { canUndo: true, canRedo: false },
-        sceneInfo: { content: 'Scene info' },
+        sceneInfo: { content: sceneInfo ? 'Scene info' : '' },
       }),
     },
+    middleware: getDefault => getDefault().concat(record),
   });
   const view = render(
     <Provider store={store}>
       <Toolbar />
     </Provider>,
   );
-  return { ...view, store };
+  return { ...view, store, actions };
 }
 
 const button = (name: string) => screen.getByRole('button', { name });
 const pressed = (name: string) => button(name).getAttribute('aria-pressed');
 const sdk = () => mocks.sdk as ReturnType<typeof createSdk>;
+const openMenu = (name: string) => fireEvent.click(screen.getByRole('combobox', { name }));
+const menuItems = () =>
+  within(screen.getByRole('listbox'))
+    .getAllByRole('option')
+    .map(option => option.textContent);
+const option = (name: string) => screen.getByRole('option', { name });
 
 describe('3D toolbar', () => {
   beforeEach(() => {
-    mocks.sdk = createSdk();
+    snapManager.setEnabled(false);
   });
 
   describe('when tabbing through the toolbar', () => {
-    it('should focus every enabled button in order', () => {
-      const { container } = renderToolbar();
-      const order = Array.from(container.querySelectorAll('button'))
-        .filter(el => !el.disabled)
-        .map(el => el.getAttribute('aria-label') ?? el.title);
+    it('should focus every enabled control in order', () => {
+      snapManager.setEnabled(true);
+      const { container } = renderToolbar({ autosaveEnabled: false });
+      const order = Array.from(container.querySelectorAll<HTMLElement>('button, [role="combobox"]'))
+        .filter(el => !(el as HTMLButtonElement).disabled && el.getAttribute('tabindex') !== '-1')
+        .map(el => el.getAttribute('aria-label') ?? (el.title || el.textContent));
       expect(order).toEqual([
         'Undo',
         'Free movement tool',
         'Translation tool',
         'Rotation tool',
         'Scaling tool',
-        'Snap options',
+        'Snap',
+        'Align to world',
+        'Snap increments',
         'Interact with the scene',
+        'Player',
         'Mute scene audio',
-        'Preferences',
-        'Inspector',
         'Run scene',
         'Edit Scene',
-        'Scene Info',
+        'All changes saved',
+        'More options',
       ]);
-    });
-  });
-
-  describe('when the snap caret is activated', () => {
-    it('should name the snap caret and expose its state', () => {
-      renderToolbar();
-      const caret = button('Snap options');
-      expect(caret.getAttribute('aria-expanded')).toBe('false');
-      fireEvent.click(caret);
-      expect(caret.getAttribute('aria-expanded')).toBe('true');
-      expect(caret.nextElementSibling?.querySelector('input')).not.toBeNull();
     });
   });
 
@@ -149,10 +186,181 @@ describe('3D toolbar', () => {
     it('should expose the selected gizmo as pressed', () => {
       renderToolbar();
       expect(pressed('Free movement tool')).toBe('true');
-      expect(pressed('Translation tool')).toBe('false');
       fireEvent.click(button('Translation tool'));
       expect(pressed('Translation tool')).toBe('true');
       expect(pressed('Free movement tool')).toBe('false');
+    });
+  });
+
+  describe('snap toggles', () => {
+    it('should toggle Snap through the snap manager', () => {
+      renderToolbar();
+      expect(pressed('Snap')).toBe('false');
+      fireEvent.click(button('Snap'));
+      expect(pressed('Snap')).toBe('true');
+      expect(snapManager.isEnabled()).toBe(true);
+    });
+
+    it('should toggle Align to world through the renderer gizmos', () => {
+      renderToolbar();
+      expect(pressed('Align to world')).toBe('false');
+      fireEvent.click(button('Align to world'));
+      expect(pressed('Align to world')).toBe('true');
+      expect(sdk().renderer.gizmos.setWorldAligned).toHaveBeenCalledWith(true);
+    });
+  });
+
+  describe('snap increments caret', () => {
+    it('should render only while Snap is on', () => {
+      renderToolbar();
+      expect(screen.queryByRole('button', { name: 'Snap increments' })).toBeNull();
+      fireEvent.click(button('Snap'));
+      expect(button('Snap increments')).toBeTruthy();
+    });
+
+    it('should open a panel of labelled increment inputs', () => {
+      snapManager.setEnabled(true);
+      renderToolbar();
+      const caret = button('Snap increments');
+      expect(caret.getAttribute('aria-expanded')).toBe('false');
+      fireEvent.click(caret);
+      expect(caret.getAttribute('aria-expanded')).toBe('true');
+      expect(screen.getByLabelText('Position').tagName).toBe('INPUT');
+      expect(screen.getByLabelText('Rotation').tagName).toBe('INPUT');
+      expect(screen.getByLabelText('Scale').tagName).toBe('INPUT');
+    });
+
+    it('should close the panel when Snap is turned off', () => {
+      snapManager.setEnabled(true);
+      const { container } = renderToolbar();
+      fireEvent.click(button('Snap increments'));
+      expect(container.querySelector('.Gizmos .panel.visible')).not.toBeNull();
+      fireEvent.click(button('Snap'));
+      expect(container.querySelector('.Gizmos .panel.visible')).toBeNull();
+    });
+
+    it('should close on Escape pressed on the caret itself', () => {
+      snapManager.setEnabled(true);
+      const { container } = renderToolbar();
+      const caret = button('Snap increments');
+      caret.focus();
+      fireEvent.click(caret);
+      fireEvent.keyDown(caret, { key: 'Escape' });
+      expect(caret.getAttribute('aria-expanded')).toBe('false');
+      expect(container.querySelector('.Gizmos .panel.visible')).toBeNull();
+      expect(document.activeElement).toBe(caret);
+    });
+
+    it('should close on Escape and return focus to the caret', () => {
+      snapManager.setEnabled(true);
+      const { container } = renderToolbar();
+      const caret = button('Snap increments');
+      fireEvent.click(caret);
+      const input = screen.getByLabelText('Position');
+      input.focus();
+      fireEvent.keyDown(input, { key: 'Escape' });
+      expect(container.querySelector('.Gizmos .panel.visible')).toBeNull();
+      expect(document.activeElement).toBe(caret);
+    });
+  });
+
+  describe('when rendered under Bevy', () => {
+    it('should place Interact before the camera button', () => {
+      const { container } = renderToolbar();
+      const interact = button('Interact with the scene');
+      const camera = container.querySelector('.camera-mode')!;
+      expect(interact.compareDocumentPosition(camera) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    });
+
+    it('should offer Invert Camera Rotation in the camera menu', () => {
+      const { container, actions } = renderToolbar();
+      fireEvent.click(container.querySelector('.camera-mode')!);
+      expect(menuItems()).toEqual(['Free', 'Player', 'Invert Camera Rotation']);
+      fireEvent.click(option('Invert Camera Rotation'));
+      expect(actions).toContainEqual(setInspectorPreferences({ freeCameraInvertRotation: true }));
+      expect(sdk().renderer.camera.setInvertRotation).toHaveBeenCalledWith(true);
+    });
+
+    it('should list auto-save, Scene Info and the inspector in More options', () => {
+      renderToolbar();
+      openMenu('More options');
+      expect(menuItems()).toEqual(['Enable autosave', 'Scene Info', 'Inspector']);
+      expect(option('Enable autosave').getAttribute('aria-selected')).toBe('true');
+      expect(option('Scene Info').getAttribute('aria-selected')).toBe('false');
+    });
+  });
+
+  describe('when rendered under Babylon', () => {
+    it('should add Invert Camera Rotation to More options', () => {
+      const { actions } = renderToolbar({ renderer: 'babylon' });
+      openMenu('More options');
+      expect(menuItems()).toEqual([
+        'Enable autosave',
+        'Scene Info',
+        'Invert Camera Rotation',
+        'Inspector',
+      ]);
+      fireEvent.click(option('Invert Camera Rotation'));
+      expect(actions).toContainEqual(setInspectorPreferences({ freeCameraInvertRotation: true }));
+      expect(sdk().renderer.camera.setInvertRotation).toHaveBeenCalledWith(true);
+    });
+
+    it('should have no Preferences button', () => {
+      renderToolbar({ renderer: 'babylon' });
+      expect(screen.queryByRole('button', { name: 'Preferences' })).toBeNull();
+    });
+  });
+
+  describe('More options actions', () => {
+    it('should toggle the auto-save preference', () => {
+      const { actions } = renderToolbar();
+      openMenu('More options');
+      fireEvent.click(option('Enable autosave'));
+      expect(actions).toContainEqual(setInspectorPreferences({ autosaveEnabled: false }));
+    });
+
+    it('should toggle the Scene Info panel', () => {
+      renderToolbar();
+      openMenu('More options');
+      fireEvent.click(option('Scene Info'));
+      openMenu('More options');
+      expect(option('Scene Info').getAttribute('aria-selected')).toBe('true');
+    });
+
+    it('should open the Babylon inspector', () => {
+      renderToolbar();
+      openMenu('More options');
+      fireEvent.click(option('Inspector'));
+      expect(sdk().renderer.debug.toggle).toHaveBeenCalled();
+    });
+
+    it('should omit Scene Info when the scene has none', () => {
+      renderToolbar({ sceneInfo: false });
+      openMenu('More options');
+      expect(menuItems()).toEqual(['Enable autosave', 'Inspector']);
+    });
+  });
+
+  describe('Save', () => {
+    it('should be hidden while auto-save is on', () => {
+      renderToolbar();
+      expect(screen.queryByRole('button', { name: /save/i })).toBeNull();
+    });
+
+    it('should sit after Edit, enabled, while auto-save is off', () => {
+      const { container } = renderToolbar({ autosaveEnabled: false });
+      const save = button('All changes saved') as HTMLButtonElement;
+      expect(save.disabled).toBe(false);
+      expect(save.parentElement).toBe(container.querySelector('.RightContent'));
+      expect(button('Edit Scene').nextElementSibling).toBe(save);
+    });
+
+    it('should save when there are changes', () => {
+      const { actions } = renderToolbar({ autosaveEnabled: false, canSave: true });
+      fireEvent.click(button('Save changes'));
+      expect(actions).toContainEqual(save());
     });
   });
 
@@ -172,7 +380,7 @@ describe('3D toolbar', () => {
         const slot = button('Run scene');
         slot.focus();
         fireEvent.click(slot);
-        expect(sdk().renderer.sceneRun.setRunning).toHaveBeenCalledWith(true);
+        expect(sdk().renderer.sceneRun!.setRunning).toHaveBeenCalledWith(true);
         expect(button(STOP)).toBe(slot);
         expect(document.activeElement).toBe(slot);
         expect((button('Pause scene') as HTMLButtonElement).disabled).toBe(false);
@@ -185,7 +393,7 @@ describe('3D toolbar', () => {
         renderToolbar();
         fireEvent.click(button('Run scene'));
         fireEvent.click(button('Pause scene'));
-        expect(sdk().renderer.sceneRun.setRunning).toHaveBeenLastCalledWith(false);
+        expect(sdk().renderer.sceneRun!.setRunning).toHaveBeenLastCalledWith(false);
         expect(pressed('Pause scene')).toBe('true');
         expect(button('Pause scene').title).toBe('Resume scene');
         expect(button(STOP)).toBeTruthy();
@@ -198,7 +406,7 @@ describe('3D toolbar', () => {
         fireEvent.click(button('Run scene'));
         fireEvent.click(button('Pause scene'));
         fireEvent.click(button('Pause scene'));
-        expect(sdk().renderer.sceneRun.setRunning).toHaveBeenLastCalledWith(true);
+        expect(sdk().renderer.sceneRun!.setRunning).toHaveBeenLastCalledWith(true);
         expect(pressed('Pause scene')).toBe('false');
         expect(button('Pause scene').title).toBe('Pause scene');
       });
@@ -209,7 +417,7 @@ describe('3D toolbar', () => {
         const { store } = renderToolbar();
         fireEvent.click(button('Run scene'));
         fireEvent.click(button(STOP));
-        expect(sdk().renderer.sceneRun.reset).toHaveBeenCalled();
+        expect(sdk().renderer.sceneRun!.reset).toHaveBeenCalled();
         expect(store.getState().ui.sceneRunStarted).toBe(false);
         expect(button('Run scene')).toBeTruthy();
         expect((button('Pause scene') as HTMLButtonElement).disabled).toBe(true);
@@ -218,8 +426,8 @@ describe('3D toolbar', () => {
   });
 
   describe.each([
-    ['Interact with the scene', () => sdk().renderer.interaction.setEditingEnabled],
-    ['Mute scene audio', () => sdk().renderer.audio.setMuted],
+    ['Interact with the scene', () => sdk().renderer.interaction!.setEditingEnabled],
+    ['Mute scene audio', () => sdk().renderer.audio!.setMuted],
   ])('when the %s toggle is clicked', (name, setter) => {
     it('should keep its name and flip aria-pressed', () => {
       renderToolbar();
@@ -227,15 +435,6 @@ describe('3D toolbar', () => {
       fireEvent.click(button(name));
       expect(setter()).toHaveBeenCalled();
       expect(pressed(name)).toBe('true');
-    });
-  });
-
-  describe('when Scene Info is clicked', () => {
-    it('should keep its name and flip aria-pressed', () => {
-      renderToolbar();
-      expect(pressed('Scene Info')).toBe('false');
-      fireEvent.click(button('Scene Info'));
-      expect(pressed('Scene Info')).toBe('true');
     });
   });
 });

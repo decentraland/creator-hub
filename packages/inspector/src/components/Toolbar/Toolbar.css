@@ -1,39 +1,158 @@
 .Toolbar {
   display: flex;
-  background-color: var(--tree-bg-color);
-  padding: 8px;
+  box-sizing: border-box;
   width: 100%;
+  height: 36px;
+  padding: 0 4px 0 10px;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--palette-neutral-onyx);
+  background-color: var(--tree-bg-color);
 }
 
-.Toolbar .undo svg,
-.Toolbar .redo svg,
-.Toolbar .save svg {
-  transform: translateY(2px);
+.Toolbar .RuntimeControls {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
 }
 
-.Toolbar .undo {
-  margin: 0px;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
+.Toolbar .RightContent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
 }
 
-.Toolbar .redo {
-  margin-left: 1px;
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
+.Toolbar .ToolbarButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--palette-neutral-onyx);
+  border-radius: 6px;
+  background-color: var(--tree-bg-color);
+  color: var(--palette-neutral-gray4);
+  cursor: pointer;
 }
 
-.Toolbar .babylonjs-inspector svg {
-  width: 18px;
-  height: 18px;
-  transform: translateY(2px);
+.Toolbar .ToolbarButton svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
 }
 
-.Toolbar .edit-scene svg,
-.Toolbar .scene-info svg {
-  width: 18px;
-  height: 18px;
-  transform: translateY(2px);
+.Toolbar .ToolbarButton.mute svg {
+  width: 16px;
+  height: 16px;
+}
+
+.Toolbar .ToolbarButton:hover:not(:disabled) {
+  position: relative;
+  z-index: 1;
+  background-color: var(--palette-whiteTransparent-subtle);
+  color: var(--palette-neutral-softWhite);
+}
+
+.Toolbar .ToolbarButton[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+  border-color: var(--palette-system-blueDark2);
+  background-color: var(--palette-system-blueDark2);
+  color: var(--palette-neutral-softWhite);
+}
+
+.Toolbar .ToolbarButton[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--palette-system-blueDark3);
+  background-color: var(--palette-system-blueDark3);
+}
+
+.Toolbar .ToolbarButton:disabled {
+  border-color: var(--palette-neutral-onyx);
+  background-color: var(--tree-bg-color);
+  color: var(--gray-0);
+  cursor: default;
+}
+
+.Toolbar .ToolbarButton:focus-visible {
+  position: relative;
+  z-index: 2;
+}
+
+.Toolbar .ToolbarButton.undo {
+  border-radius: 6px 0 0 6px;
+}
+
+.Toolbar .ToolbarButton.redo {
+  margin-left: -7px;
+  border-radius: 0 6px 6px 0;
+}
+
+.Toolbar .Gizmos .gizmo {
+  border-radius: 0;
+}
+
+.Toolbar .Gizmos .gizmo + .gizmo {
+  margin-left: -1px;
+}
+
+.Toolbar .Gizmos .gizmo.free {
+  border-radius: 6px 0 0 6px;
+}
+
+.Toolbar .Gizmos .gizmo.scale {
+  border-radius: 0 6px 6px 0;
+}
+
+.Toolbar .Gizmos .ToolbarButton.snap {
+  margin-left: 6px;
+  border-radius: 6px 0 0 6px;
+}
+
+.Toolbar .Gizmos .ToolbarButton.align-world {
+  margin-left: -1px;
+  border-radius: 0 6px 6px 0;
+}
+
+.Toolbar .Gizmos .ToolbarButton.gizmo[aria-pressed="true"],
+.Toolbar .Gizmos .ToolbarButton.snap[aria-pressed="true"],
+.Toolbar .Gizmos .ToolbarButton.align-world[aria-pressed="true"] {
+  border-color: var(--palette-neutral-onyx);
+}
+
+.Toolbar .Gizmos .open-panel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 0 0 2px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--palette-neutral-gray4);
+  cursor: pointer;
+}
+
+.Toolbar .Gizmos .open-panel svg {
+  width: 8px;
+  height: 8px;
+}
+
+.Toolbar .Gizmos .open-panel:hover {
+  background-color: var(--palette-whiteTransparent-subtle);
+  color: var(--palette-neutral-softWhite);
+}
+
+.Toolbar .Gizmos .open-panel:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 
 .Toolbar .CameraModeWrap {
@@ -42,8 +161,6 @@
   align-items: center;
 }
 
-/* CSS-only tooltip above the pill (matches the design). Hidden until the wrap is
-   hovered; pointer-events off so it never blocks the dropdown click. */
 .Toolbar .CameraModeTooltip {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -74,37 +191,52 @@
 }
 
 .Toolbar .camera-mode {
-  margin: 0 8px;
+  box-sizing: border-box;
   width: auto;
-  height: 30px;
+  height: 26px;
+  margin: 0;
+  padding: 0 8px 0 4px;
+  gap: 4px;
   border: none;
+  border-radius: 6px;
+  background-color: var(--palette-neutral-onyx);
 }
 
 .Toolbar .camera-mode:hover {
-  background-color: var(--base-19);
+  background-color: var(--gray-0);
+}
+
+.Toolbar .camera-mode:focus-visible {
+  outline-offset: 1px;
 }
 
 .Toolbar .camera-mode > svg:first-child {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  color: var(--palette-neutral-gray3);
 }
 
 .Toolbar .CameraModeLabel {
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 400;
   line-height: 1;
+  color: var(--palette-neutral-gray4);
 }
 
 .Toolbar .camera-mode .CameraModeChevron {
-  width: 16px;
-  height: 16px;
-  opacity: 0.7;
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
+  color: var(--palette-whiteTransparent-backdrop);
 }
 
-/* Two short options (Free / Player). The active one shows a checkmark leftIcon;
-   the other a same-width spacer so the labels line up. */
 .OptionList.camera-mode {
-  min-width: 140px;
-  padding-bottom: 8px;
+  min-width: 176px;
+}
+
+.OptionList.camera-mode .OptionContainer.invert-rotation {
+  margin-top: 4px;
+  border-top: 1px solid var(--palette-whiteTransparent-subtle);
 }
 
 .CheckSpacer {
@@ -113,166 +245,35 @@
   height: 16px;
 }
 
-.Toolbar .RightContent {
+.Toolbar .ToolbarMore {
   display: flex;
-  flex-grow: 1;
-  justify-content: flex-end;
   align-items: center;
+  height: 24px;
+  padding-left: 6px;
+  border-left: 1px solid var(--palette-whiteTransparent-subtle);
 }
 
-.Toolbar:not(.ui-designer-toolbar) {
+.Toolbar .toolbar-more {
   box-sizing: border-box;
-  height: 36px;
-  padding: 0 4px 0 10px;
-  align-items: center;
-  gap: 6px;
-  border-bottom: 1px solid var(--palette-neutral-onyx);
-}
-
-.Toolbar:not(.ui-designer-toolbar) .RuntimeControls {
-  display: flex;
-  gap: 3px;
-  margin-left: auto;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .RightContent {
-  flex-grow: 0;
-  gap: 6px;
-  margin-left: auto;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  width: 26px;
-  min-width: 26px;
-  height: 26px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--palette-neutral-onyx);
-  border-radius: 6px;
-  background-color: var(--tree-bg-color);
-  color: var(--palette-neutral-gray4);
-  opacity: 1;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton svg {
-  width: 16px;
-  height: 16px;
-  transform: none;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.edit-scene svg {
-  width: 12px;
-  height: 12px;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.scene-info svg,
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.save svg {
-  width: 13px;
-  height: 13px;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.babylonjs-inspector svg {
-  width: 14px;
-  height: 14px;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Preferences {
-  display: flex;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton:hover:not(:disabled) {
-  position: relative;
-  z-index: 1;
-  background-color: var(--palette-whiteTransparent-subtle);
-  color: var(--palette-neutral-softWhite);
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton[aria-pressed="true"] {
-  position: relative;
-  z-index: 1;
-  border-color: var(--palette-system-blueDark2);
-  background-color: var(--palette-system-blueDark2);
-  color: var(--palette-neutral-softWhite);
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton[aria-pressed="true"]:hover:not(:disabled) {
-  border-color: var(--palette-system-blueDark3);
-  background-color: var(--palette-system-blueDark3);
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton:disabled {
-  border-color: var(--palette-neutral-onyx);
-  background-color: var(--tree-bg-color);
-  color: var(--gray-0);
-  cursor: default;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton:focus-visible {
-  position: relative;
-  z-index: 2;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.undo {
-  border-radius: 6px 0 0 6px;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .ToolbarButton.redo {
-  margin-left: -7px;
-  border-radius: 0 6px 6px 0;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .gizmo {
-  height: 26px;
-  margin: 0;
-  border-radius: 0;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .gizmo + .gizmo {
-  margin-left: -1px;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .gizmo.free {
-  border-radius: 6px 0 0 6px;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .gizmo.scale {
-  border-radius: 0 6px 6px 0;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .ToolbarButton.gizmo[aria-pressed="true"] {
-  border-color: var(--palette-neutral-onyx);
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .open-panel {
-  display: inline-flex;
-  align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
-  margin: 0 0 0 2px;
   padding: 0;
   border: none;
   border-radius: 6px;
-  align-self: center;
   background: none;
-  color: var(--palette-neutral-gray4);
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .open-panel svg {
-  width: 14px;
-  height: 14px;
-}
-
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .open-panel:hover {
-  background-color: var(--palette-whiteTransparent-subtle);
   color: var(--palette-neutral-softWhite);
 }
 
-.Toolbar:not(.ui-designer-toolbar) .Gizmos .open-panel:focus-visible {
-  outline: 2px solid var(--focus-ring);
+.Toolbar .toolbar-more svg {
+  width: 16px;
+  height: 16px;
+}
+
+.Toolbar .toolbar-more:hover {
+  background-color: var(--palette-whiteTransparent-subtle);
+}
+
+.Toolbar .toolbar-more:focus-visible {
   outline-offset: 1px;
 }

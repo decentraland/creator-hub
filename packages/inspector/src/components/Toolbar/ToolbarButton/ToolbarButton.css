@@ -1,31 +1,4 @@
-.ToolbarButton {
-  border: none;
-  padding: 0px 2px;
-  margin: 0 8px;
-  color: #fff;
-  background-color: var(--gray-0);
-  font-size: 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  min-width: 32px;
-  height: 30px;
-}
-
-.ToolbarButton:hover:not(:disabled) {
-  background-color: var(--base-19);
-}
-
-.ToolbarButton:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 .ToolbarButton:where(:focus-visible) {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
-}
-
-.ToolbarButton svg {
-  width: 24px;
-  height: 24px;
 }
