@@ -11,6 +11,7 @@ import {
   mergeConfig,
   promoteAiAssistantSetting,
   promoteDebugConsoleSetting,
+  promoteExposeMcpServerSetting,
   type Config,
 } from '/shared/types/config';
 import { DEFAULT_RENDERER } from '/shared/types/settings';
@@ -75,6 +76,7 @@ export async function getConfigStorage(): Promise<IFileSystemStorage<Config>> {
     dropGuiEditorSetting(mergedConfig.settings);
     promoteAiAssistantSetting(mergedConfig.settings);
     promoteDebugConsoleSetting(mergedConfig.settings);
+    promoteExposeMcpServerSetting(mergedConfig.settings);
 
     if (JSON.stringify(existingConfig) !== JSON.stringify(mergedConfig)) {
       log.info('[Config] Writing merged config to storage');

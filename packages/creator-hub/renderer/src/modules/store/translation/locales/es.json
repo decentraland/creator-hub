@@ -595,7 +595,7 @@
         },
         "mcp_server": {
           "label": "Exponer el servidor MCP del asistente de IA",
-          "help": "Permite que un agente de IA externo a Creator Hub controle la escena abierta. Pega esto en la configuración MCP del agente.",
+          "help": "Permite que un agente de IA externo a Creator Hub controle la escena abierta. Mientras está activo, Creator Hub escribe la conexión en cada escena que abres como .mcp.json (Claude Code la detecta al iniciarse en la carpeta de la escena) y en mcp-server.json dentro de su carpeta de datos de la aplicación, así los agentes externos se conectan sin copiar nada. También puedes pegar esto a mano en la configuración MCP de un agente.",
           "copy": "Copiar configuración",
           "copied": "¡Copiado!",
           "note": "Solo localhost. La URL y el token cambian cada vez que se reinicia Creator Hub."

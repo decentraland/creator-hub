@@ -244,10 +244,52 @@ describe('the one-time AI assistant promotion', () => {
       storedConfig.settings!.aiAssistant = false;
       storedConfig.settings!.aiAssistantPromoted = true;
       storedConfig.settings!.debugConsolePromoted = true;
+      storedConfig.settings!.exposeMcpServerPromoted = true;
 
       const config = await getConfig();
 
       expect(config.settings.aiAssistant).toBe(false);
+      expect(storage.setAll).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('the one-time expose-MCP-server promotion', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.mocked(existsSync).mockReturnValue(true);
+  });
+
+  describe('when the stored config predates the promotion', () => {
+    it('should persist the server as exposed and marked', async () => {
+      const { getConfig, getDefaultConfig } = await import('../src/modules/config');
+      storedConfig = getDefaultConfig();
+      storedConfig.settings!.exposeMcpServer = false;
+      storedConfig.settings!.aiAssistantPromoted = true;
+      storedConfig.settings!.debugConsolePromoted = true;
+
+      await getConfig();
+
+      expect(storage.setAll).toHaveBeenCalledTimes(1);
+      const written = storage.setAll.mock.calls[0][0] as Config;
+      expect(written.settings.exposeMcpServer).toBe(true);
+      expect(written.settings.exposeMcpServerPromoted).toBe(true);
+    });
+  });
+
+  describe('when the creator turned the exposure off after the promotion ran', () => {
+    it('should leave it off and write nothing', async () => {
+      const { getConfig, getDefaultConfig } = await import('../src/modules/config');
+      storedConfig = getDefaultConfig();
+      storedConfig.settings!.exposeMcpServer = false;
+      storedConfig.settings!.exposeMcpServerPromoted = true;
+      storedConfig.settings!.aiAssistantPromoted = true;
+      storedConfig.settings!.debugConsolePromoted = true;
+
+      const config = await getConfig();
+
+      expect(config.settings.exposeMcpServer).toBe(false);
       expect(storage.setAll).not.toHaveBeenCalled();
     });
   });
@@ -282,6 +324,7 @@ describe('the one-time debug console promotion', () => {
       storedConfig.settings!.previewOptions.debugger = false;
       storedConfig.settings!.aiAssistantPromoted = true;
       storedConfig.settings!.debugConsolePromoted = true;
+      storedConfig.settings!.exposeMcpServerPromoted = true;
 
       const config = await getConfig();
 

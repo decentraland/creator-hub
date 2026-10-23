@@ -232,6 +232,11 @@ export interface Ipc {
   // the `done` event reported as `mutations`).
   'ai.revertTurn': (count: number) => Promise<void>;
   'ai.getMcpServerInfo': () => Promise<{ url: string; token: string }>;
+  // The editor window's open scene: points the MCP server at it and, while `exposeMcpServer`
+  // is on, writes the server's connection details into the scene (`.mcp.json`) for agents
+  // running outside the Hub. sceneClosed only forgets the path; the file stays.
+  'ai.sceneOpened': (path: string) => Promise<void>;
+  'ai.sceneClosed': (path: string) => Promise<void>;
   // AI sign-in without a CLI (#1531). signInCli installs the official CLI (if needed) and
   // drives its subscription login, streaming steps over AI_CLI_LOGIN_EVENTS; signOutCli
   // clears the managed sign-in; getCliState reports install/sign-in status per provider.
