@@ -46,16 +46,10 @@
   height: 24px;
 }
 
-.Toolbar .ToolbarButton.mute svg {
-  width: 16px;
-  height: 16px;
-}
-
 .Toolbar .ToolbarButton:hover:not(:disabled) {
   position: relative;
   z-index: 1;
-  background-color: var(--palette-whiteTransparent-subtle);
-  color: var(--palette-neutral-softWhite);
+  background-color: var(--base-19);
 }
 
 .Toolbar .ToolbarButton[aria-pressed="true"] {
@@ -113,46 +107,66 @@
   border-radius: 6px 0 0 6px;
 }
 
-.Toolbar .Gizmos .ToolbarButton.align-world {
-  margin-left: -1px;
-  border-radius: 0 6px 6px 0;
-}
-
 .Toolbar .Gizmos .ToolbarButton.gizmo[aria-pressed="true"],
-.Toolbar .Gizmos .ToolbarButton.snap[aria-pressed="true"],
-.Toolbar .Gizmos .ToolbarButton.align-world[aria-pressed="true"] {
+.Toolbar .Gizmos .ToolbarButton.snap[aria-pressed="true"] {
   border-color: var(--palette-neutral-onyx);
 }
 
-.Toolbar .Gizmos .open-panel {
+.Toolbar .Gizmos .snap-menu {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: center;
-  width: 24px;
-  height: 24px;
-  margin: 0 0 0 2px;
+  box-sizing: border-box;
+  width: 20px;
+  height: 26px;
+  margin-left: -1px;
   padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  color: var(--palette-neutral-gray4);
+  border: 1px solid var(--palette-neutral-onyx);
+  border-left-color: var(--palette-whiteTransparent-soft);
+  border-radius: 0 6px 6px 0;
+  background-color: var(--tree-bg-color);
+  color: var(--palette-whiteTransparent-backdrop);
   cursor: pointer;
 }
 
-.Toolbar .Gizmos .open-panel svg {
+.Toolbar .Gizmos .snap-menu svg {
   width: 8px;
   height: 8px;
 }
 
-.Toolbar .Gizmos .open-panel:hover {
-  background-color: var(--palette-whiteTransparent-subtle);
+.Toolbar .Gizmos .snap-menu:hover {
+  background-color: var(--base-19);
+}
+
+.Toolbar .Gizmos .snap-menu:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.Toolbar .ToolbarButton.mute[aria-pressed="true"] {
+  border-color: var(--palette-neutral-onyx);
+  background-color: var(--tree-bg-color);
+  color: var(--palette-neutral-gray4);
+}
+
+.Toolbar .ToolbarButton.mute[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--palette-neutral-onyx);
+  background-color: var(--base-19);
+}
+
+.Toolbar .ToolbarButton.scene-pause.running {
+  position: relative;
+  z-index: 1;
+  border-color: var(--palette-system-blueDark2);
+  background-color: var(--palette-system-blueDark2);
   color: var(--palette-neutral-softWhite);
 }
 
-.Toolbar .Gizmos .open-panel:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
+.Toolbar .ToolbarButton.scene-pause.running:hover:not(:disabled) {
+  border-color: var(--palette-system-blueDark3);
+  background-color: var(--palette-system-blueDark3);
 }
 
 .Toolbar .CameraModeWrap {
@@ -197,13 +211,13 @@
   margin: 0;
   padding: 0 8px 0 4px;
   gap: 4px;
-  border: none;
+  border: 1px solid var(--palette-neutral-onyx);
   border-radius: 6px;
-  background-color: var(--palette-neutral-onyx);
+  background-color: var(--tree-bg-color);
 }
 
 .Toolbar .camera-mode:hover {
-  background-color: var(--gray-0);
+  background-color: var(--base-19);
 }
 
 .Toolbar .camera-mode:focus-visible {
@@ -271,7 +285,7 @@
 }
 
 .Toolbar .toolbar-more:hover {
-  background-color: var(--palette-whiteTransparent-subtle);
+  background-color: var(--base-19);
 }
 
 .Toolbar .toolbar-more:focus-visible {

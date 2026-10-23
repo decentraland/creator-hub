@@ -69,7 +69,7 @@ Canvas drag and resize snap to `DRAG_SNAP_GRID` (10 logical px). The canvas gate
 
 ## Scene-run controls and mode sync
 
-Both toolbars carry Figma's RuntimeControls, only under Bevy (`sdk.renderer.sceneRun`): [Play][Pause, disabled] when stopped, [Stop][Pause] while running, and [Stop][Pause pressed] while paused. Each slot is one element in a fixed position, so keyboard focus stays put when slot 1 swaps between Play and Stop. The two bars read the same in every state.
+Both toolbars carry Figma's RuntimeControls, only under Bevy (`sdk.renderer.sceneRun`): [Play][Pause, disabled] when stopped, [Stop][Pause, highlighted] while running, and [Stop][Resume] while paused. Pause is not a toggle: its `running` class draws the highlight, and its name flips between "Pause scene" and "Resume scene". Each slot is one element in a fixed position, so keyboard focus stays put when slot 1 swaps between Play and Stop. The two bars read the same in every state.
 
 - 3D reads "running" from `sceneRun.isRunning()`; 2D reads it from `sceneRunIntent`, because the scene is always frozen in 2D.
 - In 2D, Play and resuming a paused scene both leave 2D first, then run. Pause and Stop stay in 2D.
@@ -79,7 +79,7 @@ The subtlety is **run intent**. `sceneRun` exposes only a boolean `isRunning()`,
 - Both toolbars set `sceneRunIntent` on Play, Pause, and Stop.
 - `sceneRunStarted` (`redux/ui`) is the bit the 3D model adds: "has the scene run since the last Stop". Play sets it, Pause leaves it, and Stop clears it through `setSceneRunIntent({ running: false, reset: true })`, which both Stop buttons dispatch. It lives in Redux because each bar unmounts while the other mode is open. A scene runtime error freezes the scene without a Stop, so 3D then shows paused.
 - `useSyncSceneRunWithMode` freezes the scene when 2D opens (editing needs a static viewport, because the renderer is only CSS-hidden in 2D) and resumes it when 3D returns, but only if the intent was to run.
-- The 2D toolbar displays the intent, so switching to 2D while a scene runs shows it as running (Stop, Pause unpressed), not stopped.
+- The 2D toolbar displays the intent, so switching to 2D while a scene runs shows it as running (Stop, Pause highlighted), not stopped.
 
 **Own source writes and the Bevy hot-reload (`register.ts`, `build-reload-bridge.ts`).** Under the Bevy renderer every rebuild of the scene bundle is reported to the inspector by the host (the realm bundler's `File <path> changed, rebuilding...` / `Bundle saved` lines, relayed as `notify_scene_build`), and a rebuild triggered by a source file reloads the engine scene so an IDE code save shows up (#1419). Code mode writes `src/ui/*.tsx` through the storage bridge, which would look exactly like such a save — so `writeToDisk` registers the path with `markOwnWrite` (`lib/logic/own-writes.ts`) first, and the bridge treats a rebuild it triggered like the editor's own autosave: no reload. Matched by path, not by a timing window.
 
