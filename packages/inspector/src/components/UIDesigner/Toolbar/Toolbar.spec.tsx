@@ -2,6 +2,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 
+import type * as ConfigModule from '../../../lib/logic/config';
 import { setSceneRunIntent, togglePanel } from '../../../redux/ui';
 import { PanelName, UIDesignerTool } from '../../../redux/ui/types';
 import { Tools } from './Tools';
@@ -16,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   sceneRunStarted: false,
   sceneInfo: true,
   sceneInfoPanelVisible: false,
+  renderer: 'bevy' as string,
   dispatch: vi.fn(),
   updateUIState: vi.fn(),
   sdk: {
@@ -38,6 +40,11 @@ vi.mock('../../../redux/hooks', () => ({
     }),
   useAppDispatch: () => mocks.dispatch,
 }));
+
+vi.mock('../../../lib/logic/config', async importOriginal => {
+  const actual = await importOriginal<typeof ConfigModule>();
+  return { ...actual, getConfig: () => ({ ...actual.getConfig(), renderer: mocks.renderer }) };
+});
 
 vi.mock('../../../hooks/sdk/useSdk', () => ({ useSdk: () => mocks.sdk }));
 
@@ -117,10 +124,11 @@ describe('UI Designer toolbar', () => {
         mocks.sceneRunning = true;
       });
 
-      it('should offer Stop and an unpressed Pause that pauses in place', () => {
+      it('should offer Stop and a running Pause that pauses in place', () => {
         render(<UIDesignerToolbar />);
         expect(button(STOP)).toBeTruthy();
-        expect(pressed('Pause scene')).toBe('false');
+        expect(button('Pause scene').hasAttribute('aria-pressed')).toBe(false);
+        expect(button('Pause scene').classList.contains('running')).toBe(true);
         fireEvent.click(button('Pause scene'));
         expect(mocks.dispatch).toHaveBeenCalledWith(setSceneRunIntent({ running: false }));
         expect(mocks.dispatch).not.toHaveBeenCalledWith(LEAVE_2D);
@@ -133,11 +141,13 @@ describe('UI Designer toolbar', () => {
         mocks.sceneRunning = false;
       });
 
-      it('should press Pause and resume through the Play path', () => {
+      it('should name Pause "Resume scene" and resume through the Play path', () => {
         render(<UIDesignerToolbar />);
-        expect(pressed('Pause scene')).toBe('true');
-        expect(button('Pause scene').title).toBe('Resume scene');
-        fireEvent.click(button('Pause scene'));
+        const resume = button('Resume scene');
+        expect(resume.title).toBe('Resume scene');
+        expect(resume.hasAttribute('aria-pressed')).toBe(false);
+        expect(resume.classList.contains('running')).toBe(false);
+        fireEvent.click(resume);
         expect(mocks.dispatch).toHaveBeenCalledWith(setSceneRunIntent({ running: true }));
         expect(mocks.dispatch).toHaveBeenCalledWith(LEAVE_2D);
         expect(mocks.sdk.renderer.sceneRun.setRunning).toHaveBeenCalledWith(true);
@@ -165,15 +175,19 @@ describe('UI Designer toolbar', () => {
   });
 
   describe('More options', () => {
-    it('should list Scene Info only and toggle its panel', () => {
-      render(<UIDesignerToolbar />);
-      fireEvent.click(screen.getByRole('combobox', { name: 'More options' }));
-      const items = within(screen.getByRole('listbox')).getAllByRole('option');
-      expect(items.map(item => item.textContent)).toEqual(['Scene Info']);
-      expect(items[0].getAttribute('aria-selected')).toBe('false');
-      fireEvent.click(items[0]);
-      expect(mocks.updateUIState).toHaveBeenCalledWith({ sceneInfoPanelVisible: true });
-    });
+    it.each(['bevy', 'babylon'])(
+      'should list Scene Info only under %s and toggle its panel',
+      renderer => {
+        mocks.renderer = renderer;
+        render(<UIDesignerToolbar />);
+        fireEvent.click(screen.getByRole('combobox', { name: 'More options' }));
+        const items = within(screen.getByRole('listbox')).getAllByRole('option');
+        expect(items.map(item => item.textContent)).toEqual(['Scene Info']);
+        expect(items[0].getAttribute('aria-selected')).toBe('false');
+        fireEvent.click(items[0]);
+        expect(mocks.updateUIState).toHaveBeenCalledWith({ sceneInfoPanelVisible: true });
+      },
+    );
 
     it('should be absent when the scene has no scene info', () => {
       mocks.sceneInfo = false;

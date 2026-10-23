@@ -1,65 +1,32 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSdk } from '../sdk/useSdk';
 import type { RendererGizmos } from '../../lib/renderer/types';
 
+const readAlignment = (gizmos: RendererGizmos | undefined) => ({
+  isGizmoWorldAligned: gizmos?.isWorldAligned() ?? false,
+  isGizmoWorldAlignmentDisabled: gizmos?.isWorldAlignmentDisabled() ?? false,
+});
+
+/** Mirrors the renderer's gizmo world-alignment setting; the renderer is the source of truth. */
 export const useGizmoAlignment = () => {
-  const gizmosRef = useRef<RendererGizmos | null>(null);
-  const [isGizmoWorldAligned, setGizmoWorldAligned] = useState(false);
-  const [isGizmoWorldAlignmentDisabled, setGizmoWorldAlignmentDisabled] = useState(false);
+  const gizmos = useSdk()?.renderer.gizmos;
+  const [alignment, setAlignment] = useState(() => readAlignment(gizmos));
 
-  // update world gizmo alignment only if is not disabled
-  const safeSetGizmoWorldAligned = useCallback(
-    (value: boolean) => {
-      if (!isGizmoWorldAlignmentDisabled) {
-        setGizmoWorldAligned(value);
-      }
-    },
-    [isGizmoWorldAligned],
-  );
-
-  // sync from renderer to hook state
-  const updateState = useCallback(() => {
-    if (gizmosRef.current) {
-      const gizmos = gizmosRef.current;
-      if (isGizmoWorldAligned !== gizmos.isWorldAligned()) {
-        setGizmoWorldAligned(gizmos.isWorldAligned());
-      }
-      if (isGizmoWorldAlignmentDisabled !== gizmos.isWorldAlignmentDisabled()) {
-        setGizmoWorldAlignmentDisabled(gizmos.isWorldAlignmentDisabled());
-      }
-    }
-  }, [isGizmoWorldAligned, isGizmoWorldAlignmentDisabled]);
-
-  // sync from hook state to renderer
-  const updateRenderer = useCallback(() => {
-    if (gizmosRef.current) {
-      const gizmos = gizmosRef.current;
-      if (gizmos.isWorldAligned() !== isGizmoWorldAligned) {
-        gizmos.setWorldAligned(isGizmoWorldAligned);
-      }
-    }
-  }, [isGizmoWorldAligned]);
-
-  // bind changes on renderer to update hook state
-  useSdk(
-    ({ renderer }) => {
-      if (!gizmosRef.current) {
-        gizmosRef.current = renderer.gizmos;
-        updateState();
-      }
-      return renderer.gizmos.onChange(updateState);
-    },
-    [updateState],
-  );
-
-  // bind changes in hook state to update renderer
   useEffect(() => {
-    updateRenderer();
-  }, [updateRenderer]);
+    if (!gizmos) return;
+    const sync = () => setAlignment(readAlignment(gizmos));
+    sync();
+    return gizmos.onChange(sync);
+  }, [gizmos]);
 
-  return {
-    isGizmoWorldAligned,
-    isGizmoWorldAlignmentDisabled,
-    setGizmoWorldAligned: safeSetGizmoWorldAligned,
-  };
+  const setGizmoWorldAligned = useCallback(
+    (value: boolean) => {
+      if (!gizmos || gizmos.isWorldAlignmentDisabled()) return;
+      gizmos.setWorldAligned(value);
+      setAlignment(current => ({ ...current, isGizmoWorldAligned: value }));
+    },
+    [gizmos],
+  );
+
+  return { ...alignment, setGizmoWorldAligned };
 };

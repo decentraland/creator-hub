@@ -1,5 +1,6 @@
 import { type Page } from 'playwright';
 import { App } from './pageObjects/App';
+import { UIDesigner } from './pageObjects/UIDesigner';
 
 declare const page: Page;
 
@@ -44,15 +45,12 @@ describe('3D toolbar keyboard focus', () => {
     });
   });
 
-  test('reach Snap, Align to world and the snap increments by keyboard', async () => {
-    if ((await page.locator(SNAP).getAttribute('aria-pressed')) !== 'true') {
+  test('reach the snap increments by keyboard with Snap off', async () => {
+    if ((await page.locator(SNAP).getAttribute('aria-pressed')) === 'true') {
       await page.locator(SNAP).click();
     }
     await focusByKeyboard(SNAP);
     await expect(focused()).resolves.toMatchObject({ name: 'Snap', outline: SNOW_RING });
-
-    await page.keyboard.press('Tab');
-    await expect(focused()).resolves.toMatchObject({ name: 'Align to world', outline: SNOW_RING });
 
     await page.keyboard.press('Tab');
     await expect(focused()).resolves.toMatchObject({
@@ -80,5 +78,22 @@ describe('3D toolbar keyboard focus', () => {
     await page.keyboard.press('Escape');
     await expect(focused()).resolves.toMatchObject({ name: 'Snap increments', expanded: 'false' });
     await expect(panelOpen()).resolves.toBe(0);
+  });
+
+  test('keep Align to World across a 2D round trip', async () => {
+    const chevron = page.locator('.Toolbar:not(.ui-designer-toolbar) .snap-menu');
+    const align = () => page.getByRole('checkbox', { name: 'Align to World' });
+    await chevron.click();
+    if (!(await align().isChecked())) await align().click();
+    await expect(align().isChecked()).resolves.toBe(true);
+    await chevron.click();
+
+    await UIDesigner.open();
+    await page.locator('[role="tab"]', { hasText: '3D' }).first().click();
+    await chevron.waitFor({ state: 'visible', timeout: 10_000 });
+
+    await chevron.click();
+    await expect(align().isChecked()).resolves.toBe(true);
+    await chevron.click();
   });
 });

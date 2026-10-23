@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BiVolumeFull, BiVolumeMute } from 'react-icons/bi';
 import { IoCheckmark as CheckIcon } from 'react-icons/io5';
+import cx from 'classnames';
 
 import { withSdk } from '../../hoc/withSdk';
 import {
@@ -28,6 +28,7 @@ import {
   UNDO_ALT,
   useHotkey,
 } from '../../hooks/useHotkey';
+import { getConfig } from '../../lib/logic/config';
 import type { EditorCameraMode } from '../../lib/renderer/types';
 import { Dropdown } from '../ui';
 import type { Props as OptionProps } from '../ui/Dropdown/Option/types';
@@ -41,6 +42,8 @@ import {
   PlayIcon,
   RedoIcon,
   SaveIcon,
+  SoundOffIcon,
+  SoundOnIcon,
   StopIcon,
   UndoIcon,
 } from './icons';
@@ -170,10 +173,11 @@ const Toolbar = withSdk(({ sdk }) => {
     onClick: handleToggleInvertRotation,
   };
 
+  const isBabylon = getConfig().renderer !== 'bevy';
   const moreOptions: OptionProps[] = [
     {
       value: 'autosave',
-      label: 'Enable autosave',
+      label: 'Enable Autosave',
       leftIcon: checkbox(isAutosaveEnabled),
       selected: isAutosaveEnabled,
       onClick: handleToggleAutosave,
@@ -189,13 +193,17 @@ const Toolbar = withSdk(({ sdk }) => {
           },
         ]
       : []),
-    ...(editorCamera ? [] : [invertRotationOption]),
-    {
-      value: 'inspector',
-      label: 'Inspector',
-      leftIcon: <span className="CheckSpacer" />,
-      onClick: handleInspector,
-    },
+    ...(isBabylon
+      ? [
+          invertRotationOption,
+          {
+            value: 'inspector',
+            label: 'Inspector',
+            leftIcon: <span className="CheckSpacer" />,
+            onClick: handleInspector,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -230,6 +238,17 @@ const Toolbar = withSdk(({ sdk }) => {
           }
         >
           <InteractIcon />
+        </ToolbarButton>
+      )}
+      {audio && (
+        <ToolbarButton
+          className="mute"
+          aria-pressed={muted}
+          aria-label="Mute scene audio"
+          onClick={handleToggleMute}
+          title={muted ? 'Unmute scene audio' : 'Mute scene audio'}
+        >
+          {muted ? <SoundOffIcon /> : <SoundOnIcon />}
         </ToolbarButton>
       )}
       {editorCamera && (
@@ -269,17 +288,6 @@ const Toolbar = withSdk(({ sdk }) => {
           />
         </div>
       )}
-      {audio && (
-        <ToolbarButton
-          className="mute"
-          aria-pressed={muted}
-          aria-label="Mute scene audio"
-          onClick={handleToggleMute}
-          title={muted ? 'Unmute scene audio' : 'Mute scene audio'}
-        >
-          {muted ? <BiVolumeMute /> : <BiVolumeFull />}
-        </ToolbarButton>
-      )}
       {sceneRun && (
         <div className="RuntimeControls">
           <ToolbarButton
@@ -291,9 +299,8 @@ const Toolbar = withSdk(({ sdk }) => {
             {sceneRunStarted ? <StopIcon /> : <PlayIcon />}
           </ToolbarButton>
           <ToolbarButton
-            className="scene-pause"
-            aria-label="Pause scene"
-            aria-pressed={sceneRunPaused}
+            className={cx('scene-pause', { running: sceneRunStarted && sceneRunning })}
+            aria-label={sceneRunPaused ? 'Resume scene' : 'Pause scene'}
             title={sceneRunPaused ? 'Resume scene' : 'Pause scene'}
             disabled={!sceneRunStarted}
             onClick={handleToggleSceneRun}

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import cx from 'classnames';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { getSceneClient } from '../../../lib/rpc/scene';
@@ -111,9 +112,8 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
             {sceneRunStarted ? <StopIcon /> : <PlayIcon />}
           </ToolbarButton>
           <ToolbarButton
-            className="scene-pause"
-            aria-label="Pause scene"
-            aria-pressed={sceneRunPaused}
+            className={cx('scene-pause', { running: sceneRunStarted && sceneRunning })}
+            aria-label={sceneRunPaused ? 'Resume scene' : 'Pause scene'}
             title={sceneRunPaused ? 'Resume scene' : 'Pause scene'}
             disabled={!sceneRunStarted}
             onClick={sceneRunPaused ? handlePlay : handlePause}
