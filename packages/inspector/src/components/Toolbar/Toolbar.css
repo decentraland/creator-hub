@@ -10,17 +10,22 @@
   background-color: var(--tree-bg-color);
 }
 
-.Toolbar .RuntimeControls {
+.Toolbar .LeftContent,
+.Toolbar .RightContent {
   display: flex;
-  gap: 3px;
-  margin-left: auto;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 6px;
 }
 
 .Toolbar .RightContent {
+  justify-content: flex-end;
+  padding-left: 6px;
+}
+
+.Toolbar .RuntimeControls {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
+  gap: 3px;
 }
 
 .Toolbar .ToolbarButton {
@@ -74,7 +79,7 @@
 
 .Toolbar .ToolbarButton:focus-visible {
   position: relative;
-  z-index: 2;
+  z-index: 3;
 }
 
 .Toolbar .ToolbarButton.undo {

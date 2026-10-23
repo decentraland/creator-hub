@@ -208,86 +208,91 @@ const Toolbar = withSdk(({ sdk }) => {
 
   return (
     <div className="Toolbar">
-      <ToolbarButton
-        className="undo"
-        title="Undo"
-        disabled={!canUndo}
-        onClick={canUndo ? handleUndo : undefined}
-      >
-        <UndoIcon />
-      </ToolbarButton>
-      <ToolbarButton
-        className="redo"
-        title="Redo"
-        disabled={!canRedo}
-        onClick={canRedo ? handleRedo : undefined}
-      >
-        <RedoIcon />
-      </ToolbarButton>
-      <Gizmos />
-      {interaction && (
+      <div className="LeftContent">
         <ToolbarButton
-          className="interact"
-          aria-pressed={!editingEnabled}
-          aria-label="Interact with the scene"
-          onClick={handleToggleInteract}
-          title={
-            editingEnabled
-              ? 'Interact with the scene — turn off editing so clicks reach the running scene'
-              : 'Interacting with the scene — click to re-enable editing'
-          }
+          className="undo"
+          title="Undo"
+          disabled={!canUndo}
+          onClick={canUndo ? handleUndo : undefined}
         >
-          <InteractIcon />
+          <UndoIcon />
         </ToolbarButton>
-      )}
-      {audio && (
         <ToolbarButton
-          className="mute"
-          aria-pressed={muted}
-          aria-label="Mute scene audio"
-          onClick={handleToggleMute}
-          title={muted ? 'Unmute scene audio' : 'Mute scene audio'}
+          className="redo"
+          title="Redo"
+          disabled={!canRedo}
+          onClick={canRedo ? handleRedo : undefined}
         >
-          {muted ? <SoundOffIcon /> : <SoundOnIcon />}
+          <RedoIcon />
         </ToolbarButton>
-      )}
-      {editorCamera && (
-        <div className="CameraModeWrap">
-          <div className="CameraModeTooltip">
-            <strong>Camera Toggle</strong>
-            <span>Select if you prefer to move the camera freely or through the player.</span>
+        <Gizmos />
+        {editorCamera && (
+          <div className="CameraModeWrap">
+            <div className="CameraModeTooltip">
+              <strong>Camera Toggle</strong>
+              <span>Select if you prefer to move the camera freely or through the player.</span>
+            </div>
+            <Dropdown
+              className="camera-mode"
+              value={cameraMode}
+              trigger={
+                <>
+                  <CameraIcon />
+                  <span className="CameraModeLabel">
+                    {cameraMode === 'free' ? 'Free' : 'Player'}
+                  </span>
+                  <span className="CameraModeChevron">
+                    <ChevronDownIcon />
+                  </span>
+                </>
+              }
+              options={[
+                {
+                  value: 'free',
+                  label: 'Free',
+                  leftIcon:
+                    cameraMode === 'free' ? <CheckIcon /> : <span className="CheckSpacer" />,
+                  onClick: () => handleSetCameraMode('free'),
+                },
+                {
+                  value: 'avatar',
+                  label: 'Player',
+                  leftIcon:
+                    cameraMode === 'avatar' ? <CheckIcon /> : <span className="CheckSpacer" />,
+                  onClick: () => handleSetCameraMode('avatar'),
+                },
+                invertRotationOption,
+              ]}
+            />
           </div>
-          <Dropdown
-            className="camera-mode"
-            value={cameraMode}
-            trigger={
-              <>
-                <CameraIcon />
-                <span className="CameraModeLabel">{cameraMode === 'free' ? 'Free' : 'Player'}</span>
-                <span className="CameraModeChevron">
-                  <ChevronDownIcon />
-                </span>
-              </>
+        )}
+        {interaction && (
+          <ToolbarButton
+            className="interact"
+            aria-pressed={!editingEnabled}
+            aria-label="Interact with the scene"
+            onClick={handleToggleInteract}
+            title={
+              editingEnabled
+                ? 'Interact with the scene — turn off editing so clicks reach the running scene'
+                : 'Interacting with the scene — click to re-enable editing'
             }
-            options={[
-              {
-                value: 'free',
-                label: 'Free',
-                leftIcon: cameraMode === 'free' ? <CheckIcon /> : <span className="CheckSpacer" />,
-                onClick: () => handleSetCameraMode('free'),
-              },
-              {
-                value: 'avatar',
-                label: 'Player',
-                leftIcon:
-                  cameraMode === 'avatar' ? <CheckIcon /> : <span className="CheckSpacer" />,
-                onClick: () => handleSetCameraMode('avatar'),
-              },
-              invertRotationOption,
-            ]}
-          />
-        </div>
-      )}
+          >
+            <InteractIcon />
+          </ToolbarButton>
+        )}
+        {audio && (
+          <ToolbarButton
+            className="mute"
+            aria-pressed={muted}
+            aria-label="Mute scene audio"
+            onClick={handleToggleMute}
+            title={muted ? 'Unmute scene audio' : 'Mute scene audio'}
+          >
+            {muted ? <SoundOffIcon /> : <SoundOnIcon />}
+          </ToolbarButton>
+        )}
+      </div>
       {sceneRun && (
         <div className="RuntimeControls">
           <ToolbarButton

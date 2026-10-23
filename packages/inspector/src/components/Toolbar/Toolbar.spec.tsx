@@ -177,9 +177,9 @@ describe('3D toolbar', () => {
         'Scaling tool',
         'Snap',
         'Snap increments',
+        'Player',
         'Interact with the scene',
         'Mute scene audio',
-        'Player',
         'Run scene',
         'Edit Scene',
         'All changes saved',
@@ -271,22 +271,22 @@ describe('3D toolbar', () => {
   });
 
   describe('when rendered under Bevy', () => {
-    it('should place Interact before the camera button', () => {
+    it('should order the left group as Snap, camera, Interact, Mute', () => {
       const { container } = renderToolbar();
-      const interact = button('Interact with the scene');
-      const camera = container.querySelector('.camera-mode')!;
-      expect(interact.compareDocumentPosition(camera) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-        Node.DOCUMENT_POSITION_FOLLOWING,
-      );
-    });
-
-    it('should place Mute before the camera button', () => {
-      const { container } = renderToolbar();
-      const mute = button('Mute scene audio');
-      const camera = container.querySelector('.camera-mode')!;
-      expect(mute.compareDocumentPosition(camera) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-        Node.DOCUMENT_POSITION_FOLLOWING,
-      );
+      const left = container.querySelector('.LeftContent')!;
+      const order = [
+        container.querySelector('.snap-menu')!,
+        container.querySelector('.camera-mode')!,
+        button('Interact with the scene'),
+        button('Mute scene audio'),
+      ];
+      for (const el of order) expect(left.contains(el)).toBe(true);
+      for (let i = 1; i < order.length; i++) {
+        expect(
+          order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      }
+      expect(left.lastElementChild).toBe(button('Mute scene audio'));
     });
 
     it('should swap the Mute glyph with its state', () => {
