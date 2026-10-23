@@ -148,8 +148,8 @@ describe('UI Designer toolbar', () => {
     await UIDesigner.open();
   });
 
-  test('keep the panel accent ring on the 2D toolbar', async () => {
-    const accentRing = () =>
+  test('draw the Snow focus ring on the 2D toolbar', async () => {
+    const ring = () =>
       page.evaluate(() => {
         const el = document.activeElement as HTMLElement;
         const style = getComputedStyle(el);
@@ -158,16 +158,16 @@ describe('UI Designer toolbar', () => {
 
     await page.locator('.ui-designer-toolbar .gizmo.free').click();
     await page.keyboard.press('Tab');
-    await expect(accentRing()).resolves.toEqual({
+    await expect(ring()).resolves.toEqual({
       className: expect.stringContaining('gizmo position'),
-      outline: 'solid rgb(99, 180, 246)',
+      outline: 'solid rgb(252, 252, 252)',
     });
 
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
-    await expect(accentRing()).resolves.toEqual({
-      className: expect.stringContaining('open-panel'),
-      outline: 'solid rgb(99, 180, 246)',
+    await expect(ring()).resolves.toEqual({
+      className: expect.stringContaining('edit-scene'),
+      outline: 'solid rgb(252, 252, 252)',
     });
   });
 });

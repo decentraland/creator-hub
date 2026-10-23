@@ -1,6 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { BsCaretDown } from 'react-icons/bs';
-import { BiCheckbox, BiCheckboxChecked } from 'react-icons/bi';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import cx from 'classnames';
 
 import { withSdk } from '../../../hoc/withSdk';
@@ -11,6 +9,15 @@ import { useSnapToggle } from '../../../hooks/editor/useSnap';
 import { useGizmoAlignment } from '../../../hooks/editor/useGizmoAlignment';
 import { ROOT } from '../../../lib/sdk/tree';
 import { GizmoType } from '../../../lib/utils/gizmo';
+import {
+  AlignWorldIcon,
+  ChevronDownIcon,
+  GizmoMoveIcon,
+  GizmoRotateIcon,
+  GizmoScaleIcon,
+  GizmoSelectIcon,
+  SnapIcon,
+} from '../icons';
 import { ToolbarButton } from '../ToolbarButton';
 import { Snap } from './Snap';
 
@@ -22,6 +29,9 @@ export const Gizmos = withSdk(({ sdk }) => {
 
   const handleClosePanel = useCallback(() => setShowPanel(false), []);
   const handleTogglePanel = useCallback(() => setShowPanel(!showPanel), [showPanel]);
+  const snapRef = useRef<HTMLButtonElement>(null);
+  const caretRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const entity = useSelectedEntity();
 
@@ -70,19 +80,32 @@ export const Gizmos = withSdk(({ sdk }) => {
 
   const disableGizmos = !entity || isSpawnAreaSelected;
 
-  const SnapToggleIcon = isEnabled ? BiCheckboxChecked : BiCheckbox;
-  const WorldAlignmentIcon = isGizmoWorldAligned ? BiCheckboxChecked : BiCheckbox;
-
   const ref = useOutsideClick(handleClosePanel);
 
   useEffect(() => {
     setShowPanel(false);
   }, [selection]);
 
+  useEffect(() => {
+    if (isEnabled) return;
+    if (panelRef.current?.contains(document.activeElement)) snapRef.current?.focus();
+    setShowPanel(false);
+  }, [isEnabled]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Escape' || !showPanel) return;
+      setShowPanel(false);
+      caretRef.current?.focus();
+    },
+    [showPanel],
+  );
+
   return (
     <div
       className="Gizmos"
       ref={ref}
+      onKeyDown={handleKeyDown}
     >
       <ToolbarButton
         className="gizmo free"
@@ -90,56 +113,73 @@ export const Gizmos = withSdk(({ sdk }) => {
         disabled={disableGizmos}
         onClick={handleFreeGizmo}
         title="Free movement tool"
-      />
+      >
+        <GizmoSelectIcon />
+      </ToolbarButton>
       <ToolbarButton
         className="gizmo position"
         aria-pressed={selection?.gizmo === GizmoType.POSITION || isSpawnAreaSelected}
         disabled={disableGizmos}
         onClick={handlePositionGizmo}
         title="Translation tool"
-      />
+      >
+        <GizmoMoveIcon />
+      </ToolbarButton>
       <ToolbarButton
         className="gizmo rotation"
         aria-pressed={selection?.gizmo === GizmoType.ROTATION && !isSpawnAreaSelected}
         disabled={disableGizmos}
         onClick={handleRotationGizmo}
         title="Rotation tool"
-      />
+      >
+        <GizmoRotateIcon />
+      </ToolbarButton>
       <ToolbarButton
         className="gizmo scale"
         aria-pressed={selection?.gizmo === GizmoType.SCALE && !isSpawnAreaSelected}
         disabled={disableGizmos}
         onClick={handleScaleGizmo}
         title="Scaling tool"
-      />
-      <button
-        type="button"
-        className="open-panel"
-        aria-label="Snap options"
-        aria-expanded={showPanel}
-        onClick={handleTogglePanel}
       >
-        <BsCaretDown />
-      </button>
-      <div className={cx('panel', { visible: showPanel })}>
-        <div className="title">
-          <label>Snap</label>
-          <SnapToggleIcon
-            className="icon"
-            onClick={toggle}
-          />
-        </div>
+        <GizmoScaleIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        ref={snapRef}
+        className="snap"
+        aria-pressed={isEnabled}
+        title="Snap"
+        onClick={toggle}
+      >
+        <SnapIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        className="align-world"
+        aria-pressed={isGizmoWorldAligned}
+        title="Align to world"
+        onClick={() => setGizmoWorldAligned(!isGizmoWorldAligned)}
+      >
+        <AlignWorldIcon />
+      </ToolbarButton>
+      {isEnabled && (
+        <button
+          ref={caretRef}
+          type="button"
+          className="open-panel"
+          aria-label="Snap increments"
+          aria-expanded={showPanel}
+          onClick={handleTogglePanel}
+        >
+          <ChevronDownIcon />
+        </button>
+      )}
+      <div
+        ref={panelRef}
+        className={cx('panel', { visible: showPanel && isEnabled })}
+      >
         <div className="snaps">
           <Snap gizmo={GizmoType.POSITION} />
           <Snap gizmo={GizmoType.ROTATION} />
           <Snap gizmo={GizmoType.SCALE} />
-        </div>
-        <div className="title">
-          <label>Align to world</label>
-          <WorldAlignmentIcon
-            className="icon"
-            onClick={() => setGizmoWorldAligned(!isGizmoWorldAligned)}
-          />
         </div>
       </div>
     </div>
