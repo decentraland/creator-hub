@@ -14,6 +14,8 @@ import type { Entity } from '@dcl/ecs';
 import { PLAYER } from '../../lib/sdk/tree';
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useComponentValue } from '../../hooks/sdk/useComponentValue';
+import { useAppSelector } from '../../redux/hooks';
+import { isAssetExplorerActive } from '../../redux/ui';
 import type { WithSdkProps } from '../../hoc/withSdk';
 import { withSdk } from '../../hoc/withSdk';
 import type { EditorComponentsTypes } from '../../lib/sdk/components';
@@ -219,10 +221,13 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
     [componentValue, setComponentValue, selection.index, selection.target, spawnPointManager],
   );
 
+  const assetExplorerActive = useAppSelector(isAssetExplorerActive);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (assetExplorerActive) return;
       if (editingIndex !== null) return;
       if (selection.index === null) return;
 
@@ -242,7 +247,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
 
     document.body.addEventListener('keydown', handler, true);
     return () => document.body.removeEventListener('keydown', handler, true);
-  }, [selection.index, editingIndex, handleDelete, handleDuplicate]);
+  }, [selection.index, editingIndex, assetExplorerActive, handleDelete, handleDuplicate]);
 
   const isPlayerRowHighlighted = isPlayerSelected && selection.index === null;
 

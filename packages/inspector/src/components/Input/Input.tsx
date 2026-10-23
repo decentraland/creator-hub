@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import { PropTypes } from './types';
+import type { PropTypes } from './types';
 
 import './Input.css';
 
 const submittingKeys = new Set(['Enter']);
 const cancelingKeys = new Set(['Escape', 'Tab']);
 const dismissableTargets = new Set(['menu', 'menuitem']);
+
+const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
 
 type Roles = { role: string; parentRole: string };
 const getRolesFromTarget = (target: HTMLElement | null): Roles => {
@@ -79,6 +81,7 @@ const Input = ({
       placeholder={placeholder}
       value={stateValue}
       onChange={handleTextChange}
+      onContextMenu={stopPropagation}
       disabled={disabled}
     />
   );

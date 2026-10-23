@@ -83,4 +83,94 @@ describe('Init RPC Methods', () => {
 
     await mocked.engine.update(1);
   });
+
+  describe('removeAssets', () => {
+    // file undo entries are committed after a short window (undo-redo-provider deferred mode)
+    const settle = () => new Promise(resolve => setTimeout(resolve, 150));
+
+    async function importBatch(methods: Awaited<ReturnType<typeof initRpcMethods>>) {
+      const content = new Map<string, Uint8Array>([
+        ['Batch/a.glb', new Uint8Array([1])],
+        ['Batch/sub/b.glb', new Uint8Array([2])],
+      ]);
+      await methods.importAsset({ content, basePath: 'assets', assetPackageName: '' });
+    }
+
+    it('should remove the files and undo them in one step', async () => {
+      const mocked = await mockedRpcInit();
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+
+      await methods.removeAssets({
+        paths: ['assets/Batch/a.glb', 'assets/Batch/sub/b.glb', 'assets/Batch/missing.glb'],
+      });
+      await settle();
+
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(false);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(false);
+
+      await methods.undo({});
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(true);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+    });
+
+    it('should leave the folders the files were in, even when they end up empty', async () => {
+      const mocked = await mockedRpcInit();
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+      const rmdir = vi.spyOn(mocked.fs, 'rmdir');
+
+      await methods.removeAssets({ paths: ['assets/Batch/a.glb', 'assets/Batch/sub/b.glb'] });
+
+      expect(rmdir).not.toHaveBeenCalled();
+    });
+
+    it('should report the files it could not remove and keep the rest undoable', async () => {
+      const mocked = await mockedRpcInit();
+      const rm = mocked.fs.rm;
+      mocked.fs.rm = async (path: string) =>
+        path.endsWith('sub/b.glb') ? Promise.reject(new Error('EBUSY')) : rm(path);
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+
+      const result = await methods.removeAssets({
+        paths: ['assets/Batch/a.glb', 'assets/Batch/sub/b.glb', 'assets/Batch/missing.glb'],
+      });
+      await settle();
+
+      expect(result).toEqual({
+        success: ['assets/Batch/a.glb', 'assets/Batch/missing.glb'],
+        failed: ['assets/Batch/sub/b.glb'],
+      });
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(false);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+
+      await methods.undo({});
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(true);
+    });
+
+    it('should undo a move (import followed by removal) as a single step', async () => {
+      const mocked = await mockedRpcInit();
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+
+      const moved = new Map<string, Uint8Array>([['Moved/a.glb', new Uint8Array([1])]]);
+      await methods.importAsset({ content: moved, basePath: 'assets', assetPackageName: '' });
+      await methods.removeAssets({ paths: ['assets/Batch/a.glb'] });
+      await settle();
+
+      expect(await mocked.fs.existFile('assets/Moved/a.glb')).toBe(true);
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(false);
+
+      await methods.undo({});
+      expect(await mocked.fs.existFile('assets/Moved/a.glb')).toBe(false);
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(true);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+    });
+  });
 });

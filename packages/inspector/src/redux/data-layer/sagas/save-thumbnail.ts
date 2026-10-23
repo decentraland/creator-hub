@@ -1,7 +1,8 @@
 import { call, put } from 'redux-saga/effects';
 
 import type { IDataLayer, saveAnimatedThumbnail, saveThumbnail } from '..';
-import { ErrorType, error, getDataLayerInterface, getThumbnails } from '..';
+import { ErrorType, error, getDataLayerInterface } from '..';
+import { upsertThumbnail } from '../../app';
 import type { Empty, SaveFileRequest } from '../../../lib/data-layer/remote-data-layer';
 import { getThumbnailHashNameForAsset } from '../../../lib/utils/hash';
 import { DIRECTORY } from '../../../lib/data-layer/host/fs-utils';
@@ -15,12 +16,11 @@ function* saveThumbnailFile(request: SaveFileRequest, extension: 'png' | 'webp')
       request.path,
       extension,
     );
-    request.path = `${DIRECTORY.THUMBNAILS}/${hashedFileName}`;
+    const path = `${DIRECTORY.THUMBNAILS}/${hashedFileName}`;
 
-    const _response: Empty = yield call(dataLayer.saveFile, request);
+    const _response: Empty = yield call(dataLayer.saveFile, { ...request, path });
 
-    // Fetch thumbnails again
-    yield put(getThumbnails());
+    yield put(upsertThumbnail({ path, content: request.content }));
   } catch (e) {
     yield put(error({ error: ErrorType.SaveThumbnail }));
   }
