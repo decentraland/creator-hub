@@ -3,7 +3,7 @@
  * Paths here are relative to the `assets/` directory, e.g. `my-pack/model.glb`.
  */
 
-import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
+import { DIRECTORY, getParentPath } from '../../lib/data-layer/host/fs-utils';
 
 export { getParentPath } from '../../lib/data-layer/host/fs-utils';
 
@@ -92,15 +92,21 @@ export function getUniqueCopyName(name: string, siblings: Iterable<string>, isFo
 
 /**
  * Builds a function that maps a path inside `from` (the file itself or anything below it, when
- * it is a folder) to the equivalent path below `to`. Returns undefined for unrelated paths.
+ * it is a folder) to the equivalent path below `to`, ignoring letter case as the explorer's file
+ * lookup does. Returns undefined for unrelated paths.
  */
 export function createPathMapper(from: string, to: string) {
+  const lowerFrom = from.toLowerCase();
   return (path: string): string | undefined => {
-    if (path === from) return to;
-    if (path.startsWith(from + '/')) return to + path.slice(from.length);
+    const lowerPath = path.toLowerCase();
+    if (lowerPath === lowerFrom) return to;
+    if (lowerPath.startsWith(lowerFrom + '/')) return to + path.slice(from.length);
     return undefined;
   };
 }
+
+type PathMap = (path: string) => string | undefined;
+type OnUnreachable = (path: string) => void;
 
 // `scriptPath` is the CALL_SCRIPT_METHOD action's copy of a Script component `path`.
 const REFERENCE_KEYS = new Set(['src', 'audioClipUrl', 'path', 'scriptPath']);
@@ -115,16 +121,77 @@ function parseJsonPayload(payload: string): unknown {
   }
 }
 
+const SCRIPT_LAYOUT_KEY = 'layout';
+
+type ScriptParam = { type?: unknown; value?: unknown };
+type ScriptLayout = { params?: Record<string, ScriptParam> };
+
+function isScriptLayout(
+  key: string,
+  child: unknown,
+  owner: Record<string, unknown>,
+): child is string {
+  return key === SCRIPT_LAYOUT_KEY && typeof child === 'string' && typeof owner.path === 'string';
+}
+
+function isFileName(value: string): boolean {
+  return !value.includes(':') && normalizePath(value) === value;
+}
+
+function getFileParams(layout: string): [name: string, value: string][] {
+  const { params } = (parseJsonPayload(layout) ?? {}) as ScriptLayout;
+  return Object.entries(params ?? {}).flatMap(([name, param]) =>
+    param?.type === 'string' && typeof param.value === 'string' && isFileName(param.value)
+      ? [[name, param.value] as [string, string]]
+      : [],
+  );
+}
+
+function replaceScriptParams(
+  layout: string,
+  scriptPath: string,
+  map: PathMap,
+  onUnreachable?: OnUnreachable,
+): string {
+  const folder = getParentPath(scriptPath);
+  const newFolder = getParentPath(map(scriptPath) ?? scriptPath);
+  const prefix = newFolder ? `${newFolder}/` : '';
+  const values: Record<string, string> = {};
+  for (const [name, value] of getFileParams(layout)) {
+    const moved = map(normalizePath(joinPath(folder, value)));
+    if (!moved) continue;
+    if (!moved.toLowerCase().startsWith(prefix.toLowerCase())) {
+      onUnreachable?.(moved);
+      continue;
+    }
+    const next = moved.slice(prefix.length);
+    if (next !== value) values[name] = next;
+  }
+  if (!Object.keys(values).length) return layout;
+  const parsed = parseJsonPayload(layout) as ScriptLayout;
+  const params = { ...parsed.params };
+  for (const [name, value] of Object.entries(values)) params[name] = { ...params[name], value };
+  return JSON.stringify({ ...parsed, params });
+}
+
 /**
  * Deep-walks a component value replacing the string fields that hold asset paths
  * (`src`, `audioClipUrl`, `path`, `scriptPath`, also inside an Action's `jsonPayload`) through
- * `map`. Returns the same reference when nothing changed.
+ * `map`, and the file names a Script's string parameters give relative to its folder.
+ * Returns the same reference when nothing changed.
+ *
+ * @param onUnreachable - called with each moved file a Script parameter can't name, because the
+ * script only reads files inside its own folder; the parameter is left as it was.
  */
-export function replaceAssetReferences<T>(value: T, map: (path: string) => string | undefined): T {
+export function replaceAssetReferences<T>(
+  value: T,
+  map: PathMap,
+  onUnreachable?: OnUnreachable,
+): T {
   if (Array.isArray(value)) {
     let changed = false;
     const next = value.map(item => {
-      const replaced = replaceAssetReferences(item, map);
+      const replaced = replaceAssetReferences(item, map, onUnreachable);
       if (replaced !== item) changed = true;
       return replaced;
     });
@@ -133,18 +200,21 @@ export function replaceAssetReferences<T>(value: T, map: (path: string) => strin
   if (value && typeof value === 'object' && !(value instanceof Uint8Array)) {
     let changed = false;
     const next: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const owner = value as Record<string, unknown>;
+    for (const [key, child] of Object.entries(owner)) {
       let replaced: unknown = child;
       if (REFERENCE_KEYS.has(key) && typeof child === 'string') {
         replaced = map(child) ?? child;
+      } else if (isScriptLayout(key, child, owner)) {
+        replaced = replaceScriptParams(child, owner.path as string, map, onUnreachable);
       } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
         const payload = parseJsonPayload(child);
-        const replacedPayload = replaceAssetReferences(payload, map);
+        const replacedPayload = replaceAssetReferences(payload, map, onUnreachable);
         if (payload !== undefined && replacedPayload !== payload) {
           replaced = JSON.stringify(replacedPayload);
         }
       } else {
-        replaced = replaceAssetReferences(child, map);
+        replaced = replaceAssetReferences(child, map, onUnreachable);
       }
       if (replaced !== child) changed = true;
       next[key] = replaced;
@@ -159,9 +229,14 @@ export function collectAssetReferences(value: unknown, into: string[] = []): str
   if (Array.isArray(value)) {
     for (const item of value) collectAssetReferences(item, into);
   } else if (value && typeof value === 'object' && !(value instanceof Uint8Array)) {
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const owner = value as Record<string, unknown>;
+    for (const [key, child] of Object.entries(owner)) {
       if (REFERENCE_KEYS.has(key) && typeof child === 'string') into.push(child);
-      else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
+      else if (isScriptLayout(key, child, owner)) {
+        const folder = getParentPath(owner.path as string);
+        for (const [, file] of getFileParams(child))
+          into.push(normalizePath(joinPath(folder, file)));
+      } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
         collectAssetReferences(parseJsonPayload(child), into);
       } else collectAssetReferences(child, into);
     }
