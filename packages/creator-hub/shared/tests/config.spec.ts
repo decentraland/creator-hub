@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { dropGuiEditorSetting, promoteAiAssistantSetting } from '../types/config';
+import {
+  DEFAULT_CONFIG,
+  dropGuiEditorSetting,
+  promoteAiAssistantSetting,
+  promoteExposeMcpServerSetting,
+} from '../types/config';
 import type { AppSettings } from '../types/settings';
 
 type LegacySettings = Partial<AppSettings> & { guiEditor?: boolean };
@@ -122,6 +127,60 @@ describe('promoteAiAssistantSetting', () => {
   describe('when there are no settings at all', () => {
     it('should not throw', () => {
       expect(() => promoteAiAssistantSetting(undefined)).not.toThrow();
+    });
+  });
+});
+
+describe('promoteExposeMcpServerSetting', () => {
+  it('should expose the MCP server by default for new configs', () => {
+    expect(DEFAULT_CONFIG.settings.exposeMcpServer).toBe(true);
+    expect('exposeMcpServerPromoted' in DEFAULT_CONFIG.settings).toBe(false);
+  });
+
+  describe('when the stored settings predate the promotion', () => {
+    it('should turn the exposure on and record that it has run', () => {
+      const settings: StoredSettings = { exposeMcpServer: false };
+
+      promoteExposeMcpServerSetting(settings);
+
+      expect(settings).toEqual({ exposeMcpServer: true, exposeMcpServerPromoted: true });
+    });
+
+    it('should turn it on when the key is absent entirely', () => {
+      const settings: StoredSettings = { aiAssistant: true };
+
+      promoteExposeMcpServerSetting(settings);
+
+      expect(settings.exposeMcpServer).toBe(true);
+      expect(settings.exposeMcpServerPromoted).toBe(true);
+    });
+
+    it('should leave every other setting untouched', () => {
+      const settings: StoredSettings = { exposeMcpServer: false, aiAssistant: false };
+
+      promoteExposeMcpServerSetting(settings);
+
+      expect(settings).toEqual({
+        exposeMcpServer: true,
+        exposeMcpServerPromoted: true,
+        aiAssistant: false,
+      });
+    });
+  });
+
+  describe('when the promotion has already run', () => {
+    it('should respect an exposure the creator turned back off', () => {
+      const settings: StoredSettings = { exposeMcpServer: false, exposeMcpServerPromoted: true };
+
+      promoteExposeMcpServerSetting(settings);
+
+      expect(settings.exposeMcpServer).toBe(false);
+    });
+  });
+
+  describe('when there are no settings', () => {
+    it('should do nothing', () => {
+      expect(() => promoteExposeMcpServerSetting(undefined)).not.toThrow();
     });
   });
 });

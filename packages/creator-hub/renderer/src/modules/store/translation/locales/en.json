@@ -583,7 +583,7 @@
         },
         "mcp_server": {
           "label": "Expose AI assistant MCP server",
-          "help": "Let an AI agent running outside Creator Hub control the open scene. Paste this into the agent's MCP configuration.",
+          "help": "Let an AI agent running outside Creator Hub control the open scene. While this is on, Creator Hub writes the connection into every scene you open as .mcp.json (picked up by Claude Code started in the scene folder) and to mcp-server.json in its app data folder, so external agents connect without copying anything. You can still paste this into an agent's MCP configuration by hand.",
           "copy": "Copy configuration",
           "copied": "Copied!",
           "note": "Localhost only. The URL and token change each time Creator Hub restarts."

@@ -45,6 +45,7 @@ vi.mock('../src/modules/explorer-gateway', () => ({
 
 import {
   ensureSceneMcpServer,
+  onSceneMcpStarted,
   setSceneMcpProject,
   stopSceneMcpServer,
   type SceneMcpInfo,
@@ -209,5 +210,19 @@ describe('scene-mcp server', () => {
 
     await vi.waitFor(() => expect(changed).toBeGreaterThan(0)); // list_changed was pushed
     await client.close();
+  });
+});
+
+describe('onSceneMcpStarted', () => {
+  describe('when the server is already running', () => {
+    it('should call the listener right away with the live url and token', () => {
+      const listener = vi.fn();
+
+      const unsubscribe = onSceneMcpStarted(listener);
+      unsubscribe();
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledWith(info);
+    });
   });
 });

@@ -5,7 +5,8 @@
 //
 // Phase 1 exposes read-only tools only: project metadata and the scene graph, read
 // straight from disk (see scene-composite.ts). The server is started once, lazily, and
-// its config is handed to the `claude` CLI via `--mcp-config`.
+// its config is handed to the `claude` CLI via `--mcp-config`. Agents running OUTSIDE the
+// Hub find it through the files mcp-discovery.ts writes when the server comes up.
 import http from 'http';
 import os from 'os';
 import fs from 'fs';
@@ -801,7 +802,22 @@ let starting: Promise<SceneMcpInfo> | null = null;
 let httpServer: http.Server | null = null;
 let info: SceneMcpInfo | null = null;
 let unsubscribeGatewayTools: (() => void) | null = null;
+// One token per app run: it rotates on every launch, so anything written to disk for
+// external agents (mcp-discovery.ts) is only ever valid for the process that wrote it.
 const AUTH_TOKEN = randomBytes(24).toString('hex');
+
+// Who to tell when the server comes up. The server starts lazily from several places (an
+// AI turn, the Settings tab, a scene opening), so side effects that must follow EVERY start
+// — publishing the connection details for external agents — subscribe here instead of
+// wrapping each caller. A subscriber registered after the start is called right away.
+const startListeners = new Set<(info: SceneMcpInfo) => void>();
+export function onSceneMcpStarted(listener: (info: SceneMcpInfo) => void): () => void {
+  startListeners.add(listener);
+  if (info !== null) listener(info);
+  return () => {
+    startListeners.delete(listener);
+  };
+}
 
 // Build a fresh MCP server for a new session: the static tools plus whatever explorer_* tools
 // the running preview currently exposes.
@@ -957,6 +973,7 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
     const port = typeof addr === 'object' && addr !== null ? addr.port : 0;
     info = { url: `http://127.0.0.1:${port}/mcp`, token: AUTH_TOKEN };
     log.info(`[MCP] Creator Hub MCP server listening on ${info.url}`);
+    for (const listener of startListeners) listener(info);
     return info;
   })();
 
