@@ -1079,9 +1079,7 @@ Code: inspector `Toolbar/ToolbarButton`, one look for both bars (user decisions 
 
 **Current state:**
 
-- `73a26ea5f` (layer 3a2) ships the box, the selected / disabled / focus states and the glyphs in both bars.
-- Its hover is still White 10 + Snow, and Snap is a toggle plus a separate caret.
-- Layer 3a3 (`docs/specs/design-system-tools/layer3a3-spec.md`, implementation pending) brings Figma's drawn hover and the split button.
+- `f6d320189` (layer 3a3) ships every state above in both bars: the box, selected, disabled, focus, Figma's Charcoal hover, the glyphs and the Snap split button.
 
 Creator Hub: none.
 
@@ -1722,16 +1720,17 @@ Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar"
 - **Frames:** `<Toolbar>`, `<RuntimeControls>`, `<AudioControl>` and `<Menus>`.
 - **Set:** [`21028:42986`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-42986), 2 variants (`Property 1` = 2D `21028:42987` / 3D `21023:11108`), each Fixed 1292 × 36, fill Shadow `#161518`, 1px Onix bottom border.
 - **Group names:** the groups are named against their position: `RigthSide` is the left group, `LeftSide` the right one.
-- **Read history:** 2D October 23, 2026 (unchanged since); 3D re-read on the afternoon of October 23, 2026, after a redesign (the file was being edited during the read).
+- **Read history:** 2D October 23, 2026 (unchanged since). 3D re-read on the afternoon of October 23, 2026, after a redesign; re-read again at 16:53 CEST that day, after a reorder that moved the camera button ahead of Interact and Mute (the file was being edited during both reads).
 
 - **`RigthSide`** (the left group; 3D `21023:11116` Hug 374, 2D `21028:42995` Hug 166): Top 5, Left 10, gap 6. Its frames have a 6px radius, a 1px Onix border, an Onix fill and a 1px gap between cells. It holds:
   - undo / redo, 53 × 26 (3D `Back/Forward` `21023:11117`, 2D `Tools` `21028:42996`);
   - four gizmos, 107 × 26 (3D `Tools` `21023:11120`, 2D `Tools` `21028:42999`; in 2D, rotate is `Disabled`);
   - **3D only.** `Snap` `21719:56439`: a 46 × 26 split `ToolbarButton` (`Chevron=True`) in a `Tools` frame. The Snap toggle (grid and magnet glyph), a White 20 seam, then a chevron that opens the snap menu;
+  - **3D only.** `CameraSettings` `21023:11130` (Fixed 86 × 26) → `CameraButton` `21023:11131`: Hug 88.12 × 26, 6px radius, a 1.06px border, **Shadow fill**, padding 0 / 8 / 0 / 4, gap 4. It holds an 18 × 18 `Camera` icon (Silver outline), the label "Player" (Inter 400 12px / 100%, Gray `#CFCDD4`) and an 8 × 8 `arrow-down` (White 60);
   - **3D only.** `Interact` `21023:11128`: 26 × 26;
-  - **3D only.** `Sound` `21723:57310`: Mute, a framed 26 × 26 `ToolbarButton`. Its states are drawn in `<AudioControl>` (`21723:57634`): **On** is a speaker with waves, **Off** a speaker with an ×, both Gray on a Shadow cell (re-read the evening of October 23, 2026: the Off cell gained its Shadow fill and its glyph went from Snow to Gray). Neither has a selected fill;
-  - **3D only.** `CameraSettings` `21023:11130` (Fixed 86 × 26) → `CameraButton` `21023:11131`: Hug 88.12 × 26, 6px radius, a 1.06px border, **Shadow fill**, padding 0 / 8 / 0 / 4, gap 4. It holds an 18 × 18 `Camera` icon (Silver outline), the label "Player" (Inter 400 12px / 100%, Gray `#CFCDD4`) and an 8 × 8 `arrow-down` (White 60).
-- **`RuntimeControls`** (3D `21028:33543`, 2D `21028:43015`): `Preview=Off`, centred at Left 618, gap 3.
+  - **3D only.** `Sound` `21723:57310`: Mute, a framed 26 × 26 `ToolbarButton`. Its states are drawn in `<AudioControl>` (`21723:57634`): **On** is a speaker with waves, **Off** a speaker with an ×, both Gray on a Shadow cell (re-read the evening of October 23, 2026: the Off cell gained its Shadow fill and its glyph went from Snow to Gray). Neither has a selected fill.
+- **3D left-group x positions** (in the 1292 bar): undo / redo 10–63, gizmos 69–176, Snap 182–228, camera 234–320, Interact 326–352, Mute 358–384.
+- **`RuntimeControls`** (3D `21028:33543`, 2D `21028:43015`): `Preview=Off`, Left 618, 55 wide, gap 3, so it sits at the true bar centre (645.5 of 1292).
 - **`LeftSide`** (the right group; 3D `21023:11109`, 2D `21028:42988`): Left 1202, gap 6, padding-right 4. It holds the `Edit` and `Save` frames (26 × 26, 6px radius, a 1px Onix border and fill), a `Div` (a 24px White 10 vertical rule) and a 16 × 16 `Kebab` (three Snow dots, no frame).
 - **`<Menus>` `21719:56867`** (the open menus, each a 0.71-scaled `Menu`: Fixed 176, Onix, a 0.71px White 10 border, radius 8.52, padding 7.1, drop shadow `0 2.84 5.68` Black 40):
   - **Snap menu** `21719:56868`:
@@ -1742,17 +1741,17 @@ Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar"
   - **Camera menu** `21719:56872`: Free ✓, Player, a rule, an "Invert Camera Rotation" checkbox row. Its trigger is drawn Onix-filled, unlike the bar's `CameraButton`; the bar instance is the source (✱, G10).
   - **⋮ menu** `21722:57105` (named "CameraSettings", sic): one "Enable Autosave" checkbox row.
 
-**Final design** (user decisions October 22–23, 2026; layer 3a3):
+**Final design** (user decisions October 22–23, 2026; layers 3a3 and 3a4):
 
 - **Bar:** 36px tall with a 1px `--palette-neutral-onyx` bottom border, insets 10 / 4, 6px gaps.
 - **Groups:** each joined group's cells carry their own 1px Onix border and overlap by 1px, so seams are single pixels and groups come out 51 / 103px wide (✱; the code has no frame wrappers).
-- **3D, left to right:** undo / redo, gizmos, the **Snap split button**, Interact, **Mute**, the camera button.
+- **3D, left to right:** undo / redo, gizmos, the **Snap split button**, the **camera button**, Interact, **Mute**. Tab order follows the same order (DOM order, no `tabindex`).
   - **Snap split:** 46 wide; the "Snap increments" chevron always shows, 20 × 26 (✱ below the 24px floor, accepted).
   - **Snap menu:** hangs from the Snap toggle's left edge; bordered Position / Rotation / Scale fields, a White 10 rule inset with the rows (the documented menu-divider deviation), an "Align to World" checkbox (`CheckboxField color="tertiary"`, 16px box, 12px Gray label like the rows above). There is no separate Align toggle.
   - **Mute:** framed, a Shadow cell and a Gray glyph in both states; the glyph swap and `aria-pressed` carry the state.
   - **Camera button:** Shadow fill + 1px Onix border, icon stroke `--palette-neutral-gray3`. Its menu has the "Invert Camera Rotation" checkbox.
 - **2D:** undo / redo and gizmos; **no snap control** (as `21028:42987` draws it; snapping still works).
-- **RuntimeControls:** centred in the free space between the left groups and the right group (✱).
+- **RuntimeControls:** at the **true bar centre**, as Figma draws them. When the left controls leave no room, they fall back to sit right after the last left control: Mute under Bevy, the Snap chevron under Babylon. The code wraps the left controls in `LeftContent` and the right ones in `RightContent`, equal flexible halves around the run controls. `RightContent` carries `padding-left: 6px`, which cancels the bar's 10 / 4 inset asymmetry; without it the run controls would land 3px right of centre (✱, accepted in Validate 3a4 round 1).
 - **Right side:** Edit ("Edit Scene"), Save, the rule and a ⋮ named "More options".
   - **Save** is hidden while auto-save is on and shown while it is off.
   - **2D has no Save** (✱): code-as-source writes every edit to its file.
@@ -1765,16 +1764,20 @@ Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar"
 - **Hover:** Figma's Charcoal (→ `--base-19`) with the glyph unchanged, in both bars; the split button's chevron cell hovers on its own.
 - **Focus:** Snow `--focus-ring` on every control of both bars.
 
-**Current state** (`73a26ea5f`, layer 3a2): both bars have the bar, groups, run controls, the right side and Figma's glyphs. What layer 3a3 (`docs/specs/design-system-tools/layer3a3-spec.md`, implementation pending) still has to change:
+**Decisions** (the record for this toolbar; grep here before asking again):
 
-- the Snap / Align toggles and the conditional caret (instead of the split button and menu);
-- the `#1e1e1e` increments card;
-- Mute after the camera, with react-icons;
-- the Onix-filled camera button;
-- the White 10 + Snow hover;
-- ⋮ holding Invert / Inspector under Bevy too;
-- the labels "Enable autosave" and "Align to world" (lower-case);
-- Pause as a pressed toggle when paused (see RuntimeControls).
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-23 | Figma moved the 3D camera button while it was being read (16:35 → 16:53 CEST). Is the 16:53 layout settled? | Yes. Re-read the board before the final screenshots |
+| 2026-10-23 | Apply the new 3D order exactly as drawn? | Yes: undo / redo · gizmos · Snap · camera · Interact · Mute, with tab order following |
+| 2026-10-23 | Where do the run controls go? | The true bar centre. When there is no room, right after the last left control (Mute under Bevy, Snap under Babylon). This retires the earlier "centred in the free space" deviation (✱7) |
+| 2026-10-23 | Does the 2D bar change with the reorder? | No: `21028:42987` is unchanged |
+
+**Current state** (layer 3a4 on top of `f6d320189`): matches the final design above. Measured in Creator Hub:
+
+- At a 1440 window both bars centre the run controls exactly (0.00px off).
+- From a 1200 window down, the 3D run controls sit 6px after Mute.
+- Below a window of about 890 the bar's content no longer fits, and the right group, ⋮ first, is clipped. That predates 3a4: the content is as wide at `f6d320189`, and the main window has no minimum width.
 
 | Variant | Fill | Border | Contrast | A11y |
 | --- | --- | --- | --- | --- |
@@ -1797,7 +1800,7 @@ Set [`21028:16521`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 - **Running:** `Preview=On`: slot 1 Stop, Pause Blue Dark 2 + Snow (a `running` class; hover Blue Dark 3), named "Pause scene".
 - **Paused:** slot 1 Stop, Pause in the rest look (Shadow, Gray), named "Resume scene".
 
-**Current state** (`73a26ea5f`): the earlier model, Pause an `aria-pressed` toggle that is pressed (Blue Dark 2) while paused and unpressed while running. Layer 3a3 replaces it.
+**Current state:** as above, placed at the true bar centre (see the Toolbar decisions).
 
 | Preview | Play slot | Pause slot | A11y |
 | --- | --- | --- | --- |
