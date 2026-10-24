@@ -82,11 +82,12 @@ const VideoControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
           <TextField
             label="Custom Name"
             value={videoPlayer.customName}
-            onChange={e =>
+            onBlur={e => {
+              if (e.target.value === videoPlayer.customName) return;
               setVideoPlayers(
                 videoPlayers.with(idx, { ...videoPlayer, customName: e.target.value }),
-              )
-            }
+              );
+            }}
           />
         </AdminListRow>
       ))}

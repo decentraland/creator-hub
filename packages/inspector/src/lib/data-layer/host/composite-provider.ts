@@ -47,6 +47,7 @@ export class CompositeProvider implements StateProvider {
   private pendingOperations = new Set<string>();
   private savePromise: Promise<void> | null = null;
   private lastSaveTime = 0;
+  private trailingSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly minSaveInterval = 100;
 
   constructor(
@@ -187,16 +188,40 @@ export class CompositeProvider implements StateProvider {
 
     this.pendingOperations.delete(transaction.id);
 
-    if (this.dirtyState === DirtyState.DirtyAndNeedsDump) {
-      const preferences = this.getInspectorPreferences();
-      const shouldAutosave = preferences.autosaveEnabled;
-      const now = Date.now();
+    if (this.dirtyState !== DirtyState.DirtyAndNeedsDump) return;
+    if (!this.getInspectorPreferences().autosaveEnabled) return;
 
-      if (shouldAutosave && now - this.lastSaveTime >= this.minSaveInterval) {
-        this.lastSaveTime = now;
-        await this.saveComposite(true);
-      }
+    const now = Date.now();
+    const sinceLastSave = now - this.lastSaveTime;
+
+    if (sinceLastSave >= this.minSaveInterval) {
+      this.clearTrailingSave();
+      this.lastSaveTime = now;
+      await this.saveComposite(true);
+      return;
     }
+
+    this.scheduleTrailingSave(this.minSaveInterval - sinceLastSave);
+  }
+
+  private scheduleTrailingSave(delay: number): void {
+    if (this.trailingSaveTimer) return;
+
+    this.trailingSaveTimer = setTimeout(() => {
+      this.trailingSaveTimer = null;
+      if (this.dirtyState !== DirtyState.DirtyAndNeedsDump) return;
+      if (!this.getInspectorPreferences().autosaveEnabled) return;
+
+      this.lastSaveTime = Date.now();
+      void this.saveComposite(true);
+    }, delay);
+  }
+
+  private clearTrailingSave(): void {
+    if (!this.trailingSaveTimer) return;
+
+    clearTimeout(this.trailingSaveTimer);
+    this.trailingSaveTimer = null;
   }
 
   async saveComposite(dump = true): Promise<CompositeDefinition | null> {
@@ -261,6 +286,8 @@ export class CompositeProvider implements StateProvider {
   }
 
   async dispose(): Promise<void> {
+    this.clearTrailingSave();
+
     if (this.savePromise) {
       await this.savePromise;
     }
