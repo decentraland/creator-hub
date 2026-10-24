@@ -984,7 +984,8 @@
       "init_failed": "無法初始化登入。請檢查您的連接。",
       "identity_not_found": "無法完成登入。請重新登入。",
       "identity_expired": "您的登入請求已過期。請重新登入。",
-      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。"
+      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。",
+      "verifier_mismatch": "無法完成登入：此登入是從其他工作階段發起的。請重新登入。"
     }
   },
   "more": {

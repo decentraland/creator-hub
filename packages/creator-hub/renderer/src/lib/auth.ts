@@ -4,6 +4,11 @@ import { ChainId, ProviderType } from '@dcl/schemas';
 import { type AuthIdentity, type AuthChain } from '@dcl/crypto';
 import * as sso from '@dcl/single-sign-on-client';
 import { analytics } from '#preload';
+import {
+  SIGN_IN_VERIFIER_HEADER,
+  createSignInVerifier,
+  deriveSignInRequestId,
+} from './signInVerifier';
 
 const STORAGE_KEY_ADDRESS = 'auth-server-provider-address';
 const STORAGE_KEY_CHAIN_ID = 'auth-server-provider-chain-id';
@@ -16,7 +21,7 @@ type Payload = {
 /**
  * Reason a deep-link sign in failed, used to surface a translated message.
  */
-export type SignInErrorReason = 'not_found' | 'expired' | 'network' | 'unknown';
+export type SignInErrorReason = 'not_found' | 'expired' | 'network' | 'verifier' | 'unknown';
 
 /**
  * Error thrown while fetching/applying a deep-link sign in identity. Carries a
@@ -111,11 +116,15 @@ export class AuthServerProvider {
   }
 
   /**
-   * Generates the id that correlates a deep-link sign in with this app instance.
-   * The auth dapp only needs a valid UUID v4 in the link — the deep-link flow
-   * never recovers a server-side request for it — so nothing is created here.
+   * Generates the id that correlates a deep-link sign in with this app instance,
+   * and the verifier it is derived from. The verifier must be kept for this
+   * attempt and passed to `applyDeepLinkIdentity`: the auth server only hands
+   * the identity to whoever presents it.
    */
-  static createSignInRequestId = (): string => crypto.randomUUID();
+  static createSignInRequest = async (): Promise<{ requestId: string; verifier: string }> => {
+    const verifier = createSignInVerifier();
+    return { requestId: await deriveSignInRequestId(verifier), verifier };
+  };
 
   /**
    * Fetches a stored identity by its id (delivered via deep link). The identity
@@ -124,9 +133,11 @@ export class AuthServerProvider {
    */
   static fetchIdentity = async (
     identityId: string,
+    verifier: string,
   ): Promise<{ identity: AuthIdentity; signer: string }> => {
     const response = await fetch(
       `${AuthServerProvider.authServerUrl}/identities/${encodeURIComponent(identityId)}`,
+      { headers: { [SIGN_IN_VERIFIER_HEADER]: verifier } },
     );
 
     if (response.status === 404) {
@@ -134,6 +145,9 @@ export class AuthServerProvider {
     }
     if (response.status === 410) {
       throw new SignInError('expired', 'Sign in identity expired');
+    }
+    if (response.status === 401) {
+      throw new SignInError('verifier', 'Sign in identity belongs to another sign in request');
     }
     if (response.status === 403) {
       throw new SignInError(
@@ -158,8 +172,8 @@ export class AuthServerProvider {
    * Completes a deep-link sign in: fetches the identity for the given id and
    * persists it. Returns the signer address.
    */
-  static applyDeepLinkIdentity = async (identityId: string): Promise<string> => {
-    const { identity, signer } = await AuthServerProvider.fetchIdentity(identityId);
+  static applyDeepLinkIdentity = async (identityId: string, verifier: string): Promise<string> => {
+    const { identity, signer } = await AuthServerProvider.fetchIdentity(identityId, verifier);
     localStorage.setItem(STORAGE_KEY_ADDRESS, signer);
     sso.localStorageStoreIdentity(signer, identity);
     return signer;
