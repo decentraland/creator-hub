@@ -3,32 +3,13 @@ import type { ActionRef } from '@dcl/asset-packs';
 import { TextField, CheckboxField, RangeField } from '../../../ui';
 import { Dropdown } from '../../../ui/Dropdown';
 import EntityField from '../../../ui/EntityField/EntityField';
-import InfoTooltip from '../../../ui/InfoTooltip/InfoTooltip';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
 import ActionField from './ActionField';
+import { ObjectField } from './ObjectField';
+import { ArrayField } from './ArrayField';
+import { labelWithTooltip } from './labels';
 
 import type { Props } from './types';
-
-// The param's identifier is what the creator sees, so present it readably:
-// camelCase / snake_case / kebab-case -> spaced, first letter capitalized
-// (e.g. `activatedBy` -> "Activated By", `audioClipUrl` -> "Audio Clip Url").
-function formatLabel(name: string): string {
-  const spaced = name
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .trim();
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-function labelWithTooltip(name: string, tooltip?: string) {
-  const label = formatLabel(name);
-  if (!tooltip) return label;
-  return (
-    <>
-      {label} <InfoTooltip text={tooltip} />
-    </>
-  );
-}
 
 export function ScriptParamField({ name, param, onUpdate }: Props) {
   switch (param.type) {
@@ -90,6 +71,24 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
           label={labelWithTooltip(name, param.tooltip)}
           value={param.value}
           onChange={(value: ActionRef) => onUpdate(value)}
+        />
+      );
+
+    case 'object':
+      return (
+        <ObjectField
+          name={name}
+          param={param}
+          onUpdate={onUpdate}
+        />
+      );
+
+    case 'array':
+      return (
+        <ArrayField
+          name={name}
+          param={param}
+          onUpdate={onUpdate}
         />
       );
 

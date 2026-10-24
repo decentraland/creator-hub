@@ -103,6 +103,20 @@ describe('buildInspectorUrl', () => {
     });
   });
 
+  describe('when the dev asset catalog is enabled', () => {
+    it('should point the inspector at the development CDN', () => {
+      expect(buildParams({ useDevAssetCatalog: true }).get('contentUrl')).toBe(
+        'https://builder-items.decentraland.zone',
+      );
+    });
+
+    it('should not point at the development CDN when disabled', () => {
+      expect(buildParams({ useDevAssetCatalog: false }).get('contentUrl')).not.toBe(
+        'https://builder-items.decentraland.zone',
+      );
+    });
+  });
+
   describe('when a project is open', () => {
     it('should identify the project to the inspector', () => {
       expect(buildParams({ project: fakeProject() }).get('projectId')).toBe('project-1');

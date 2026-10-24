@@ -35,7 +35,7 @@ import {
 import type { FlatFetchInit } from '~system/SignedFetch';
 import { getRealm } from '~system/Runtime';
 import { signedFetch } from '~system/SignedFetch';
-import { getEntityParent, getPlayerPosition, getWorldPosition, getWorldRotation } from './helpers';
+import { getPlayerPosition, getWorldPosition, getWorldRotation } from './helpers';
 import type {
   ActionPayload,
   ISDKHelpers,
@@ -45,7 +45,6 @@ import type {
 } from './definitions';
 import {
   ActionType,
-  ProximityLayer,
   TriggerType,
   TweenType,
   TeleportMode,
@@ -73,7 +72,8 @@ import {
 } from './ui';
 import { AlignMode } from './enums';
 import { getExplorerComponents } from './components';
-import { initTriggers, damageTargets, healTargets } from './triggers';
+import { initTriggers } from './triggers';
+import { dealDamageInRadius, dealHealToPlayers } from './combat';
 import { followMap } from './transform';
 import { getEasingFunctionFromInterpolation } from './tweens';
 import { getRewardsServerUrl } from './admin-toolkit-ui/constants';
@@ -1237,50 +1237,9 @@ export function createActionsSystem(
     }
   }
 
-  // DAMAGE
+  // DAMAGE — shared radius scan lives in ./combat so script weapons hit the same targets.
   function handleDamage(entity: Entity, payload: ActionPayload<ActionType.DAMAGE>) {
-    const { radius, layer, hits } = payload;
-    const entityPosition = AvatarAttach.has(entity)
-      ? getPlayerPosition()
-      : getWorldPosition(entity);
-
-    const getRoot = (entity: Entity): Entity => {
-      const parent = getEntityParent(entity);
-      return !parent ? entity : getRoot(parent);
-    };
-
-    for (const target of damageTargets) {
-      const targetPosition = getWorldPosition(target);
-      const distance = Vector3.distance(entityPosition, targetPosition);
-
-      // avoid causing damage to the entity itself or its children
-      const entityTree = Array.from(getComponentEntityTree(engine, entity, Transform));
-      const isPartOfEntityTree = entityTree.some(($: Entity) => $ === target);
-      if (isPartOfEntityTree) {
-        continue;
-      }
-
-      if (layer) {
-        if (layer === ProximityLayer.PLAYER) {
-          const root = getRoot(target);
-          if (root !== engine.PlayerEntity && root !== engine.CameraEntity) {
-            continue;
-          }
-        } else if (layer === ProximityLayer.NON_PLAYER) {
-          const root = getRoot(target);
-          if (root === engine.PlayerEntity || root === engine.CameraEntity) {
-            continue;
-          }
-        }
-      }
-      if (distance <= radius) {
-        const total = hits === undefined ? 1 : Math.max(hits, 1);
-        for (let i = 0; i < total; i++) {
-          const triggerEvents = getTriggerEvents(target);
-          triggerEvents.emit(TriggerType.ON_DAMAGE);
-        }
-      }
-    }
+    dealDamageInRadius(engine, entity, payload);
   }
 
   // MOVE_PLAYER_HERE
@@ -1452,23 +1411,7 @@ export function createActionsSystem(
   }
 
   function handleHealPlayer(entity: Entity, payload: ActionPayload<ActionType.HEAL_PLAYER>) {
-    const { multiplier } = payload;
-
-    const getRoot = (entity: Entity): Entity => {
-      const parent = getEntityParent(entity);
-      return !parent ? entity : getRoot(parent);
-    };
-
-    for (const target of healTargets) {
-      const root = getRoot(target);
-      if (root === engine.PlayerEntity) {
-        const triggerEvents = getTriggerEvents(target);
-        const total = Math.max(multiplier ?? 1, 1);
-        for (let i = 0; i < total; i++) {
-          triggerEvents.emit(TriggerType.ON_HEAL_PLAYER);
-        }
-      }
-    }
+    dealHealToPlayers(engine, entity, payload);
   }
 
   async function request(url: string, init?: FlatFetchInit) {
