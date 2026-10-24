@@ -11,6 +11,7 @@ import { delay } from '/shared/utils';
 import { fetch } from '/shared/fetch';
 
 import { config } from '/@/config';
+import { WORLD_LIMITS_TIMEOUT_MS, Worlds } from '/@/lib/worlds';
 import { t } from '/@/modules/store/translation/utils';
 import {
   type Info,
@@ -23,7 +24,8 @@ import {
 } from '/@/lib/deploy';
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
-export const MAX_POINTER_SIZE_BYTES = 15 * 1e6; // 15MB validation in the content-server
+// @dcl/content-validator `entityParameters.scene.maxSizeInMB`, checked per pointer in binary units.
+export const MAX_POINTER_SIZE_BYTES = 15 * 1024 * 1024;
 
 const ASSET_BUNDLE_REGISTRY = config.get('ASSET_BUNDLE_REGISTRY_URL');
 const ASSET_BUNDLE_REGISTRY_ABGEN = config.get('ASSET_BUNDLE_REGISTRY_ABGEN_URL');
@@ -49,6 +51,61 @@ export const fetchInfo = async (url: string): Promise<Info> => {
 
 export function getInvalidFiles(files: File[]) {
   return files.filter(file => file.size > MAX_FILE_SIZE_BYTES).map(file => file.name);
+}
+
+export function getTotalSize(files: File[]) {
+  return files.reduce((total, file) => total + file.size, 0);
+}
+
+export function getGenesisCitySceneSizeLimit(parcelCount: number) {
+  return parcelCount * MAX_POINTER_SIZE_BYTES;
+}
+
+/**
+ * Picks the parcels to ask the world limits for: one shared parcel per replaced scene, which
+ * credits back the same scenes as the whole list, or one of the scene's own when none is replaced.
+ * Keeps the request small, as the server caps how many parcels it takes.
+ */
+export function getWorldLimitsParcels(parcels: string[], replacedScenesParcels: string[][]) {
+  const sceneParcels = new Set(parcels);
+  const picked = new Set<string>();
+  for (const replacedParcels of replacedScenesParcels) {
+    const shared = replacedParcels.find(parcel => sceneParcels.has(parcel));
+    if (shared) picked.add(shared);
+  }
+  if (picked.size === 0 && parcels.length > 0) picked.add(parcels[0]);
+  return [...picked];
+}
+
+/**
+ * Resolves the size the worlds server will accept for the whole scene, or `null` when it cannot be
+ * known (a server without the limits endpoint, or a failed request), in which case the server
+ * stays the only gate.
+ */
+export async function fetchWorldSceneSizeLimit(
+  worldName: string,
+  parcels: string[],
+): Promise<number | null> {
+  const worlds = new Worlds();
+  // Publish waits for both requests, so one deadline bounds them together.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WORLD_LIMITS_TIMEOUT_MS);
+  try {
+    const replacedScenesParcels = await worlds.fetchReplacedScenesParcels(
+      worldName,
+      parcels,
+      controller.signal,
+    );
+    if (!replacedScenesParcels) return null;
+    const limits = await worlds.fetchWorldLimits(
+      worldName,
+      getWorldLimitsParcels(parcels, replacedScenesParcels),
+      controller.signal,
+    );
+    return limits?.maxSceneSizeInBytes ?? null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export const deploy = async (
