@@ -31,9 +31,9 @@
  * ## One listener, one handler
  *
  * Electron keeps only ONE `onHeadersReceived` listener per session — a second registration
- * replaces the first — so the Studios CORS rewrite and the isolation headers must share a
- * handler registered over the union of their filters, each rule applying to the URLs it
- * matches. CORS only fills in a header the response omitted; isolation is forced and replaces
+ * replaces the first — so the asset-packs CDN CORS rewrite and the isolation headers must
+ * share a handler registered over the union of their filters, each rule applying to the URLs
+ * it matches. CORS only fills in a header the response omitted; isolation is forced and replaces
  * whatever the response sent.
  *
  * ## Header names are case-insensitive, and a spread is not
@@ -51,8 +51,6 @@
 import { URL } from 'node:url';
 import { session, type Session } from 'electron';
 import { app, shell } from 'electron';
-
-import { STUDIOS_ADMIN_URL } from '/shared/urls';
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -93,7 +91,6 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.today',
   'https://decentraland.zone',
   'https://studios.decentraland.org',
-  STUDIOS_ADMIN_URL,
   'https://docs.decentraland.org',
   'https://youtube.com',
   'https://www.youtube.com',
@@ -102,15 +99,6 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
 ] as AllowedOrigins<typeof IS_DEV>[]);
 
 app.on('ready', () => {
-  const filter = {
-    urls: ['https://studios.decentraland.org/*', `${STUDIOS_ADMIN_URL}/*`],
-  };
-
-  session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
-    details.requestHeaders['Origin'] = '*';
-    callback({ requestHeaders: details.requestHeaders });
-  });
-
   const isolationFilter = { urls: ['file://*/*', 'http://localhost/*', 'http://localhost:*/*'] };
 
   const embedFilter = {
@@ -125,7 +113,7 @@ app.on('ready', () => {
   // returns Access-Control-Allow-Origin when it forwards/varies on Origin, but it intermittently
   // serves cached responses WITHOUT that header — so a cross-origin fetch from the inspector
   // iframe (a localhost origin) is CORS-blocked and place_smart_item / drag-drop fail with a
-  // bare "Failed to fetch". Inject ACAO ourselves (as we do for studios) so it's immune to the
+  // bare "Failed to fetch". Inject ACAO ourselves so it's immune to the
   // CDN's cache state. Public, read-only content, so `*` is safe.
   const contentFilter = {
     urls: [
@@ -136,7 +124,7 @@ app.on('ready', () => {
   };
 
   const combinedFilter = {
-    urls: [...filter.urls, ...isolationFilter.urls, ...embedFilter.urls, ...contentFilter.urls],
+    urls: [...isolationFilter.urls, ...embedFilter.urls, ...contentFilter.urls],
   };
   const matches = (url: string, patterns: string[]) =>
     patterns.some(pattern => {
@@ -164,7 +152,7 @@ app.on('ready', () => {
     let responseHeaders: ResponseHeaders = details.responseHeaders ?? {};
 
     if (
-      matches(details.url, [...filter.urls, ...contentFilter.urls]) &&
+      matches(details.url, contentFilter.urls) &&
       !hasHeader(responseHeaders, 'Access-Control-Allow-Origin')
     ) {
       responseHeaders = setHeader(responseHeaders, 'Access-Control-Allow-Origin', '*');
