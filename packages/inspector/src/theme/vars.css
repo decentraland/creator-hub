@@ -29,11 +29,13 @@
   --controlHeight-large: 46px;
   --shape-borderRadius: 6px;
   --shape-borderRadiusLarge: 12px;
+  --shape-borderRadiusPill: 100px;
   --borderWidth-strong: 1.5px;
   --palette-whiteTransparent-subtle: rgba(255, 255, 255, 0.1);
   --palette-whiteTransparent-soft: rgba(255, 255, 255, 0.2);
   --palette-whiteTransparent-blurry: rgba(255, 255, 255, 0.4);
   --palette-whiteTransparent-backdrop: rgba(255, 255, 255, 0.6);
+  --palette-blackTransparent-blurry: rgba(0, 0, 0, 0.4);
   --palette-primary-light: #ff6280;
   --palette-neutral-gray2: #716b7c;
   --palette-neutral-gray3: #a09ba8;
