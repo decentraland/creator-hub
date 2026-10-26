@@ -29,3 +29,50 @@ input[type="number"] {
   max-height: calc(30vh);
   overflow-y: auto;
 }
+
+.contexify {
+  border: 1px solid var(--palette-whiteTransparent-subtle);
+}
+
+.contexify_itemContent {
+  min-height: 38px;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.contexify_itemContent > svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  color: var(--ui-designer-text-muted);
+}
+
+.contexify_item:focus-visible > .contexify_itemContent {
+  box-shadow: inset 0 0 0 1px var(--focus-ring);
+}
+
+.contexify .contexify_item > .contexify_submenu {
+  left: calc(100% + var(--contexify-menu-padding) + 11px);
+  pointer-events: initial;
+  visibility: hidden;
+  transition:
+    opacity 0s 250ms,
+    visibility 0s 250ms;
+}
+
+.contexify .contexify_item > .contexify_submenu-right {
+  right: calc(100% + var(--contexify-menu-padding) + 11px);
+  left: unset;
+}
+
+.contexify .contexify_submenu-isOpen > .contexify_submenu,
+.contexify_item:not(.contexify_item-disabled):hover > .contexify_submenu {
+  visibility: visible;
+  transition: none;
+}
+
+.contexify .contexify_item:focus > .contexify_submenu {
+  transition: none;
+}

@@ -92,9 +92,9 @@
   text-overflow: ellipsis;
 }
 
-.Tree .contexify svg {
-  color: var(--contexify-item-color);
-  margin-right: 4px;
+.Tree .item:focus-visible {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: -1px;
 }
 
 .Tree .contexify_item {

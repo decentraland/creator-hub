@@ -23,7 +23,7 @@ export function CatalogAssetContextMenu() {
           onAddToFilesystem?.(asset);
         }}
       >
-        Add to filesystem
+        Add to Filesystem
       </Item>
       <Item
         hidden={args => !isBuiltIn(args)}
@@ -32,7 +32,7 @@ export function CatalogAssetContextMenu() {
           void copyBuiltInEmoteName(getBuiltInEmote(asset)!);
         }}
       >
-        Copy name
+        Copy Name
       </Item>
     </ContextMenu>
   );

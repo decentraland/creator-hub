@@ -51,6 +51,24 @@ describe('when the entity menu offers components to add', () => {
     cleanup();
   });
 
+  it('should list Create Custom Item then Add Component, leaving the divider to the tree menu', () => {
+    const rows = Array.from(screen.getByRole('menu', { name: 'Entity Options' }).children).map(
+      row =>
+        row.getAttribute('role') === 'separator'
+          ? '─'
+          : (row.getAttribute('aria-label') ?? row.textContent ?? '').trim(),
+    );
+
+    expect(rows).toEqual(['Create Custom Item', 'Add Component']);
+  });
+
+  it('should show the submenu label in Title Case', () => {
+    const submenu = screen.getByRole('menuitem', { name: 'Add Component' });
+    const visibleLabel = submenu.querySelector('.contexify_itemContent')?.firstChild?.textContent;
+
+    expect(visibleLabel).toBe('Add Component');
+  });
+
   it('should name the submenu item by its label alone and keep its popup', () => {
     const submenu = screen.getByRole('menuitem', { name: 'Add Component' });
 

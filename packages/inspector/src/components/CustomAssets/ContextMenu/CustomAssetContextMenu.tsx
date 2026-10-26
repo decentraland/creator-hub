@@ -1,5 +1,5 @@
 import React from 'react';
-import { Item } from 'react-contexify';
+import { Item, Separator } from 'react-contexify';
 import { ContextMenu } from '../../ContexMenu/ContextMenu';
 import { CUSTOM_ASSETS_CONTEXT_MENU_ID, type CustomAssetContextMenuProps } from './ContextMenu';
 
@@ -15,8 +15,9 @@ export function CustomAssetContextMenu() {
           onAddToFilesystem(assetId);
         }}
       >
-        Add to filesystem
+        Add to Filesystem
       </Item>
+      <Separator />
       <Item
         onClick={({ props }) => {
           const { assetId, onRename } = props as CustomAssetContextMenuProps;

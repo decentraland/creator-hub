@@ -26,6 +26,11 @@
   background: var(--list-smart-item-hover-bg-color);
 }
 
+.assets-catalog-asset:focus-visible {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
 .assets-catalog-asset img {
   width: 60px;
   height: 60px;

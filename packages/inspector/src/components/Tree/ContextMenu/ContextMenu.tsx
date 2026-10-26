@@ -1,5 +1,5 @@
 import React from 'react';
-import { Item } from 'react-contexify';
+import { Item, Separator } from 'react-contexify';
 import { AiFillFileAdd as AddChildIcon } from 'react-icons/ai';
 
 import { ContextMenu as Menu } from '../../ContexMenu';
@@ -29,7 +29,7 @@ function ContextMenu({
   enableEdit = true,
   enableRemove = true,
   enableDuplicate = true,
-  addChildLabel = 'Add child',
+  addChildLabel = 'Add Child',
   addChildIcon = <AddChildIcon />,
   onAddChild,
   onEdit,
@@ -79,6 +79,7 @@ function ContextMenu({
       >
         <DeleteIcon /> Delete
       </Item>
+      {someActionIsEnabled && extra && <Separator />}
       {extra}
     </Menu>
   );
