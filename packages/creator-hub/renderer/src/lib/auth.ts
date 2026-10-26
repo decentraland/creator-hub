@@ -32,6 +32,20 @@ export class SignInError extends Error {
   }
 }
 
+export type RelayErrorReason = 'rejected' | 'expired' | 'no_identity';
+
+export class RelayError extends Error {
+  constructor(
+    readonly reason: RelayErrorReason,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'RelayError';
+  }
+}
+
+const TRANSACTION_REJECTED_CODE = -32003;
+
 export type OutcomeError = {
   code: number;
   message: string;
@@ -224,7 +238,7 @@ export class AuthServerProvider {
     const timeoutPromise = new Promise<any>((_, reject) => {
       setTimeout(() => {
         socket.off('outcome', onMessage);
-        reject(new Error('Timeout'));
+        reject(new RelayError('expired', 'Timeout'));
       }, safeDelayMs);
     });
 
@@ -287,7 +301,6 @@ export class AuthServerProvider {
     socket: Socket,
     payload: Payload & { authChain?: AuthChain },
   ) => {
-    // TODO: Also send the chain id for requests that are not dcl_personal_sign once supported on the auth server.
     const response = await socket.emitWithAck('request', {
       method: payload.method,
       params: payload.params,
@@ -322,9 +335,6 @@ export class AuthServerProvider {
   };
 
   request = async ({ method, params }: Payload): Promise<any> => {
-    // The chain id is a virtual concept in this provider.
-    // Changing it will only affect the rpc used for eth_calls and other non-transactional calls.
-    // It will also affect the result value of the eth_chainId and net_version calls.
     if (method === 'wallet_switchEthereumChain') {
       const chainIdParam = params?.[0]?.chainId;
       if (typeof chainIdParam !== 'string') {
@@ -356,10 +366,6 @@ export class AuthServerProvider {
       }
     }
 
-    /**
-     * These ethereum calls don't require the user's wallet given that no new transaction or signature is being created.
-     * Because of this, we can use a regular provider to make the call, without the need of opening the auth dapp.
-     */
     if (
       [
         'eth_getTransactionReceipt',
@@ -387,20 +393,26 @@ export class AuthServerProvider {
       return client.request({ method: method as any, params: params as any });
     }
 
-    const socket = await AuthServerProvider.getSocket();
-
     const identity = this.getIdentity();
+    if (!identity) {
+      throw new RelayError('no_identity', 'No valid identity to sign the request');
+    }
+
+    const socket = await AuthServerProvider.getSocket();
 
     const requestResponse = await AuthServerProvider.createRequest(socket, {
       method,
       params,
-      authChain: identity?.authChain,
+      authChain: identity.authChain,
     });
 
     AuthServerProvider.openAuthDapp(requestResponse.requestId);
 
     const outcome = await AuthServerProvider.awaitOutcomeWithTimeout(socket, requestResponse);
 
+    if (outcome.error?.code === TRANSACTION_REJECTED_CODE) {
+      throw new RelayError('rejected', outcome.error.message);
+    }
     if (outcome.error) {
       throw outcome.error;
     }
