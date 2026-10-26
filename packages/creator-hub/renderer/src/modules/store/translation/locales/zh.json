@@ -130,6 +130,9 @@
       "revert": "撤销 AI 的更改",
       "selection": "选择：{names}",
       "selection_clear": "清除",
+      "asset_mention": "资源：{name}",
+      "asset_mention_built_in": "内置动画：{name}",
+      "asset_mention_remove": "移除",
       "provider": "助手",
       "provider_signin": "登录",
       "prompt": {
@@ -466,6 +469,15 @@
             "loading": "加载中...",
             "failed": "失败的"
           },
+          "progress": {
+            "checking": "正在准备上传...",
+            "uploading": "正在上传 {sent} / {total}",
+            "processing": "发布中...",
+            "batches": "已上传第 {completed} 批，共 {total} 批",
+            "cancel_too_early": "正在移除之前的场景，暂时无法取消。请稍后再试。",
+            "cancel_unauthorized": "无法在此处取消发布。退出 Creator Hub 即可停止。",
+            "cancel_unsupported": "请更新此场景的 SDK 以在此处取消发布。"
+          },
           "errors": {
             "details": "详细信息",
             "code_error": "你的场景代码包含一个或多个错误。\n请修复它们并重试。",
@@ -480,12 +492,16 @@
             "invalid_identity": "身份验证失败。",
             "max_file_size_exceeded": "一个或多个资产超过了允许的限制（{maxFileSizeInMb}MB）。\n优化或移除大文件并重试。",
             "max_scene_size_exceeded": "您的场景超过了允许的最大大小。\n请减少资产的数量或大小，然后重试。",
+            "deploy_state_lost": "已无法跟踪此次发布，它可能仍会完成。\n再次发布前，请在“管理”部分查看该场景。",
+            "deploy_request_timeout": "发布未在 60 分钟内完成，可能仍在进行中。\n再次发布前，请在“管理”部分查看该场景。",
             "unknown": "出了问题。\n请重试。",
             "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。"
           },
           "actions": {
             "report_issue": "报告问题",
-            "retry": "重试"
+            "retry": "重试",
+            "cancel": "取消",
+            "cancelling": "正在取消..."
           },
           "redirect": {
             "sign_in": "您将在 {seconds} 秒后被重定向到登录步骤……"
@@ -983,7 +999,8 @@
       "init_failed": "無法初始化登入。請檢查您的連接。",
       "identity_not_found": "無法完成登入。請重新登入。",
       "identity_expired": "您的登入請求已過期。請重新登入。",
-      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。"
+      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。",
+      "verifier_mismatch": "無法完成登入：此登入是從其他工作階段發起的。請重新登入。"
     }
   },
   "more": {

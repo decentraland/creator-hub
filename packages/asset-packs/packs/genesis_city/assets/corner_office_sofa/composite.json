@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/corner_office_sofa/corner_office_sofa.glb"
+          }
+        }
+      }
+    }
+  ]
+}

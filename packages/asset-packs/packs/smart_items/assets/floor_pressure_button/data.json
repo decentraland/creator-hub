@@ -1,0 +1,8 @@
+{
+  "id": "566d4c1b-1291-5936-8e1f-714a9318bcde",
+  "name": "Floor Pressure Button",
+  "category": "buttons",
+  "tags": ["button", "pressure", "plate", "floor", "switch", "step", "scifi", "lab", "activate"],
+  "description": "A round plate on the floor that sinks while a player stands on it and pops back up when they step off. Use it to trigger other smart items, like opening a door while someone stands on the plate. Its actions run for the player who stepped on or off, so an effect only one player can see or hear, like a sound, plays just for them.",
+  "author": "Decentraland Foundation"
+}

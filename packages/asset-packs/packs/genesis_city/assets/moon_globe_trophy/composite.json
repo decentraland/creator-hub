@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/moon_globe_trophy/moon_globe_trophy.glb"
+          }
+        }
+      }
+    }
+  ]
+}

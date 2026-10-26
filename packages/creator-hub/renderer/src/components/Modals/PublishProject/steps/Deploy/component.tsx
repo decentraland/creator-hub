@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cx from 'classnames';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
@@ -15,7 +15,8 @@ import { useDeploy } from '/@/hooks/useDeploy';
 import { useCounter } from '/@/hooks/useCounter';
 import { useSceneSizeLimit } from '/@/hooks/useSceneSizeLimit';
 
-import { type Deployment } from '/@/modules/store/deployment/slice';
+import { actions as deploymentActions, type Deployment } from '/@/modules/store/deployment/slice';
+import { isFinalPhase } from '/@/modules/store/deployment/deploy-api';
 import {
   getInvalidFiles,
   getTotalSize,
@@ -41,6 +42,8 @@ import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
 import { parseCoords } from '/@/components/Modals/PublishProject/utils';
 
+import { DeployProgress, type DeployCancel } from './DeployProgress';
+
 import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
@@ -54,7 +57,7 @@ function getPath(filename: string) {
 }
 
 export function Deploy(props: Props) {
-  const { project, previousStep, onStep, onBack, deploymentMetadata } = props;
+  const { project, previousStep, onStep, onBack, onClose, deploymentMetadata } = props;
   const { signOut, wallet } = useAuth();
   const dispatch = useDispatch();
   const { updateProjectInfo } = useWorkspace();
@@ -124,6 +127,40 @@ export function Deploy(props: Props) {
     setShowWarning(false);
     setSkipWarning(false);
   }, []);
+
+  const canCancel =
+    !!deployment?.supportsDeployResource &&
+    deployment.status === 'pending' &&
+    !!deployment.phase &&
+    !isFinalPhase(deployment.phase);
+
+  const handleCancel = useCallback(
+    async () =>
+      (await dispatch(deploymentActions.cancelDeployment(project.path)).unwrap()).rejection,
+    [dispatch, project.path],
+  );
+
+  const cancel = useMemo<DeployCancel>(() => {
+    if (!canCancel) return { kind: 'hidden' };
+    if (!deployment.hasCancelToken) return { kind: 'unsupported' };
+    if (deployment.cancelRequested) return { kind: 'cancelling' };
+    return { kind: 'available', onCancel: handleCancel };
+  }, [canCancel, deployment?.hasCancelToken, deployment?.cancelRequested, handleCancel]);
+
+  // A cancelled deployment leaves the CLI unable to deploy again, so leave this step: the
+  // previous step starts a fresh one. Only on the transition, as a deployment cancelled
+  // earlier is still in the store when this step mounts again.
+  const previousStatus = useRef(deployment?.status);
+  useEffect(() => {
+    const wasPending = previousStatus.current === 'pending';
+    previousStatus.current = deployment?.status;
+    if (!wasPending || deployment?.status !== 'cancelled') return;
+    if (previousStep && onBack) {
+      onBack();
+    } else {
+      onClose();
+    }
+  }, [deployment?.status, previousStep, onBack, onClose]);
 
   const jumpInLocation = useMemo(() => {
     const [x, y] = parseCoords(project.scene.base);
@@ -320,7 +357,13 @@ export function Deploy(props: Props) {
                   />
                 )}
                 {(deployment.status === 'pending' || undeployStatus === 'pending') && (
-                  <Deploying steps={steps} />
+                  <Deploying steps={steps}>
+                    <DeployProgress
+                      key={deployment.id}
+                      upload={deployment.upload}
+                      cancel={cancel}
+                    />
+                  </Deploying>
                 )}
                 {deployment.status === 'complete' && (
                   <Success
@@ -425,9 +468,10 @@ export function Idle({
 
 type DeployingProps = {
   steps: Step[];
+  children?: ReactNode;
 };
 
-function Deploying({ steps }: DeployingProps) {
+function Deploying({ steps, children }: DeployingProps) {
   return (
     <div className="Deploying">
       <div className="header">
@@ -435,6 +479,7 @@ function Deploying({ steps }: DeployingProps) {
         <Typography variant="h5">{t('modal.publish_project.deploy.deploying.publish')}</Typography>
       </div>
       <ConnectedSteps steps={steps} />
+      {children}
     </div>
   );
 }

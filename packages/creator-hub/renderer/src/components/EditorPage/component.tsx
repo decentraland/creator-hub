@@ -386,6 +386,10 @@ export function EditorPage() {
   // chip, attached as context on send). Cheap read; only runs while the panel is visible.
   // Rejects harmlessly under the Bevy renderer (no selection RPC) — selection just stays empty.
   useEffect(() => {
+    dispatch(aiActions.setChatVisible(aiOpen || aiDetached));
+  }, [aiOpen, aiDetached, dispatch]);
+
+  useEffect(() => {
     // Poll while the chat is visible anywhere — inline or in the detached window (#1504).
     if (!aiOpen && !aiDetached) {
       dispatch(aiActions.setSelection([]));

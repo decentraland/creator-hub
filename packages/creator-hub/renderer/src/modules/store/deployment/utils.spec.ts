@@ -57,6 +57,7 @@ vi.mock('/@/lib/worlds', () => ({
 
 // Imported after the mocks: `utils` reads the registry hosts from config at module load.
 const {
+  deploy,
   fetchDeploymentStatus,
   fetchWorldSceneSizeLimit,
   getAvailableCatalystServer,
@@ -329,5 +330,28 @@ describe('fetchWorldSceneSizeLimit', () => {
     it('should abort the limits request when the shared deadline elapses, not 5 s after it started', () => {
       expect({ aborted: limitsSignal.aborted, limit }).toEqual({ aborted: true, limit: null });
     });
+  });
+});
+
+describe('deploy', () => {
+  const URL = 'http://localhost:4000/api';
+  const PAYLOAD = { address: '0xabc', authChain: [], chainId: ChainId.ETHEREUM_MAINNET };
+
+  let cancelBody: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    cancelBody = vi.fn(async () => undefined);
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({ ok: true, status: 200, body: { cancel: cancelBody } });
+    await deploy(URL, PAYLOAD);
+  });
+
+  it('should give the blocking request far longer than an upload of a large scene takes', () => {
+    const [, , timeoutMs] = fetchMock.mock.calls[0];
+    expect(timeoutMs).toBeGreaterThanOrEqual(30 * 60 * 1000);
+  });
+
+  it('should release the unread response body', () => {
+    expect(cancelBody).toHaveBeenCalled();
   });
 });

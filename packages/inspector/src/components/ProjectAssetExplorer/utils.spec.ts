@@ -1,3 +1,4 @@
+import { Filter } from './Filters/types';
 import * as utils from './utils';
 
 import type { AssetNodeFolder, AssetNodeItem } from './types';
@@ -36,6 +37,28 @@ describe('ProjectAssetExplorer/utils', () => {
         children: [],
       };
       expect(utils.isAssetNode(node)).toBe(false);
+    });
+  });
+  describe('mapAssetTypeToFilter', () => {
+    describe('when a model file name ends in _emote', () => {
+      it('should group it under Avatar Animations', () => {
+        const asset = { type: 'gltf' as const, src: 'asset-packs/dance/Avatar_Dance_emote.glb' };
+        expect(utils.mapAssetTypeToFilter(asset)).toBe(Filter.Emotes);
+      });
+    });
+
+    describe('when a model file name does not end in _emote', () => {
+      it('should group it under Models', () => {
+        const asset = { type: 'gltf' as const, src: 'models/emote_stage.glb' };
+        expect(utils.mapAssetTypeToFilter(asset)).toBe(Filter.Models);
+      });
+    });
+
+    describe('when a non-model file name ends in _emote', () => {
+      it('should not group it under Avatar Animations', () => {
+        const asset = { type: 'image' as const, src: 'images/wave_emote.png' };
+        expect(utils.mapAssetTypeToFilter(asset)).toBe(Filter.Images);
+      });
     });
   });
 });

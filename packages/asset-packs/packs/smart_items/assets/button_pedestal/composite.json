@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/button_pedestal.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Button.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Press\",\"tooltip\":\"Text shown when the player points at the button.\"},\"onClick\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the button is pressed.\"},\"inputButton\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"Input that presses the button: 0 = mouse click, 1 = E key, 2 = F key.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played whenever the button is pressed. Leave empty for no sound.\"},\"animation\":{\"type\":\"string\",\"optional\":true,\"value\":\"pressPedestal\",\"tooltip\":\"Name of the animation clip in the button's model that plays when the button is pressed. Leave empty for no animation.\"}},\"actions\":[{\"methodName\":\"press\",\"description\":\"Presses the button, playing its animation and sound and triggering its On Click action\",\"params\":{}}],\"events\":[\"click\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::Animator", "core::AudioSource"]
+          }
+        }
+      }
+    }
+  ]
+}

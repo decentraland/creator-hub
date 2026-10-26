@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/metal_slat_trash_bin/metal_slat_trash_bin.glb"
+          }
+        }
+      }
+    }
+  ]
+}

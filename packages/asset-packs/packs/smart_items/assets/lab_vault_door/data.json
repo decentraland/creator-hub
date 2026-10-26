@@ -1,0 +1,8 @@
+{
+  "id": "e26e6392-a51a-51bd-a828-7c81dcf0317a",
+  "name": "Lab Vault Door",
+  "category": "doors",
+  "tags": ["door", "vault", "scifi", "lab", "round", "entrance"],
+  "description": "A heavy round sci-fi vault door that rolls open and closed when clicked.",
+  "author": "Decentraland Foundation"
+}

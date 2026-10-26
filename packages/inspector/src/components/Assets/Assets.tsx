@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { MdImageSearch } from 'react-icons/md';
-import { FaBroom } from 'react-icons/fa';
+import { MdImageSearch, MdOutlineSpeed as OptimizeIcon } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
@@ -15,8 +14,11 @@ import {
 import { getConfig } from '../../lib/logic/config';
 import { getSceneClient } from '../../lib/rpc/scene';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
+import { selectAssetCatalog } from '../../redux/app';
 import {
   clearRemovedFiles,
+  dropRestoredFiles,
   selectRemovedFiles,
   selectHasRecoverableFiles,
 } from '../../redux/clean-assets';
@@ -38,6 +40,7 @@ import { useScanAssets } from '../../hooks/useScanAssets';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { FolderOpen } from '../Icons/Folder';
 import CleanupIcon from '../Icons/Cleanup';
+import { ListChevronsDownUpIcon, ListChevronsUpDownIcon } from '../Icons/ListChevrons';
 import { AssetsCatalog } from '../AssetsCatalog';
 import { CatalogAssetContextMenu } from '../AssetsCatalog/Asset/ContextMenu/CatalogAssetContextMenu';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
@@ -61,11 +64,17 @@ function removeSmartItems(assetPack: AssetPack) {
   };
 }
 
-function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean }) {
+type Props = {
+  isAssetsPanelCollapsed: boolean;
+  onToggleCollapse: () => void;
+};
+
+function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
   const dispatch = useAppDispatch();
   const tab = useAppSelector(getSelectedAssetsTab);
   const removedAssets = useAppSelector(selectRemovedFiles);
   const hasRecoverableFiles = useAppSelector(selectHasRecoverableFiles);
+  const assetCatalog = useAppSelector(selectAssetCatalog);
   const debugConsoleEnabled = useAppSelector(getDebugConsoleEnabled);
   const mobileDebugSessionEnabled = useAppSelector(getMobileDebugSessionEnabled);
   const [showCleanAssetsModal, setShowCleanAssetsModal] = useState(false);
@@ -87,6 +96,18 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   ]);
 
   useEffect(() => {
+    if (!removedAssets.length) return;
+    const pending = new Set(removedAssets.map(file => file.path));
+    getDataLayerInterface()
+      ?.getFilesSizes({ path: DIRECTORY.ASSETS, ignore: [] })
+      .then(({ files }) => {
+        const restored = files.map(file => file.path).filter(path => pending.has(path));
+        if (restored.length) dispatch(dropRestoredFiles(restored));
+      })
+      .catch(error => console.warn('Could not check the recoverable files:', error));
+  }, [assetCatalog, removedAssets, dispatch]);
+
+  useEffect(() => {
     if (debugConsoleEnabled) {
       dispatch(selectAssetsTab({ tab: AssetsTab.DebugConsole }));
     } else if (tab === AssetsTab.DebugConsole) {
@@ -99,6 +120,15 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
       dispatch(selectAssetsTab({ tab }));
     },
     [],
+  );
+
+  // A tab click on a collapsed panel means "show me this tab", so reopen it too.
+  const handleTabSelect = useCallback(
+    (tab: AssetsTab) => () => {
+      dispatch(selectAssetsTab({ tab }));
+      if (isAssetsPanelCollapsed) onToggleCollapse();
+    },
+    [isAssetsPanelCollapsed, onToggleCollapse],
   );
 
   const config = getConfig();
@@ -300,13 +330,13 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             )}
             {showOptimizeButton && (
               <InfoTooltip
-                text="Optimize models"
+                text="Optimize"
                 trigger={
                   <button
                     className="icon-item"
                     onClick={handleOptimizeClick}
                   >
-                    <FaBroom />
+                    <OptimizeIcon />
                   </button>
                 }
                 openOnTriggerMouseEnter={true}
@@ -332,7 +362,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         )}
         <div
           className="tab"
-          onClick={handleTabClick(AssetsTab.FileSystem)}
+          onClick={handleTabSelect(AssetsTab.FileSystem)}
           data-test-id={AssetsTab.FileSystem}
         >
           <div className={cx({ underlined: tab === AssetsTab.FileSystem })}>
@@ -342,7 +372,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         </div>
         <div
           className="tab"
-          onClick={handleTabClick(AssetsTab.CustomAssets)}
+          onClick={handleTabSelect(AssetsTab.CustomAssets)}
           data-test-id={AssetsTab.CustomAssets}
         >
           <div className={cx({ underlined: tab === AssetsTab.CustomAssets })}>
@@ -352,7 +382,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         </div>
         <div
           className="tab"
-          onClick={handleTabClick(AssetsTab.AssetsPack)}
+          onClick={handleTabSelect(AssetsTab.AssetsPack)}
           data-test-id={AssetsTab.AssetsPack}
         >
           <div className={cx({ underlined: tab === AssetsTab.AssetsPack })}>
@@ -363,7 +393,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         {debugConsoleEnabled && (
           <div
             className="tab"
-            onClick={handleTabClick(AssetsTab.DebugConsole)}
+            onClick={handleTabSelect(AssetsTab.DebugConsole)}
             data-test-id={AssetsTab.DebugConsole}
           >
             <div className={cx({ underlined: tab === AssetsTab.DebugConsole })}>
@@ -375,7 +405,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         {mobileDebugSessionEnabled && (
           <div
             className="tab"
-            onClick={handleTabClick(AssetsTab.MobileDebugSession)}
+            onClick={handleTabSelect(AssetsTab.MobileDebugSession)}
             data-test-id={AssetsTab.MobileDebugSession}
           >
             <div className={cx({ underlined: tab === AssetsTab.MobileDebugSession })}>
@@ -384,6 +414,27 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             </div>
           </div>
         )}
+        <div className="Assets-buttons-right">
+          <InfoTooltip
+            text={isAssetsPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
+            trigger={
+              <button
+                className="collapse-toggle"
+                onClick={onToggleCollapse}
+                aria-label={
+                  isAssetsPanelCollapsed ? 'Expand assets panel' : 'Collapse assets panel'
+                }
+                aria-expanded={!isAssetsPanelCollapsed}
+                data-test-id="assets-collapse-toggle"
+              >
+                {isAssetsPanelCollapsed ? <ListChevronsUpDownIcon /> : <ListChevronsDownUpIcon />}
+              </button>
+            }
+            openOnTriggerMouseEnter={true}
+            closeOnTriggerClick={true}
+            position="top center"
+          />
+        </div>
       </div>
       {tab === AssetsTab.MobileDebugSession ? (
         <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>

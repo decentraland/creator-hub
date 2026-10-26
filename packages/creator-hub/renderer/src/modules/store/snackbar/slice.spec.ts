@@ -1,10 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { workspace } from '#preload';
 
 import type { Project } from '/shared/types/projects';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { actions as workspaceActions } from '../workspace';
+import { actions as deploymentActions } from '../deployment';
+import { DeploymentError } from '../../../lib/deploy';
 
 const projectWithOutdatedDeps = {
   path: '/tmp/scene',
@@ -64,6 +66,44 @@ describe('snackbar slice', () => {
       const notification = notifications.find($ => $.type === 'generic' && $.severity === 'error');
 
       expect(notification).toMatchObject({ message: 'Failed importing scene' });
+    });
+  });
+
+  describe('when a deployment ends', () => {
+    const PATH = '/tmp/scene';
+    let store: ReturnType<typeof createTestStore>;
+
+    const deployNotifications = () =>
+      store.getState().snackbar.notifications.filter($ => $.type === 'deploy');
+
+    const reject = (error: Error) =>
+      store.dispatch(deploymentActions.executeDeployment.rejected(error, 'request-1', PATH));
+
+    beforeEach(() => {
+      store = createTestStore();
+      store.dispatch(deploymentActions.executeDeployment.pending('request-1', PATH));
+    });
+
+    describe('and it was cancelled', () => {
+      beforeEach(() => {
+        reject(
+          new DeploymentError('DEPLOYMENT_CANCELLED', { catalyst: 'idle', assetBundle: 'idle' }),
+        );
+      });
+
+      it('should drop the deploy notification without pushing a new one', () => {
+        expect(deployNotifications()).toEqual([]);
+      });
+    });
+
+    describe('and it failed', () => {
+      beforeEach(() => {
+        reject(new DeploymentError('DEPLOYMENT_FAILED', { catalyst: 'idle', assetBundle: 'idle' }));
+      });
+
+      it('should show the deploy notification', () => {
+        expect(deployNotifications()).toHaveLength(1);
+      });
     });
   });
 });

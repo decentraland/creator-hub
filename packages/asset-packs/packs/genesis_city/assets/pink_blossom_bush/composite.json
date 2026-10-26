@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/pink_blossom_bush/pink_blossom_bush.glb"
+          }
+        }
+      }
+    }
+  ]
+}
