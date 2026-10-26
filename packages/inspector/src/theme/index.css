@@ -58,8 +58,8 @@ input[type="number"] {
   pointer-events: initial;
   visibility: hidden;
   transition:
-    opacity 0s 250ms,
-    visibility 0s 250ms;
+    opacity 0s 400ms,
+    visibility 0s 400ms;
 }
 
 .contexify .contexify_item > .contexify_submenu-right {
@@ -75,4 +75,14 @@ input[type="number"] {
 
 .contexify .contexify_item:focus > .contexify_submenu {
   transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contexify.contexify_willEnter-fade {
+    animation: none;
+  }
+
+  .contexify .contexify_item > .contexify_submenu {
+    transition: none;
+  }
 }
