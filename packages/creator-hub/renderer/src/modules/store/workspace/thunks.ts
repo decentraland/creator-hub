@@ -3,7 +3,7 @@ import { captureException } from '@sentry/electron/renderer';
 
 import { shouldUpdateDependencies } from './utils';
 import { actions } from './index';
-import { fs, npm, pkg, scene, settings, workspace } from '#preload';
+import { fs, npm, pkg, scene, settings, skills, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -13,7 +13,7 @@ import {
   ProjectError,
   PROJECT_ALREADY_IMPORTED_ERROR_PREFIX,
 } from '/shared/types/projects';
-import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { PACKAGES } from '/shared/types/pkg';
 import { WorkspaceError } from '/shared/types/workspace';
 
@@ -116,6 +116,36 @@ export const updateAvailableDependencyUpdates = createAsyncThunk(
     };
   },
 );
+export const updateSdkSkills = createAsyncThunk(
+  'workspace/updateSdkSkills',
+  async (project: Project) => {
+    try {
+      await skills.updateProject(project.path);
+    } catch (error) {
+      captureException(error, {
+        tags: { source: 'workspace', event: 'update-sdk-skills' },
+        extra: { path: project.path },
+      });
+      throw error;
+    }
+  },
+);
+// Follows the dependency update strategy: the skills are as much a part of keeping a scene
+// current as its packages.
+export const checkSdkSkillsUpdate = createAsyncThunk(
+  'workspace/checkSdkSkillsUpdate',
+  async (project: Project, { dispatch, getState }) => {
+    const strategy = getState().workspace.settings.dependencyUpdateStrategy;
+    if (strategy === DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING) return { project, outdated: false };
+
+    const { outdated } = await skills.getProjectStatus(project.path);
+    if (outdated && strategy === DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE) {
+      await dispatch(updateSdkSkills(project)).unwrap();
+      return { project, outdated: false };
+    }
+    return { project, outdated };
+  },
+);
 export const runProject = createAsyncThunk(
   'workspace/runProject',
   async (project: Project, { dispatch, getState, rejectWithValue }) => {
@@ -127,6 +157,9 @@ export const runProject = createAsyncThunk(
       dispatch(actions.moveProjectToMissing(project));
       return rejectWithValue(new WorkspaceError('PROJECT_NOT_FOUND'));
     }
+
+    // Not awaited: it hits GitHub and must never hold up opening the scene.
+    dispatch(checkSdkSkillsUpdate(project));
 
     // It's possible for "node_modules" to not exist because it was never installed before
     // or because the user deleted it while the app was running.

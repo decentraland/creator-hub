@@ -6,6 +6,7 @@ export type NotificationId = string;
 export type CustomNotificationType =
   | { type: 'missing-scenes' }
   | { type: 'new-dependency-version'; project: Project }
+  | { type: 'new-sdk-skills-version'; project: Project }
   | { type: 'deploy'; path: string };
 
 export type Opts = {

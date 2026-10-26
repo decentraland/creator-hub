@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { workspace } from '#preload';
+import { skills, workspace } from '#preload';
 
 import type { Project } from '/shared/types/projects';
 
@@ -35,6 +35,48 @@ describe('snackbar slice', () => {
 
       expect(
         store.getState().snackbar.notifications.some($ => $.type === 'new-dependency-version'),
+      ).toBe(false);
+    });
+  });
+
+  describe("when the scene's AI skills are behind decentraland/sdk-skills main", () => {
+    const isSkillsToast = ($: { type: string }) => $.type === 'new-sdk-skills-version';
+
+    it('should show the "AI skills update" toast', async () => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: true });
+      const store = createTestStore();
+
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      expect(store.getState().snackbar.notifications.some(isSkillsToast)).toBe(true);
+    });
+
+    it('should dismiss the toast and report success once the update runs', async () => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: true });
+      vi.mocked(skills.updateProject).mockResolvedValue();
+      const store = createTestStore();
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      await store.dispatch(workspaceActions.updateSdkSkills(projectWithOutdatedDeps));
+
+      const { notifications } = store.getState().snackbar;
+      expect(skills.updateProject).toHaveBeenCalledWith(projectWithOutdatedDeps.path);
+      expect(notifications.some(isSkillsToast)).toBe(false);
+      expect(notifications).toContainEqual(
+        expect.objectContaining({ severity: 'success', message: 'AI skills were updated' }),
+      );
+    });
+  });
+
+  describe("when the scene's AI skills are up to date", () => {
+    it('should not show the "AI skills update" toast', async () => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: false });
+      const store = createTestStore();
+
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      expect(
+        store.getState().snackbar.notifications.some($ => $.type === 'new-sdk-skills-version'),
       ).toBe(false);
     });
   });

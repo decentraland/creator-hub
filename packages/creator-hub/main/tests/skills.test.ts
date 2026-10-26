@@ -1,9 +1,13 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { linkSkillsIntoProject } from '../src/modules/skills';
+import {
+  getProjectSkillsStatus,
+  linkSkillsIntoProject,
+  unlinkSkillsFromProject,
+} from '../src/modules/skills';
 
 const noop = () => {};
 const tmpDirs: string[] = [];
@@ -23,6 +27,7 @@ function setup() {
 }
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   for (const d of tmpDirs.splice(0)) fs.rmSync(d, { recursive: true, force: true });
 });
 
@@ -88,5 +93,144 @@ describe('linkSkillsIntoProject', () => {
     // Still points at their checkout, not our cache.
     const resolved = fs.realpathSync(path.join(project, '.agents', 'skills'));
     expect(resolved).toBe(fs.realpathSync(theirCheckout));
+  });
+});
+
+// A scene whose skills-lock.json lists decentraland/sdk-skills, written `lockAgeMs` ago.
+function setupInstalledScene(lockAgeMs = 0) {
+  const { project } = setup();
+  const lockPath = path.join(project, 'skills-lock.json');
+  fs.writeFileSync(
+    lockPath,
+    JSON.stringify({
+      version: 1,
+      skills: { 'decentraland-sdk-skills': { source: 'decentraland/sdk-skills' } },
+    }),
+  );
+  const mtime = new Date(Date.now() - lockAgeMs);
+  fs.utimesSync(lockPath, mtime, mtime);
+  return { project, lockPath };
+}
+
+function readProjectInfo(project: string) {
+  return JSON.parse(fs.readFileSync(path.join(project, '.editor', 'project.json'), 'utf8'));
+}
+
+function writeProjectInfo(project: string, info: object) {
+  fs.mkdirSync(path.join(project, '.editor'), { recursive: true });
+  fs.writeFileSync(path.join(project, '.editor', 'project.json'), JSON.stringify(info));
+}
+
+// GitHub: `latestSha` is main's head; `commitsSince` is what `commits?since=` returns.
+function stubGitHub({
+  latestSha,
+  commitsSince = [],
+}: {
+  latestSha: string;
+  commitsSince?: unknown[];
+}) {
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url.includes('/commits/main')) return new Response(latestSha);
+    if (url.includes('/commits?')) return new Response(JSON.stringify(commitsSince));
+    return new Response('', { status: 404 });
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
+describe('getProjectSkillsStatus', () => {
+  it('reports nothing installed when the scene has no skills lock', async () => {
+    const { project } = setup();
+    const fetchMock = stubGitHub({ latestSha: 'abc' });
+    expect(await getProjectSkillsStatus(project, noop)).toEqual({
+      installed: false,
+      outdated: false,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('ignores a lock that only lists skills from other repos', async () => {
+    const { project } = setup();
+    fs.writeFileSync(
+      path.join(project, 'skills-lock.json'),
+      JSON.stringify({ skills: { figma: { source: 'figma/mcp-server-guide' } } }),
+    );
+    stubGitHub({ latestSha: 'abc' });
+    expect((await getProjectSkillsStatus(project, noop)).installed).toBe(false);
+  });
+
+  describe('when Creator Hub has no recorded commit for the scene', () => {
+    it('is outdated when main has commits newer than the lock', async () => {
+      const { project } = setupInstalledScene(60_000);
+      stubGitHub({ latestSha: 'new', commitsSince: [{ sha: 'new' }] });
+      expect(await getProjectSkillsStatus(project, noop)).toEqual({
+        installed: true,
+        outdated: true,
+      });
+    });
+
+    it('records the latest commit as the baseline when nothing landed since the lock', async () => {
+      const { project } = setupInstalledScene(60_000);
+      stubGitHub({ latestSha: 'head', commitsSince: [] });
+      expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(false);
+      expect(readProjectInfo(project).sdkSkills.sha).toBe('head');
+    });
+  });
+
+  describe('when Creator Hub recorded a commit after the lock was written', () => {
+    it('is outdated once main moves past the recorded commit', async () => {
+      const { project } = setupInstalledScene(60_000);
+      writeProjectInfo(project, { sdkSkills: { sha: 'old', recordedAt: Date.now() } });
+      const fetchMock = stubGitHub({ latestSha: 'new' });
+      expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(true);
+      expect(fetchMock.mock.calls.some(([url]) => url.includes('/commits?'))).toBe(false);
+    });
+
+    it('is up to date while main is still at the recorded commit', async () => {
+      const { project } = setupInstalledScene(60_000);
+      writeProjectInfo(project, { sdkSkills: { sha: 'same', recordedAt: Date.now() } });
+      stubGitHub({ latestSha: 'same' });
+      expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(false);
+    });
+  });
+
+  it('falls back to the lock time when the creator re-ran `skills add` after our record', async () => {
+    const { project } = setupInstalledScene(0);
+    writeProjectInfo(project, { sdkSkills: { sha: 'old', recordedAt: Date.now() - 60_000 } });
+    stubGitHub({ latestSha: 'new', commitsSince: [] });
+    expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(false);
+    expect(readProjectInfo(project).sdkSkills.sha).toBe('new');
+  });
+
+  it('reads as up to date when GitHub cannot be reached', async () => {
+    const { project } = setupInstalledScene(60_000);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    );
+    expect(await getProjectSkillsStatus(project, noop)).toEqual({
+      installed: true,
+      outdated: false,
+    });
+  });
+});
+
+describe('unlinkSkillsFromProject', () => {
+  it('removes the links Creator Hub made, whole-dir and per-skill, and nothing else', () => {
+    const { cache, project } = setup();
+    linkSkillsIntoProject(project, cache, noop); // whole-dir links into both agent dirs
+    // .agents/skills becomes a real dir with a user skill next to one of our per-skill links.
+    fs.unlinkSync(path.join(project, '.agents', 'skills'));
+    const agentsSkills = path.join(project, '.agents', 'skills');
+    fs.mkdirSync(path.join(agentsSkills, 'my-skill'), { recursive: true });
+    fs.symlinkSync(path.join(cache, 'skill-a'), path.join(agentsSkills, 'skill-a'), 'dir');
+
+    unlinkSkillsFromProject(project, cache);
+
+    expect(fs.existsSync(path.join(project, '.claude', 'skills'))).toBe(false);
+    expect(fs.readdirSync(agentsSkills)).toEqual(['my-skill']);
+    expect(fs.readdirSync(cache).sort()).toEqual(['skill-a', 'skill-b']);
   });
 });

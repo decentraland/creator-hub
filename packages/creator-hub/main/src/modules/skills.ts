@@ -17,6 +17,12 @@ import { spawn } from 'child_process';
 import { app } from 'electron';
 import log from 'electron-log/main';
 
+import type { ProjectInfo } from '/shared/types/projects';
+import type { SkillsUpdateStatus } from '/shared/types/skills';
+import { FileSystemStorage } from '/shared/types/storage';
+
+import { getWorkspaceConfigPath } from './electron';
+
 const REPO = 'decentraland/sdk-skills';
 const BRANCH = 'main';
 const SHA_TIMEOUT_MS = 15_000;
@@ -67,6 +73,15 @@ async function fetchWithTimeout(
   return res;
 }
 
+async function fetchLatestSha(): Promise<string> {
+  const res = await fetchWithTimeout(
+    `https://api.github.com/repos/${REPO}/commits/${BRANCH}`,
+    SHA_TIMEOUT_MS,
+    'application/vnd.github.sha',
+  );
+  return (await res.text()).trim();
+}
+
 // SHA the cache was built from, or null when there is nothing reusable (no tree,
 // unreadable/foreign meta, or a meta written by another app version).
 function readCachedSha(metaPath: string, skillsDir: string, appVersion: string): string | null {
@@ -114,12 +129,7 @@ export async function ensureSkillsCache(
   const cached = readCachedSha(metaPath, skillsDir, appVersion);
 
   try {
-    const shaRes = await fetchWithTimeout(
-      `https://api.github.com/repos/${REPO}/commits/${BRANCH}`,
-      SHA_TIMEOUT_MS,
-      'application/vnd.github.sha',
-    );
-    const sha = (await shaRes.text()).trim();
+    const sha = await fetchLatestSha();
     if (sha === cached) return skillsDir;
 
     const tarRes = await fetchWithTimeout(
@@ -329,4 +339,128 @@ export function warmSkillsCache(): Promise<string | null> {
 export async function ensureSkillsLinked(projectDir: string): Promise<void> {
   const dir = await warmSkillsCache();
   if (dir !== null) linkSkillsIntoProject(projectDir, dir);
+}
+
+// ---- Skills the creator installed into the scene themselves ----
+//
+// Separate from the cache above: a creator who ran `npx skills add decentraland/sdk-skills`
+// in their scene (for their own Claude Code, Cursor, ...) gets a project-local copy that
+// never refreshes on its own. Creator Hub remembers which upstream commit that copy came
+// from (`ProjectInfo.sdkSkills`) and offers an update once main has moved past it.
+
+const SKILLS_LOCK = 'skills-lock.json';
+// `add`, not `update`: `update` only refreshes skills already in the lock, so a skill added
+// upstream since (e.g. bug reporting) would never arrive. `--yes` is npx's own install
+// prompt, which would otherwise hang a child with no TTY; `--all` skips the CLI's prompts.
+const SKILLS_ADD_ARGS = ['--yes', 'skills', 'add', REPO, '--all'];
+
+type SkillsLock = { skills?: Record<string, { source?: string }> };
+
+function getCacheSkillsDir(): string {
+  return path.join(app.getPath('userData'), 'sdk-skills', 'skills');
+}
+
+async function getProjectInfoStorage(projectDir: string) {
+  const projectInfoPath = path.join(await getWorkspaceConfigPath(projectDir), 'project.json');
+  return FileSystemStorage.getOrCreate<ProjectInfo>(projectInfoPath);
+}
+
+// mtime of the scene's skills lock when it lists decentraland/sdk-skills, else null.
+export function getSdkSkillsLockTime(projectDir: string): number | null {
+  const lockPath = path.join(projectDir, SKILLS_LOCK);
+  try {
+    const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8')) as SkillsLock;
+    const fromRepo = Object.values(lock.skills ?? {}).some(s =>
+      (s.source ?? '').toLowerCase().includes(REPO),
+    );
+    return fromRepo ? fs.statSync(lockPath).mtimeMs : null;
+  } catch {
+    return null;
+  }
+}
+
+async function hasCommitsSince(since: number): Promise<boolean> {
+  const res = await fetchWithTimeout(
+    `https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&since=${new Date(since).toISOString()}&per_page=1`,
+    SHA_TIMEOUT_MS,
+  );
+  const commits = (await res.json()) as unknown[];
+  return commits.length > 0;
+}
+
+// Whether the scene's own copy of the skills is behind upstream main. Never throws: offline
+// or a GitHub error reads as "up to date" so the check can't block opening a scene.
+export async function getProjectSkillsStatus(
+  projectDir: string,
+  logger: Logger = defaultLog,
+): Promise<SkillsUpdateStatus> {
+  const lockTime = getSdkSkillsLockTime(projectDir);
+  if (lockTime === null) return { installed: false, outdated: false };
+
+  try {
+    const storage = await getProjectInfoStorage(projectDir);
+    const recorded = await storage.get('sdkSkills');
+    const latestSha = await fetchLatestSha();
+
+    // A lock rewritten after our record means the creator ran `skills add` on their own, so
+    // the recorded commit no longer describes what they have.
+    if (recorded && recorded.recordedAt >= lockTime) {
+      return { installed: true, outdated: recorded.sha !== latestSha };
+    }
+
+    // No usable record (installed outside Creator Hub): judge by when the lock was written.
+    // If nothing landed on main since, what they have IS the latest commit, so record it
+    // and compare by SHA from now on.
+    const outdated = await hasCommitsSince(lockTime);
+    if (!outdated) await storage.set('sdkSkills', { sha: latestSha, recordedAt: Date.now() });
+    return { installed: true, outdated };
+  } catch (e) {
+    logger(`could not check ${projectDir} for a skills update: ${String(e)}`);
+    return { installed: true, outdated: false };
+  }
+}
+
+// Remove the links Creator Hub made into the scene (see linkSkillsIntoProject) so the CLI
+// writes a real folder instead of writing through a link into the shared cache. The next AI
+// turn links back whatever the creator doesn't have, in merge mode.
+export function unlinkSkillsFromProject(projectDir: string, cacheSkillsDir: string): void {
+  for (const agentDir of ['.claude', '.agents']) {
+    const skillsPath = path.join(projectDir, agentDir, 'skills');
+    if (isSymlink(skillsPath)) {
+      if (isOwnedLink(skillsPath, cacheSkillsDir)) removeLink(skillsPath);
+      continue;
+    }
+    if (!fs.existsSync(skillsPath)) continue;
+    for (const name of fs.readdirSync(skillsPath)) {
+      const linkPath = path.join(skillsPath, name);
+      if (isSymlink(linkPath) && isOwnedLink(linkPath, cacheSkillsDir)) removeLink(linkPath);
+    }
+  }
+}
+
+export async function updateProjectSkills(
+  projectDir: string,
+  logger: Logger = defaultLog,
+): Promise<void> {
+  unlinkSkillsFromProject(projectDir, getCacheSkillsDir());
+
+  // Read before running so the record can't claim a commit that landed mid-install.
+  let sha: string | null = null;
+  try {
+    sha = await fetchLatestSha();
+  } catch (e) {
+    logger(`could not read the latest ${REPO} commit: ${String(e)}`);
+  }
+
+  // Loaded here, not at the top: ai.ts imports this module, and bin.ts resolves Electron app
+  // paths on import, which would break every main test that reaches ai.ts.
+  const { run } = await import('./bin');
+  const child = run('npm', 'npx', { args: SKILLS_ADD_ARGS, cwd: projectDir });
+  await child.wait();
+  logger(`updated the skills in ${projectDir}${sha ? ` to ${sha.slice(0, 7)}` : ''}`);
+
+  if (sha !== null) {
+    const storage = await getProjectInfoStorage(projectDir);
+    await storage.set('sdkSkills', { sha, recordedAt: Date.now() });
+  }
 }

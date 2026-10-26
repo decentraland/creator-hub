@@ -222,6 +222,50 @@ export const slice = createSlice({
           }
         },
       )
+      .addCase(
+        workspaceActions.checkSdkSkillsUpdate.fulfilled,
+        (state, { meta, payload: { project, outdated } }) => {
+          state.notifications = state.notifications.filter(
+            $ => $.type !== 'new-sdk-skills-version',
+          );
+          if (outdated) {
+            state.notifications.push(
+              createCustomNotification(
+                { type: 'new-sdk-skills-version', project },
+                { duration: 0, requestId: meta.requestId },
+              ),
+            );
+          }
+        },
+      )
+      .addCase(workspaceActions.updateSdkSkills.pending, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.type !== 'new-sdk-skills-version' && $.requestId !== 'updateSdkSkills',
+        );
+        state.notifications.push(
+          createGenericNotification('loading', t('snackbar.generic.updating_sdk_skills'), {
+            duration: 0,
+            requestId: 'updateSdkSkills',
+          }),
+        );
+      })
+      .addCase(workspaceActions.updateSdkSkills.fulfilled, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'updateSdkSkills');
+        state.notifications.push(
+          createGenericNotification('success', t('snackbar.generic.sdk_skills_updated'), {
+            requestId: 'updateSdkSkills',
+          }),
+        );
+      })
+      .addCase(workspaceActions.updateSdkSkills.rejected, state => {
+        state.notifications = state.notifications.filter($ => $.requestId !== 'updateSdkSkills');
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.sdk_skills_update_failed'), {
+            duration: 5000,
+            requestId: 'updateSdkSkills',
+          }),
+        );
+      })
       .addCase(deploymentActions.executeDeployment.pending, (state, action) => {
         const path = action.meta.arg;
         state.notifications = state.notifications.filter($ => $.requestId !== path);
