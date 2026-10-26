@@ -103,8 +103,4 @@ input[type="number"] {
   .contexify.contexify_willEnter-fade {
     animation: none;
   }
-
-  .contexify .contexify_item > .contexify_submenu {
-    transition: none;
-  }
 }
