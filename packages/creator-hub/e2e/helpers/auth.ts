@@ -26,7 +26,7 @@ export type AuthMockOptions = {
   address?: string;
 };
 
-type RecordedFetch = { url: string; method: string; body: string | null };
+type RecordedFetch = { url: string; method: string; body: string | null; verifier?: string | null };
 
 /**
  * Installs the sign-in mocks into the page: stubs the auth server (`window.fetch`
@@ -70,7 +70,8 @@ export async function installAuthMocks(page: Page, options: AuthMockOptions = {}
         }
 
         if (url.includes('/identities/')) {
-          w.__e2eFetchCalls.push({ url, method, body });
+          const verifier = new Headers(init?.headers).get('x-identity-verifier');
+          w.__e2eFetchCalls.push({ url, method, body, verifier });
           return new Response(JSON.stringify({ identity }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
