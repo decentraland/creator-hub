@@ -762,7 +762,7 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | Div | — | as Menu-Entry Div | — | — | — | between the slots | — | `role="separator"` |
 | Container | ✱ width | as above | as above | as above | as above | `min-width: 200px`; the menu grows with a long label ("Delete 12 Items", component names) where Figma draws a fixed 200 | — | — |
 | Div | ✱ inset | White 10 | — | — | — | inset with the rows, 10px clear above and below (Figma: full bleed in the composed menu); user decision October 21, 2026 (#1707) | 1.36:1, decorative | `role="separator"` |
-| Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | scrolls past 30vh (`theme/index.css` `.contexify_submenu`) | as Container | `role="menu"`, opened from a row with `aria-haspopup="menu"` |
+| Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | opens 10px clear of the parent menu; scrolls past 30vh (`theme/index.css` `.contexify_submenu`); opens at once and stays open about 250ms after the pointer leaves its parent row, so a diagonal move across the gap reaches it | as Container | `role="menu"`, opened from a row with `aria-haspopup="menu"` |
 
 **Decisions** (the record for this component; grep here before asking again):
 
@@ -771,6 +771,7 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | 2026-10-26 | Name the Menu shadow token, and which rules consume it? | `--menu-shadow` = `0 4px 8px rgba(0,0,0,.4)`, a new token in the hub. `--contexify-menu-shadow`, `OptionList.css` and `MoreOptionsMenu.css` consume it; the snap card (`Gizmos.css`) switches after #1714 merges (G30). |
 | 2026-10-26 | Menu width? | `min-width: 200px`, Figma's width, growing with long labels (✱ width). |
 | 2026-10-26 | Submenus? | They inherit the container values; the chevron is White 40 in every state; the open parent row takes the Pale Black hover fill; the 30vh scroll cap stays (✱ open, and Menu-Entry ✱ submenu parent). |
+| 2026-10-26 | A diagonal pointer path from "Add Component" to its 5th item closed the submenu (a row-height hover bridge doesn't cover it). Keep the 10px gap? | Yes, with a close delay: the submenu stays open about 250ms after the pointer leaves its parent row (a CSS `transition-delay` on closing only); opening stays instant. |
 
 ### Context menus (inspector)
 
@@ -802,7 +803,7 @@ Our board for the inspector's right-click menus (decision October 26, 2026; no F
 | Disabled | the library's `opacity: .5` | — | not drawn (✱) |
 | Divider | `--contexify-separator-color: var(--palette-whiteTransparent-subtle)`, `--contexify-separator-margin: 10px 0`, 1px | `rgba(255,255,255,.1)` | Div White 10 (✱ inset with the rows) |
 | Submenu chevron | `--contexify-arrow-color`, `--contexify-activeArrow-color`, `--contexify-rightSlot-color`, `--contexify-activeRightSlot-color`: `var(--palette-whiteTransparent-blurry)` | `rgba(255,255,255,.4)` | `arrow-right` 10, White 40 |
-| Submenu | a nested `.contexify` with every value above. It opens 10px clear of the parent menu, its first row level with the parent row (as the TitleBar menu), and scrolls past `max-height: 30vh` | — | not drawn (✱) |
+| Submenu | a nested `.contexify` with every value above. It opens 10px clear of the parent menu, its first row level with the parent row (as the TitleBar menu), and scrolls past `max-height: 30vh`. It opens at once and closes 250ms after the pointer leaves the parent row (`transition-delay` on closing only) | — | not drawn (✱) |
 
 A menu is `22 + 38 × rows + 21 × dividers` tall: the padding plus border, then each row, then each divider with its 10px above and below.
 
