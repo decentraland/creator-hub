@@ -58,7 +58,7 @@ const fromParcel = (parcel: ParcelFields, role: RoleType) => {
   const result: Land = {
     id,
     tokenId: parcel.tokenId,
-    name: (parcel.data && parcel.data.name) || 'Parcel',
+    name: parcel.data?.name || '',
     type: LandType.PARCEL,
     roles: [role],
     role,
@@ -82,7 +82,7 @@ const fromEstate = (estate: EstateFields, role: RoleType) => {
   const result: Land = {
     id,
     tokenId: id,
-    name: (estate.data && estate.data.name) || `Estate ${id}`,
+    name: estate.data?.name || '',
     type: LandType.ESTATE,
     roles: [role],
     role,

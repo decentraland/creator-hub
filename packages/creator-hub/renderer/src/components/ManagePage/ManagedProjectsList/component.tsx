@@ -40,13 +40,13 @@ type UnpublishConfirmationState = {
 
 type Props = {
   projects: ManagedProject[];
-  total: number;
+  hasMore: boolean;
   isLoading: boolean;
   onLoadMore: () => void;
 };
 
 const ManagedProjectsList: React.FC<Props> = React.memo(props => {
-  const { projects, total, isLoading, onLoadMore } = props;
+  const { projects, hasMore, isLoading, onLoadMore } = props;
   const { wallet } = useAuth();
   const [settingsModal, setSettingsModal] = useState<SettingsModalState>({
     isOpen: false,
@@ -138,7 +138,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
           onViewScenes={handleViewScenes}
         />
       ))}
-      {projects.length < total && (
+      {hasMore && (
         <Box className="LoadMoreContainer">
           <DCLButton
             disabled={isLoading}

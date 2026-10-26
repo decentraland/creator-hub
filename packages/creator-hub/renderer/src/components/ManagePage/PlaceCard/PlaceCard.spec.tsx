@@ -1,0 +1,93 @@
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { flatten } from 'flat';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
+
+import { en } from '/@/modules/store/translation/locales';
+import { setCurrentLocale } from '/@/modules/store/translation/utils';
+
+import { PlaceCard } from '.';
+
+type CardProps = Parameters<typeof PlaceCard>[0];
+
+function renderCard(props: Partial<CardProps> = {}) {
+  const onViewScenes = vi.fn();
+  render(
+    <ThemeProvider theme={dark}>
+      <PlaceCard
+        name="Land Name"
+        place={{ kind: 'parcel', x: 96, y: 15 }}
+        status="published"
+        thumbnail="thumb.png"
+        scenesCount={1}
+        menuOptions={[{ text: 'Jump In', handler: () => {} }]}
+        onViewScenes={onViewScenes}
+        {...props}
+      />
+    </ThemeProvider>,
+  );
+  return { onViewScenes };
+}
+
+describe('PlaceCard', () => {
+  beforeAll(() => {
+    setCurrentLocale('en', flatten(en));
+  });
+
+  afterEach(cleanup);
+
+  describe('when the LAND is a published parcel', () => {
+    it('should be an article named by the LAND, showing coordinates and scenes', () => {
+      renderCard();
+
+      const card = screen.getByRole('article', { name: 'Land Name' });
+      expect(card.textContent).toContain('96,15');
+      expect(card.textContent).toContain('1 Scene');
+    });
+
+    it('should name its menu after the LAND', () => {
+      renderCard();
+
+      expect(screen.getByRole('button', { name: 'Options for Land Name' })).toBeTruthy();
+    });
+  });
+
+  describe('when the LAND is an estate', () => {
+    it('should count its LANDs where a parcel shows coordinates', () => {
+      renderCard({ place: { kind: 'estate', size: 6, base: { x: 0, y: 0 } }, scenesCount: 2 });
+
+      const card = screen.getByRole('article');
+      expect(card.textContent).toContain('6 LANDs');
+      expect(card.textContent).toContain('2 Scenes');
+    });
+  });
+
+  describe('when the account has a tagged role', () => {
+    it('should show the tag after the place', () => {
+      renderCard({ role: 'tenant' });
+
+      expect(screen.getByRole('article').textContent).toContain('96,15Tenant');
+    });
+  });
+
+  describe('when nothing is published on the LAND', () => {
+    it('should say so and offer the Scenes page', () => {
+      const { onViewScenes } = renderCard({ status: 'unpublished' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'View Scenes' }));
+
+      expect(screen.getByText('No Scene Published')).toBeTruthy();
+      expect(onViewScenes).toHaveBeenCalled();
+    });
+  });
+
+  describe('when the card links to a detail page', () => {
+    it('should make the name its one link', () => {
+      renderCard({ href: '#/manage/land/96,15' });
+
+      expect(screen.getByRole('link', { name: 'Land Name' }).getAttribute('href')).toBe(
+        '#/manage/land/96,15',
+      );
+    });
+  });
+});

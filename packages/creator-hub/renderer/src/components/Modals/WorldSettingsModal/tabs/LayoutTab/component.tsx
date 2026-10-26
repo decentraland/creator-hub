@@ -214,7 +214,12 @@ const WorldScenesView: React.FC<{
                     />
                   </Box>
                 </Box>
-                {!!scene.menuOptions.length && <Dropdown options={scene.menuOptions} />}
+                {!!scene.menuOptions.length && (
+                  <Dropdown
+                    label={t('menu.options_for', { name: scene.title })}
+                    options={scene.menuOptions}
+                  />
+                )}
               </Box>
             ))}
           </Box>

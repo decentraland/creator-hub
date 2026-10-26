@@ -1,3 +1,12 @@
 export { AssistantIcon } from './AssistantIcon';
+export { CalendarIcon } from './CalendarIcon';
 export { ChevronDownIcon } from './ChevronDownIcon';
+export { InfoIcon } from './InfoIcon';
+export { JumpInIcon } from './JumpInIcon';
+export { KebabIcon } from './KebabIcon';
+export { LinkIcon } from './LinkIcon';
+export { MapPinIcon } from './MapPinIcon';
+export { PublicIcon } from './PublicIcon';
+export { ScenesIcon } from './ScenesIcon';
+export { SwapIcon } from './SwapIcon';
 export { WarningCircleIcon } from './WarningCircleIcon';

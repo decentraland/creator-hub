@@ -270,6 +270,26 @@ describe('Lands.fetchLand', () => {
     });
   });
 
+  describe('when a parcel and an estate carry no on-chain name', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        landQuery({
+          ownerParcels: [parcelFields(3, 4)],
+          ownerEstates: [estateFields('7', [null])],
+        }),
+      );
+    });
+
+    it('should leave both names empty, so a LAND named "Parcel" stays distinguishable', async () => {
+      const [lands] = await new Lands().fetchLand('0xme');
+
+      expect(Object.fromEntries(lands.map(land => [land.id, land.name]))).toEqual({
+        '3,4': '',
+        '7': '',
+      });
+    });
+  });
+
   describe('when an estate parcel has its own update operator', () => {
     beforeEach(() => {
       fetchMock.mockResolvedValue(

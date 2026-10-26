@@ -1060,23 +1060,23 @@
   },
   "manage": {
     "header": {
-      "title": "Manage Worlds"
+      "title": "Manage"
     },
-    "items": "{count} {count, plural, one {item} other {items}}",
     "load_more": "Load more",
     "search": "Search",
     "sort_by": "Sort by",
     "sort": {
-      "latest": "Last published",
-      "name": "Domain name"
+      "latest": "Last Updated",
+      "name": "Name"
     },
-    "filter_by": "Filter by",
     "filters": {
+      "all": "All",
       "published": "Published",
-      "unpublished": "Not published"
+      "unpublished": "Not Published"
     },
     "sign_in": {
-      "title": "Sign in to manage your worlds",
+      "title": "Hi there!",
+      "description": "Sign In to start managing your Worlds and LANDs.",
       "action": "Sign In"
     },
     "empty_list": {
@@ -1092,61 +1092,83 @@
         "title": "No places to display",
         "description": "Mint a NAME or become a collaborator to see more results."
       },
-      "all": {
-        "title": "No places to display",
-        "description": "Mint a NAME or become a collaborator to add your first Place."
+      "worlds": {
+        "title": "No Worlds to manage yet",
+        "description": "Mint a new Decentraland <name>NAME</name> or claim an <ens>ENS Domain</ens> to create your World and start publishing your scenes.",
+        "info": "Decentraland Worlds are your own personal 3D space to hang out, host events, and build—all you need is a Decentraland NAME.",
+        "info_label": "What is a World?"
+      },
+      "lands": {
+        "title": "No LANDs to manage yet",
+        "description": "Rent or buy LAND to publish your scenes.",
+        "info": "LAND is a non-fungible token that includes a record of its coordinates, its owner, and a reference to a content description file or parcel manifest that describes and encodes the content the owner wishes to serve on their LAND.",
+        "info_label": "What is LAND?"
       }
     },
     "actions": {
       "view_scenes": "View Scenes",
-      "mint_name": "Mint a new NAME"
+      "mint_name": "Mint New NAME",
+      "rent_or_buy_land": "Rent or Buy LAND"
     },
     "worlds_storage": {
-      "used": "Space used",
-      "for_names": "for Decentraland NAMEs",
+      "used": "Space Used",
       "description": "Total storage is calculated based on MANA, LAND, and NAME holdings.",
-      "link": "View details"
+      "link": "View Details →",
+      "usage": "<b>{used}</b> / {max} MB",
+      "info_label": "About Space Used"
     },
     "cards": {
-      "published_scene": "Published Scene",
       "roles": {
         "owner": "Owner",
         "collaborator": "Collaborator",
-        "operator": "Operator",
-        "tenant": "Tenant"
+        "tenant": "Tenant",
+        "manager": "Manager"
       },
       "menu": {
         "jump_in": "Jump In",
         "copy_url": "Copy URL",
         "edit_name": "Edit Name",
         "permissions": "Permissions",
-        "parcel": "Parcel",
         "view_storage": "View Storage",
-        "unpublish": "Unpublish"
+        "unpublish": "Unpublish",
+        "create_event": "Create Event",
+        "transfer": "Transfer"
       },
       "no_scene": {
-        "title": "No scene published",
-        "view_scenes": "VIEW SCENES"
+        "title": "No Scene Published",
+        "view_scenes": "View Scenes"
       },
       "worlds": {
-        "world": "World",
-        "multi-scene": "Multi-scene",
-        "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
-        "scene_settings": "Scene Settings",
         "world_settings": "Settings",
         "layout": "Layout",
         "published_world": "Published World"
       },
       "land": {
-        "land": "LAND",
-        "land_settings": "LAND Settings",
-        "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
-        "land_coords": "{coordX}, {coordY}"
-      }
+        "lands_count": "{count, plural, one {# LAND} other {# LANDs}}",
+        "parcel_name": "Parcel {coords}",
+        "estate_name": "Estate {id}"
+      },
+      "scenes_count": "{count, plural, one {# Scene} other {# Scenes}}"
     },
     "unpublish_world_confirmation": {
       "title": "Unpublish <b>{worldName}</b>?"
+    },
+    "view": "View",
+    "tabs": {
+      "worlds": "Worlds",
+      "lands": "LANDs"
+    },
+    "read_more": "Read More →",
+    "errors": {
+      "fetch": {
+        "title": "Something went wrong.",
+        "description": "Please, try again.",
+        "retry": "Try again"
+      }
     }
+  },
+  "menu": {
+    "options_for": "Options for {name}"
   },
   "analytics": {
     "header": {

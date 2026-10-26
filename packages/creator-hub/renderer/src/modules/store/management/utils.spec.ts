@@ -1,18 +1,28 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flatten } from 'flat';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ManagedProject } from '../../../../../shared/types/manage';
 import { FilterBy, ManagedProjectType, SortBy } from '../../../../../shared/types/manage';
 import type { Land, LandDeployment } from '../../../lib/land';
 import { LandType, RoleType } from '../../../lib/land';
 import type { WorldData, WorldScene, Worlds } from '../../../lib/worlds';
+import { en } from '../translation/locales';
+import { setCurrentLocale } from '../translation/utils';
 import {
   fetchAllDeployedWorlds,
   fetchWorldSceneCoords,
+  getLandName,
   groupLandDeployments,
   selectLandProjects,
+  selectWorldProjects,
   toLandProject,
 } from './utils';
 
 const TEST_ADDRESS = '0xowner';
+
+beforeAll(() => {
+  setCurrentLocale('en', flatten(en));
+});
 
 const scene = (base: string | undefined, parcels: string[] = []): WorldScene =>
   ({
@@ -311,6 +321,33 @@ describe('toLandProject', () => {
           { x: 5, y: 5 },
           { x: 5, y: 6 },
         ],
+        place: { kind: 'estate', size: 2, base: { x: 5, y: 5 } },
+      });
+    });
+  });
+
+  describe('when the LAND is a parcel', () => {
+    it('should place it at its own coordinates', () => {
+      expect(toLandProject(landParcel(12, -2), [], contentUrl).place).toEqual({
+        kind: 'parcel',
+        x: 12,
+        y: -2,
+      });
+    });
+  });
+
+  describe('when the estate lists its parcels out of order', () => {
+    it('should take the lowest parcel as its base, for Jump In', () => {
+      const land = landEstate('9', [
+        [3, 1],
+        [-2, 4],
+        [-2, 0],
+      ]);
+
+      expect(toLandProject(land, [], contentUrl).place).toEqual({
+        kind: 'estate',
+        size: 3,
+        base: { x: -2, y: 0 },
       });
     });
   });
@@ -321,6 +358,75 @@ describe('toLandProject', () => {
 
       expect(project.deployment).toBeUndefined();
       expect(project.scenes).toEqual([]);
+    });
+  });
+});
+
+describe('selectWorldProjects', () => {
+  const project = (id: string): ManagedProject => ({
+    id,
+    displayName: id,
+    type: ManagedProjectType.WORLD,
+    role: RoleType.OWNER,
+  });
+  const published = [project('zeta.dcl.eth'), project('alpha.dcl.eth')];
+  const empty = [project('omega.dcl.eth'), project('beta.dcl.eth')];
+  const ids = (filters: Parameters<typeof selectWorldProjects>[2]) =>
+    selectWorldProjects(published, empty, filters).map(world => world.id);
+
+  describe('when sorting by last updated', () => {
+    it('should keep the published order and list the empty worlds after, A to Z', () => {
+      expect(ids({ sortBy: SortBy.LATEST, searchQuery: '' })).toEqual([
+        'zeta.dcl.eth',
+        'alpha.dcl.eth',
+        'beta.dcl.eth',
+        'omega.dcl.eth',
+      ]);
+    });
+  });
+
+  describe('when sorting by name', () => {
+    it('should merge both lists A to Z', () => {
+      expect(ids({ sortBy: SortBy.NAME, searchQuery: '' })).toEqual([
+        'alpha.dcl.eth',
+        'beta.dcl.eth',
+        'omega.dcl.eth',
+        'zeta.dcl.eth',
+      ]);
+    });
+  });
+
+  describe('when searching', () => {
+    it('should narrow the empty worlds, which the server search never sees', () => {
+      expect(ids({ sortBy: SortBy.LATEST, searchQuery: 'OME' })).toEqual([
+        'zeta.dcl.eth',
+        'alpha.dcl.eth',
+        'omega.dcl.eth',
+      ]);
+    });
+  });
+});
+
+describe('getLandName', () => {
+  describe('when the LAND has an on-chain name', () => {
+    it('should use it', () => {
+      expect(getLandName(toLandProject(landParcel(1, 1, 'Plaza'), [], contentUrl))).toBe('Plaza');
+    });
+  });
+
+  describe('when an unnamed LAND is a parcel', () => {
+    it('should name it by its coordinates', () => {
+      expect(getLandName(toLandProject(landParcel(12, -2, ''), [], contentUrl))).toBe(
+        'Parcel 12,-2',
+      );
+    });
+  });
+
+  describe('when an unnamed LAND is an estate', () => {
+    it('should name it by its id', () => {
+      expect(getLandName(toLandProject(landEstate('501', [[0, 0]], ''), [], contentUrl))).toBe(
+        'Estate 501',
+      );
     });
   });
 });
@@ -390,6 +496,24 @@ describe('selectLandProjects', () => {
     it('should match the coordinates of a parcel, estate parcels included', () => {
       expect(select({ searchQuery: '-5, 11' })).toEqual(['Alpha']);
       expect(select({ searchQuery: '1,1' })).toEqual(['Zeta']);
+    });
+  });
+
+  describe('when a LAND has no on-chain name', () => {
+    const unnamed = [landParcel(40, 40, ''), landParcel(1, 1, 'Zeta'), landParcel(2, 2, 'Alpha')];
+    const named = (filters: Partial<Parameters<typeof selectLandProjects>[2]>) =>
+      selectLandProjects(
+        unnamed.map(land => toLandProject(land, [], contentUrl)),
+        unnamed,
+        { publishFilter: undefined, sortBy: SortBy.NAME, searchQuery: '', ...filters },
+      ).map(getLandName);
+
+    it('should sort it by the name the card shows', () => {
+      expect(named({})).toEqual(['Alpha', 'Parcel 40,40', 'Zeta']);
+    });
+
+    it('should find it by the name the card shows', () => {
+      expect(named({ searchQuery: 'parcel 40' })).toEqual(['Parcel 40,40']);
     });
   });
 });

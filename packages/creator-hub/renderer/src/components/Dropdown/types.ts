@@ -7,6 +7,7 @@ export type Option = {
 };
 
 export type Props = {
+  label: string;
   options: Option[];
   className?: string;
   selected?: string;

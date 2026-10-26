@@ -1,231 +1,188 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
-import cx from 'classnames';
-import RefreshIcon from '@mui/icons-material/Cached';
-import type { SelectChangeEvent } from 'decentraland-ui2';
-import { Box, Chip, IconButton, MenuItem, Typography } from 'decentraland-ui2';
 import { analytics, misc } from '#preload';
+import { useDispatch, useSelector } from '#store';
 import { t } from '/@/modules/store/translation/utils';
-import { actions as managementActions } from '/@/modules/store/management';
+import {
+  actions as managementActions,
+  selectors as managementSelectors,
+} from '/@/modules/store/management';
 import { fetchENSList } from '/@/modules/store/ens';
 import { useAuth } from '/@/hooks/useAuth';
-import { useDispatch, useSelector } from '#store';
-import { FilterBy, SortBy } from '/shared/types/manage';
+import type { FilterBy, ManagedProject, ManageTab, SortBy } from '/shared/types/manage';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Loader } from '../Loader';
 import { Container } from '../Container';
-import { FiltersBar } from '../FiltersBar';
-import { Select } from '../Select';
-import { Search } from '../Search';
-import { Button } from '../Button';
-import { Row } from '../Row';
-import { Column } from '../Column';
 import { ManagedProjectsList } from './ManagedProjectsList';
-import { StorageUsed } from './StorageUsed';
-import { SignInCard } from './SignInCard';
-import './styles.css';
+import { LandProjectsList } from './LandProjectsList';
+import { EmptyState } from './EmptyState';
+import { SpaceUsed } from './SpaceUsed';
+import { getManageTabId, MANAGE_PANEL_ID, ManageViewBar } from './ViewBar';
+import { CLAIM_NAME_URL, getEmptyKind, getManageEmptyState } from './manageEmptyState';
+import { Content, Title } from './component.styled';
 
-const CLAIM_NAME_URL = 'https://decentraland.org/marketplace/names/claim';
+const LANDS_MARKETPLACE_URL = 'https://decentraland.org/marketplace/lands';
 
-const FILTER_OPTIONS: Array<{ label: string; value: FilterBy }> = [
-  {
-    label: t('manage.filters.published'),
-    value: FilterBy.PUBLISHED,
-  },
-  {
-    label: t('manage.filters.unpublished'),
-    value: FilterBy.UNPUBLISHED,
-  },
-];
-
-const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
-  {
-    label: t('manage.sort.latest'),
-    value: SortBy.LATEST,
-  },
-  {
-    label: t('manage.sort.name'),
-    value: SortBy.NAME,
-  },
-];
+const noop = (_project: ManagedProject) => {};
 
 export function ManagePage() {
   const { isSignedIn, isSigningIn, signIn, wallet } = useAuth();
   const { data: ens } = useSelector(state => state.ens);
-  const { status, projects, total, page, sortBy, searchQuery, publishFilter } = useSelector(
-    state => state.management,
-  );
+  const { tab, status, projects, total, page, sortBy, searchQuery, publishFilter, lands } =
+    useSelector(state => state.management);
+  const worldProjects = useSelector(managementSelectors.getWorldProjects);
+  const landProjects = useSelector(managementSelectors.getLandProjects);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const titleId = useId();
 
-  const isLoading = status === 'idle' || status === 'loading';
-  const showMainLoader = isLoading && !projects.length;
-
-  // Names can change outside the app (a purchase, a granted deploy permission), so the
-  // sign-in-time fetch goes stale. Refresh in the background on every visit to this tab.
   useEffect(() => {
     if (wallet) {
       dispatch(fetchENSList({ address: wallet }));
     }
   }, [wallet, dispatch]);
 
-  const handleSortDropdownChange = useCallback((e: SelectChangeEvent<SortBy>) => {
-    dispatch(managementActions.setSortBy(e.target.value as SortBy));
-    dispatch(managementActions.fetchManagedProjectsFiltered());
-  }, []);
+  useEffect(() => {
+    if (isSignedIn && tab === 'lands' && lands.status === 'idle') {
+      dispatch(managementActions.fetchLandProjects());
+    }
+  }, [isSignedIn, tab, lands.status, dispatch]);
 
-  const handleSearch = useCallback((value: string) => {
-    dispatch(managementActions.setSearchQuery(value));
+  const refetchWorlds = useCallback(() => {
     dispatch(managementActions.fetchManagedProjectsFiltered());
-  }, []);
+  }, [dispatch]);
 
-  const handlePublishFilterChange = useCallback((value: FilterBy) => {
-    dispatch(managementActions.setPublishFilter(value));
-    dispatch(managementActions.fetchManagedProjectsFiltered());
-  }, []);
+  const handleTabChange = useCallback(
+    (next: ManageTab) => dispatch(managementActions.setTab(next)),
+    [dispatch],
+  );
+
+  const handleViewChange = useCallback(
+    (view: FilterBy | undefined) => {
+      dispatch(managementActions.setPublishFilter(view));
+      refetchWorlds();
+    },
+    [refetchWorlds],
+  );
+
+  const handleSortChange = useCallback(
+    (next: SortBy) => {
+      dispatch(managementActions.setSortBy(next));
+      refetchWorlds();
+    },
+    [refetchWorlds],
+  );
+
+  const handleSearch = useCallback(
+    (query: string) => {
+      dispatch(managementActions.setSearchQuery(query));
+      refetchWorlds();
+    },
+    [refetchWorlds],
+  );
 
   const handleLoadMoreProjects = useCallback(() => {
     dispatch(managementActions.setPage(page + 1));
-    dispatch(managementActions.fetchManagedProjectsFiltered());
-  }, [page]);
-
-  const handleRefreshProjects = useCallback(() => {
-    dispatch(managementActions.setPage(0));
-    dispatch(managementActions.setSearchQuery(''));
-    dispatch(managementActions.fetchManagedProjectsFiltered());
-  }, []);
-
-  const handleMintName = useCallback(() => {
-    analytics.track('Manage Worlds External Action', { action: 'Mint NAME' });
-    misc.openExternal(CLAIM_NAME_URL);
-  }, []);
+    refetchWorlds();
+  }, [page, refetchWorlds]);
 
   const handleViewScenes = useCallback(() => {
     navigate('/scenes');
   }, [navigate]);
 
-  const emptyTitle = useMemo(() => {
-    if (projects.length) return '';
-    if (searchQuery) return t('manage.empty_list.search.title');
-    if (!Object.keys(ens).length) return t('manage.empty_list.all.title');
-    if (publishFilter === FilterBy.PUBLISHED) return t('manage.empty_list.published.title');
-    return t('manage.empty_list.unpublished.title');
-  }, [projects.length, searchQuery, publishFilter, ens]);
+  const emptyActions = {
+    onMintName: () => {
+      analytics.track('Manage Worlds External Action', { action: 'Mint NAME' });
+      void misc.openExternal(CLAIM_NAME_URL);
+    },
+    onRentOrBuyLand: () => void misc.openExternal(LANDS_MARKETPLACE_URL),
+    onViewScenes: handleViewScenes,
+    onRetry: () =>
+      tab === 'lands'
+        ? dispatch(managementActions.fetchLandProjects())
+        : dispatch(managementActions.fetchManagedProjectsFiltered({ resetPage: true })),
+  };
 
-  const emptySubtitle = useMemo(() => {
-    if (projects.length) return '';
-    if (searchQuery) return t('manage.empty_list.search.description');
-    if (!Object.keys(ens).length) return t('manage.empty_list.all.description');
-    if (publishFilter === FilterBy.PUBLISHED) return t('manage.empty_list.published.description');
-    return t('manage.empty_list.unpublished.description');
-  }, [projects.length, searchQuery, publishFilter, ens]);
+  const isWorlds = tab === 'worlds';
+  const items = isWorlds ? worldProjects : landProjects;
+  const listStatus = isWorlds ? status : lands.status;
+  const isLoading = listStatus === 'idle' || listStatus === 'loading';
+  const emptyKind = getEmptyKind({
+    failed: listStatus === 'failed',
+    count: items.length,
+    hasAny: isWorlds ? Object.keys(ens).length > 0 : lands.projects.length > 0,
+    searchQuery,
+    view: publishFilter,
+  });
+
+  const renderList = () => {
+    if (isLoading && !items.length) return <Loader size={70} />;
+    if (emptyKind) {
+      return (
+        <EmptyState
+          {...getManageEmptyState({ tab, kind: emptyKind, view: publishFilter }, emptyActions)}
+        />
+      );
+    }
+    return isWorlds ? (
+      <ManagedProjectsList
+        projects={worldProjects}
+        hasMore={projects.length < total}
+        isLoading={isLoading}
+        onLoadMore={handleLoadMoreProjects}
+      />
+    ) : (
+      <LandProjectsList
+        projects={landProjects}
+        onViewScenes={handleViewScenes}
+        onTransfer={noop}
+      />
+    );
+  };
 
   return (
     <main className="ManagePage">
       <Navbar active={NavbarItem.MANAGE} />
       <Container>
-        <Typography variant="h3">
-          {t('manage.header.title')}
-          {isSignedIn && (
-            <IconButton
-              onClick={handleRefreshProjects}
-              disabled={isLoading}
-              className={cx('RefreshButton', { Loading: isLoading && !showMainLoader })}
-            >
-              <RefreshIcon />
-            </IconButton>
+        <Content>
+          <Title
+            id={titleId}
+            variant="h3"
+            component="h1"
+          >
+            {t('manage.header.title')}
+          </Title>
+          {!isSignedIn && !isSigningIn ? (
+            <EmptyState
+              icon="wave"
+              title={t('manage.sign_in.title')}
+              description={t('manage.sign_in.description')}
+              action={{ label: t('manage.sign_in.action'), variant: 'tertiary', onClick: signIn }}
+            />
+          ) : (
+            <>
+              <ManageViewBar
+                labelledBy={titleId}
+                tab={tab}
+                view={publishFilter}
+                sortBy={sortBy}
+                searchQuery={searchQuery}
+                onTabChange={handleTabChange}
+                onViewChange={handleViewChange}
+                onSortChange={handleSortChange}
+                onSearch={handleSearch}
+              />
+              {isWorlds && emptyKind !== 'none' && <SpaceUsed />}
+              <div
+                role="tabpanel"
+                id={MANAGE_PANEL_ID}
+                aria-labelledby={getManageTabId(tab)}
+              >
+                {renderList()}
+              </div>
+            </>
           )}
-        </Typography>
-        {!isSignedIn && !isSigningIn ? (
-          <SignInCard onClickSignIn={signIn} />
-        ) : (
-          <Row>
-            <Column className="ContentColumn">
-              <FiltersBar className="FiltersBar">
-                <>
-                  <Typography variant="h6">
-                    {t('manage.items', { count: projects.length })}
-                  </Typography>
-                  <Box className="FilterChipsContainer">
-                    <Typography>{t('manage.filter_by')}</Typography>
-                    {FILTER_OPTIONS.map(option => (
-                      <Chip
-                        key={option.value}
-                        label={option.label}
-                        variant={option.value === publishFilter ? 'filled' : 'outlined'}
-                        className="FilterChip"
-                        onClick={
-                          option.value !== publishFilter && !isLoading
-                            ? () => handlePublishFilterChange(option.value)
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </Box>
-                </>
-                {publishFilter === FilterBy.PUBLISHED && (
-                  <>
-                    <Typography>{t('manage.sort_by')}</Typography>
-                    <Select
-                      variant="standard"
-                      value={sortBy}
-                      onChange={handleSortDropdownChange}
-                      disabled={!projects?.length || isLoading}
-                    >
-                      {SORT_OPTIONS.map(option => (
-                        <MenuItem
-                          key={option.value}
-                          value={option.value}
-                          className="sort-item"
-                        >
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <Search
-                      placeholder={t('manage.search')}
-                      defaultValue={searchQuery}
-                      disabled={!searchQuery && !projects.length}
-                      onChange={handleSearch}
-                    />
-                  </>
-                )}
-              </FiltersBar>
-              {showMainLoader ? (
-                <Loader size={70} />
-              ) : projects.length === 0 ? (
-                <Box className="EmptyContainer">
-                  <Typography variant="h6">{emptyTitle}</Typography>
-                  <Typography variant="body1">{emptySubtitle}</Typography>
-                  {!searchQuery &&
-                    (!Object.keys(ens).length || publishFilter === FilterBy.UNPUBLISHED ? (
-                      <Button
-                        onClick={handleMintName}
-                        color="secondary"
-                      >
-                        {t('manage.actions.mint_name')}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={handleViewScenes}
-                        color="secondary"
-                      >
-                        {t('manage.actions.view_scenes')}
-                      </Button>
-                    ))}
-                </Box>
-              ) : (
-                <ManagedProjectsList
-                  projects={projects}
-                  total={total}
-                  isLoading={isLoading}
-                  onLoadMore={handleLoadMoreProjects}
-                />
-              )}
-            </Column>
-            <StorageUsed />
-          </Row>
-        )}
+        </Content>
       </Container>
     </main>
   );

@@ -1059,23 +1059,23 @@
   },
   "manage": {
     "header": {
-      "title": "管理世界"
+      "title": "管理"
     },
-    "items": "{count} {count, plural, one {项目} other {项目}}",
     "load_more": "加载更多",
     "search": "搜索",
     "sort_by": "排序方式",
     "sort": {
-      "latest": "最后发布",
-      "name": "域名"
+      "latest": "最近更新",
+      "name": "名称"
     },
-    "filter_by": "筛选",
     "filters": {
+      "all": "全部",
       "published": "已发布",
       "unpublished": "未发布"
     },
     "sign_in": {
-      "title": "登录以管理您的世界",
+      "title": "你好！",
+      "description": "登录以开始管理您的世界和 LAND。",
       "action": "登录"
     },
     "empty_list": {
@@ -1091,61 +1091,83 @@
         "title": "没有地点可显示",
         "description": "铸造一个NAME或成为协作者以查看更多结果。"
       },
-      "all": {
-        "title": "没有地点可显示",
-        "description": "铸造一个NAME或成为协作者以添加您的第一个地点。"
+      "worlds": {
+        "title": "还没有可管理的世界",
+        "description": "铸造一个新的 Decentraland <name>NAME</name> 或认领一个 <ens>ENS 域名</ens>，以创建您的世界并开始发布场景。",
+        "info": "Decentraland 世界是您专属的个人 3D 空间，可以聚会、举办活动和建造——您只需要一个 Decentraland NAME。",
+        "info_label": "什么是世界？"
+      },
+      "lands": {
+        "title": "还没有可管理的 LAND",
+        "description": "租用或购买 LAND 来发布您的场景。",
+        "info": "LAND 是一种非同质化代币，包含其坐标、所有者的记录，以及对内容描述文件或地块清单的引用，该文件描述并编码所有者希望在其 LAND 上提供的内容。",
+        "info_label": "什么是 LAND？"
       }
     },
     "actions": {
       "view_scenes": "查看场景",
-      "mint_name": "铸造新NAME"
+      "mint_name": "铸造新NAME",
+      "rent_or_buy_land": "租用或购买 LAND"
     },
     "worlds_storage": {
       "used": "已使用空间",
-      "for_names": "用于 Decentraland NAMEs",
       "description": "总存储空间根据 MANA、LAND 和 NAME 持有量计算。",
-      "link": "查看详情"
+      "link": "查看详情 →",
+      "usage": "<b>{used}</b> / {max} MB",
+      "info_label": "关于已使用空间"
     },
     "cards": {
-      "published_scene": "已发布的场景",
       "roles": {
         "owner": "所有者",
         "collaborator": "协作者",
-        "operator": "租户",
-        "tenant": "出租人"
+        "tenant": "租户",
+        "manager": "管理者"
       },
       "menu": {
         "jump_in": "进入",
         "copy_url": "复制URL",
         "edit_name": "编辑名称",
         "permissions": "权限",
-        "parcel": "地块",
         "view_storage": "查看存储",
-        "unpublish": "取消发布"
+        "unpublish": "取消发布",
+        "create_event": "创建活动",
+        "transfer": "转让"
       },
       "no_scene": {
         "title": "未发布场景",
         "view_scenes": "查看场景"
       },
       "worlds": {
-        "world": "世界",
-        "multi-scene": "多场景",
-        "scenes_count": "{count} {count, plural, one {场景} other {场景}}",
-        "scene_settings": "场景设置",
         "world_settings": "设置",
         "layout": "布局",
         "published_world": "已发布的世界"
       },
       "land": {
-        "land": "土地",
-        "land_settings": "土地设置",
-        "parcels_count": "{count} {count, plural, one {地块} other {地块}}",
-        "land_coords": "{coordX}, {coordY}"
-      }
+        "lands_count": "{count, plural, other {# 块 LAND}}",
+        "parcel_name": "地块 {coords}",
+        "estate_name": "Estate {id}"
+      },
+      "scenes_count": "{count, plural, other {# 个场景}}"
     },
     "unpublish_world_confirmation": {
       "title": "取消发布 <b>{worldName}</b>？"
+    },
+    "view": "查看",
+    "tabs": {
+      "worlds": "世界",
+      "lands": "LANDs"
+    },
+    "read_more": "了解更多 →",
+    "errors": {
+      "fetch": {
+        "title": "出了点问题。",
+        "description": "请重试。",
+        "retry": "重试"
+      }
     }
+  },
+  "menu": {
+    "options_for": "{name} 的选项"
   },
   "analytics": {
     "header": {

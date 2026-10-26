@@ -204,7 +204,7 @@ describe('management slice', () => {
   describe('initial state', () => {
     it('should have correct initial values', () => {
       expect(initialState.sortBy).toBe(SortBy.LATEST);
-      expect(initialState.publishFilter).toBe(FilterBy.PUBLISHED);
+      expect(initialState.publishFilter).toBeUndefined();
       expect(initialState.searchQuery).toBe('');
       expect(initialState.page).toBe(0);
       expect(initialState.total).toBe(0);
@@ -334,6 +334,68 @@ describe('management slice', () => {
       await store.dispatch(fetchManagedProjectsFiltered());
 
       expect(mockWorldsAPI.fetchWorlds).toHaveBeenCalled();
+    });
+
+    describe('when the view is All', () => {
+      beforeEach(() => {
+        vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+        store.dispatch({
+          type: 'ens/fetchENSList/fulfilled',
+          payload: [
+            { subdomain: 'zeta.dcl.eth', nftOwnerAddress: TEST_ADDRESS },
+            { subdomain: 'beta.dcl.eth', nftOwnerAddress: TEST_ADDRESS },
+          ],
+          meta: { arg: { address: TEST_ADDRESS } },
+        });
+        mockWorldsAPI.fetchWorlds.mockResolvedValue({
+          worlds: [
+            {
+              name: 'alpha.dcl.eth',
+              owner: TEST_ADDRESS,
+              deployedScenes: 1,
+              lastDeployedAt: '2026-01-01',
+            },
+          ],
+          total: 1,
+        });
+        mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+      });
+
+      it('should list the published worlds first, then the empty ones', async () => {
+        await store.dispatch(fetchManagedProjectsFiltered());
+
+        expect(selectors.getWorldProjects(store.getState()).map(project => project.id)).toEqual([
+          'alpha.dcl.eth',
+          'beta.dcl.eth',
+          'zeta.dcl.eth',
+        ]);
+      });
+
+      describe('and the next page of published worlds loads', () => {
+        it('should not ask for the empty worlds again', async () => {
+          await store.dispatch(fetchManagedProjectsFiltered());
+          mockWorldsAPI.fetchWorldScenes.mockClear();
+          store.dispatch(actions.setPage(1));
+
+          await store.dispatch(fetchManagedProjectsFiltered());
+
+          expect(mockWorldsAPI.fetchWorldScenes).not.toHaveBeenCalledWith(
+            'zeta.dcl.eth',
+            expect.anything(),
+          );
+        });
+      });
+    });
+
+    describe('when the view is Not Published', () => {
+      it('should not ask for the published worlds', async () => {
+        vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+        store.dispatch(actions.setPublishFilter(FilterBy.UNPUBLISHED));
+
+        await store.dispatch(fetchManagedProjectsFiltered());
+
+        expect(mockWorldsAPI.fetchWorlds).not.toHaveBeenCalled();
+      });
     });
 
     it('should throw error when no connected account is found', async () => {
@@ -1305,14 +1367,14 @@ describe('management slice', () => {
       expect(result[0].deployment).toBeUndefined();
     });
 
-    it('should update state with empty projects and total', async () => {
+    it('should keep the empty worlds apart from the paged published ones', async () => {
       mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
 
       await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS }));
 
       const state = store.getState().management;
-      expect(state.projects).toHaveLength(3); // All 3 worlds have 0 scenes
-      expect(state.total).toBe(3);
+      expect(state.emptyProjects).toHaveLength(3);
+      expect(state.total).toBe(0);
     });
 
     it('should filter out all worlds when all have published scenes', async () => {
@@ -1879,6 +1941,10 @@ describe('management slice', () => {
       });
 
       describe('when filtering by published', () => {
+        beforeEach(() => {
+          store.dispatch(actions.setPublishFilter(FilterBy.PUBLISHED));
+        });
+
         it('should list the LANDs holding a scene', () => {
           expect(selectors.getLandProjects(store.getState()).map(project => project.id)).toEqual([
             '1,1',

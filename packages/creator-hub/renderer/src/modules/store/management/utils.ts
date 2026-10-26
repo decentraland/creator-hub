@@ -1,9 +1,10 @@
-import type { ManagedProject } from '/shared/types/manage';
+import type { LandPlace, ManagedProject } from '/shared/types/manage';
 import { FilterBy, ManagedProjectType, SortBy } from '/shared/types/manage';
 import { retry } from '/shared/utils';
 
 import type { Land, LandDeployment } from '/@/lib/land';
-import { coordsToId, ownedCoords, parseCoords } from '/@/lib/land';
+import { coordsToId, LandType, ownedCoords, parseCoords } from '/@/lib/land';
+import { t } from '/@/modules/store/translation/utils';
 import type { WorldData, WorldScene, Worlds } from '/@/lib/worlds';
 import { WorldRoleType } from '/@/lib/worlds';
 
@@ -206,6 +207,20 @@ export function groupLandDeployments(
   return grouped;
 }
 
+function landPlace(land: Land): LandPlace {
+  if (land.type === LandType.PARCEL) return { kind: 'parcel', x: land.x ?? 0, y: land.y ?? 0 };
+  const [x, y] = ownedCoords([land]).sort((a, b) => a[0] - b[0] || a[1] - b[1])[0] ?? [0, 0];
+  return { kind: 'estate', size: land.parcels?.length ?? land.size ?? 0, base: { x, y } };
+}
+
+/** The name a LAND card shows: its on-chain name, else "Parcel x,y" or "Estate id". */
+export function getLandName(project: ManagedProject): string {
+  if (project.displayName) return project.displayName;
+  return project.place?.kind === 'parcel'
+    ? t('manage.cards.land.parcel_name', { coords: coordsToId(project.place.x, project.place.y) })
+    : t('manage.cards.land.estate_name', { id: project.id });
+}
+
 /** A LAND as a managed project, summarising its most recent deployment. */
 export function toLandProject(
   land: Land,
@@ -233,7 +248,27 @@ export function toLandProject(
     scenes: deployments
       .map(deployment => parseCoords(deployment.metadata.scene?.base ?? ''))
       .filter(coords => coords !== null),
+    place: landPlace(land),
   };
+}
+
+/**
+ * The Worlds list: the published worlds in the server's order (already searched and sorted
+ * there), then the empty worlds, which the server search never sees, narrowed and sorted here.
+ */
+export function selectWorldProjects(
+  published: ManagedProject[],
+  empty: ManagedProject[],
+  filters: { sortBy: SortBy; searchQuery: string },
+): ManagedProject[] {
+  const query = filters.searchQuery.trim().toLowerCase();
+  const byName = (a: ManagedProject, b: ManagedProject) =>
+    a.displayName.localeCompare(b.displayName);
+  const matches = empty.filter(project => project.displayName.toLowerCase().includes(query));
+
+  return filters.sortBy === SortBy.NAME
+    ? [...published, ...matches].sort(byName)
+    : [...published, ...matches.sort(byName)];
 }
 
 /** LAND projects narrowed by the publish filter and search (name or `x,y`), then sorted. */
@@ -249,7 +284,7 @@ export function selectLandProjects(
   const matchesSearch = (project: ManagedProject) => {
     const land = landsById.get(project.id);
     return (
-      project.displayName.toLowerCase().includes(name) ||
+      getLandName(project).toLowerCase().includes(name) ||
       (!!land && parcelIds(land).some(id => id.includes(coords)))
     );
   };
@@ -258,7 +293,7 @@ export function selectLandProjects(
     (filters.publishFilter === FilterBy.PUBLISHED) === !!project.deployment;
 
   const byName = (a: ManagedProject, b: ManagedProject) =>
-    a.displayName.localeCompare(b.displayName);
+    getLandName(a).localeCompare(getLandName(b));
   const byLatest = (a: ManagedProject, b: ManagedProject) =>
     (b.deployment?.lastPublishedAt ?? 0) - (a.deployment?.lastPublishedAt ?? 0);
 

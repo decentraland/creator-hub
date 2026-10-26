@@ -1,7 +1,7 @@
 import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
 import pLimit from 'p-limit';
 import type { Async } from '/shared/types/async';
-import type { ManagedProject } from '/shared/types/manage';
+import type { ManagedProject, ManageTab } from '/shared/types/manage';
 import { FilterBy } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
 import { AuthServerProvider } from '/@/lib/auth';
@@ -28,6 +28,7 @@ import {
   getWorldSettingsInitialState,
   groupLandDeployments,
   selectLandProjects,
+  selectWorldProjects,
   toLandProject,
   toManagedProject,
 } from './utils';
@@ -71,12 +72,14 @@ export type LandProjectsState = {
 
 // state
 export type ManagementState = {
+  tab: ManageTab;
   sortBy: SortBy;
-  publishFilter: FilterBy;
+  publishFilter: FilterBy | undefined;
   searchQuery: string;
   page: number;
   total: number;
   projects: ManagedProject[];
+  emptyProjects: ManagedProject[];
   storageStats: WorldsWalletStats | null;
   accountHoldings: AccountHoldings | null;
   worldSettings: WorldSettingsState;
@@ -85,12 +88,14 @@ export type ManagementState = {
 };
 
 export const initialState: Async<ManagementState> = {
+  tab: 'worlds',
   sortBy: SortBy.LATEST,
-  publishFilter: FilterBy.PUBLISHED,
+  publishFilter: undefined,
   searchQuery: '',
   page: 0,
   total: 0,
   projects: [],
+  emptyProjects: [],
   storageStats: null,
   accountHoldings: null,
   status: 'idle',
@@ -142,11 +147,12 @@ export const fetchManagedProjectsFiltered = createAsyncThunk(
     const connectedAccount = AuthServerProvider.getAccount();
     if (!connectedAccount) throw new Error('No connected account found');
 
-    const { publishFilter } = getState().management;
     if (args?.resetPage) dispatch(actions.setPage(0));
-    if (publishFilter === FilterBy.PUBLISHED) {
+    const { publishFilter, page } = getState().management;
+    if (publishFilter !== FilterBy.UNPUBLISHED) {
       await dispatch(fetchWorlds({ address: connectedAccount })).unwrap();
-    } else if (publishFilter === FilterBy.UNPUBLISHED) {
+    }
+    if (publishFilter !== FilterBy.PUBLISHED && page === 0) {
       await dispatch(fetchEmptyWorlds({ address: connectedAccount })).unwrap();
     }
   },
@@ -524,10 +530,15 @@ const slice = createSlice({
       state.sortBy = action.payload;
       state.page = 0;
     },
-    setPublishFilter: (state, action: PayloadAction<FilterBy>) => {
+    setTab: (state, action: PayloadAction<ManageTab>) => {
+      state.tab = action.payload;
+    },
+    setPublishFilter: (state, action: PayloadAction<FilterBy | undefined>) => {
       state.publishFilter = action.payload;
       state.page = 0;
+      state.total = 0;
       state.projects = [];
+      state.emptyProjects = [];
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
@@ -578,8 +589,7 @@ const slice = createSlice({
         state.total = action.payload.total;
       })
       .addCase(fetchEmptyWorlds.fulfilled, (state, action) => {
-        state.projects = action.payload ?? []; // Not paginated.
-        state.total = action.payload.length;
+        state.emptyProjects = action.payload ?? [];
       })
       .addCase(fetchStorageStats.fulfilled, (state, action) => {
         state.storageStats = action.payload;
@@ -722,6 +732,17 @@ const getWorldScenes = createSelector(
   managementState => managementState.worldSettings.scenes,
 );
 
+const getWorldProjects = createSelector(
+  [
+    (state: AppState) => state.management.projects,
+    (state: AppState) => state.management.emptyProjects,
+    (state: AppState) => state.management.sortBy,
+    (state: AppState) => state.management.searchQuery,
+  ],
+  (published, empty, sortBy, searchQuery) =>
+    selectWorldProjects(published, empty, { sortBy, searchQuery }),
+);
+
 const getLandProjects = createSelector(
   [
     (state: AppState) => state.management.lands.projects,
@@ -776,6 +797,7 @@ export const reducer = slice.reducer;
 export const selectors = {
   ...slice.selectors,
   getManagedProjects,
+  getWorldProjects,
   getWorldSettings,
   getWorldScenes,
   getLandProjects,
