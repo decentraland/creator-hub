@@ -12,6 +12,8 @@ The visual language for the two UIs in this repo: the **`@dcl/inspector`** web U
 
 Both UIs are specified in one Figma file, **📗️ Design System | Creator Tools** (file key `5ecKgNHjChZEe05LUwKGku`). [Node `20420:50646`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20420-50646) is its COVER page. Tokens live on the pages under **Tokens** (Colors, Typography, Tags / Labels); components and screens live on the section pages, so start from the frame URL for the surface you're changing. A page whose name contains `🟡 Outdated` is superseded: don't pull from it.
 
+Feature files extend it. **🧰 Integrate LANDs to CH | Creator Tools | 09/26** (file key `albOLmqF5fUwmRJ7CjBulU`, page `💻 High-fi 🟡` `5660:3959`) specifies Manage's LAND and World surfaces; see [Manage (LANDs in Creator Hub)](#manage-lands-in-creator-hub).
+
 Read `.ai/skills/figma/SKILL.md` before pulling a frame. It covers the Figma MCP, the Claude-in-Chrome fallback when the MCP's call cap is hit, and syncing palette changes back into this file.
 
 ---
@@ -730,6 +732,13 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | Container | open | Onix | 1px White 10 all sides | 12px | `0 4px 8px rgba(0,0,0,.4)` | 200 × Hug (117 with one entry per slot), padding 10 / 0, gap 10 | Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow and border carry the edge | `role="menu"` with `aria-labelledby` the trigger; Escape closes, arrows move, focus returns to the trigger |
 | Options / Options2 | — | none | none | — | — | Fill × Hug, padding 0 / 10 | — | `role="group"` when a Section labels it |
 | Div | — | as Menu-Entry Div | — | — | — | between the slots | — | `role="separator"` |
+| Container | ✱ Creator Hub width | Onix | — | — | — | min-width 230 (the Manage card menu `5660:4117`, the only Creator Hub instance drawn); rows hug | — | — |
+
+**Decisions** (Creator Hub `components/Dropdown`):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | The Manage card menu is the DS Menu, and `components/Dropdown` is shared. Restyle it for one surface or for all? | Restyle `components/Dropdown` to the DS Menu and Menu-Entry for every consumer, in the LANDs work, with Before / After shots of each consumer |
 
 ### Icon system (Icons)
 
@@ -1808,6 +1817,110 @@ Set [`21028:16521`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | --- | --- | --- | --- |
 | Off (`21028:16522`) | Play glyph; frame Onix fill + 1px Onix border; `Active` On, `Selected` Off | frame Onix fill + 1px Onix border; `Active` Off, `Selected` Off, `Disabled` true | slot 1 `aria-label="Run scene"`; Pause native `disabled` |
 | On (`21028:16527`) | **Stop** glyph (Gray); frame Onix fill + 1px Onix border; `Active` On, `Selected` Off | frame has no fill and no border; `Active` On, `Selected` On (Blue Dark 2, Snow) | slot 1 named for Stop; Pause named "Pause scene", no `aria-pressed`; Snow on Blue Dark 2 8.61:1 |
+
+### Manage (LANDs in Creator Hub)
+
+From the feature file `albOLmqF5fUwmRJ7CjBulU`, page `💻 High-fi 🟡` (`5660:3959`), read October 26, 2026. Code: Creator Hub `components/ManagePage`. Contrast is against the page `#16141a`, the card (White 5 over the page, `#222025`) or the hovered card (White 10, `#2d2c31`). The sections below are this file's components; the page's frames instance the `Place Entry` set kept on the `🗄️ Archived` page, not the High-fi copies. User-facing strings are as approved on October 26, 2026, with Figma's capitalisation (one grammar fix, "an ENS Domain").
+
+### Role tag (Manage)
+
+Set [`5660:4717`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4717), 3 variants (`Owner` `5660:4723`, `Collaborator` `5660:4718`, `Tenat` `5660:4720`, sic). Pill Hug × 27, padding 4 / 10, radius 100, label `H6 Regular` 16 / 400. Not interactive. Code: `PublishedProjectCard` role `Chip` (to be replaced).
+
+| Variant | Roles | Fill | Label | Contrast (card / hovered card) | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Owner | LAND owner, LAND lessor, World owner | White 10 | Snow | 11.64 / 9.86 | text in the card's accessible content; no role |
+| Collaborator | LAND per-token update operator, World collaborator | Blue Dark 1 `#1A75D2` @ 20% (ui2 `palette.info.dark`) | Blue Light 1 `#63B4F6` (ui2 `palette.info.light`) | 5.89 / 5.11 | — |
+| ✱ Manager | LAND UpdateManager | as Collaborator | as Collaborator | 5.89 / 5.11 | not drawn; same look as Collaborator (user decision) |
+| Tenant | LAND tenant | Orange `#FE9C2A` @ 20% (ui2 `palette.warning.main`) | ✱ Orange Light 1 `#FFB95B` (ui2 `palette.warning.light`), not Figma's Orange | 6.37 / 5.54 | Figma's Orange is 5.16 at rest but 3.91 on Figma's White 15 hover |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Which roles carry a tag on the card? | Every role: Owner (owner and lessor), Collaborator, Manager, Tenant. This supersedes the earlier "no tag for owner or lessor" |
+| 2026-10-26 | Manager has no Figma variant. Which look? | The Collaborator look (blue), labelled "Manager" |
+| 2026-10-26 | Collaborator blue and Tenant orange, as Figma? | Yes |
+| 2026-10-26 | The hovered card drops Collaborator and Tenant under 4.5:1. Fix? | Yes: the card hovers to White 10, not 15, and the Tenant label is Orange Light 1 `#FFB95B` |
+
+### Place Entry (Manage)
+
+Set `Place Entry` [`5655:2522`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5655-2522) on `🗄️ Archived`, 8 variants (`Type` World / LAND × `Status` Unpublished / Published × `Hover` Off / On; LAND: `5738:8200` Unpublished · Off, `5738:8284` Unpublished · On, `5738:8213` Published · Off, `5738:8230` Published · On). The High-fi page's `Land-Card` `5660:4770` and `World-Card` `5660:4725` are copies that every frame ignores. Shared: 416 × 383, radius 16, 1px White 10, clip. Text block Fill × 110, padding 20, gap 10: a place row (16px pin, coords `x,y` or "N LANDs" Inter 16 / 400 / 150% Silver, the Role tag), the name `H4 Semi` 20 Snow with ellipsis, and the kebab (`rounded-button-contained` 40 × 40, radius 100, top 18, right 10, `Kebab` 4 × 20 White 40). Thumbnail fills the rest, radius 16, cover. Published adds `Stats` bottom-left 10 / 10: Black 60, radius 100, padding 6 / 10, 14px glyph + "N Scenes" `H7 Regular` Gray. Unpublished: a world-map texture (image, 3% opacity, `luminosity` blend), "No Scene Published" `H5 Regular` 18 Snow, Secondary `Button-Contained-Text` 160 wide "VIEW SCENES". Code: `ManagePage/PublishedProjectCard` (324 × 428, radius 10, header / thumbnail / body).
+
+| Variant | State | Fill | Kebab | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Unpublished / Published | rest | White 5 | no fill, White 40 glyph | name 15.73; coords 5.95; kebab 3.73 | the card is one link to the detail page named by the LAND name; the kebab is a separate `<button aria-haspopup="menu">` with an accessible name, 40px target |
+| any | hover | ✱ White 10 (Figma White 15) | White 10 fill | name 13.50; coords 5.11; kebab glyph on its fill 3.06 | — |
+| any | ✱ focus-within / menu open | as hover | White 10 fill | ring ui2 `palette.info.light` 7.22 on the card | `:focus-visible` 2px ring on the card and on the kebab |
+| Published | rest | — | — | ✱ stats Gray on Black 60: 8.02 over a mid-grey thumbnail, 3.65 over white (accepted) | the count is also on the detail page |
+
+The kebab shows at rest in the LAND Unpublished variants and only on hover elsewhere in the set; the frames show it at rest on every card. Code shows it on every card (keyboard reach).
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Card hover fill | White 10 (see Role tag) |
+| 2026-10-26 | Name of a LAND with no on-chain name | "Parcel {x,y}" / "Estate {id}" |
+| 2026-10-26 | Estate size wording | "1 LAND" / "N LANDs" |
+| 2026-10-26 | Unpublished copy and CTA | "No Scene Published" and "View Scenes" (shown uppercase by the button style) |
+| 2026-10-26 | ⋮ items on a LAND card | Jump In, Copy URL, Create Event for every role; Transfer only for the owner, its divider hidden with it. "Parcel" (Builder) and "View Storage" are dropped |
+| 2026-10-26 | Create Event target | the Events submit form, prefilled with the LAND's base coordinates. Verified October 26, 2026: `https://decentraland.org/events/submit` (Creator Hub's `SUBMIT_EVENT_URL`) redirects to `/events/new-event`; `x`/`y`, `position` and `coordinates` query params do not prefill its X / Y fields, so no prefill parameter is confirmed |
+| 2026-10-26 | Stats chip over bright thumbnails (3.65:1) | Accepted (✱ above) |
+
+### View bar (Manage)
+
+Instance `Filter` [`5660:4066`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4066) (main `5645:8124`, not on this page). Fill × 56, radius 999, padding 0 / 10, gap 16, White 10. Left: WORLDS / LANDS `PillIconText` (Selected / Idle, as documented, 20px globe / pin). Right slot, gap 30: `Filter-Dropdown` ("View" Silver 16 + value Snow 16, 10px chevron, input padding 10, radius 6), Sort-By ("Sort by" + value), Search-Bar 300 (100px radius, 1px White 40, padding 10 / 40 / 10 / 10, 24px glyph, "Search" White 40). Code: `ManagePage` `FiltersBar` row.
+
+| Part | State | Look | Contrast (on the bar `#2d2c31`) | A11y |
+| --- | --- | --- | --- | --- |
+| WORLDS / LANDS | selected / idle / hover / selected + hover | per PillIconText | selected 9.86; idle label White 60 6.04 | `role="tablist"` of two `role="tab"` buttons, `aria-selected`, arrow keys move; the list below is the `tabpanel` |
+| View, Sort by | rest | label Silver, value Snow, chevron | label 5.11, value 13.50 | label names the select (`aria-labelledby`) |
+| Search | rest | placeholder White 40 | 3.53 (documented DS gap) | `aria-label` "Search" |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Filter control: "View" dropdown (component) or Published / Not published pills (LAND frames)? | One "View" dropdown in both tabs: All / Published / Not Published, default All. No pills anywhere |
+| 2026-10-26 | Sort options | "Last Updated" (newest deployment first, never-published last) and "Name" (A–Z), both tabs |
+| 2026-10-26 | "N items" count | Dropped |
+| 2026-10-26 | Sort and search under Not Published | Always shown |
+
+### EmptyState (Manage)
+
+`EmptyState` in Logged Out [`5660:4686`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4686), Empty Worlds [`5660:4182`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4182) and Empty LANDs [`5660:4203`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4203) (layer named "Empty Worlds", sic). Column 550 × 500, gap 20, centred: 80 × 80 Cerise line icon, title `H1 Semi` 30 / 600 Snow, optional ⓘ, body `H5 Regular` 18 Gray, a 46px `Button-Contained-Text`. The ⓘ opens the DS Tooltip (Onix, radius 12, padding 16 / 20, 14 / 400 Snow, max 300) ending in "Read More →". Code: `ManagePage/SignInCard` and the `EmptyContainer` block.
+
+| View | Icon | CTA | Links | Contrast |
+| --- | --- | --- | --- | --- |
+| Logged out | waving hands | Terciary "SIGN IN" | — | title 17.81; body 11.61; Terciary border 3.83 |
+| Empty Worlds | globe in hand | Primary "MINT NEW NAME" → `https://decentraland.org/marketplace/names/claim` | inline NAME → the same; inline ENS Domain → `https://app.ens.domains/`; Read More → `https://decentraland.org/blog/about-decentraland/decentraland-worlds-your-own-virtual-space` | ✱ Snow on Primary 3.55 (accepted, DS-wide) |
+| Empty LANDs | pin in hand | Primary "RENT OR BUY LAND" → `https://decentraland.org/marketplace/lands` | Read More → `https://docs.decentraland.org/marketplace/land-manager` | ✱ Snow on Primary 3.55 (accepted) |
+| ✱ fetch error, empty search, empty filter | none | none | — | as above | not drawn; today's copy |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | ⓘ behaviour | A focusable button named "What is a World?" / "What is LAND?"; the tooltip shows on hover and focus, Escape closes; "Read More →" opens the URLs above |
+| 2026-10-26 | Where does "ENS Domain" link? | `https://app.ens.domains/` |
+| 2026-10-26 | Undrawn states | Loading is the existing `Loader`; fetch error, empty search and empty filter use the EmptyState with no icon and today's copy until design draws them |
+| 2026-10-26 | Snow on Primary CTA 3.55:1 | Accepted (DS-wide trade-off) |
+
+### Manage page (Manage)
+
+Frames [`5660:4109`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4109) (LANDs, menu open), [`5660:4067`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4067) (LANDs, Not Published) and [`5660:4044`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4044) (Worlds). Content column 1920 wide, padding 0 / 98, gap 30: the DS `TitleBar` "Main Section" (56 tall, "Manage" Inter 48 / 600 / 117% Snow), the View bar, then a card row (gap 20, 416 cards). WORLDS adds a "Space Used" row above the cards: `H5 Regular` 18 Snow label + ⓘ (tooltip "Total storage is calculated based on MANA, LAND, and NAME holdings. View Details →"), the used value `H4 Semi` 20 with " / 900 MB" `H6 Regular` 16, and a `ProgressBar` 501 × 16, radius 100, padding 2, track White 10, fill a raw `#FF2D55 → #FFBC5B` gradient. Code: `ManagePage` with the `StorageUsed` donut sidebar.
+
+| Part | Figma | ✱ Deviation | Contrast |
+| --- | --- | --- | --- |
+| Storage bar | no border | none: kept as drawn, unlike the DS `ProgressBar` (2px Snow) | track vs page 1.32 (decorative); fill Ruby end vs track 3.81 |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Page title | "Manage" |
+| 2026-10-26 | Storage | The horizontal "Space Used" bar exactly as Figma, with no added border, on WORLDS only; "View Details" opens the existing `WorldsYourStorageModal` |
+| 2026-10-26 | Refresh button beside the title | Removed (the data layer refetches with polling after a transaction) |
 
 ---
 
