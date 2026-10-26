@@ -176,9 +176,8 @@
 
   --ui-designer-control-empty-bg: rgba(255, 255, 255, 0.05); /* placeholder / unbound field fill */
   --ui-designer-control-selected-bg: rgba(255, 255, 255, 0.1); /* White 10 · menu rows */
-  --ui-designer-control-hover-bg: rgba(255, 255, 255, 0.06);
-  --ui-designer-control-active-bg: var(--ui-designer-control-accent);
-  --ui-designer-control-active-fg: #35333b;
+  --ui-designer-control-active-bg: var(--palette-system-blueDark2);
+  --ui-designer-control-active-fg: var(--ui-designer-text);
   /* Panel surfaces, foreground and glyphs — the Figma's own Neutrals ramp
      (PropertiesFull 1492:1939). The panel frame reuses --base-19 rather than
      declaring the design's #25212a: the two differ by 1/255, and the group cards
