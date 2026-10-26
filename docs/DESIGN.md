@@ -270,7 +270,7 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 
 | Role | Tokens |
 | --- | --- |
-| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` |
+| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--palette-neutral-onyx` `#35333b` (Figma Neutrals/Onix: menu and tooltip fill; same name and value as the inspector's), `--toast` `#3d3b43`, `--dimmer` `#000000dd` |
 | Text | `--text` `#ffffff`, `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` |
 | Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) |
 | Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` |
@@ -348,7 +348,7 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Neutrals/Cloudy Sky | `#716B7C` | `--palette-neutral-gray2` (aliased by `--ui-designer-glyph`) | `--dropdown` · ui2 `neutral.gray2` | match |
 | Neutrals/Graffito | `#5E5B67` | — | `--light-gray` · ui2 `neutral.gray1` | missing in inspector |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` · ui2 `neutral.gray0` | match |
-| Onix (swatch) | `#35333B` | `--ui-designer-control-bg` | — | match |
+| Onix (swatch) | `#35333B` | `--ui-designer-control-bg`, `--palette-neutral-onyx` | `--palette-neutral-onyx` | match |
 | Onix Dark 1 (swatch) | `#2D2A33` | — | `--title-bar-button` | missing in inspector |
 | Charcoal (swatch) | `#25212A` | `--ui-designer-panel-bg` → `--base-19` `#242129` | `--card`, `--modal`, `--secondary`, `--darker-gray` `#242129` · ui2 `neutral.softBlack2` `#242129` | **deviation**: both worlds follow ui2's `#242129`, 1/255 from Figma; keep |
 | Neutrals/Shadow | `#161518` | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` | match; `--bg` and `--background` are `#161518` in `theme.css` too (match) |
@@ -438,7 +438,7 @@ Every literal the Feedback pages use, mapped once; the variant tables below refe
 | `#FCFCFC` text, glyphs, spinner track, progress border | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
 | `#FF2D55` action text, spinner arc | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
 | `#161518` snackbar fill | Neutrals/Shadow | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` |
-| `#35333B` tooltip fill | Neutrals/Onix (swatch) | `--ui-designer-control-bg` | missing |
+| `#35333B` tooltip fill | Neutrals/Onix (swatch) | `--ui-designer-control-bg` | `--palette-neutral-onyx` |
 | `rgba(255,255,255,.1)` progress track | DCL/White10% | `--ui-designer-control-border` | missing |
 | Snow @ .3 spinner track | not a Figma step (ramp is 60/40/20/10) | missing | missing |
 | Ruby → Yellow progress fill | Brand/Flare, as an image fill | missing | missing (`--metaverse-gradient` differs) |
@@ -568,7 +568,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | `#A09BA8` card meta, menu glyphs, section label | Neutrals/Silver | `--ui-designer-text-muted`, `--neutral-grey-3` | `--dcl-silver`, `--clear-divider` · ui2 `neutral.gray3` |
 | `#FFFFFF` icon glyphs | Neutrals/White | `--white` | `--white`, `--text` |
 | `#43404A` menu row hover | Neutrals/Pale Black | `--gray-0` | `--dark-gray` · ui2 `neutral.gray0` |
-| `#35333B` menu fill | Neutrals/Onix (swatch) | `--ui-designer-control-bg` | missing |
+| `#35333B` menu fill | Neutrals/Onix (swatch) | `--ui-designer-control-bg` | `--palette-neutral-onyx` |
 | `#FF2D55` primary button, D7 retention value | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
 | `#C640CD` smart-item icon disc | Brand/Lavender | `--lavender`, `--smart-item-icon-bg-color` | missing |
 | `rgba(255,255,255,.05)` card and accordion-row rest fill | not a Figma step (unnamed `#FFFFFF` 5%) | `--ui-designer-control-empty-bg` | `--transparent-gray-dark` |
@@ -1378,7 +1378,7 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | Figma swatch | Value | Inspector (UI Designer) | Creator Hub | Status |
 | --- | --- | --- | --- | --- |
 | Neutrals/Charcoal | `#25212A` | `--ui-designer-panel-bg` (`#242129`, deviation within 1/255) | AI panel `palette.background.paper` (value not verified) | match / documented deviation |
-| Neutrals/Onix | `#35333B` | `--ui-designer-control-bg` | — | match |
+| Neutrals/Onix | `#35333B` | `--ui-designer-control-bg` | `--palette-neutral-onyx` | match |
 | Neutrals/Onix Dark 1 | `#2D2A33` | missing | `--title-bar-button` | missing in inspector — fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` | match — `InputAction` hover fill |
 | Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph`, `--ui-designer-text-muted` is Silver | `--dropdown` | match — idle glyphs and the `Position` / `Size` icons |
@@ -1828,8 +1828,8 @@ Set [`5660:4717`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5
 
 | Variant | Roles | Fill | Label | Contrast (card / hovered card) | A11y |
 | --- | --- | --- | --- | --- | --- |
-| Owner | LAND owner, LAND lessor, World owner | White 10 | Snow | 11.64 / 9.86 | text in the card's accessible content; no role |
-| Collaborator | LAND per-token update operator, World collaborator | Blue Dark 1 `#1A75D2` @ 20% (ui2 `palette.info.dark`) | Blue Light 1 `#63B4F6` (ui2 `palette.info.light`) | 5.89 / 5.11 | — |
+| Owner | not rendered: owners and lessors (LAND) and World owners carry no tag | White 10 | Snow | 11.64 / 9.86 | — |
+| Collaborator | LAND per-token update operator, World collaborator | Blue Dark 1 `#1A75D2` @ 20% (ui2 `palette.info.dark`) | Blue Light 1 `#63B4F6` (ui2 `palette.info.light`) | 5.89 / 5.11 | text in the card's accessible content; no role |
 | ✱ Manager | LAND UpdateManager | as Collaborator | as Collaborator | 5.89 / 5.11 | not drawn; same look as Collaborator (user decision) |
 | Tenant | LAND tenant | Orange `#FE9C2A` @ 20% (ui2 `palette.warning.main`) | ✱ Orange Light 1 `#FFB95B` (ui2 `palette.warning.light`), not Figma's Orange | 6.37 / 5.54 | Figma's Orange is 5.16 at rest but 3.91 on Figma's White 15 hover |
 
@@ -1837,7 +1837,7 @@ Set [`5660:4717`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5
 
 | Date | Question | Answer |
 | --- | --- | --- |
-| 2026-10-26 | Which roles carry a tag on the card? | Every role: Owner (owner and lessor), Collaborator, Manager, Tenant. This supersedes the earlier "no tag for owner or lessor" |
+| 2026-10-26 | Which roles carry a tag on the card? | Collaborator, Manager and Tenant. Owners and lessors carry none, as the `5660:4067` NOTES say (re-confirmed against the board) |
 | 2026-10-26 | Manager has no Figma variant. Which look? | The Collaborator look (blue), labelled "Manager" |
 | 2026-10-26 | Collaborator blue and Tenant orange, as Figma? | Yes |
 | 2026-10-26 | The hovered card drops Collaborator and Tenant under 4.5:1. Fix? | Yes: the card hovers to White 10, not 15, and the Tenant label is Orange Light 1 `#FFB95B` |
@@ -1863,9 +1863,10 @@ The kebab shows at rest in the LAND Unpublished variants and only on hover elsew
 | 2026-10-26 | Name of a LAND with no on-chain name | "Parcel {x,y}" / "Estate {id}" |
 | 2026-10-26 | Estate size wording | "1 LAND" / "N LANDs" |
 | 2026-10-26 | Unpublished copy and CTA | "No Scene Published" and "View Scenes" (shown uppercase by the button style) |
-| 2026-10-26 | ⋮ items on a LAND card | Jump In, Copy URL, Create Event for every role; Transfer only for the owner, its divider hidden with it. "Parcel" (Builder) and "View Storage" are dropped |
-| 2026-10-26 | Create Event target | the Events submit form, prefilled with the LAND's base coordinates. Verified October 26, 2026: `https://decentraland.org/events/submit` (Creator Hub's `SUBMIT_EVENT_URL`) redirects to `/events/new-event`; `x`/`y`, `position` and `coordinates` query params do not prefill its X / Y fields, so no prefill parameter is confirmed |
+| 2026-10-26 | ⋮ items on a LAND card | Jump In, Copy URL, Create Event for every role; Transfer only for the owner while the LAND is not rented out (hidden for a lessor), its divider hidden with it. "Parcel" (Builder) and "View Storage" are dropped |
+| 2026-10-26 | Create Event target | `SUBMIT_EVENT_URL` (`https://decentraland.org/events/submit`, which redirects to `/events/new-event`) with no prefill: `x`/`y`, `position` and `coordinates` don't prefill its X / Y fields (checked October 26, 2026). A prefill parameter is a follow-up with the Events team |
 | 2026-10-26 | Stats chip over bright thumbnails (3.65:1) | Accepted (✱ above) |
+| 2026-10-26 | Accessible name of the ⋮ | "Options for {name}", one key `menu.options_for`, for every `Dropdown` consumer |
 
 ### View bar (Manage)
 
@@ -1875,7 +1876,7 @@ Instance `Filter` [`5660:4066`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjB
 | --- | --- | --- | --- | --- |
 | WORLDS / LANDS | selected / idle / hover / selected + hover | per PillIconText | selected 9.86; idle label White 60 6.04 | `role="tablist"` of two `role="tab"` buttons, `aria-selected`, arrow keys move; the list below is the `tabpanel` |
 | View, Sort by | rest | label Silver, value Snow, chevron | label 5.11, value 13.50 | label names the select (`aria-labelledby`) |
-| Search | rest | placeholder White 40 | 3.53 (documented DS gap) | `aria-label` "Search" |
+| Search | rest | placeholder White 40 | ✱ 3.53 (accepted: Figma's value kept) | `aria-label` "Search" |
 
 **Decisions:**
 
@@ -1885,6 +1886,8 @@ Instance `Filter` [`5660:4066`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjB
 | 2026-10-26 | Sort options | "Last Updated" (newest deployment first, never-published last) and "Name" (A–Z), both tabs |
 | 2026-10-26 | "N items" count | Dropped |
 | 2026-10-26 | Sort and search under Not Published | Always shown |
+| 2026-10-26 | The LAND frames still draw pills. Keep the one dropdown? | Yes, the "View" dropdown in both tabs |
+| 2026-10-26 | Search placeholder White 40 is 3.53:1 | Keep Figma's White 40 (✱ accepted) |
 
 ### EmptyState (Manage)
 
@@ -1895,7 +1898,10 @@ Instance `Filter` [`5660:4066`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjB
 | Logged out | waving hands | Terciary "SIGN IN" | — | title 17.81; body 11.61; Terciary border 3.83 |
 | Empty Worlds | globe in hand | Primary "MINT NEW NAME" → `https://decentraland.org/marketplace/names/claim` | inline NAME → the same; inline ENS Domain → `https://app.ens.domains/`; Read More → `https://decentraland.org/blog/about-decentraland/decentraland-worlds-your-own-virtual-space` | ✱ Snow on Primary 3.55 (accepted, DS-wide) |
 | Empty LANDs | pin in hand | Primary "RENT OR BUY LAND" → `https://decentraland.org/marketplace/lands` | Read More → `https://docs.decentraland.org/marketplace/land-manager` | ✱ Snow on Primary 3.55 (accepted) |
-| ✱ fetch error, empty search, empty filter | none | none | — | as above | not drawn; today's copy |
+| ✱ empty search | none | none | — | as above |
+| ✱ empty filter, WORLDS | none | today's copy and CTAs | — | as above |
+| ✱ empty filter, LANDS | none | Published: "No published places to display" + "View Scenes"; Not Published: "No places to display", no body, no button | — | as above |
+| ✱ fetch error | none | "Something went wrong." / "Please, try again." + Terciary "Try again" (re-runs the tab's fetch) | — | as above |
 
 **Decisions:**
 
@@ -1903,7 +1909,7 @@ Instance `Filter` [`5660:4066`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjB
 | --- | --- | --- |
 | 2026-10-26 | ⓘ behaviour | A focusable button named "What is a World?" / "What is LAND?"; the tooltip shows on hover and focus, Escape closes; "Read More →" opens the URLs above |
 | 2026-10-26 | Where does "ENS Domain" link? | `https://app.ens.domains/` |
-| 2026-10-26 | Undrawn states | Loading is the existing `Loader`; fetch error, empty search and empty filter use the EmptyState with no icon and today's copy until design draws them |
+| 2026-10-26 | Undrawn states | Loading is the existing `Loader`; fetch error, empty search and empty filter use the EmptyState with no icon until design draws them: today's search copy, the per-tab filter copy and the error copy in the table above |
 | 2026-10-26 | Snow on Primary CTA 3.55:1 | Accepted (DS-wide trade-off) |
 
 ### Manage page (Manage)
@@ -1921,6 +1927,10 @@ Frames [`5660:4109`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-i
 | 2026-10-26 | Page title | "Manage" |
 | 2026-10-26 | Storage | The horizontal "Space Used" bar exactly as Figma, with no added border, on WORLDS only; "View Details" opens the existing `WorldsYourStorageModal` |
 | 2026-10-26 | Refresh button beside the title | Removed (the data layer refetches with polling after a transaction) |
+| 2026-10-26 | Page side margin: Figma 98, `Container` 128 | Figma's 98 on every page that uses the shared `Container` (Scenes, Templates, Analytics, Analytics detail, Manage, Learn, Videos, Docs) and on `SignInPage` |
+| 2026-10-26 | Name of the Space Used ⓘ | "About Space Used" |
+| 2026-10-26 | Manage at 1920 fits 4 cards only while the page doesn't scroll (an 8px classic scrollbar takes layout width). Accept 3 when scrolling? | No: scrollbars become overlay app-wide (no layout width), so Manage keeps 4 per row at 1920 when it scrolls. Gated on proof in the built app (client width = window width on a scrolling page) on each platform the team can check; if it can't be done, report back, no fallback |
+| 2026-10-26 | `SignInPage` copies the old 128 margin outside `Container`. Move it too? | Yes, to 98 |
 
 ---
 
