@@ -315,10 +315,16 @@ export const Tile = withContextMenu<Props>(
 
     return (
       <>
-        <Menu id={contextMenuId}>{renderMenu()}</Menu>
+        <Menu
+          id={contextMenuId}
+          label="Asset Options"
+        >
+          {renderMenu()}
+        </Menu>
         <div
           ref={setCardRef}
           className={cx('Tile', { selected, 'drop-target': isDropTarget })}
+          tabIndex={-1}
           key={value.name}
           onClick={onClick}
           onDoubleClick={onSelect}

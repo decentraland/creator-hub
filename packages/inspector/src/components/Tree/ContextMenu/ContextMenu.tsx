@@ -8,6 +8,7 @@ import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 
 export interface Props {
   id: string;
+  label: string;
   enableAdd?: boolean;
   enableEdit?: boolean;
   enableRemove?: boolean;
@@ -23,6 +24,7 @@ export interface Props {
 
 function ContextMenu({
   id,
+  label,
   enableAdd = true,
   enableEdit = true,
   enableRemove = true,
@@ -41,7 +43,10 @@ function ContextMenu({
   if (!someActionIsEnabled && !extra) return null;
 
   return (
-    <Menu id={id}>
+    <Menu
+      id={id}
+      label={label}
+    >
       <Item
         hidden={!enableEdit}
         itemID="rename"

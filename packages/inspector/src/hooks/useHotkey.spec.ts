@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from 'vitest';
+import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
 import { renderHook, cleanup, fireEvent } from '@testing-library/react';
 
 import { useHotkey } from './useHotkey';
@@ -61,10 +61,36 @@ describe('when a hotkey is disabled', () => {
   });
 });
 
-// hotkeys.unbind(key) drops EVERY handler for that key, across every component.
-// Two components sharing a key is normal here (Gizmos and the Renderer both bind
-// `f`), so an unscoped unbind on one unmount silently killed the other's binding
-// for the rest of the session.
+describe('when a menu is open', () => {
+  let menu: HTMLElement;
+
+  beforeEach(() => {
+    menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    document.body.appendChild(menu);
+  });
+
+  afterEach(() => {
+    menu.remove();
+  });
+
+  it('should leave the key to the menu', () => {
+    const onKey = vi.fn();
+    renderHook(() => useHotkey(['down'], onKey, document.body));
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'ArrowDown',
+      cancelable: true,
+      bubbles: true,
+    });
+    Object.defineProperty(event, 'keyCode', { value: 40 });
+    document.body.dispatchEvent(event);
+
+    expect(onKey).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+});
+
 describe('when two components bind the same key', () => {
   it('should keep one binding alive after the other unmounts', () => {
     const stays = vi.fn();

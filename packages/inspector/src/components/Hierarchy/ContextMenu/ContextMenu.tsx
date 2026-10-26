@@ -73,6 +73,7 @@ const ContextMenu = (value: Entity) => {
           <Separator />
           <Submenu
             label="Add component"
+            aria-label="Add Component"
             itemID="add-component"
           >
             {availableComponents.map(

@@ -272,6 +272,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
                 selected: isSpawnAreaSelected,
               })}
               onContextMenu={e => handleSpawnAreaContextMenu(e, index)}
+              tabIndex={-1}
             >
               <div className="item-area">
                 <DisclosureWidget
@@ -393,7 +394,10 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
 
       {isPlayerOpen && spawnAreaNodes}
 
-      <Menu id={menuId}>
+      <Menu
+        id={menuId}
+        label="Spawn Point Options"
+      >
         <Item
           onClick={handleAction(() => {
             if (contextMenuIndex !== null) setEditingIndex(contextMenuIndex);

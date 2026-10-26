@@ -71,6 +71,7 @@ const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFile
         data-test-id={value.id}
         data-test-label={value.name}
         onContextMenu={handleContextMenu}
+        tabIndex={-1}
         onDragStart={builtInEmote ? () => notifyBuiltInEmoteNotDraggable(value.name) : undefined}
         onMouseEnter={animatedSrc ? () => setHovered(true) : undefined}
         onMouseLeave={animatedSrc ? () => setHovered(false) : undefined}

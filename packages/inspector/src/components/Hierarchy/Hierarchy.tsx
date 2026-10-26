@@ -298,6 +298,7 @@ const Hierarchy = withSdk(({ sdk }) => {
 
   const props = {
     getExtraContextMenu: ContextMenu,
+    contextMenuLabel: 'Entity Options',
     onAddChild: addChild,
     onDrop: setParent,
     onRemove: remove,

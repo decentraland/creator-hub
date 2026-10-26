@@ -892,6 +892,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             addChildLabel="New folder"
             addChildIcon={<NewFolderIcon />}
             getExtraContextMenu={getExtraContextMenu}
+            contextMenuLabel="Asset Options"
             getIcon={val => <NodeIcon value={tree.get(val)} />}
             getDragContext={handleDragContext}
             getDragItem={handleDragItem}

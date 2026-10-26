@@ -5,7 +5,10 @@ import { CUSTOM_ASSETS_CONTEXT_MENU_ID, type CustomAssetContextMenuProps } from 
 
 export function CustomAssetContextMenu() {
   return (
-    <ContextMenu id={CUSTOM_ASSETS_CONTEXT_MENU_ID}>
+    <ContextMenu
+      id={CUSTOM_ASSETS_CONTEXT_MENU_ID}
+      label="Custom Item Options"
+    >
       <Item
         onClick={({ props }) => {
           const { assetId, onAddToFilesystem } = props as CustomAssetContextMenuProps;
