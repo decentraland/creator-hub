@@ -8,14 +8,13 @@
 
 :root {
   /* Colors */
-  --bg: #16141a;
+  --bg: #161518;
   --bg-inspector: #000;
   --metaverse-gradient: linear-gradient(to bottom, #060d2b, #132d7d 52%, #9763c1);
-  --purple-banner: #691ea9;
+  --purple-banner: #691fa9;
   --purplish-grey-raw: 115, 110, 125;
   --white: #ffffff;
   --black: #161518;
-
 
   --light-gray: #5e5b67;
   --dark-gray: #43404a;
@@ -48,13 +47,13 @@
   --font-monospace:
     "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
 
-  --background: #18141a;
-  --danger: #ffa900;
-  --error: #ff0000;
+  --background: #161518;
+  --danger: #fe9c2a;
+  --error: #fb3b3b;
   --success: #34ce77;
   --primary: #ff2d55;
   --secondary: #242129;
-  --primary-hover: #ff3d61;
+  --primary-hover: #ff6280;
   --secondary-hover: #28262c;
   --secondary-on-modal: #67637033;
   --secondary-on-modal-hover: #6763704d;
