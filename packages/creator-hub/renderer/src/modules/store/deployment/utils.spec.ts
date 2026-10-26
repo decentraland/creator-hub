@@ -44,7 +44,7 @@ vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
 }));
 
 // Imported after the mocks: `utils` reads the registry hosts from config at module load.
-const { fetchDeploymentStatus, getAvailableCatalystServer } = await import('./utils');
+const { deploy, fetchDeploymentStatus, getAvailableCatalystServer } = await import('./utils');
 
 describe('getAvailableCatalystServer', () => {
   it('should return a server for sepolia network', () => {
@@ -184,5 +184,28 @@ describe('fetchDeploymentStatus', () => {
 
       expect(cancelErrorBody).toHaveBeenCalled();
     });
+  });
+});
+
+describe('deploy', () => {
+  const URL = 'http://localhost:4000/api';
+  const PAYLOAD = { address: '0xabc', authChain: [], chainId: ChainId.ETHEREUM_MAINNET };
+
+  let cancelBody: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    cancelBody = vi.fn(async () => undefined);
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({ ok: true, status: 200, body: { cancel: cancelBody } });
+    await deploy(URL, PAYLOAD);
+  });
+
+  it('should give the blocking request far longer than an upload of a large scene takes', () => {
+    const [, , timeoutMs] = fetchMock.mock.calls[0];
+    expect(timeoutMs).toBeGreaterThanOrEqual(30 * 60 * 1000);
+  });
+
+  it('should release the unread response body', () => {
+    expect(cancelBody).toHaveBeenCalled();
   });
 });

@@ -54,12 +54,22 @@ export const appState = createSlice({
       state.thumbnails = payload.files;
       state.thumbnailsLoaded = true;
     },
+    upsertThumbnail: (state, { payload }: PayloadAction<GetFilesResponse['files'][number]>) => {
+      const index = state.thumbnails.findIndex($ => $.path === payload.path);
+      if (index === -1) state.thumbnails.push(payload);
+      else state.thumbnails[index] = payload;
+    },
   },
 });
 
 // Actions
-export const { updateCanSave, updatePreferences, updateAssetCatalog, updateThumbnails } =
-  appState.actions;
+export const {
+  updateCanSave,
+  updatePreferences,
+  updateAssetCatalog,
+  updateThumbnails,
+  upsertThumbnail,
+} = appState.actions;
 
 // Selectors
 export const selectCanSave = (state: RootState): boolean => state.app.canSave;

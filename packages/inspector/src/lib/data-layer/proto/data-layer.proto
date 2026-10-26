@@ -149,7 +149,7 @@ service DataService {
   rpc GetAssetData(Asset) returns (AssetData) {}
   rpc ImportAsset(ImportAssetRequest) returns (Empty) {}
   rpc RemoveAsset(Asset) returns (Empty) {}
-  rpc RemoveAssets(RemoveAssetsRequest) returns (Empty) {}
+  rpc RemoveAssets(RemoveAssetsRequest) returns (RemoveFilesResponse) {}
   rpc RemoveFiles(RemoveFilesRequest) returns (RemoveFilesResponse) {}
   rpc Save(Empty) returns (Empty) {}
   rpc GetInspectorPreferences(Empty) returns (InspectorPreferencesMessage) {}

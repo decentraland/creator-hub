@@ -29,12 +29,32 @@ import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { determineAssetType, extractFileExtension } from '../../ImportAsset/utils';
 import type { AssetNodeItem } from '../types';
 import { isEmoteAsset } from '../utils';
-import { guessMimeType } from '../file-ops';
+import { getMimeType } from '../../SceneInfoPanel/MarkdownRenderer/utils';
 import type { Props } from './types';
 
 import './Tile.css';
 
 const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
+
+/** Whether `element` has entered the viewport at least once. */
+function useHasBeenVisible(element: Element | null) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!element || visible) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) setVisible(true);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element, visible]);
+
+  return visible;
+}
 
 /** Loads the real file of an image asset so the card can show it as its thumbnail. */
 function useImageUrl(path: string, enabled: boolean) {
@@ -50,7 +70,7 @@ function useImageUrl(path: string, enabled: boolean) {
       ?.getFile({ path: withAssetDir(path) })
       .then(({ content }) => {
         if (cancelled) return;
-        objectUrl = URL.createObjectURL(new Blob([content], { type: guessMimeType(path) }));
+        objectUrl = URL.createObjectURL(new Blob([content], { type: getMimeType(path) }));
         setUrl(objectUrl);
       })
       .catch(error => console.warn(`Could not load the image ${path}:`, error));
@@ -97,7 +117,9 @@ export const Tile = withContextMenu<Props>(
         value?.type === 'asset' ? determineAssetType(extractFileExtension(value.name)[1]) : null,
       [value],
     );
-    const imageUrl = useImageUrl(valueId, classification === 'Images');
+    const [element, setElement] = useState<HTMLDivElement | null>(null);
+    const hasBeenVisible = useHasBeenVisible(element);
+    const imageUrl = useImageUrl(valueId, classification === 'Images' && hasBeenVisible);
 
     useEffect(() => {
       if (value?.type === 'asset' && getAnimatedThumbnail) {
@@ -142,6 +164,14 @@ export const Tile = withContextMenu<Props>(
         collect: monitor => ({ isDropTarget: monitor.isOver() && monitor.canDrop() }),
       }),
       [isFolder, readOnly, valueId, onDropItems],
+    );
+
+    const setCardRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        drag(drop(node));
+        setElement(node);
+      },
+      [drag, drop],
     );
 
     const handleRemove = useCallback(() => onRemove(valueId), [valueId, onRemove]);
@@ -287,7 +317,7 @@ export const Tile = withContextMenu<Props>(
       <>
         <Menu id={contextMenuId}>{renderMenu()}</Menu>
         <div
-          ref={node => drag(drop(node))}
+          ref={setCardRef}
           className={cx('Tile', { selected, 'drop-target': isDropTarget })}
           key={value.name}
           onClick={onClick}
