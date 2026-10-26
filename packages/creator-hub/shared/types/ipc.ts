@@ -1,8 +1,9 @@
-import type { OpenDialogOptions } from 'electron';
+import type { OpenDialogOptions, SaveDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
 import type { DeployOptions } from '/shared/types/deploy';
+import type { SceneExportOptions, SceneExportResult } from '/shared/types/scene-export';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
@@ -174,6 +175,9 @@ export interface Ipc {
   'updater.getReleaseNotes': (version: string) => Promise<ReleaseNotes | undefined>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
+  'electron.showSaveDialog': (opts: Partial<SaveDialogOptions>) => Promise<string | null>;
+  'sceneExport.export': (options: SceneExportOptions) => Promise<SceneExportResult>;
+  'sceneExport.cancel': (entityId: string) => Promise<void>;
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;

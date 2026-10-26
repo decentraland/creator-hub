@@ -1,4 +1,5 @@
 import { AI_STREAM_EVENT } from '/shared/types/ipc';
+import { SCENE_EXPORT_PROGRESS_EVENT } from '/shared/types/scene-export';
 import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
@@ -27,6 +28,7 @@ import {
   revertTurn,
 } from './scene-mcp';
 import * as optimizer from './optimizer';
+import * as sceneExport from './scene-export';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -41,6 +43,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     electron.getWorkspaceConfigPath(path),
   );
   handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
+  handle('electron.showSaveDialog', (_event, opts) => electron.showSaveDialog(opts));
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
 
@@ -192,4 +195,11 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('optimizer.revert', (_event, path) => optimizer.revert(path));
   handle('optimizer.tools', () => optimizer.tools());
   handle('optimizer.installTools', (_event, path) => optimizer.installTools(path));
+
+  handle('sceneExport.export', (event, options) =>
+    sceneExport.exportScene(options, progress => {
+      if (!event.sender.isDestroyed()) event.sender.send(SCENE_EXPORT_PROGRESS_EVENT, progress);
+    }),
+  );
+  handle('sceneExport.cancel', async (_event, entityId) => sceneExport.cancelSceneExport(entityId));
 }
