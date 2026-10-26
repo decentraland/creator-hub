@@ -270,7 +270,7 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 
 | Role | Tokens |
 | --- | --- |
-| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--palette-neutral-onyx` `#35333b` (Figma Neutrals/Onix: menu and tooltip fill; same name and value as the inspector's), `--toast` `#3d3b43`, `--dimmer` `#000000dd` |
+| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--palette-neutral-onyx` `#35333b` (Figma Neutrals/Onix: menu and tooltip fill; same name and value as the inspector's), `--modal-surface` `#181225` (the DS DefaultModal fill, a raw Figma hex; LAND modals only), `--toast` `#3d3b43`, `--dimmer` `#000000dd` |
 | Text | `--text` `#ffffff`, `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` |
 | Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) |
 | Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` |
@@ -590,7 +590,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | Inter 14 / 400 / 100% | `H7 Regular` | `--font-family` + literal size | same |
 | Inter 14 / 400 / 150%, cap-height trim | unnamed (location and privacy meta) | `--font-family` + literal size | same |
 | Inter 12 / 400 / 100% | `H8 Regular` (the section label is the same face uppercase, unnamed) | `--font-family` + literal size | same |
-| `#181225` modal fill | — (a raw hex on every modal, not a variable) | missing (`--modal-content-bg-color` resolves to `--tree-bg-color` `#161518`) | missing (`--modal` `#242129`, the ui2 `Modal` paper) |
+| `#181225` modal fill | — (a raw hex on every modal, not a variable) | missing (`--modal-content-bg-color` resolves to `--tree-bg-color` `#161518`) | `--modal-surface` (the shared `DefaultModal` only; other modals keep `--modal` `#242129`, the ui2 `Modal` paper) |
 | `#000000` title-bar fill | Neutrals/Black | `--black`, `--base-21` | `--bg-inspector` |
 | `#2D2A33` toolbar icon and split buttons, toolbar tooltip | Neutrals/Onix Dark 1 | missing | `--title-bar-button` |
 | `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — documented deviation (1/255) | `--darker-gray`, `--card`, `--modal` `#242129` — same 1/255 deviation |
@@ -1935,6 +1935,142 @@ Frames [`5660:4109`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-i
 | 2026-10-26 | Manage at 1920 fits 4 cards only while the page doesn't scroll (an 8px classic scrollbar takes layout width). Accept 3 when scrolling? | No: scrollbars become overlay app-wide (no layout width), so Manage keeps 4 per row at 1920 when it scrolls. Gated on proof in the built app (client width = window width on a scrolling page) on each platform the team can check; if it can't be done, report back, no fallback |
 | 2026-10-26 | The overlay-scrollbar gate failed in the built app (macOS): the `OverlayScrollbar` feature flag has no effect; with the custom `::-webkit-scrollbar` rules removed, "Show scroll bars: Automatic / When scrolling" goes overlay (client width 1920) but "Always" stays classic (1905); Windows untested. Keep pursuing overlay? | No: the custom scrollbars stay as they are (`theme.css` unchanged). This reverses the overlay decision above: Manage shows 4 cards per row at 1920 while the list fits and 3 once it scrolls, the same on every OS (✱ above) |
 | 2026-10-26 | `SignInPage` copies the old 128 margin outside `Container`. Move it too? | Yes, to 98 |
+
+### DefaultModal (Creator Hub, Manage)
+
+The DS `DefaultModal` (Modals) used by the LAND modals: Transfer LAND [`5660:4181`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4181) and Unpublish Scene [`5660:4446`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4446). Chrome: 700 wide, fill `--modal-surface` `#181225` (Figma's raw hex, now a token), 1px White 10, radius 24, padding 100, a 500-wide content column (gap 50); title Inter 600 24 Snow; body `H6 Regular` 16 Snow with names in `H6 Semi`; CTAs in a row, gap 20, Secondary then Primary, 240 × 46 each; close: a Black 60 pill with an × in the corner. Code: a shared styled `DefaultModal` over ui2 `Modal` (every other Creator Hub modal keeps ui2's chrome).
+
+| Part | State | Look | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| Primary CTA | blocked (form not valid) | Primary at 20% node opacity | exempt | `disabled` |
+| any | ✱ the glow (Mythic @ 30%, blur 500) | decorative | — | `aria-hidden` |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Restyle all Creator Hub modals to the DS DefaultModal? | No: a shared styled `DefaultModal` for Transfer, Unpublish (single and bulk) and the transaction states only; other modals untouched |
+
+### Transaction states (Manage)
+
+Not drawn in Figma (✱ throughout). One block inside the action's `DefaultModal` for every on-chain action (Transfer, Save details, Domain Name set / removed, Collaborator added / removed / replaced, Manager added / removed). `sendLandTransaction` returns `confirmed | failed | unconfirmed` and throws `RelayError` (rejected −32003, expired).
+
+| State | Copy | Controls |
+| --- | --- | --- |
+| ✱ Waiting for signature | "Confirm this transaction in your browser." | Cancel |
+| ✱ Pending | "Transaction sent. Waiting for confirmation…" + "View on Etherscan" | Close |
+| ✱ Done | per action, e.g. "LAND transferred." | Close |
+| ✱ Not confirmed yet | "Not confirmed yet. It can take a few minutes; check again later." + "View on Etherscan" | Close |
+| ✱ Rejected | "You rejected the request in your browser." | Try again · Cancel |
+| ✱ Expired | "The request expired before it was signed." | Try again · Cancel |
+| ✱ Failed | "The transaction failed." + "View on Etherscan" | Try again · Close |
+| ✱ Multi-step | "Step {n} of {total}" above the state (Managers: one tx per registry) | — |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Transaction state copy | Approved as above |
+
+### LAND detail page (Manage)
+
+Frames [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5690-7364) (Details), [`5660:4356`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4356) (Scenes), [`5660:4640`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4640) (Collaborators); `Title Bar` `5660:4256`; `tab-bar` `5738:6922` (its LAND variant reads SETTINGS in the component; the frames override it to MANAGERS). Route `/manage/land/:id/:tab`. Title "Manage - {name}" Inter 600 48; header row "Role [tag] · Owner [avatar] name"; SAVE (Details) + ⋮ (the card menu); tabs `H6 Semi Caps` 16, Silver idle, Snow active + 2px underline, 1px White 20 rule, gap 40.
+
+| Role | Header row | Tabs | ⋮ Transfer |
+| --- | --- | --- | --- |
+| Owner | hidden | Details · Scenes · Collaborators · Managers | ✓ |
+| Lessor (rented out) | hidden (owner header) | Details (Domain Name only editable) · Scenes | — |
+| Manager | Role [Manager] · Owner | Details · Scenes · Collaborators | — |
+| Collaborator | Role [Collaborator] · Owner | Details · Scenes | — |
+| Tenant | Role [Tenant] · Owner | Details (Domain Name only editable) · Scenes | — |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Header Role / Owner row for owners | Hidden for owners and lessors; others see "Role [tag] · Owner [avatar] name" |
+| 2026-10-26 | Page title | "Manage - {name}"; unnamed: "Parcel x,y" / "Estate {id}" |
+| 2026-10-26 | Back control | The shared `Title` back control is restyled to the DS `BackTitle` (40 pill, Primary arrow); this also repaints Analytics detail |
+| 2026-10-26 | Tab state | In the route: `/manage/land/:id/:tab` |
+| 2026-10-26 | Page states | `Loader` while loading; EmptyState "This LAND is no longer in your list." + "Back to Manage" when not found or access was lost |
+| 2026-10-26 | Per-role visibility | As the table above |
+
+### Details tab (Manage)
+
+Frame [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5690-7364); Domain Name states in Group 23 `5688:7356` (Owns names `5660:4286`, Doesn't have any name `5660:4289`, Name set `5660:4292`). Fields: Land Name (Text-Input, "Write here"), Description (textarea, "Write something about your LAND here"), Domain Name (help line, Dropdown-Input "Choose a NAME", "Claim a NAME" link). Thumbnail and Categories (NICE TO HAVE) are out of scope: on-chain metadata is name + description.
+
+| Part | Rule |
+| --- | --- |
+| ✱ Land Name + Description editable by | owner, manager and **collaborator** (`updateLandData` accepts the update operator and update managers); read-only for tenant and lessor. Deviation from the board's NOTES ("collaborators: domain name and scenes only") |
+| SAVE | Land Name + Description in one tx; disabled until changed; "Discard" beside it |
+| Domain Name | its own confirm + tx, signed by the NAME's owner; any role; NAMEs used by a World or another LAND greyed out |
+| Domain "Name set" pencil | re-opens the NAME dropdown, which includes "Remove link" (its own tx) |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | One SAVE for the whole form? | SAVE = Land Name + Description (one tx); Domain Name has its own confirm + tx |
+| 2026-10-26 | Can collaborators and managers edit Land Name + Description? | Yes (the contract allows it; Figma's NOTES overridden, ✱ above). Tenants read-only |
+| 2026-10-26 | Field limits | Builder's limits, a live counter, the Text-Input Error state, and "Discard" next to SAVE. Builder's `LandEditPage` enforces only a non-empty name (no length limit) |
+| 2026-10-26 | Limit values (no Builder limit to copy) | Land Name max 50, Description max 140 (our decision), live "{n}/{max}" counters, the Text-Input Error state when over |
+| 2026-10-26 | Field placeholder White 40 is 3.82:1 (modal) / 3.83:1 (page) | Accepted (✱), as the search placeholder |
+
+### Scenes tab (Manage)
+
+Frame [`5660:4356`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4356); `Scene-entry` [`5660:4823`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4823) (Default `5660:4824`, Hover `5660:4840`: 1724 × 70, padding 10 / 20, 1px White 20 bottom rule; Hover White 10 + download (Silver) + unpublish ✕ (System/Red)). Sub-bar as the Manage View bar: "{n} Scenes · {n} LANDs", Sort by, Search. Table: checkbox, Name, Parcels, Location.
+
+| Part | Rule |
+| --- | --- |
+| ✱ LIST / MAP toggle | not shipped: the Map view is postponed (follow-up), the tab ships the list only |
+| ✱ Row tags ("Unsynched", "SDK 6" in `5660:4382`) | none |
+| Sort | "Last Updated" and "Name", the Manage page's options and keys |
+| Bulk | checkboxes kept; select-all in the header; "Unpublish selected" appears when ≥ 1 is selected; one empty-scene deploy per scene; the Unpublish modal with plural copy |
+| Download | warning modal → save dialog → row progress → result snackbar per recovery (`none` / `self-contained` / `partial`) |
+| Empty | EmptyState "No scenes published on this LAND." + Secondary "View Scenes" |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Unpublish copy | Figma's: "Are you sure you want to unpublish {scene} from {LAND name}?" |
+| 2026-10-26 | Bulk checkboxes | Kept, with "Unpublish selected" |
+| 2026-10-26 | Map view | Postponed: a follow-up, not a permanent deviation |
+| 2026-10-26 | Row tags | None (no "SDK 6") |
+| 2026-10-26 | Sort | "Last Updated" + "Name" (reuse `manage.sort.*`) |
+
+### Collaborators tab (Manage)
+
+Frame [`5660:4640`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4640). Description line; a 570-wide field with an inline `Button-Contained-Text-Icon` Primary small "+ ADD" (63 × 26, radius 6, padding 2 / 6, blocked at 20% opacity); list header (select-all + "Collaborators: N"); rows: checkbox, 28px avatar, name `H6 Semi` 16 Snow (max 230), trash on hover.
+
+| Part | Rule |
+| --- | --- |
+| ✱ Copy | "Collaborators can publish scenes on this LAND." and "Collaborators: N": no "up to 100", no "stream", no cap (the board says otherwise) |
+| Field | "Wallet address or NAME"; the resolved profile (avatar + name + shortened address) before adding; errors "Enter a wallet address or a NAME." / "This NAME doesn't exist." / "You can't add yourself." |
+| Parcel | at most one collaborator (one operator per token); adding when the slot is taken opens a replace-confirm |
+| Estate | one row per distinct parcel operator plus the estate-wide operator; each row has an "All parcels" / "{N} Parcels" select that opens the existing parcel picker. Writes are one `setManyLandUpdateOperator` tx for all selected parcels (no chunking; very large estates may hit the gas limit: follow-up) |
+| Remove | trash on hover and focus, named "Remove {name}"; a remove-confirm; then the transaction states |
+| Who edits | owner and manager |
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Collaborators copy | As above (✱ deviation from the board) |
+| 2026-10-26 | Estate rows | "All parcels" / "{N} Parcels" select opening the parcel picker |
+| 2026-10-26 | Row action | Figma's trash, on hover and focus, named "Remove {name}" |
+| 2026-10-26 | Remove and replace | Each through a confirm modal, then the transaction states |
+
+### Managers tab (Manage)
+
+No Figma frame (✱): built from the Collaborators pattern and approved by the user. Owner-only tab. Description "Managers can publish scenes and add or remove collaborators on all your LAND, not only this one."; "Wallet address or NAME" + "+ Add"; "Managers: N"; rows as Collaborators; add / remove through confirm + transaction states, always two steps (one tx per registry: LAND, then Estate), even when the owner holds no Estate, so the manager also covers Estates acquired later. If step 2 fails, the row shows "Applies to LAND only". Empty: "No managers yet".
+
+**Decisions:**
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Managers draft | Approved; it stays a tab of the LAND page |
+| 2026-10-26 | Sign the Estate registry when the owner has no Estate? | Yes, always both registries (LAND, then Estate) |
 
 ---
 
