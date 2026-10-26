@@ -70,6 +70,7 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--palette-whiteTransparent-subtle` | `rgba(255,255,255,.1)` | Figma White Subtle · White 10: checkbox hover halo; `Button` Secondary fill (contained + secondary) and its pressed state; `--ui-designer-control-border` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-soft` | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `Button` Secondary hover and `.active`; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-blurry` | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `Button variant="outlined"` outline; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) |
+| `--palette-blackTransparent-blurry` | `rgba(0,0,0,.4)` | Figma Black Blurry · Black 40: the Scrollbar handle fill, on the react-contexify submenu (user, October 26, 2026). 1.32:1 on Onix on its own; the White 60 handle border carries it |
 | `--palette-whiteTransparent-backdrop` | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border; `outlined` pressed outline and `text` pressed label (ui2 theme-path name) |
 | `--palette-system-blueDark2` | `#244b7d` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1); the selected toggle fill through `--ui-designer-control-active-bg` |
 | `--palette-system-blueDark3` | `#243852` | Figma System/Blue Dark 3: the fill of a selected toggle under the pointer (Snow glyph 11.61:1). Darker than Blue Dark 2 on purpose, as Figma draws it |
@@ -204,6 +205,7 @@ No pair that passed 4.5:1 now fails. `--error-main` text on `#242129` (the `Call
 | `--controlHeight-large` | `46px` | `TextField size="large"` and `Button size="large"` height (Figma Text-Input, Button-Contained-Text; ui2 theme-path name) |
 | `--shape-borderRadius` | `6px` | Dense field, dropdown and textarea corners; `--ui-designer-radius-field` aliases it (ui2 theme-path name) |
 | `--shape-borderRadiusLarge` | `12px` | Large field, `.Button.medium` and `.Button.large` corners; `--ui-designer-radius-menu` aliases it (ui2 theme-path name) |
+| `--shape-borderRadiusPill` | `100px` | Figma's 100px pill: the Scrollbar handle on the react-contexify submenu (user, October 26, 2026); the other pills listed under Figma values take it as they are re-themed |
 | `--borderWidth-strong` | `1.5px` | Kept as the ui2 theme-path name; unused, because Chromium floors a fractional border width — large fields draw 1.5px as a 1px border plus `box-shadow: inset 0 0 0 0.5px`, and `Button variant="outlined"` draws it as `box-shadow: inset 0 0 0 1.5px` with no border, so the outline takes no box |
 
 Give interactive controls a consistent height so rows align: fields take `--controlHeight-small` (dense, the default) or `--controlHeight-large` (forms). Interactive hit targets should be ≥24px.
@@ -392,7 +394,7 @@ Figma names four steps per base colour, Backdrop 60% · Blurry 40% · Soft 20% �
 | White Backdrop · White 60 | `rgba(255,255,255,.6)` | `--palette-whiteTransparent-backdrop` | — | match |
 | Black Subtle · Black 10 | `rgba(0,0,0,.1)` | — | — | missing (no consumer) |
 | Black Soft | `rgba(0,0,0,.2)` | `--contexify-separator-color` | — | match |
-| Black Blurry | `rgba(0,0,0,.4)` | — | — | missing (no consumer) |
+| Black Blurry | `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` | — | match |
 | Black Backdrop | `rgba(0,0,0,.6)` | `--modal-overlay-bg-color` | — | match |
 | — | `.05` / `.07` white | `--ui-designer-control-empty-bg`, `--ui-designer-hairline` | `--transparent-gray-dark` `.05` | not Figma steps; deviation, keep (solved for contrast, see the accent note) |
 | — | `.23` white · `#ffffffb2` (70%) · `#000000dd` (87%) | — | `--transparent-gray-light`, `--text-on-secondary`, `--dimmer` | not Figma steps |
@@ -442,7 +444,7 @@ Every literal the Feedback pages use, mapped once; the variant tables below refe
 | Snow @ .3 spinner track | not a Figma step (ramp is 60/40/20/10) | missing | missing |
 | Ruby → Yellow progress fill | Brand/Flare, as an image fill | missing | missing (`--metaverse-gradient` differs) |
 | 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px) |
-| 100px pill radius | — | missing | missing |
+| 100px pill radius | — | `--shape-borderRadiusPill` | missing |
 | `0 2px 3px rgba(0,0,0,.25)` tooltip shadow | — | missing (`--contexify-menu-shadow` differs) | missing |
 | Inter 14 / 400 / 100% | `H7 Regular` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
 | Inter 14 / 600 / 100% uppercase | `H7 Semi Caps` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
@@ -507,7 +509,7 @@ Every literal the Navigation pages use, mapped once; the variant tables below re
 | `rgba(255,255,255,.2)` Create split divider | Transparencies/White 20 | `--ui-designer-control-border-strong` | missing (`CreateButton` carries the literal) |
 | `#A14BF3` avatar disc behind the placeholder snapshot | Rarities/Legendary | missing | missing; a wearable-rarity colour, not a navigation token — the real avatar decides |
 | 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px; `CreateButton` and `UserMenu` carry the literal) |
-| 100px pill radius (logo, avatar, dot) | — | missing | missing |
+| 100px pill radius (logo, avatar, dot) | — | `--shape-borderRadiusPill` | missing |
 | 2px active indicator (bottom on horizontal, right on vertical) | — | literal | literal |
 | Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
 | Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
@@ -581,7 +583,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | 8px radius (menu row) | — | missing (`--ui-designer-radius-field` is 6px) | missing (`--mui-shape-borderRadius` is 6px; `SceneList` carries the literal) |
 | 12px radius (menu, published thumbnail, CTA buttons, grouped accordion) | — | `--ui-designer-radius-menu` | missing (`UserMenu` carries the literal) |
 | 16px radius (cards, card thumbnails) | — | missing | missing (`Tutorials` carries the literal) |
-| 100px pill (kebab button) | — | missing | missing |
+| 100px pill (kebab button) | — | `--shape-borderRadiusPill` | missing |
 | `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | `--menu-shadow` (`--contexify-menu-shadow` keeps `2px 2px 10px rgba(0,0,0,.5)` until the Menu-Entry spoke points it there) | missing (ui2 `MuiPaper` elevation) |
 | Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
 | Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + literal size | same |
@@ -604,11 +606,11 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | `#FF4BED` @ 30% + layer blur 500 modal glow | DCL/Rarities/Mythic (legacy) | missing | missing |
 | `#FFD079 → #DA36FF` AI sparkle gradient | — (raw linear gradient) | missing | missing (`components/Icons/AssistantIcon` paints its own gradient) |
 | `rgba(0,0,0,.2)` modal title-bar fill | Transparencies/Black 20 | `--contexify-separator-color` (same value, a react-contexify role) | missing |
-| `rgba(0,0,0,.4)` scrollbar handle | Transparencies/Black 40 | missing | missing |
+| `rgba(0,0,0,.4)` scrollbar handle | Transparencies/Black 40 | `--palette-blackTransparent-blurry` | missing |
 | `rgba(0,0,0,.6)` modal close button | Transparencies/Black 60 | `--modal-overlay-bg-color` (same value, the overlay role) | missing (`--dimmer` is `#000000dd`) |
-| `rgba(255,255,255,.6)` scrollbar handle border, verification expiry text | Transparencies/White 60 | missing | missing |
+| `rgba(255,255,255,.6)` scrollbar handle border, verification expiry text | Transparencies/White 60 | `--palette-whiteTransparent-backdrop` | missing |
 | 24px radius (modals) | — | missing | missing (ui2 `Modal` paper is 12px) |
-| 100px pill (modal close, radio, avatar ring, scrollbar handle) and 9999px (BackCTA, title Tag) | — | missing | missing (`EditorPage` and `Title` carry `100%`) |
+| 100px pill (modal close, radio, avatar ring, scrollbar handle) and 9999px (BackCTA, title Tag) | — | `--shape-borderRadiusPill` (100px; 9999px draws the same pill) | missing (`EditorPage` and `Title` carry `100%`) |
 | 34px pill (scene status chip) | — | missing | missing |
 | 5px radius (16px checkbox) | — | missing | missing |
 | 6px radius (attach button) | — | `--ui-designer-radius-field` | `--mui-shape-borderRadius` |
@@ -726,7 +728,7 @@ Set [`20749:790`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 
 **Inspector context menus** (layer 3b, unit 1): the eight react-contexify menus take this look, and their board is ours, in [Context menus (inspector)](#context-menus-inspector).
 
-**Status** (October 26, 2026): spec in progress, from the approved board (`docs/specs/menu-entry-spec.md`, local).
+**Status** (October 26, 2026): signed off by the user; the three sign-off changes (400ms close delay, the submenu scrollbar, reduced motion) are being implemented in the spoke (`docs/specs/menu-entry-spec.md`, local).
 
 **Decisions** (the record for these menus; grep here before asking again):
 
@@ -762,7 +764,8 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | Div | — | as Menu-Entry Div | — | — | — | between the slots | — | `role="separator"` |
 | Container | ✱ width | as above | as above | as above | as above | `min-width: 200px`; the menu grows with a long label ("Delete 12 Items", component names) where Figma draws a fixed 200 | — | — |
 | Div | ✱ inset | White 10 | — | — | — | inset with the rows, 10px clear above and below (Figma: full bleed in the composed menu); user decision October 21, 2026 (#1707) | 1.36:1, decorative | `role="separator"` |
-| Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | opens 10px clear of the parent menu; scrolls past 30vh (`theme/index.css` `.contexify_submenu`); opens at once and stays open about 250ms after the pointer leaves its parent row, so a diagonal move across the gap reaches it | as Container | `role="menu"`, opened from a row with `aria-haspopup="menu"` |
+| Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | opens 10px clear of the parent menu; scrolls past 30vh (`theme/index.css` `.contexify_submenu`) with Figma's Scrollbar `20931:3935` (16px, Black 40 pill, 1px White 60 inner border, no track); opens at once and stays open 400ms after the pointer leaves its parent row, so a diagonal move across the gap reaches it; the keyboard opens and closes it at once | as Container; scrollbar thumb border 5.07:1 on Onix (the Black 40 fill alone is 1.32:1) | `role="menu"`, opened from a row with `aria-haspopup="menu"` |
+| Container | ✱ enter motion (Figma draws none) | — | — | — | — | the library's 0.3s fade with a 10px slide, turned off under `prefers-reduced-motion: reduce` | — | — |
 
 **Decisions** (the record for this component; grep here before asking again):
 
@@ -772,6 +775,10 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | 2026-10-26 | Menu width? | `min-width: 200px`, Figma's width, growing with long labels (✱ width). |
 | 2026-10-26 | Submenus? | They inherit the container values; the chevron is White 40 in every state; the open parent row takes the Pale Black hover fill; the 30vh scroll cap stays (✱ open, and Menu-Entry ✱ submenu parent). |
 | 2026-10-26 | A diagonal pointer path from "Add Component" to its 5th item closed the submenu (a row-height hover bridge doesn't cover it). Keep the 10px gap? | Yes, with a close delay: the submenu stays open about 250ms after the pointer leaves its parent row (a CSS `transition-delay` on closing only); opening stays instant. |
+| 2026-10-26 | Sign-off of the Before / After / Board set (layer 3b unit 1) | Signed off, with the three changes below. |
+| 2026-10-26 | The 250ms close delay drops a 500–750ms diagonal. Change it? | Raise it to 400ms. Opening stays instant, and the keyboard still opens and closes the submenu at once. |
+| 2026-10-26 | The submenu shows the platform scrollbar (a light thumb on Onix). Theme it? | Yes, in this unit, to Figma's Scrollbar `20931:3935`, on the react-contexify submenu only; other inspector scroll areas stay as they are. |
+| 2026-10-26 | The menus' enter animation ignores reduced motion. Change it? | Under `prefers-reduced-motion: reduce` the enter animation (0.3s fade and 10px slide) is off. |
 
 ### Context menus (inspector)
 
@@ -803,7 +810,8 @@ Our board for the inspector's right-click menus (decision October 26, 2026; no F
 | Disabled | the library's `opacity: .5` | — | not drawn (✱) |
 | Divider | `--contexify-separator-color: var(--palette-whiteTransparent-subtle)`, `--contexify-separator-margin: 10px 0`, 1px | `rgba(255,255,255,.1)` | Div White 10 (✱ inset with the rows) |
 | Submenu chevron | `--contexify-arrow-color`, `--contexify-activeArrow-color`, `--contexify-rightSlot-color`, `--contexify-activeRightSlot-color`: `var(--palette-whiteTransparent-blurry)` | `rgba(255,255,255,.4)` | `arrow-right` 10, White 40 |
-| Submenu | a nested `.contexify` with every value above. It opens 10px clear of the parent menu, its first row level with the parent row (as the TitleBar menu), and scrolls past `max-height: 30vh`. It opens at once and closes 250ms after the pointer leaves the parent row (`transition-delay` on closing only) | — | not drawn (✱) |
+| Submenu | a nested `.contexify` with every value above. It opens 10px clear of the parent menu, its first row level with the parent row (as the TitleBar menu), and scrolls past `max-height: 30vh` with Figma's Scrollbar (see "Scrollbar (Scrollbar)"). It opens at once and closes 400ms after the pointer leaves the parent row (`transition-delay` on closing only, no fade); the keyboard opens and closes it at once | — | not drawn (✱) |
+| Enter motion | the library's fade with a 10px slide (0.3s), off under `prefers-reduced-motion: reduce` | — | not drawn (✱) |
 
 A menu is `22 + 38 × rows + 21 × dividers` tall: the padding plus border, then each row, then each divider with its 10px above and below.
 
@@ -915,7 +923,7 @@ Component [`20808:605`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 
 ### Scrollbar (Scrollbar)
 
-Component [`20931:3935`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20931-3935), 1 variant and no component set: a 16 × 860 row (gap 10, no track fill) holding `Handle` 16 × 860, 100px pill, Black 40 fill, 1px White 60 inner border. The Help & Support modal places it at 14 × 860 with a 560-tall handle and 300 bottom padding (the thumb proportion is placeholder, not spec). Code: Creator Hub `theme.css` global `::-webkit-scrollbar` (8px wide, track `--black`, thumb `--dcl-silver`, 4px radius) — drift on width, track, thumb colour and radius; inspector `UIDesigner.css` `.ui-designer-right-rail-tabpanel::-webkit-scrollbar` (8px, transparent track, thumb White 12 / hover White 22, 4px radius) — drift.
+Component [`20931:3935`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20931-3935), 1 variant and no component set: a 16 × 860 row (gap 10, no track fill) holding `Handle` 16 × 860, 100px pill, Black 40 fill, 1px White 60 inner border. The Help & Support modal places it at 14 × 860 with a 560-tall handle and 300 bottom padding (the thumb proportion is placeholder, not spec). Code: Creator Hub `theme.css` global `::-webkit-scrollbar` (8px wide, track `--black`, thumb `--dcl-silver`, 4px radius) — drift on width, track, thumb colour and radius; inspector `UIDesigner.css` `.ui-designer-right-rail-tabpanel::-webkit-scrollbar` (8px, transparent track, thumb White 12 / hover White 22, 4px radius) — drift; inspector react-contexify submenu (`.contexify_submenu`, layer 3b unit 1, user decision October 26, 2026; being implemented) — the target: 16px, Black 40 pill thumb, 1px White 60 inner border, no track, the track inset 10px top and bottom (✱) to clear the menu's padding and 12px corners. Re-read October 26, 2026 14:24–14:28 CET: unchanged.
 
 | Part | State | Fill | Border | Radius | Size | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- |
