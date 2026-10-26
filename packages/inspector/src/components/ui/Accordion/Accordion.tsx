@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useId, useState } from 'react';
 import cx from 'classnames';
-import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io';
+import { ArrowRightIcon } from '../../Icons/ArrowRight';
 import { CheckboxField } from '../CheckboxField';
 
 import './Accordion.css';
@@ -11,9 +11,7 @@ export type AccordionProps = {
   className?: string;
   initialOpen?: boolean;
   enabled?: boolean;
-  initialEnabled?: boolean;
   onToggleEnabled?: (enabled: boolean) => void;
-  rightContent?: React.ReactNode;
 };
 
 export const Accordion: React.FC<AccordionProps> = ({
@@ -22,46 +20,53 @@ export const Accordion: React.FC<AccordionProps> = ({
   className,
   initialOpen = true,
   enabled,
-  initialEnabled = true,
   onToggleEnabled,
-  rightContent,
 }) => {
   const [isOpen, setIsOpen] = useState(initialOpen);
-  const [isEnabled, setIsEnabled] = useState(initialEnabled);
-
-  const handleToggleEnabled = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newEnabled = e.target.checked;
-      setIsEnabled(newEnabled);
-      onToggleEnabled?.(newEnabled);
-    },
-    [onToggleEnabled],
-  );
-
-  const Icon = isOpen ? <IoIosArrowUp className="icon" /> : <IoIosArrowDown className="icon" />;
+  const id = useId();
+  const headerId = `${id}-header`;
+  const regionId = `${id}-region`;
+  const isOff = enabled === false;
+  const isVisible = isOpen && !isOff;
 
   return (
-    <div className={cx('Accordion', className, { open: isOpen, disabled: !isEnabled })}>
-      <div
-        className="header"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="left-content">
-          {enabled !== undefined && (
-            <CheckboxField
-              checked={isEnabled}
-              onChange={handleToggleEnabled}
-              onClick={e => e.stopPropagation()}
-            />
-          )}
+    <div
+      className={cx('Accordion', className, {
+        open: isOpen,
+        disabled: isOff,
+        'has-toggle': enabled !== undefined,
+      })}
+    >
+      <div className="header">
+        <button
+          type="button"
+          id={headerId}
+          className="toggle"
+          aria-expanded={isOpen}
+          aria-controls={regionId}
+          onClick={() => setIsOpen(open => !open)}
+        >
+          <ArrowRightIcon />
           <span className="label">{label}</span>
-        </div>
-        <div className="right-content">
-          {rightContent}
-          {Icon}
-        </div>
+        </button>
+        {enabled !== undefined && (
+          <CheckboxField
+            className="enable"
+            aria-label={`Enable ${label}`}
+            checked={enabled}
+            onChange={e => onToggleEnabled?.(e.target.checked)}
+          />
+        )}
       </div>
-      {isOpen && (enabled === undefined || isEnabled) && <div className="content">{children}</div>}
+      <div
+        id={regionId}
+        role="region"
+        aria-labelledby={headerId}
+        className="content"
+        hidden={!isVisible}
+      >
+        {isVisible && children}
+      </div>
     </div>
   );
 };

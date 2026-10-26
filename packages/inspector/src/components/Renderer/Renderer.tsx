@@ -54,6 +54,7 @@ import {
   ZOOM_OUT_ALT,
   ZOOM_OUT,
   RESET_CAMERA,
+  ACTIVATABLE_CONTROLS,
   DUPLICATE,
   DUPLICATE_ALT,
   FOCUS_SELECTED,
@@ -210,7 +211,10 @@ const Renderer: React.FC = () => {
   const cameraKeys = { enabled: !isUIDesignerOpen };
   useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body, cameraKeys);
   useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body, cameraKeys);
-  useHotkey([RESET_CAMERA], resetCamera, document.body, cameraKeys);
+  useHotkey([RESET_CAMERA], resetCamera, document.body, {
+    ...cameraKeys,
+    ignoreTargets: ACTIVATABLE_CONTROLS,
+  });
   useHotkey([FOCUS_SELECTED], focusOnSelected, document.body, cameraKeys);
 
   // listen to ctrl key to place single tile

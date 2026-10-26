@@ -29,24 +29,24 @@ const AdminToolsBasicView = withSdk<Props>(({ sdk, entity }) => {
   return (
     <div className="AdminToolsBasicViewInspector">
       <Accordion
-        label="TEXT ANNOUNCEMENTS"
-        className="PanelSection border"
+        label="Text Announcements"
+        className="PanelSection"
         enabled={!!adminComponent.textAnnouncementControl?.isEnabled}
         onToggleEnabled={enabled => handleToggleEnabled('textAnnouncementControl', enabled)}
       >
         <TextAnnouncementControl entity={entity} />
       </Accordion>
       <Accordion
-        label="VIDEO SCREENS"
-        className="PanelSection border"
+        label="Video Screens"
+        className="PanelSection"
         enabled={!!adminComponent.videoControl?.isEnabled}
         onToggleEnabled={enabled => handleToggleEnabled('videoControl', enabled)}
       >
         <VideoControl entity={entity} />
       </Accordion>
       <Accordion
-        label="SMART ITEM ACTIONS"
-        className="PanelSection border"
+        label="Smart Item Actions"
+        className="PanelSection"
         enabled={!!adminComponent.smartItemsControl?.isEnabled}
         onToggleEnabled={enabled => handleToggleEnabled('smartItemsControl', enabled)}
       >
