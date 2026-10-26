@@ -2,6 +2,7 @@ import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { skills, workspace } from '#preload';
 
 import type { Project } from '/shared/types/projects';
+import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { actions as workspaceActions } from '../workspace';
@@ -14,6 +15,14 @@ const projectWithOutdatedDeps = {
     '@dcl/sdk': { current: '7.0.0', latest: '7.9.9', wanted: '7.9.9', type: 'dependencies' },
   },
 } as unknown as Project;
+
+async function setDependencyUpdateStrategy(
+  store: ReturnType<typeof createTestStore>,
+  dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY,
+) {
+  const { settings } = store.getState().workspace;
+  await store.dispatch(workspaceActions.updateSettings({ ...settings, dependencyUpdateStrategy }));
+}
 
 describe('snackbar slice', () => {
   describe('when the dependency update is triggered while the "new dependencies version" toast is showing', () => {
@@ -62,6 +71,38 @@ describe('snackbar slice', () => {
       const { notifications } = store.getState().snackbar;
       expect(skills.updateProject).toHaveBeenCalledWith(projectWithOutdatedDeps.path);
       expect(notifications.some(isSkillsToast)).toBe(false);
+      expect(notifications).toContainEqual(
+        expect.objectContaining({ severity: 'success', message: 'AI skills were updated' }),
+      );
+    });
+  });
+
+  describe('when "Scene Dependencies" is set to "Do nothing"', () => {
+    it('should not check the AI skills or show their toast', async () => {
+      const store = createTestStore();
+      await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING);
+
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      expect(skills.getProjectStatus).not.toHaveBeenCalled();
+      expect(
+        store.getState().snackbar.notifications.some($ => $.type === 'new-sdk-skills-version'),
+      ).toBe(false);
+    });
+  });
+
+  describe('when "Scene Dependencies" is set to "Auto-update all my scenes"', () => {
+    it('should update outdated AI skills without asking', async () => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: true });
+      vi.mocked(skills.updateProject).mockResolvedValue();
+      const store = createTestStore();
+      await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE);
+
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      const { notifications } = store.getState().snackbar;
+      expect(skills.updateProject).toHaveBeenCalledWith(projectWithOutdatedDeps.path);
+      expect(notifications.some($ => $.type === 'new-sdk-skills-version')).toBe(false);
       expect(notifications).toContainEqual(
         expect.objectContaining({ severity: 'success', message: 'AI skills were updated' }),
       );
