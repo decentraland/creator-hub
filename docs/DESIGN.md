@@ -732,7 +732,7 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | Container | open | Onix | 1px White 10 all sides | 12px | `0 4px 8px rgba(0,0,0,.4)` | 200 × Hug (117 with one entry per slot), padding 10 / 0, gap 10 | Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow and border carry the edge | `role="menu"` with `aria-labelledby` the trigger; Escape closes, arrows move, focus returns to the trigger |
 | Options / Options2 | — | none | none | — | — | Fill × Hug, padding 0 / 10 | — | `role="group"` when a Section labels it |
 | Div | — | as Menu-Entry Div | — | — | — | between the slots | — | `role="separator"` |
-| Container | ✱ Creator Hub width | Onix | — | — | — | min-width 230 (the Manage card menu `5660:4117`, the only Creator Hub instance drawn); rows hug | — | — |
+| Container | ✱ Creator Hub width | Onix | — | — | — | min-width 230 for `components/Dropdown` (the ⋮ menus; the Manage card menu `5660:4117` is the only Creator Hub instance drawn); rows hug. Select lists follow Dropdown-Input instead (View bar (Manage)) | — | — |
 
 **Decisions** (Creator Hub `components/Dropdown`):
 
@@ -1837,7 +1837,7 @@ Set [`5660:4717`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5
 
 | Date | Question | Answer |
 | --- | --- | --- |
-| 2026-10-26 | Which roles carry a tag on the card? | Collaborator, Manager and Tenant. Owners and lessors carry none, as the `5660:4067` NOTES say (re-confirmed against the board) |
+| 2026-10-26 | Which roles carry a tag on the card? | Collaborator, Manager and Tenant. Owners and lessors carry none, as the `5660:4067` NOTES say (re-confirmed against the board, and confirmed with the designer the same day) |
 | 2026-10-26 | Manager has no Figma variant. Which look? | The Collaborator look (blue), labelled "Manager" |
 | 2026-10-26 | Collaborator blue and Tenant orange, as Figma? | Yes |
 | 2026-10-26 | The hovered card drops Collaborator and Tenant under 4.5:1. Fix? | Yes: the card hovers to White 10, not 15, and the Tenant label is Orange Light 1 `#FFB95B` |
@@ -1876,6 +1876,7 @@ Instance `Filter` [`5660:4066`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjB
 | --- | --- | --- | --- | --- |
 | WORLDS / LANDS | selected / idle / hover / selected + hover | per PillIconText | selected 9.86; idle label White 60 6.04 | `role="tablist"` of two `role="tab"` buttons, `aria-selected`, arrow keys move; the list below is the `tabpanel` |
 | View, Sort by | rest | label Silver, value Snow, chevron | label 5.11, value 13.50 | label names the select (`aria-labelledby`) |
+| View, Sort by | ✱ open (not drawn on this board) | the DS Dropdown-Input Selected list: Onix menu, 1px White 10, radius 12, as wide as its longest option (no 230 floor; at least the trigger's width), rows 38 tall, radius 8, inset 10, label Inter 400 16 / 150% Snow; the selected row Pale Black with a 16px Checkmark on its **left**; no focus ring on a row when the list was opened with the mouse | Snow on Pale Black 9.88 | `role="listbox"`, `option`s with `aria-selected`; a row draws the `palette.info.light` ring only after an arrow key |
 | Search | rest | placeholder White 40 | ✱ 3.53 (accepted: Figma's value kept) | `aria-label` "Search" |
 
 **Decisions:**
@@ -1919,6 +1920,8 @@ Frames [`5660:4109`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-i
 | Part | Figma | ✱ Deviation | Contrast |
 | --- | --- | --- | --- |
 | Storage bar | no border | none: kept as drawn, unlike the DS `ProgressBar` (2px Snow) | track vs page 1.32 (decorative); fill Ruby end vs track 3.81 |
+| Space Used row | absent from Empty Worlds `5660:4182` | hidden when the user has no Worlds at all (the `no-worlds` EmptyState); shown with search / filter empties and the list | — |
+| Card grid at a 1920 window | 4 cards per row (1724 content) | ✱ 4 per row while the list fits; **3 once the page scrolls**, because the custom 8px classic scrollbar takes layout width (content 1716). Accepted (user decision, see below) | — |
 
 **Decisions:**
 
@@ -1930,6 +1933,7 @@ Frames [`5660:4109`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-i
 | 2026-10-26 | Page side margin: Figma 98, `Container` 128 | Figma's 98 on every page that uses the shared `Container` (Scenes, Templates, Analytics, Analytics detail, Manage, Learn, Videos, Docs) and on `SignInPage` |
 | 2026-10-26 | Name of the Space Used ⓘ | "About Space Used" |
 | 2026-10-26 | Manage at 1920 fits 4 cards only while the page doesn't scroll (an 8px classic scrollbar takes layout width). Accept 3 when scrolling? | No: scrollbars become overlay app-wide (no layout width), so Manage keeps 4 per row at 1920 when it scrolls. Gated on proof in the built app (client width = window width on a scrolling page) on each platform the team can check; if it can't be done, report back, no fallback |
+| 2026-10-26 | The overlay-scrollbar gate failed in the built app (macOS): the `OverlayScrollbar` feature flag has no effect; with the custom `::-webkit-scrollbar` rules removed, "Show scroll bars: Automatic / When scrolling" goes overlay (client width 1920) but "Always" stays classic (1905); Windows untested. Keep pursuing overlay? | No: the custom scrollbars stay as they are (`theme.css` unchanged). This reverses the overlay decision above: Manage shows 4 cards per row at 1920 while the list fits and 3 once it scrolls, the same on every OS (✱ above) |
 | 2026-10-26 | `SignInPage` copies the old 128 margin outside `Container`. Move it too? | Yes, to 98 |
 
 ---
