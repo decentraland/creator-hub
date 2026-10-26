@@ -67,6 +67,7 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-control-selected-bg` | `rgba(255,255,255,.1)` | Hover/selected fill on a menu **row** |
 | `--ui-designer-control-active-bg` | `#244b7d` (→ `--palette-system-blueDark2`) | Fill of a selected/active **toggle** |
 | `--ui-designer-control-active-fg` | `#fcfcfc` (→ `--ui-designer-text`, Snow) | Glyph on that fill: 8.61:1 |
+| `--palette-whiteTransparent-faint` | `rgba(255,255,255,.05)` | Figma's unnamed `#FFFFFF` 5% (no Figma variable; ui2's `whiteTransparent` stops at `subtle`): the AccordionEntry hover fill, and its `:focus-visible` fill under the Snow ring (user, October 26, 2026). 1.16:1 against the `#242129` panel on its own, so it never carries a state alone: hover doesn't need to, and focus adds the ring |
 | `--palette-whiteTransparent-subtle` | `rgba(255,255,255,.1)` | Figma White Subtle · White 10: checkbox hover halo; `Button` Secondary fill (contained + secondary) and its pressed state; `--ui-designer-control-border` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-soft` | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `Button` Secondary hover and `.active`; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-blurry` | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `Button variant="outlined"` outline; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) |
@@ -572,7 +573,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | `#35333B` menu fill | Neutrals/Onix (swatch) | `--ui-designer-control-bg` | missing |
 | `#FF2D55` primary button, D7 retention value | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
 | `#C640CD` smart-item icon disc | Brand/Lavender | `--lavender`, `--smart-item-icon-bg-color` | missing |
-| `rgba(255,255,255,.05)` card and accordion-row rest fill | not a Figma step (unnamed `#FFFFFF` 5%) | `--ui-designer-control-empty-bg` | `--transparent-gray-dark` |
+| `rgba(255,255,255,.05)` card rest fill, AccordionEntry hover fill | not a Figma step (unnamed `#FFFFFF` 5%) | `--palette-whiteTransparent-faint` (accordion); `--ui-designer-control-empty-bg` (UI Designer fields) | `--transparent-gray-dark` |
 | `rgba(255,255,255,.1)` card border, accordion rules, menu border and rule, secondary button fill | Transparencies/White 10 | `--ui-designer-control-border`, `--ui-designer-control-selected-bg` | missing (`PublishedProjectCard` paints `--transparent-gray-dark`, White 5) |
 | `rgba(255,255,255,.15)` card hover fill | not a Figma step (unnamed `#FFFFFF` 15%) | missing | missing (`Tutorials` hovers with `.1`) |
 | `rgba(255,255,255,.2)` location divider | Transparencies/White 20 | `--ui-designer-control-border-strong` | missing |
@@ -628,26 +629,94 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 
 ### AccordionEntry (Accordion)
 
-Set [`20932:3939`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-3939), 3 variants (`Property 1` = Default / Hover / Expanded). Shared: Fill width (596 in the set), header row 50 tall, padding 0 / 20, gap 20, chevron 12.25 box (Vector 11.23 × 6.63 White 40, rotated −90° closed, 180° open), label `H7 Semi` Snow, 1px White 10 bottom rule, no radius, no shadow. Code: inspector `ui/Accordion` (4px radius, padding 12 / 8, 12px / 500 uppercase label on `--text-light`, which no stylesheet defines (it resolves to the inherited colour), `--base-14` border, open header rule `--base-12` — drift on every value); Creator Hub `Modals/AppSettings/Tabs/AiTab` hand-rolled `SettingsAccordion` (MUI-generated `--mui-palette-divider` top rule, 13px title; no ui2 `Accordion` in use) — drift.
+Set [`20932:3939`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-3939), 3 variants (`Property 1` = Default `20932:3940` / Hover `20932:3943` / Expanded `20932:3946`; re-read October 26, 2026, unchanged). Shared:
+
+- **Row:** Fill width (596 in the set), 50 tall, padding 0 / 20, gap 20, 1px White 10 bottom rule, no radius, no shadow.
+- **Order:** the chevron **leads**: `arrow-right` `20932:3942`, then the label `Text` `20932:3941` (523.75 wide).
+- **Chevron:** an instance of the `arrow-right` icon component, 12.25 box; its Vector `21791:3` is 11.23 × 6.63, White 40, and points right closed, down open.
+- **Label:** `H7 Semi` Snow, in the copy's own casing (no Caps).
+- **Expanded:** a composite. Its header is a nested AccordionEntry Default instance `21290:47861` with its bottom stroke removed, over a `Description` instance `21290:47876`. Its one rule is the variant's own bottom rule, under the body; nothing separates the header from the body.
+
+Code: inspector `ui/Accordion`, used by `AdminToolsBasicView` and `AdminToolkitView`. It has a 4px radius, padding 12 / 8, a 12px / 500 uppercase label on `--text-light` (which no stylesheet defines, so it resolves to the inherited colour), a `--base-14` border and an open header rule in `--base-12`: drift on every value, and layer 3b unit 2 aligns it (decisions below). Creator Hub: none. Its hand-rolled `SettingsAccordion` (`Modals/AppSettings/Tabs/AiTab`) is not this set: Figma draws it on App Settings `21176:30197` as a local `ConnectDropdown` frame (`H6 Semi` 16 / 600 DCL/White, a leading chevron, no row, no rule), and it is its own Creator Hub unit in layer 4 (G34). Its rule is the separate `hr.AiDivider` (`--mui-palette-divider`), and its title inherits its size at weight 600.
 
 | Variant | State | Fill | Border | Chevron | Body | Size | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Default | collapsed | none | 1px White 10 bottom | right (−90°), White 40 | — | 596 × 50 | label 17.73:1 on `#161518`, 17.81:1 on `#16141a`; chevron 3.83:1 (≥ 3:1 non-text); rule 1.32:1, decorative | header is a `<button aria-expanded="false" aria-controls>`; hit target 50 tall, full width |
-| Hover | collapsed + hover | White 5 (unnamed) | 1px White 10 bottom | right, White 40 | — | 596 × 50 | fill vs surface 1.13:1 — the fill alone does not announce the state; label over it 15.67:1 | — |
-| Expanded | open | none | 1px White 10 bottom, on the Description row | down (180°), White 40 | `Description` row: Fill × Hug 37, padding 0 / 20 / 20, `H7 Regular` Gray, 17 tall | 596 × 88 (50 + 37 + rule) | body 11.55:1 / 11.61:1 | `aria-expanded="true"`; body is `role="region" aria-labelledby` the header |
+| Default | collapsed | none | 1px White 10 bottom | leads the row; right, White 40 | — | 596 × 50 | label 17.73:1 on `#161518`, 17.81:1 on `#16141a`, 15.45:1 on the `#242129` entity panel; chevron 3.83:1 / 3.74:1 (≥ 3:1 non-text); rule 1.32:1 / 1.36:1, decorative | header is a `<button aria-expanded="false" aria-controls>`; hit target 50 tall, full width |
+| Hover | collapsed + hover | White 5 (unnamed; `--palette-whiteTransparent-faint`) | 1px White 10 bottom | right, White 40 | — | 596 × 50 | fill vs surface 1.13:1 (1.16:1 on `#242129`) — the fill alone does not announce the state; label over it 15.67:1 (13.37:1 on the panel) | — |
+| Expanded | open | none | 1px White 10 bottom, under the body (none under the header) | down, White 40 | `Description` row: Fill × Hug 37, padding 0 / 20 / 20, `H7 Regular` Gray, 17 tall | 596 × 88 (50 + 37 + rule) | body 11.55:1 / 11.61:1 (10.07:1 on the panel) | `aria-expanded="true"`; body is `role="region" aria-labelledby` the header |
 | any | ✱ expanded + hover | White 5 on the header row only | — | — | — | — | as Hover | — |
-| any | ✱ focus | — | — | — | — | — | ring on `#161518`: `--border-focused` 4.34:1, `--ui-designer-control-accent` 8.13:1; Creator Hub ui2 `palette.info.light` 8.13:1 | `:focus-visible` outline 2px, offset −2px, on the header button |
-| any | ✱ disabled | — | — | White 20 chevron | — | — | not drawn; `ui/Accordion` dims to `opacity: .7` — keep that until Figma draws one | `aria-disabled="true"`, still focusable |
+| any | ✱ dense inspector row (user, October 26, 2026) | as the variant | 1px `--palette-whiteTransparent-subtle` bottom rule on each entry, flush, no box | 12px glyph box (`--uid-space-3`), `--palette-whiteTransparent-blurry`; right closed, down open | padding 0 / `--uid-space-2` / `--uid-space-3` (0 / 8 / 12), controls in a column with a `--uid-space-4` gap | Fill (315 in the entity panel) × 32 (`calc(var(--uid-space-4) * 2)`); padding 0 / `--uid-space-2` (8); gap `--uid-space-2` (8); label `H7 Semi` 14 / 600 / 100% `--palette-neutral-softWhite` | as Default on `#242129` | 32px hit target; Figma's look at the panel's density (its 50px / 20px row is the modal's) |
+| any | ✱ focus (Figma draws none; user, October 26, 2026) | White 5 `--palette-whiteTransparent-faint`, as Hover | 1px inset Snow `--focus-ring` (`outline: 1px solid; outline-offset: -1px`) | as the state | — | — | ring 15.45:1 on `#242129`, 13.37:1 over the White 5 fill | `:focus-visible` on the header button only; the same ring as unit 1's menu rows. Replaces the 2px accent outline at −2px proposal |
+| any | ✱ off, the section switched off by its checkbox (Figma draws none; user, October 26, 2026) | — | — | White 40 under the dim, right or down as the remembered state | hidden while off | — | the whole entry at `opacity: .7`: label 8.39:1 on `#242129` | toggle remembered, not disabled: the header stays focusable and still toggles, so the chevron and `aria-expanded` flip; the body stays hidden until the section is re-enabled, then opens if it was left open. Nothing draws as open over an empty body. No `aria-disabled`; the old proposal's White 20 chevron is dropped |
+| any | ✱ enable checkbox (Figma draws none; user, October 26, 2026) | — | — | — | — | the inspector `CheckboxField`, between the chevron and the label | as `CheckboxField` | a separate control beside the header button, never inside it; `aria-label="Enable <label>"` ("Enable Video Screens"); the visible text is unchanged |
+
+**Decisions** (layer 3b unit 2; the record for this component, so grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | No Figma board draws the inspector's accordions. Who composes it? | We do, in this doc: [Admin Tools accordions (inspector)](#admin-tools-accordions-inspector), built from AccordionEntry `20932:3939` and the Checkbox on our tokens. It is the unit's source once the user approves it at sign-off. Design's review of it is tracked on G10 and blocks nothing. |
+| 2026-10-26 | Density in the ~300px entity panel? | Figma's look on a dense row, not Figma's 50px / 20px-padding modal row: 32px tall, padding 0 / 8, gap 8 (✱ dense inspector row). The inspector has one density, so there is no `size` prop. |
+| 2026-10-26 | Grouping? | Flush rows divided by Figma's 1px White 10 bottom rule. The per-entry box (`border` modifier: `--base-14`, 4px radius, 2px margin) goes from `AdminToolsBasicView`, so both panels draw alike. |
+| 2026-10-26 | Header semantics? | A `<button aria-expanded aria-controls>`; Enter and Space toggle it; the body is `role="region"`, named by the header. The enable checkbox is a separate control beside it, never nested. Test-first. |
+| 2026-10-26 | Keyboard focus? | On `:focus-visible` the header takes Figma's Hover fill (White 5) plus a 1px inset Snow `--focus-ring`, as unit 1's menu rows (✱ focus). This replaces the 2px accent outline proposal. |
+| 2026-10-26 | Off state (the enable checkbox unchecked)? | Keep the existing look: `opacity: .7`, body hidden, the header still focusable and still toggling (✱ off). Nothing draws as open over an empty body. |
+| 2026-10-26 | While a section is off, what does its header do? | Toggle remembered, not disabled: the chevron and `aria-expanded` flip; the body stays hidden until the section is re-enabled, then opens if it was left open. No `aria-disabled`; the chevron stays White 40 under the 0.7 dim, and the old ✱ row's White 20 is dropped (✱ off). |
+| 2026-10-26 | Tab order between the header and its checkbox? | The header button first, then the "Enable …" checkbox, set by DOM order with no positive `tabindex`. |
+| 2026-10-26 | How does a `<button>` keep chevron, checkbox, label with the checkbox between? | A full-row header `<button>` holds the chevron and the label, with a slot reserved for the checkbox; the checkbox is its sibling, layered above it in that slot. Nothing is nested. |
+| 2026-10-26 | The enable checkbox's accessible name? | `aria-label="Enable <label>"`, e.g. "Enable Video Screens". |
+| 2026-10-26 | Order of chevron, checkbox and label? | Chevron, checkbox, label: Figma's leading chevron stays first, and the checkbox sits between it and the label. |
+| 2026-10-26 | Label casing? | Title Case, Figma's `H7 Semi` Snow with no `text-transform`: Text Announcements, Video Screens, Smart Item Actions, in both views. This closes G3 (`--text-light` goes). |
+| 2026-10-26 | Chevron glyph? | Figma's `arrow-right` vector as a `currentColor` SVG, White 40, right closed and down open. react-icons `IoIosArrow*` goes. |
+| 2026-10-26 | Name of the hover token? | `--palette-whiteTransparent-faint` = `rgba(255, 255, 255, 0.05)`, a new token in the hub. |
+| 2026-10-26 | `rightContent`? | Removed: no accordion passes one; the Admin Tools tooltip belongs to the outer `Container`. |
+| 2026-10-26 | The checkbox ignores `enabled` and shows checked after a re-select while the scene says off. Fix it here? | Yes, test-first: `enabled` controls the checkbox, `initialEnabled` goes, and `onToggleEnabled` keeps its name. |
+| 2026-10-26 | Creator Hub `SettingsAccordion`? | Its own Creator Hub unit in layer 4 (G34), against its App Settings `ConnectDropdown` board `21176:30197`. |
 
 ### LabelAccordion (Accordion)
 
-Component [`20932:5388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-5388), 1 variant: a group label over a bordered stack of AccordionEntry instances. Column, 638 wide, gap 10. Code: inspector none; Creator Hub none (`DocsPage` lists FAQ-style links without a disclosure).
+Component [`20932:5388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-5388), 1 variant: a group label over a bordered stack of AccordionEntry instances. Column, 638 wide, gap 10. Figma defect (G10): the second entry's header reads the placeholder "Text", with its question ("How do I become a Decentraland creator?") in the body slot. Code: inspector none; Creator Hub none (`DocsPage` lists FAQ-style links without a disclosure).
 
 | Part | State | Fill | Border | Radius | Typography | Size / spacing | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Label (`create`) | default | none | none | — | `H6 Semi Caps` White 40 | 638 × 19 | **3.83:1 on `#161518` and `#16141a` — fails 4.5:1** (16px / 600 is not large text); Silver would pass at 6.71:1 — the user picks | `<h3>` or the group's `aria-labelledby` target |
 | Questions (group) | default | none | 1px White 10 all sides | 12px | — | Fill × Hug 139; entries inside are AccordionEntry at 638 wide (header text 563.75) | border 1.32:1, decorative | `role="group"`; entries keep their own button semantics |
 | Entries | collapsed / open | as AccordionEntry | last entry keeps its 1px bottom rule inside the 12px frame | — | header `H7 Semi` Snow, body `H7 Regular` Gray | header 50 tall | as AccordionEntry | as AccordionEntry |
+
+### Admin Tools accordions (inspector)
+
+This is our board for the inspector's accordions (decision October 26, 2026). No Figma board draws them: Editor 3D `21673:54990` draws the entity panel as `Container` cards with no accordion, and the Figma seat is View. It is composed only from AccordionEntry `20932:3939` and the inspector `CheckboxField`, on our tokens. The two views share it:
+
+- **Basic view:** `SmartItemBasicView` → `AdminToolsBasicView`, at the top of the panel.
+- **Advanced view:** the "Admin Tools" `Container` → `AdminToolkitView`, under the "Advanced" divider.
+
+Both views draw the same three entries in the same order as today. The basic view lists Text Announcements, Video Screens, Smart Item Actions; the advanced view lists Video Screens, Text Announcements, Smart Item Actions.
+
+**Status:** the unit's source once the user approves it at sign-off (layer 3b unit 2). Design's review is tracked on G10 and blocks nothing.
+
+**Tokens.** Every part below is a token. The one literal is the label's 14px size, as with every `--font-family` + size row in "Type".
+
+| Part | Token | Value | Figma |
+| --- | --- | --- | --- |
+| Entry rule | `--palette-whiteTransparent-subtle` | `rgba(255,255,255,.1)`, 1px, bottom only | White 10 |
+| Header hover, expanded + hover, focus fill | `--palette-whiteTransparent-faint` | `rgba(255,255,255,.05)` | unnamed White 5 |
+| Focus ring | `--focus-ring` | Snow `#fcfcfc`, 1px inset | ✱ not drawn |
+| Chevron | `--palette-whiteTransparent-blurry` | White 40, 12px box `--uid-space-3` | White 40, 12.25 box |
+| Label | `--palette-neutral-softWhite`, `--font-family` | Inter 14 / 600 / 100% | `H7 Semi` Snow |
+| Row height | `calc(var(--uid-space-4) * 2)` | 32px | ✱ 50 |
+| Row padding, gaps | `--uid-space-2` | 0 / 8; 8 between chevron, checkbox and label | ✱ 0 / 20, gap 20 |
+| Body padding, gap | `--uid-space-2`, `--uid-space-3`, `--uid-space-4` | 0 / 8 / 12; 16 between controls | ✱ 0 / 20 / 20 |
+| Off | — | `opacity: .7` on the entry | ✱ not drawn |
+
+**Layout.** A row is `[chevron] [enable checkbox] [label]`, full width, with the entries flush one under another and each closed by its rule. The header `<button>` covers the whole row and holds the chevron and the label. The checkbox is its sibling, layered over the button in the column between them. Both share one grid, so the checkbox column takes the checkbox's own width.
+
+| State | Look | A11y |
+| --- | --- | --- |
+| Collapsed | chevron right; no body | `aria-expanded="false"` |
+| Hover (anywhere in the header, the checkbox included) | White 5 fill on the header row | — |
+| Expanded | chevron down; the body's controls below the header, the rule under the body | `aria-expanded="true"`; the body is `role="region"`, named by the header |
+| Expanded + hover | White 5 on the header row only | — |
+| Keyboard focus | White 5 plus the 1px inset Snow ring on the header row | `:focus-visible`; Tab reaches the header, then its checkbox |
+| Off (checkbox unchecked) | the entry at `opacity: .7`, body hidden, the header still toggles; re-enabling opens the body if it was left open | the checkbox reads "Enable Video Screens, checkbox, not checked" |
 
 ### Background (Background)
 
