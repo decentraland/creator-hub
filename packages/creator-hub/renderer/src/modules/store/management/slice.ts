@@ -5,6 +5,9 @@ import type { ManagedProject } from '/shared/types/manage';
 import { FilterBy } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
 import { AuthServerProvider } from '/@/lib/auth';
+import type { LandDeployment } from '/@/lib/land';
+import { Lands, ownedCoords } from '/@/lib/land';
+import { clearLandScene } from '/@/lib/landUnpublish';
 import type {
   WorldScene,
   WorldSettings,
@@ -23,6 +26,9 @@ import {
   getThumbnailUrlFromDeployment,
   getWorldPermissionsInitialState,
   getWorldSettingsInitialState,
+  groupLandDeployments,
+  selectLandProjects,
+  toLandProject,
   toManagedProject,
 } from './utils';
 import type {
@@ -55,6 +61,14 @@ export type WorldPermissionsState = {
   error: string | null;
 };
 
+export type LandProjectsState = {
+  projects: ManagedProject[];
+  deployments: Record<string, LandDeployment[]>;
+  requestId: string | null;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  error: string | null;
+};
+
 // state
 export type ManagementState = {
   sortBy: SortBy;
@@ -67,6 +81,7 @@ export type ManagementState = {
   accountHoldings: AccountHoldings | null;
   worldSettings: WorldSettingsState;
   worldPermissions: WorldPermissionsState;
+  lands: LandProjectsState;
 };
 
 export const initialState: Async<ManagementState> = {
@@ -82,6 +97,7 @@ export const initialState: Async<ManagementState> = {
   error: null,
   worldSettings: getWorldSettingsInitialState(),
   worldPermissions: getWorldPermissionsInitialState(),
+  lands: { projects: [], deployments: {}, requestId: null, status: 'idle', error: null },
 };
 
 const PROJECTS_PAGE_LIMIT = 50;
@@ -464,6 +480,41 @@ export const removeParcelsPermission = createAsyncThunk(
   },
 );
 
+/** Fetches the account's LANDs as managed projects, one per parcel or estate, with their deployments */
+export const fetchLandProjects = createAsyncThunk(
+  'management/fetchLandProjects',
+  async (_: void, { dispatch }) => {
+    const address = AuthServerProvider.getAccount();
+    if (!address) throw new Error('No connected account found');
+
+    const { land } = await dispatch(fetchLandList({ address })).unwrap();
+    const LandsAPI = new Lands();
+    const deployments = groupLandDeployments(
+      land,
+      await LandsAPI.fetchLandPublishedScenes(ownedCoords(land)),
+    );
+
+    return {
+      projects: land.map(item =>
+        toLandProject(item, deployments[item.id] ?? [], hash => LandsAPI.getContentSrcUrl(hash)),
+      ),
+      deployments,
+    };
+  },
+);
+
+/** Unpublishes a LAND scene by deploying an empty scene over it, then refetches the LAND projects */
+export const unpublishLandScene = createAsyncThunk(
+  'management/unpublishLandScene',
+  async ({ scene }: { scene: { base: string; parcels: string[] } }, { dispatch, getState }) => {
+    const address = AuthServerProvider.getAccount();
+    if (!address) throw new Error('No connected account found');
+
+    await clearLandScene(scene, getState().land.data, address);
+    await dispatch(fetchLandProjects()).unwrap();
+  },
+);
+
 // slice
 const slice = createSlice({
   name: 'management',
@@ -634,6 +685,22 @@ const slice = createSlice({
         if (state.worldPermissions.parcels[walletAddress]) {
           state.worldPermissions.parcels[walletAddress].status = 'failed';
         }
+      })
+      .addCase(fetchLandProjects.pending, (state, action) => {
+        state.lands.requestId = action.meta.requestId;
+        state.lands.status = 'loading';
+        state.lands.error = null;
+      })
+      .addCase(fetchLandProjects.fulfilled, (state, action) => {
+        if (action.meta.requestId !== state.lands.requestId) return;
+        state.lands.projects = action.payload.projects;
+        state.lands.deployments = action.payload.deployments;
+        state.lands.status = 'succeeded';
+      })
+      .addCase(fetchLandProjects.rejected, (state, action) => {
+        if (action.meta.requestId !== state.lands.requestId) return;
+        state.lands.status = 'failed';
+        state.lands.error = action.error.message || 'Failed to fetch LAND projects';
       });
   },
 });
@@ -653,6 +720,18 @@ const getWorldSettings = createSelector(
 const getWorldScenes = createSelector(
   getManagementState,
   managementState => managementState.worldSettings.scenes,
+);
+
+const getLandProjects = createSelector(
+  [
+    (state: AppState) => state.management.lands.projects,
+    (state: AppState) => state.land.data,
+    (state: AppState) => state.management.publishFilter,
+    (state: AppState) => state.management.sortBy,
+    (state: AppState) => state.management.searchQuery,
+  ],
+  (projects, lands, publishFilter, sortBy, searchQuery) =>
+    selectLandProjects(projects, lands, { publishFilter, sortBy, searchQuery }),
 );
 
 const getError = createSelector(getManagementState, managementState => managementState.error);
@@ -688,6 +767,8 @@ export const actions = {
   fetchParcelsPermission,
   addParcelsPermission,
   removeParcelsPermission,
+  fetchLandProjects,
+  unpublishLandScene,
 };
 
 export const reducer = slice.reducer;
@@ -697,6 +778,7 @@ export const selectors = {
   getManagedProjects,
   getWorldSettings,
   getWorldScenes,
+  getLandProjects,
   getError,
   getPermissionsState,
   getParcelsStateForAddress,

@@ -1,8 +1,9 @@
 import type { ManagedProject } from '/shared/types/manage';
-import { ManagedProjectType } from '/shared/types/manage';
+import { FilterBy, ManagedProjectType, SortBy } from '/shared/types/manage';
 import { retry } from '/shared/utils';
 
-import { parseCoords } from '/@/lib/land';
+import type { Land, LandDeployment } from '/@/lib/land';
+import { coordsToId, ownedCoords, parseCoords } from '/@/lib/land';
 import type { WorldData, WorldScene, Worlds } from '/@/lib/worlds';
 import { WorldRoleType } from '/@/lib/worlds';
 
@@ -180,6 +181,91 @@ export const getThumbnailUrlFromDeployment = (
   if (thumbnailContent) return getContentSrcUrl(thumbnailContent.hash);
   return '';
 };
+
+const parcelIds = (land: Land) => ownedCoords([land]).map(([x, y]) => coordsToId(x, y));
+
+/** Each LAND's deployments, keyed by LAND id; a LAND with none is left out. */
+export function groupLandDeployments(
+  lands: Land[],
+  deployments: LandDeployment[],
+): Record<string, LandDeployment[]> {
+  const landIdsByParcel = new Map<string, string[]>();
+  for (const land of lands) {
+    for (const parcel of parcelIds(land)) {
+      landIdsByParcel.set(parcel, [...(landIdsByParcel.get(parcel) ?? []), land.id]);
+    }
+  }
+
+  const grouped: Record<string, LandDeployment[]> = {};
+  for (const deployment of deployments) {
+    const landIds = new Set(deployment.pointers.flatMap(id => landIdsByParcel.get(id) ?? []));
+    for (const landId of landIds) {
+      grouped[landId] = [...(grouped[landId] ?? []), deployment];
+    }
+  }
+  return grouped;
+}
+
+/** A LAND as a managed project, summarising its most recent deployment. */
+export function toLandProject(
+  land: Land,
+  deployments: LandDeployment[],
+  getContentSrcUrl: (hash: string) => string,
+): ManagedProject {
+  const latest = deployments.reduce<LandDeployment | undefined>(
+    (newest, deployment) =>
+      !newest || deployment.timestamp > newest.timestamp ? deployment : newest,
+    undefined,
+  );
+
+  return {
+    id: land.id,
+    displayName: land.name,
+    type: ManagedProjectType.LAND,
+    role: land.role,
+    deployment: latest && {
+      title: latest.metadata.display?.title || land.name,
+      description: latest.metadata.display?.description || '',
+      thumbnail: getThumbnailUrlFromDeployment(latest, getContentSrcUrl),
+      lastPublishedAt: latest.timestamp,
+      scenesCount: deployments.length,
+    },
+    scenes: deployments
+      .map(deployment => parseCoords(deployment.metadata.scene?.base ?? ''))
+      .filter(coords => coords !== null),
+  };
+}
+
+/** LAND projects narrowed by the publish filter and search (name or `x,y`), then sorted. */
+export function selectLandProjects(
+  projects: ManagedProject[],
+  lands: Land[],
+  filters: { publishFilter?: FilterBy; sortBy: SortBy; searchQuery: string },
+): ManagedProject[] {
+  const landsById = new Map(lands.map(land => [land.id, land]));
+  const name = filters.searchQuery.trim().toLowerCase();
+  const coords = name.replace(/\s/g, '');
+
+  const matchesSearch = (project: ManagedProject) => {
+    const land = landsById.get(project.id);
+    return (
+      project.displayName.toLowerCase().includes(name) ||
+      (!!land && parcelIds(land).some(id => id.includes(coords)))
+    );
+  };
+  const matchesFilter = (project: ManagedProject) =>
+    filters.publishFilter === undefined ||
+    (filters.publishFilter === FilterBy.PUBLISHED) === !!project.deployment;
+
+  const byName = (a: ManagedProject, b: ManagedProject) =>
+    a.displayName.localeCompare(b.displayName);
+  const byLatest = (a: ManagedProject, b: ManagedProject) =>
+    (b.deployment?.lastPublishedAt ?? 0) - (a.deployment?.lastPublishedAt ?? 0);
+
+  return projects
+    .filter(project => matchesFilter(project) && matchesSearch(project))
+    .sort(filters.sortBy === SortBy.NAME ? byName : byLatest);
+}
 
 export const getWorldSettingsInitialState = (): WorldSettingsState => ({
   worldName: '',

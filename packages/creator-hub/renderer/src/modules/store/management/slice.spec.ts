@@ -3,6 +3,10 @@ import { AuthServerProvider } from '../../../lib/auth';
 import type { ManagedProject } from '../../../../../shared/types/manage';
 import { SortBy, FilterBy, ManagedProjectType } from '../../../../../shared/types/manage';
 import { createTestStore } from '../../../../tests/utils/testStore';
+import type { Land, LandDeployment } from '../../../lib/land';
+import { LandType, RoleType } from '../../../lib/land';
+import { clearLandScene } from '../../../lib/landUnpublish';
+import { fetchLandList } from '../land';
 import type * as ManagementUtils from './utils';
 import {
   actions,
@@ -25,6 +29,8 @@ import {
   fetchWorlds,
   fetchEmptyWorlds,
   updateWorldSettings,
+  fetchLandProjects,
+  unpublishLandScene,
 } from './slice';
 
 const TEST_ADDRESS = '0x123abc';
@@ -62,7 +68,7 @@ const createMockWorldsAPI = () => ({
 });
 
 const createMockLandsAPI = () => ({
-  fetchLandPublishedScene: vi.fn(),
+  fetchLandPublishedScenes: vi.fn(),
   getContentSrcUrl: vi.fn((hash: string) => `https://land-content.com/${hash}`),
 });
 
@@ -91,16 +97,17 @@ vi.mock('/@/lib/worlds', () => ({
   },
 }));
 
-vi.mock('/@/lib/land', () => ({
+vi.mock('/@/lib/land', async importOriginal => ({
+  ...((await importOriginal()) as object),
   Lands: class {
     constructor() {
       return mockLandsAPI;
     }
   },
-  LandType: {
-    PARCEL: 'parcel',
-    ESTATE: 'estate',
-  },
+}));
+
+vi.mock('/@/lib/landUnpublish', () => ({
+  clearLandScene: vi.fn(),
 }));
 
 vi.mock('/@/lib/account', () => ({
@@ -1748,6 +1755,212 @@ describe('management slice', () => {
         '0xnonexistent',
       );
       expect(parcelsState).toBeUndefined();
+    });
+  });
+
+  describe('LAND projects', () => {
+    const ownedParcel: Land = {
+      id: '1,1',
+      tokenId: 'token-1-1',
+      type: LandType.PARCEL,
+      roles: [RoleType.OWNER],
+      role: RoleType.OWNER,
+      x: 1,
+      y: 1,
+      name: 'Corner',
+      description: null,
+      owner: TEST_ADDRESS,
+      operators: [],
+    };
+    const managedEstate: Land = {
+      id: '7',
+      tokenId: '7',
+      type: LandType.ESTATE,
+      roles: [RoleType.MANAGER],
+      role: RoleType.MANAGER,
+      parcels: [
+        { x: 5, y: 5, id: '5,5', updateOperator: null },
+        { x: 5, y: 6, id: '5,6', updateOperator: null },
+      ],
+      name: 'Plaza',
+      description: null,
+      owner: '0xother',
+      operators: [],
+    };
+    const sceneOnCorner = {
+      id: 'scene-corner',
+      timestamp: 1000,
+      pointers: ['1,1'],
+      content: [],
+      metadata: { display: { title: 'Corner scene' }, scene: { base: '1,1', parcels: ['1,1'] } },
+    } as unknown as LandDeployment;
+
+    const landListResolves = (land: Land[]) =>
+      vi.mocked(fetchLandList).mockImplementation(({ address }) => {
+        const payload = { land, authorizations: [], rentals: [] };
+        return {
+          type: 'land/fetchLandList/fulfilled',
+          payload,
+          meta: { arg: { address } },
+          unwrap: () => Promise.resolve(payload),
+        } as any;
+      });
+
+    beforeEach(() => {
+      landListResolves([ownedParcel, managedEstate]);
+      mockLandsAPI.fetchLandPublishedScenes.mockResolvedValue([sceneOnCorner]);
+    });
+
+    describe('fetchLandProjects', () => {
+      describe('when an account is signed in', () => {
+        beforeEach(async () => {
+          vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+          await store.dispatch(fetchLandProjects());
+        });
+
+        it('should fetch the account LAND list', () => {
+          expect(fetchLandList).toHaveBeenCalledWith({ address: TEST_ADDRESS });
+        });
+
+        it('should look up scenes over every parcel, estates expanded', () => {
+          expect(mockLandsAPI.fetchLandPublishedScenes).toHaveBeenCalledWith([
+            [1, 1],
+            [5, 5],
+            [5, 6],
+          ]);
+        });
+
+        it('should hold one LAND project per parcel or estate, with its deployments', () => {
+          const { lands } = store.getState().management;
+
+          expect(lands.status).toBe('succeeded');
+          expect(lands.projects.map(project => [project.id, project.type])).toEqual([
+            ['1,1', ManagedProjectType.LAND],
+            ['7', ManagedProjectType.LAND],
+          ]);
+          expect(lands.deployments).toEqual({ '1,1': [sceneOnCorner] });
+        });
+
+        it('should leave the worlds list alone', () => {
+          expect(store.getState().management.projects).toEqual([]);
+        });
+      });
+
+      describe('when no account is signed in', () => {
+        beforeEach(async () => {
+          vi.mocked(AuthServerProvider.getAccount).mockReturnValue(null);
+          await store.dispatch(fetchLandProjects());
+        });
+
+        it('should fail without asking for scenes', () => {
+          expect(store.getState().management.lands.status).toBe('failed');
+          expect(mockLandsAPI.fetchLandPublishedScenes).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when the state is cleared while the fetch is in flight', () => {
+        beforeEach(async () => {
+          vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+          const pending = store.dispatch(fetchLandProjects());
+          store.dispatch(actions.clearState());
+          await pending;
+        });
+
+        it('should drop the stale answer', () => {
+          expect(store.getState().management.lands.projects).toEqual([]);
+        });
+      });
+    });
+
+    describe('getLandProjects', () => {
+      beforeEach(async () => {
+        vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+        await store.dispatch(fetchLandProjects());
+      });
+
+      describe('when filtering by published', () => {
+        it('should list the LANDs holding a scene', () => {
+          expect(selectors.getLandProjects(store.getState()).map(project => project.id)).toEqual([
+            '1,1',
+          ]);
+        });
+      });
+
+      describe('when filtering by not published', () => {
+        beforeEach(() => {
+          store.dispatch(actions.setPublishFilter(FilterBy.UNPUBLISHED));
+        });
+
+        it('should list the LANDs holding nothing, from the same fetch', () => {
+          expect(selectors.getLandProjects(store.getState()).map(project => project.id)).toEqual([
+            '7',
+          ]);
+        });
+      });
+
+      describe('when searching by coordinates', () => {
+        beforeEach(() => {
+          store.dispatch(actions.setPublishFilter(FilterBy.UNPUBLISHED));
+          store.dispatch(actions.setSearchQuery('5,6'));
+        });
+
+        it('should match an estate by one of its parcels', () => {
+          expect(selectors.getLandProjects(store.getState()).map(project => project.id)).toEqual([
+            '7',
+          ]);
+        });
+      });
+    });
+
+    describe('unpublishLandScene', () => {
+      const scene = { base: '1,1', parcels: ['1,1'] };
+
+      describe('when the empty scene deploys', () => {
+        beforeEach(async () => {
+          vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+          await store.dispatch(fetchLandProjects());
+          vi.mocked(fetchLandList).mockClear();
+          vi.mocked(clearLandScene).mockResolvedValue();
+          await store.dispatch(unpublishLandScene({ scene })).unwrap();
+        });
+
+        it('should clear the scene with the account LAND', () => {
+          expect(clearLandScene).toHaveBeenCalledWith(
+            scene,
+            [ownedParcel, managedEstate],
+            TEST_ADDRESS,
+          );
+        });
+
+        it('should refetch the LAND list', () => {
+          expect(fetchLandList).toHaveBeenCalledWith({ address: TEST_ADDRESS });
+        });
+      });
+
+      describe('when the deploy fails', () => {
+        beforeEach(() => {
+          vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+          vi.mocked(clearLandScene).mockRejectedValue(new Error('Catalyst answered 400'));
+        });
+
+        it('should reject without refetching', async () => {
+          await expect(store.dispatch(unpublishLandScene({ scene })).unwrap()).rejects.toThrow(
+            'Catalyst answered 400',
+          );
+          expect(fetchLandList).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when no account is signed in', () => {
+        beforeEach(() => {
+          vi.mocked(AuthServerProvider.getAccount).mockReturnValue(null);
+        });
+
+        it('should reject without deploying', async () => {
+          await expect(store.dispatch(unpublishLandScene({ scene })).unwrap()).rejects.toThrow();
+          expect(clearLandScene).not.toHaveBeenCalled();
+        });
+      });
     });
   });
 });

@@ -13,6 +13,7 @@ import {
   Rentals,
   type Authorization,
   type Land,
+  type Rental,
 } from '/@/lib/land';
 
 // actions
@@ -111,12 +112,16 @@ const getLandTiles = createSelector(
 export type LandTile = Tile & { land: Land };
 export type LandState = {
   data: Land[];
+  authorizations: Authorization[];
+  rentals: Rental[];
   tiles: Record<string, AtlasTileProps>;
   error: string | null;
 };
 
 export const initialState: Async<LandState> = {
   data: [],
+  authorizations: [],
+  rentals: [],
   tiles: {},
   status: 'idle',
   error: null,
@@ -136,6 +141,8 @@ export const slice = createSlice({
       })
       .addCase(fetchLandList.fulfilled, (state, action) => {
         state.data = [...action.payload.land];
+        state.authorizations = action.payload.authorizations;
+        state.rentals = action.payload.rentals;
         state.status = 'succeeded';
       })
       .addCase(fetchTiles.pending, state => {

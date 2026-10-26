@@ -1,4 +1,3 @@
-import fromUnixTime from 'date-fns/fromUnixTime';
 import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
 import { chunk, retry } from '/shared/utils';
@@ -42,6 +41,17 @@ export const idToCoords = (id: string): [string | number, string | number] => {
   return [x, y];
 };
 
+/** Every parcel the lands cover, estates expanded into their parcels. */
+export function ownedCoords(lands: Land[]): Coords[] {
+  return lands.flatMap(land =>
+    land.parcels?.length
+      ? land.parcels.map(({ x, y }): Coords => [x, y])
+      : land.x !== undefined && land.y !== undefined
+        ? [[land.x, land.y] as Coords]
+        : [],
+  );
+}
+
 const fromParcel = (parcel: ParcelFields, role: RoleType) => {
   const id = coordsToId(parcel.x, parcel.y);
 
@@ -82,6 +92,8 @@ const fromEstate = (estate: EstateFields, role: RoleType) => {
       x: parseInt(parcel.x, 10),
       y: parseInt(parcel.y, 10),
       id: coordsToId(parcel.x, parcel.y),
+      updateOperator:
+        parcel.updateOperator && !isZero(parcel.updateOperator) ? parcel.updateOperator : null,
     })),
     owner: estate.owner.address,
     operators: [],
@@ -131,6 +143,7 @@ export const estateFields = () => `
       x
       y
       tokenId
+      updateOperator
     }
     data {
       name
@@ -198,6 +211,7 @@ export enum RoleType {
   LESSOR = 2,
   TENANT = 3,
   OPERATOR = 4,
+  MANAGER = 5,
 }
 
 export type Land = {
@@ -208,7 +222,7 @@ export type Land = {
   role: RoleType;
   x?: number;
   y?: number;
-  parcels?: { x: number; y: number; id: string }[];
+  parcels?: { x: number; y: number; id: string; updateOperator: string | null }[];
   size?: number;
   name: string;
   description: string | null;
@@ -237,7 +251,7 @@ export type EstateFields = {
   };
   updateOperator: string | null;
   size: number;
-  parcels: Pick<ParcelFields, 'x' | 'y' | 'tokenId'>[];
+  parcels: Pick<ParcelFields, 'x' | 'y' | 'tokenId' | 'updateOperator'>[];
   data: {
     name: string | null;
     description: string | null;
@@ -267,8 +281,10 @@ export type Rental = {
   lessor: string;
   tenant: string;
   operator: string;
-  startedAt: Date;
-  endsAt: Date;
+  /** Epoch milliseconds. */
+  startedAt: number;
+  /** Epoch milliseconds. */
+  endsAt: number;
 };
 
 export type LandQueryResult = {
@@ -289,7 +305,9 @@ export type LandQueryResult = {
 };
 
 export type LandDeployment = Omit<WorldDeployment, 'metadata'> & {
-  metadata: Omit<WorldDeployment['metadata'], 'worldConfiguration'>;
+  metadata: Omit<WorldDeployment['metadata'], 'worldConfiguration' | 'source'> & {
+    source?: WorldDeployment['metadata']['source'] & { isEmpty?: boolean };
+  };
 };
 
 export enum Color {
@@ -314,6 +332,7 @@ export const colorByRole: Record<RoleType, string> = {
   [RoleType.LESSOR]: Color.MILLENIAL_ORANGE,
   [RoleType.OPERATOR]: Color.LUISXVI_VIOLET,
   [RoleType.TENANT]: Color.SUMMER_RED,
+  [RoleType.MANAGER]: Color.LUISXVI_VIOLET,
 };
 
 export class Lands {
@@ -411,22 +430,21 @@ export class Lands {
       }
     }
 
-    // I'm operator of all the lands from addresses that gave me UpdateManager permission
-    for (const authorization of data.operatorAuthorizations) {
-      const { owner } = authorization;
-      for (const parcel of owner.parcels) {
-        const land = fromParcel(parcel, RoleType.OPERATOR);
+    for (const { owner, isApproved, tokenAddress } of data.operatorAuthorizations) {
+      if (!isApproved) continue;
+      const parcels = tokenAddress === this.LAND_REGISTRY_ADDRESS ? owner.parcels : [];
+      const estates = tokenAddress === this.ESTATE_REGISTRY_ADDRESS ? owner.estates : [];
+      for (const parcel of parcels) {
+        const land = fromParcel(parcel, RoleType.MANAGER);
         land.operators.push(address);
-        // skip if already owned or operated
         if (!lands.some(_land => _land.id === land.id)) {
           lands.push(land);
         }
       }
-      for (const estate of owner.estates) {
+      for (const estate of estates) {
         if (estate.parcels.length > 0) {
-          const land = fromEstate(estate, RoleType.OPERATOR);
+          const land = fromEstate(estate, RoleType.MANAGER);
           land.operators.push(address);
-          // skip if already owned or operated
           if (!lands.some(_land => _land.id === land.id)) {
             lands.push(land);
           }
@@ -500,7 +518,8 @@ export class Lands {
    *
    * `/content/entities/active` resolves many pointers at once and answers each
    * scene once, however many parcels it covers — so a 100-parcel estate holding
-   * one scene costs one request and yields one entity, not a hundred.
+   * one scene costs one request and yields one entity, not a hundred. The empty
+   * scene an unpublish leaves behind (`metadata.source.isEmpty`) is not a scene.
    */
   public async fetchLandPublishedScenes(coords: Coords[]): Promise<LandDeployment[]> {
     const groups = await Promise.all(
@@ -524,7 +543,12 @@ export class Lands {
       ),
     );
 
-    const byEntityId = new Map(groups.flat().map(scene => [scene.id, scene]));
+    const byEntityId = new Map(
+      groups
+        .flat()
+        .filter(scene => !scene.metadata?.source?.isEmpty)
+        .map(scene => [scene.id, scene]),
+    );
     return [...byEntityId.values()];
   }
 }
@@ -609,8 +633,8 @@ export class Rentals {
       lessor: fields.lessor,
       tenant: fields.tenant,
       operator: fields.operator,
-      startedAt: fromUnixTime(+fields.startedAt),
-      endsAt: fromUnixTime(+fields.endsAt),
+      startedAt: +fields.startedAt * 1000,
+      endsAt: +fields.endsAt * 1000,
     };
   };
 }

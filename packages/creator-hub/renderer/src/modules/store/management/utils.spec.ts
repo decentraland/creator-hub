@@ -1,7 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { FilterBy, ManagedProjectType, SortBy } from '../../../../../shared/types/manage';
+import type { Land, LandDeployment } from '../../../lib/land';
+import { LandType, RoleType } from '../../../lib/land';
 import type { WorldData, WorldScene, Worlds } from '../../../lib/worlds';
-import { fetchAllDeployedWorlds, fetchWorldSceneCoords } from './utils';
+import {
+  fetchAllDeployedWorlds,
+  fetchWorldSceneCoords,
+  groupLandDeployments,
+  selectLandProjects,
+  toLandProject,
+} from './utils';
 
 const TEST_ADDRESS = '0xowner';
 
@@ -197,6 +206,190 @@ describe('fetchAllDeployedWorlds', () => {
       await expect(fetchAllDeployedWorlds(worldsApi, TEST_ADDRESS)).rejects.toThrow(
         /broken\.dcl\.eth/,
       );
+    });
+  });
+});
+
+const landParcel = (x: number, y: number, name = 'Parcel'): Land => ({
+  id: `${x},${y}`,
+  tokenId: `token-${x}-${y}`,
+  type: LandType.PARCEL,
+  roles: [RoleType.OWNER],
+  role: RoleType.OWNER,
+  x,
+  y,
+  name,
+  description: null,
+  owner: TEST_ADDRESS,
+  operators: [],
+});
+
+const landEstate = (id: string, coords: Array<[number, number]>, name = `Estate ${id}`): Land => ({
+  id,
+  tokenId: id,
+  type: LandType.ESTATE,
+  roles: [RoleType.MANAGER],
+  role: RoleType.MANAGER,
+  parcels: coords.map(([x, y]) => ({ x, y, id: `${x},${y}`, updateOperator: null })),
+  name,
+  description: null,
+  owner: TEST_ADDRESS,
+  operators: [],
+});
+
+const landDeployment = (id: string, parcels: string[], timestamp = 1000): LandDeployment =>
+  ({
+    id,
+    timestamp,
+    pointers: parcels,
+    content: [{ file: 'thumb.png', hash: `hash-${id}` }],
+    metadata: {
+      display: { title: `Scene ${id}`, description: `About ${id}`, navmapThumbnail: 'thumb.png' },
+      scene: { base: parcels[0], parcels },
+    },
+  }) as unknown as LandDeployment;
+
+const contentUrl = (hash: string) => `https://peer.example.org/content/contents/${hash}`;
+
+describe('groupLandDeployments', () => {
+  describe('when scenes sit on a parcel and across an estate', () => {
+    it('should file each scene under the LAND whose parcels it covers', () => {
+      const lands = [
+        landParcel(1, 1),
+        landEstate('7', [
+          [5, 5],
+          [5, 6],
+        ]),
+      ];
+      const onParcel = landDeployment('a', ['1,1']);
+      const onEstate = landDeployment('b', ['5,5', '5,6']);
+
+      expect(groupLandDeployments(lands, [onParcel, onEstate])).toEqual({
+        '1,1': [onParcel],
+        '7': [onEstate],
+      });
+    });
+  });
+
+  describe('when a LAND has nothing deployed', () => {
+    it('should leave it out', () => {
+      expect(groupLandDeployments([landParcel(1, 1)], [])).toEqual({});
+    });
+  });
+});
+
+describe('toLandProject', () => {
+  describe('when the LAND holds scenes', () => {
+    it('should be a LAND project summarising its latest scene', () => {
+      const land = landEstate(
+        '7',
+        [
+          [5, 5],
+          [5, 6],
+        ],
+        'Plaza',
+      );
+      const project = toLandProject(
+        land,
+        [landDeployment('old', ['5,5'], 1000), landDeployment('new', ['5,6'], 2000)],
+        contentUrl,
+      );
+
+      expect(project).toEqual({
+        id: '7',
+        displayName: 'Plaza',
+        type: ManagedProjectType.LAND,
+        role: RoleType.MANAGER,
+        deployment: {
+          title: 'Scene new',
+          description: 'About new',
+          thumbnail: contentUrl('hash-new'),
+          lastPublishedAt: 2000,
+          scenesCount: 2,
+        },
+        scenes: [
+          { x: 5, y: 5 },
+          { x: 5, y: 6 },
+        ],
+      });
+    });
+  });
+
+  describe('when the LAND holds no scene', () => {
+    it('should carry no deployment and no scenes', () => {
+      const project = toLandProject(landParcel(1, 1), [], contentUrl);
+
+      expect(project.deployment).toBeUndefined();
+      expect(project.scenes).toEqual([]);
+    });
+  });
+});
+
+describe('selectLandProjects', () => {
+  const lands = [
+    landParcel(1, 1, 'Zeta'),
+    landEstate(
+      '7',
+      [
+        [-5, 10],
+        [-5, 11],
+      ],
+      'Alpha',
+    ),
+    landParcel(2, 2, 'Empty lot'),
+  ];
+  const projects = [
+    toLandProject(lands[0], [landDeployment('a', ['1,1'], 1000)], contentUrl),
+    toLandProject(lands[1], [landDeployment('b', ['-5,10'], 3000)], contentUrl),
+    toLandProject(lands[2], [], contentUrl),
+  ];
+  const select = (filters: Partial<Parameters<typeof selectLandProjects>[2]>) =>
+    selectLandProjects(projects, lands, {
+      publishFilter: FilterBy.PUBLISHED,
+      sortBy: SortBy.LATEST,
+      searchQuery: '',
+      ...filters,
+    }).map(project => project.displayName);
+
+  describe('when filtering by published', () => {
+    it('should list only LANDs holding a scene', () => {
+      expect(select({})).toEqual(['Alpha', 'Zeta']);
+    });
+  });
+
+  describe('when filtering by not published', () => {
+    it('should list only LANDs holding no scene', () => {
+      expect(select({ publishFilter: FilterBy.UNPUBLISHED })).toEqual(['Empty lot']);
+    });
+  });
+
+  describe('when sorting by name', () => {
+    it('should order them A to Z', () => {
+      expect(select({ sortBy: SortBy.NAME })).toEqual(['Alpha', 'Zeta']);
+    });
+  });
+
+  describe('when sorting by date modified', () => {
+    it('should put the latest deployment first and LANDs never deployed last', () => {
+      const all = [...projects].reverse();
+      const order = selectLandProjects(all, lands, {
+        publishFilter: undefined,
+        sortBy: SortBy.LATEST,
+        searchQuery: '',
+      }).map(project => project.displayName);
+
+      expect(order).toEqual(['Alpha', 'Zeta', 'Empty lot']);
+    });
+  });
+
+  describe('when searching', () => {
+    it('should match the LAND name, ignoring case', () => {
+      expect(select({ searchQuery: 'zet' })).toEqual(['Zeta']);
+    });
+
+    it('should match the coordinates of a parcel, estate parcels included', () => {
+      expect(select({ searchQuery: '-5, 11' })).toEqual(['Alpha']);
+      expect(select({ searchQuery: '1,1' })).toEqual(['Zeta']);
     });
   });
 });
