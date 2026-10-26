@@ -43,6 +43,7 @@
   --palette-system-blueDark2: #244b7d;
   --palette-system-blueDark3: #243852;
   --focus-ring: var(--ui-designer-text);
+  --menu-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 
   /* DCL Colors */
   --primary-main: #ff2d55;

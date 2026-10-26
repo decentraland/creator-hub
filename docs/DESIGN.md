@@ -58,6 +58,7 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-control-border` | `rgba(255,255,255,.1)` | Control borders (Figma White 10) |
 | `--ui-designer-hairline` | `rgba(255,255,255,.07)` | Subtle dividers |
 | `--focus-ring` | `--ui-designer-text` `#fcfcfc` (Snow) | Keyboard focus on the shared controls: the `:focus-visible` ring of `Button`, the `Dropdown` trigger, `CheckboxField`, `ModeSwitcher` and the `RangeField` thumb, and the focus border of `TextField` and `TextArea`. 17.73:1 on `#161518`, 15.45 on `#242129`, 12.13 on Onix, 9.88 on `--gray-0`. A ring on a light surface takes `--text-primary` instead: the `Pill` remove button sits on the `--base-02` `#f0f0f0` pill, where Snow is 1.11:1 and `--text-primary` about 15:1. That ring draws inside the 11px button (`outline-offset: -2px`), because any outer offset covers the end of the pill's label. UI Designer panels keep `--ui-designer-control-accent` |
+| `--menu-shadow` | `0 4px 8px rgba(0,0,0,.4)` | Figma Menu `20749:386` drop shadow (0 / 4 / 8, Black 40, no Figma variable): every menu surface — react-contexify through `--contexify-menu-shadow`, the `Dropdown` `OptionList`, `MoreOptionsMenu`, and the snap card after #1714 (G30) |
 | `--border-focused` | `#127fd4` | VS Code blue: `Tree` drop indicators and older UI Designer rules. Not a focus ring: 2.97:1 on Onix, 2.42 on `--gray-0` |
 | `--ui-designer-accent` | `rgb(80,200,255)` | **Canvas** selection cyan |
 | `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | Canvas hover/selection fills, drop targets |
@@ -581,7 +582,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | 12px radius (menu, published thumbnail, CTA buttons, grouped accordion) | — | `--ui-designer-radius-menu` | missing (`UserMenu` carries the literal) |
 | 16px radius (cards, card thumbnails) | — | missing | missing (`Tutorials` carries the literal) |
 | 100px pill (kebab button) | — | missing | missing |
-| `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | missing (`--contexify-menu-shadow` is `2px 2px 10px rgba(0,0,0,.5)`) | missing (ui2 `MuiPaper` elevation) |
+| `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | `--menu-shadow` (`--contexify-menu-shadow` keeps `2px 2px 10px rgba(0,0,0,.5)` until the Menu-Entry spoke points it there) | missing (ui2 `MuiPaper` elevation) |
 | Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
 | Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + literal size | same |
 | Inter 14 / 600 / 100% | `H7 Semi` (the CTA label is the same face uppercase, unnamed) | `--font-family` + literal size | same |
@@ -717,9 +718,38 @@ Set [`20749:790`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 | Hover | hover / keyboard active | Pale Black | same | same | same | 240 × 38 | fill vs Onix 1.23:1 — weak; label over it 9.88:1, glyph 3.74:1, chevron 3.06:1 (≥ 3:1) | the keyboard-active item uses the same fill plus the focus ring below |
 | Section | — | none | — | Inter 12 / 400 uppercase Silver (220 × 15), gap 16 | — | 240 × 38 | 4.59:1 (≥ 4.5:1, barely; 12px / 400 is small text) | `role="presentation"` heading or `aria-label` on the group; not focusable |
 | Div | — | White 10, 1px tall | — | — | — | 240 × 1 (padding 7 / 10 ⇒ 15px of rhythm) | 1.37:1, decorative | `role="separator"` |
-| Default | ✱ focus | Pale Black | — | — | — | — | ring `--border-focused` 2.97:1 on Onix and 2.42:1 on the Pale Black row — **below 3:1**; `--ui-designer-control-accent` 5.56:1 / 4.53:1 passes; Creator Hub ui2 `palette.info.light` 5.56:1 / 4.53:1 | `:focus-visible` outline 2px, offset −2px, inside the row |
+| Default | ✱ keyboard active (Figma draws none) | Pale Black plus a 1px inset Snow `--focus-ring`, as the Dropdown list | as Hover | as Hover | as Hover | — | ring 9.88:1 on the Pale Black row; the fill alone is 1.23:1, so the ring carries the state | `:focus-visible` on the row the arrow keys make active; a hovered row keeps the fill alone |
 | Default | ✱ press | White 10 over Pale Black | — | — | — | — | — | — |
-| Default | ✱ disabled | none | Silver @ .4 | White 40 label | — | — | label 3.38:1, glyph 1.92:1 — disabled content is exempt from the minimums | `aria-disabled="true"`, stays in the tab order of the menu |
+| Default | ✱ disabled (Figma draws none) | none; the whole row at the library's `opacity: .5` | Silver @ .5 | Snow @ .5 | — | — | label 4.34:1, glyph 2.26:1 — disabled content is exempt from the minimums | `aria-disabled="true"`, stays in the menu's arrow-key order |
+| Default | ✱ leading glyph | none | 16px, Silver `--ui-designer-text-muted` on rest and hover, 10px gap; each menu keeps its current glyph family (no swap to Figma's icons), and a menu with no glyphs (catalog asset, custom item) gets none | `H8 Regular` Snow, 12px in every menu | — | 200 min × 38 | as Default | glyph `aria-hidden` |
+| Default | ✱ submenu parent (Figma draws none) | Pale Black while its submenu is open | as Default | as Default | chevron White 40 in every state | 38 | chevron 3.39:1 on Onix, 3.05:1 on Pale Black | `aria-haspopup="menu"`; the name is the row's own label ("Add Component"), never its submenu's items |
+
+**Inspector context menus** (layer 3b, unit 1): the eight react-contexify menus take this look, and their board is ours, in [Context menus (inspector)](#context-menus-inspector).
+
+**Status** (October 26, 2026): spec in progress, from the approved board (`docs/specs/menu-entry-spec.md`, local).
+
+**Decisions** (the record for these menus; grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Where do the `--contexify-*` value changes land? | On the spoke with the component CSS, so each PR is visually complete on its own. New tokens (`--menu-shadow`) go to the hub. |
+| 2026-10-26 | Row height? | 38px, as Figma (react-contexify draws 32 today). |
+| 2026-10-26 | Label size? | 12px (`H8 Regular`) in every menu. The catalog, custom item and tile menus inherit 14px today. |
+| 2026-10-26 | Row glyphs? | 16px Silver `--ui-designer-text-muted`, 10px gap, Silver on hover too. No glyph swaps, and no glyphs added to menus that have none (✱ leading glyph). |
+| 2026-10-26 | Disabled rows? | The library's `opacity: .5` (label 4.34:1). This replaces the White 40 label proposal (✱ disabled). |
+| 2026-10-26 | Keyboard focus? | A 1px inset Snow `--focus-ring` on the arrow-key-active row, over Pale Black, as the Dropdown list. This replaces the 2px accent outline at −2px proposal (✱ keyboard active). |
+| 2026-10-26 | Label casing? | Title Case, following Figma's menus ("Enable Autosave"): Add Child, Add Component, New Folder, Add to Filesystem, Copy Name, Copy File Name / Copy File Names, Duplicate N Items, Delete N Items. Rename, Duplicate, Delete, Create Custom Item and Copy Path / Copy Paths stay as they are. |
+| 2026-10-26 | The per-panel overrides (`Tree.css` `.Tree .contexify svg`, `Tile.css` `.ProjectView .contexify .contexify_itemContent`)? | Delete both; one global `.contexify_itemContent` rule in `theme/index.css` replaces them. Keep `Tree.css`'s `.Tree .item > div:not(.contexify)`: the menu renders inside the tree row and must stay out of its layout. |
+| 2026-10-26 | Accessibility fixes in this unit? | Yes, test-first. The menu gets an accessible name, separators get `role="separator"`, glyphs get `aria-hidden`, Escape returns focus to the trigger, and "Add Component"'s name stops including its submenu's items. |
+| 2026-10-26 | The tile menu closes on the first ArrowDown and no row takes focus. Fix it here? | Yes, in this unit. |
+| 2026-10-26 | No Figma board draws the inspector's context menus. Who designs it? | We do, in this doc: [Context menus (inspector)](#context-menus-inspector), composed only from Menu `20749:386` and Menu-Entry `20749:790` on our tokens (the Figma seat is View). It becomes the unit's source once the user approves it. Design's review of it is tracked on G10 and blocks nothing. |
+| 2026-10-26 | Approve our board as the unit's source? | Yes, with its three proposals below. |
+| 2026-10-26 | Group the rows with dividers? | Yes: edit verbs and create / copy verbs form two groups. Hierarchy root, custom item, tree row and tile each gain a divider; the Hierarchy entity's divider moves from before Add Component to before Create Custom Item. |
+| 2026-10-26 | Tile order? | Delete moves up beside Rename and Duplicate, as in the tree row. |
+| 2026-10-26 | Section headers, and a danger colour for Delete? | No Section headers; Delete stays Snow. |
+| 2026-10-26 | The menus' accessible names? | Entity Options (Hierarchy), Spawn Point Options (PlayerTree), Asset Options (Local Assets tree and tile), Catalog Asset Options, Custom Item Options, Node Options (UI Designer `NodeTree`); the submenu row is "Add Component", and the submenu container is a `role="menu"`. |
+| 2026-10-26 | Keyboard and focus behaviour, as built? | Approved: the app's shortcuts pause while a menu is open; rows, tiles and cards take focus on left-click (`tabIndex -1`); Escape returns focus to the trigger row. |
+| 2026-10-26 | The returned focus draws the browser's default blue ring on the row, tile or card. Who themes it? | This unit: a 1px inset Snow `--focus-ring` on `:focus-visible`, the same ring as the menu rows. G19 keeps the tree rows' arrow-key navigation and reuses this ring. |
 
 ### Menu (Menu)
 
@@ -730,6 +760,96 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | Container | open | Onix | 1px White 10 all sides | 12px | `0 4px 8px rgba(0,0,0,.4)` | 200 × Hug (117 with one entry per slot), padding 10 / 0, gap 10 | Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow and border carry the edge | `role="menu"` with `aria-labelledby` the trigger; Escape closes, arrows move, focus returns to the trigger |
 | Options / Options2 | — | none | none | — | — | Fill × Hug, padding 0 / 10 | — | `role="group"` when a Section labels it |
 | Div | — | as Menu-Entry Div | — | — | — | between the slots | — | `role="separator"` |
+| Container | ✱ width | as above | as above | as above | as above | `min-width: 200px`; the menu grows with a long label ("Delete 12 Items", component names) where Figma draws a fixed 200 | — | — |
+| Div | ✱ inset | White 10 | — | — | — | inset with the rows, 10px clear above and below (Figma: full bleed in the composed menu); user decision October 21, 2026 (#1707) | 1.36:1, decorative | `role="separator"` |
+| Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | scrolls past 30vh (`theme/index.css` `.contexify_submenu`) | as Container | `role="menu"`, opened from a row with `aria-haspopup="menu"` |
+
+**Decisions** (the record for this component; grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-26 | Name the Menu shadow token, and which rules consume it? | `--menu-shadow` = `0 4px 8px rgba(0,0,0,.4)`, a new token in the hub. `--contexify-menu-shadow`, `OptionList.css` and `MoreOptionsMenu.css` consume it; the snap card (`Gizmos.css`) switches after #1714 merges (G30). |
+| 2026-10-26 | Menu width? | `min-width: 200px`, Figma's width, growing with long labels (✱ width). |
+| 2026-10-26 | Submenus? | They inherit the container values; the chevron is White 40 in every state; the open parent row takes the Pale Black hover fill; the 30vh scroll cap stays (✱ open, and Menu-Entry ✱ submenu parent). |
+
+### Context menus (inspector)
+
+Our board for the inspector's right-click menus (decision October 26, 2026; no Figma board draws them, and the Figma seat is View). It is composed only from Menu `20749:386` and Menu-Entry `20749:790`, with Romina's conventions from the Toolbar ⋮ and Camera menus (`21722:57105`, `21719:56872`) and the TitleBar menus (`21372:16356`):
+
+- rows inset 10px inside the menu;
+- a Div between groups of related actions;
+- a Section only to name a choice group (there is none here: a context menu is named by what was right-clicked);
+- Title Case labels.
+
+**Status:** approved by the user (October 26, 2026), proposals included; it is the source for layer 3b unit 1. Design's review is tracked on G10 and blocks nothing.
+
+**Tokens.** Every part below is a token, set in `vars.css` or in the one `theme/index.css` rule:
+
+| Part | Token | Value | Figma |
+| --- | --- | --- | --- |
+| Menu fill | `--contexify-menu-bgColor: var(--palette-neutral-onyx)` | `#35333b` | Neutrals/Onix |
+| Menu border | `border: 1px solid var(--palette-whiteTransparent-subtle)` (a `.contexify` rule: the library has no border variable) | `rgba(255,255,255,.1)` | 1px White 10 |
+| Menu radius | `--contexify-menu-radius: var(--shape-borderRadiusLarge)` | `12px` | 12px |
+| Menu shadow | `--contexify-menu-shadow: var(--menu-shadow)` | `0 4px 8px rgba(0,0,0,.4)` | drop shadow 0 / 4 / 8 Black 40 |
+| Menu inset | `--contexify-menu-padding` (`--contexify-menu-negatePadding` follows it) | `10px` | padding 10 / 0, slots 0 / 10 |
+| Menu width | `--contexify-menu-minWidth` | `200px`, grows with a long label | Fixed 200 (✱) |
+| Row | `--contexify-itemContent-padding`; the global `.contexify_itemContent` rule adds `min-height: 38px` and `gap: 10px` | `0 10px` | Fill × 38, padding 0 / 10, gap 10 |
+| Row radius | `--contexify-activeItem-radius` | `8px` | 8px |
+| Label | `--contexify-item-color`, `--contexify-activeItem-color`: `var(--ui-designer-text)`; `--font-family` 400 12px | `#fcfcfc` | `H8 Regular` Snow |
+| Glyph | `color: var(--ui-designer-text-muted)`, 16 × 16, rest and hover | `#a09ba8` | `Info` 16, Silver |
+| Hover | `--contexify-activeItem-bgColor: var(--gray-0)` | `#43404a` | Pale Black |
+| Keyboard active | hover fill plus `box-shadow: inset 0 0 0 1px var(--focus-ring)` | `#fcfcfc` | not drawn (✱) |
+| Disabled | the library's `opacity: .5` | — | not drawn (✱) |
+| Divider | `--contexify-separator-color: var(--palette-whiteTransparent-subtle)`, `--contexify-separator-margin: 10px 0`, 1px | `rgba(255,255,255,.1)` | Div White 10 (✱ inset with the rows) |
+| Submenu chevron | `--contexify-arrow-color`, `--contexify-activeArrow-color`, `--contexify-rightSlot-color`, `--contexify-activeRightSlot-color`: `var(--palette-whiteTransparent-blurry)` | `rgba(255,255,255,.4)` | `arrow-right` 10, White 40 |
+| Submenu | a nested `.contexify` with every value above. It opens 10px clear of the parent menu, its first row level with the parent row (as the TitleBar menu), and scrolls past `max-height: 30vh` | — | not drawn (✱) |
+
+A menu is `22 + 38 × rows + 21 × dividers` tall: the padding plus border, then each row, then each divider with its 10px above and below.
+
+**The eight menus.** Rows are listed top to bottom, with ─ for a divider. Glyphs keep their current family. The hover shot uses the first enabled row, and the keyboard-active shot the second.
+
+| Menu (code) | Trigger | Rows | Glyphs | States drawn | Size |
+| --- | --- | --- | --- | --- | --- |
+| Hierarchy entity (`Hierarchy/ContextMenu` + `Tree/ContextMenu`) | an entity row | Rename · Add Child · Duplicate · Delete ─ Create Custom Item · Add Component ▸ | yes, except Add Component | default, hover, keyboard active, submenu open (component names; scrolls past 30vh) | 200 × 271 |
+| Hierarchy root | Scene | Add Child ─ Create Custom Item | yes | default, hover, keyboard active | 200 × 119 |
+| Player spawn point (`Hierarchy/PlayerTree`) | a spawn point | Rename · Duplicate · Delete | yes (`Md*` / `Ai*`, now 16px) | default, hover, keyboard active, disabled Delete (one spawn point) | 200 × 136 |
+| Catalog asset (`AssetsCatalog/Asset/ContextMenu`) | an asset | Add to Filesystem; a built-in emote shows Copy Name instead | none | default, hover, keyboard active | 200 × 60 |
+| Custom item (`CustomAssets/ContextMenu`) | a custom item | Add to Filesystem ─ Rename · Delete | none | default, hover, keyboard active | 200 × 157 |
+| Local Assets tree row (`ProjectView` + `Tree/ContextMenu`) | a folder row | Rename · New Folder · Duplicate · Delete ─ Copy Path · Copy File Name | yes | default, hover, keyboard active | 200 × 271 |
+| Local Assets tile (`ProjectAssetExplorer/Tile`) | a tile | Rename · Duplicate · Delete ─ Copy Path · Copy File Name | yes | default, hover, keyboard active | 200 × 233 |
+| UI Designer node (`UIDesigner/LeftPanel/NodeTree` + `Tree/ContextMenu`) | a node row in the 2D hierarchy | Rename · Duplicate · Delete (Rename only on a renameable node; no Add Child) | yes | default, hover, keyboard active | 200 × 136 |
+
+Variants of the same menus:
+
+- **File row:** a model row has no New Folder (200 × 233).
+- **Multi-selection, tile:** Duplicate N Items · Delete N Items ─ Copy Paths · Copy File Names, with Rename hidden (200 × 195).
+- **Multi-selection, tree row:** Rename is hidden, Duplicate and Delete keep their labels, and the copy rows become Copy Paths · Copy File Names.
+- **Read-only path:** the copy group only.
+- **Built-in emote** (tile or tree row): Copy Name only.
+
+**Changes the board makes beyond the earlier decisions** (approved by the user, October 26, 2026):
+
+- **Grouping dividers** in the Hierarchy root, custom item, tree row and tile menus. Today only the Hierarchy entity menu has a divider, before Add Component; the board moves it up to sit before Create Custom Item, so the edit verbs and the create verbs form two groups.
+- **The tile's Delete moves up** to join Rename and Duplicate, so the tile and the tree row list the same verbs in the same order.
+- **No Section headers.**
+- **Delete stays Snow:** Figma draws no danger colour.
+
+**Accessibility, every menu:**
+
+- `role="menu"` named by `aria-label`, `role="menuitem"` rows, `role="separator"` dividers and `aria-hidden` glyphs.
+- The submenu row has `aria-haspopup="menu"` and is named "Add Component", by its own label; the submenu container is a `role="menu"` too.
+- Arrow keys move the 1px Snow ring, and the app's shortcuts pause while a menu is open.
+- The trigger takes focus: rows, tiles and cards are focusable on left-click (`tabIndex -1`), and Escape returns focus to the row that opened the menu. That returned focus draws the same ring as the menu rows, a 1px inset Snow `--focus-ring` on `:focus-visible` (`outline: 1px solid var(--focus-ring); outline-offset: -1px`), never the browser's default.
+- Contrast: label 12.13:1 on Onix and 9.88:1 on Pale Black; glyph 4.59:1 and 3.74:1; chevron 3.39:1 and 3.05:1; ring 9.88:1 in the menu. On the triggers the ring is 17.73:1 on the tree `#161518`, 10.40:1 on a selected row `--selected-item`, 9.88:1 on a tile `--gray-0`, 11.93:1 on a card `--list-item-bg-color`, and 7.96:1 on a hovered card.
+
+| Menu                                | Accessible name (`aria-label`) |
+| ----------------------------------- | ------------------------------ |
+| Hierarchy entity and Hierarchy root | Entity Options                 |
+| Player spawn point                  | Spawn Point Options            |
+| Local Assets tree row and tile      | Asset Options                  |
+| Catalog asset                       | Catalog Asset Options          |
+| Custom item                         | Custom Item Options            |
+| UI Designer `NodeTree`              | Node Options                   |
 
 ### Icon system (Icons)
 
@@ -1813,13 +1933,14 @@ Set [`21028:16521`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ## Pages inventory
 
-Harvested October 16, 2026 from the Figma file's own page list (`store.getState().mirror.appModel.pagesList` in the web client; the ids were spot-checked against the URL after clicking into eight pages); the Slider page was added October 20, 2026. 53 pages: 8 section headers, 1 cover, 36 in scope, 8 skipped. **Pages whose name contains `🟡 Outdated` are not sources.** Address a page as `?node-id=<id with : as ->`, or pass the id to `get_metadata` to list its frames; pass frame or set ids, never the page id, to `get_variable_defs`.
+Harvested October 16, 2026 from the Figma file's own page list (`store.getState().mirror.appModel.pagesList` in the web client; the ids were spot-checked against the URL after clicking into eight pages); the Slider page was added October 20, 2026; re-harvested October 26, 2026 (3D Editor Bottom Panel added, Icons now under Tokens). 54 pages: 8 section headers, 1 cover, 37 in scope, 8 skipped. **Pages whose name contains `🟡 Outdated` are not sources.** Address a page as `?node-id=<id with : as ->`, or pass the id to `get_metadata` to list its frames; pass frame or set ids, never the page id, to `get_variable_defs`.
 
 | Page | Section | Node id | Status |
 | --- | --- | --- | --- |
 | COVER | — | `20420:50646` | cover |
 | ↓ Tokens | Tokens | `20717:461` | section header |
 | Colors | Tokens | `20752:6024` | in scope (tokens, synced above) |
+| Icons | Tokens | `20450:15495` | in scope |
 | Typography | Tokens | `20717:313` | in scope (tokens, synced above) |
 | Tags / Labels | Tokens | `20755:7456` | in scope (component page: Place, Privacy Public/Private, Role tag Owner/Collaborator/Tenant; references Snow, Silver, Pale Black, White 10, System/Orange, System/Blue Light 1, `H6 Regular`; defines no token) |
 | ↓ Feedback | Feedback | `20762:23667` | section header |
@@ -1835,7 +1956,6 @@ Harvested October 16, 2026 from the Figma file's own page list (`store.getState(
 | Cards | Surfaces | `20910:7505` | in scope |
 | Cards 🟡 Outdated | Surfaces | `21457:1660` | skipped: outdated |
 | Menu | Surfaces | `20747:59496` | in scope |
-| Icons | Surfaces | `20450:15495` | in scope |
 | Modals | Surfaces | `20423:75560` | in scope |
 | Modals 🟡 Outdated | Surfaces | `21457:14856` | skipped: outdated |
 | Scrollbar | Surfaces | `20937:5631` | in scope |
@@ -1866,6 +1986,7 @@ Harvested October 16, 2026 from the Figma file's own page list (`store.getState(
 | AI Assistant | Editor | `21206:31202` | in scope |
 | Cleanup wizard 🟡 Outdated | Editor | `21023:15344` | skipped: outdated |
 | Scene Editor 🟡 Outdated | Editor | `20533:81937` | skipped: outdated |
+| 3D Editor Bottom Panel | Editor | `21670:18705` | in scope (added October 26, 2026: boards Feedback `21673:55006`, Components `21673:54749`, Editor 3D `21673:54990`, Editor 3D Bottom Panel `21673:54913`; no context menu drawn) |
 | UI Editor | Editor | `21028:15887` | in scope |
 | Viewport | Editor | `20506:34918` | in scope |
 | Toolbar | Editor | `21023:11034` | in scope |
