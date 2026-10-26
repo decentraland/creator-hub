@@ -765,7 +765,8 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | Container | ✱ width | as above | as above | as above | as above | `min-width: 200px`; the menu grows with a long label ("Delete 12 Items", component names) where Figma draws a fixed 200 | — | — |
 | Div | ✱ inset | White 10 | — | — | — | inset with the rows, 10px clear above and below (Figma: full bleed in the composed menu); user decision October 21, 2026 (#1707) | 1.36:1, decorative | `role="separator"` |
 | Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | opens 10px clear of the parent menu; scrolls past 30vh (`theme/index.css` `.contexify_submenu`) with Figma's Scrollbar `20931:3935` (16px, Black 40 pill, 1px White 60 inner border, no track); opens at once and stays open 400ms after the pointer leaves its parent row, so a diagonal move across the gap reaches it; the keyboard opens and closes it at once | as Container; scrollbar thumb border 5.07:1 on Onix (the Black 40 fill alone is 1.32:1) | `role="menu"`, opened from a row with `aria-haspopup="menu"` |
-| Container | ✱ enter motion (Figma draws none) | — | — | — | — | the library's 0.3s fade with a 10px slide, turned off under `prefers-reduced-motion: reduce` | — | — |
+| Container | ✱ enter motion (Figma draws none) | — | — | — | — | the library's 0.3s fade with a 10px slide, turned off under `prefers-reduced-motion: reduce`; the submenu's 400ms close delay stays under reduced motion (hover intent, not motion) | — | — |
+| Submenu | ✱ scrollbar weight (Figma draws no scrollbar inside a menu) | Figma's Scrollbar `20931:3935` as drawn: a 16px Black 40 pill with a 1px White 60 border, no track | — | pill | — | 16px of the 200px submenu, flush with its right border, inset 10px top and bottom; the heavier look is our accepted choice (user, October 26, 2026) | border 5.07:1 on Onix | — |
 
 **Decisions** (the record for this component; grep here before asking again):
 
@@ -779,6 +780,8 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | 2026-10-26 | The 250ms close delay drops a 500–750ms diagonal. Change it? | Raise it to 400ms. Opening stays instant, and the keyboard still opens and closes the submenu at once. |
 | 2026-10-26 | The submenu shows the platform scrollbar (a light thumb on Onix). Theme it? | Yes, in this unit, to Figma's Scrollbar `20931:3935`, on the react-contexify submenu only; other inspector scroll areas stay as they are. |
 | 2026-10-26 | The menus' enter animation ignores reduced motion. Change it? | Under `prefers-reduced-motion: reduce` the enter animation (0.3s fade and 10px slide) is off. |
+| 2026-10-26 | Under reduced motion, does the submenu keep its 400ms close delay? | Yes. Reduced motion turns off only the enter animation; the close delay is hover intent, not motion, and without it a diagonal move can't reach the submenu. |
+| 2026-10-26 | The 16px scrollbar thumb reads heavy in the 200px submenu. Keep it? | Yes, exactly as Figma draws it (✱ scrollbar weight). |
 
 ### Context menus (inspector)
 
