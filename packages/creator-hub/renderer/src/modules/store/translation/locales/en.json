@@ -468,6 +468,15 @@
             "loading": "In process...",
             "failed": "Error"
           },
+          "progress": {
+            "checking": "Preparing the upload...",
+            "uploading": "Uploading {sent} of {total}",
+            "processing": "Publishing...",
+            "batches": "Batch {completed} of {total} uploaded",
+            "cancel_too_early": "Can't cancel while the previous scenes are being removed. Try again in a moment.",
+            "cancel_unauthorized": "Couldn't cancel the deployment from here. Quit Creator Hub to stop it.",
+            "cancel_unsupported": "Update the SDK of this scene to cancel deployments from here."
+          },
           "errors": {
             "details": "Details",
             "code_error": "Your scene code contains one or more errors.\nPlease fix them and try again.",
@@ -482,12 +491,16 @@
             "invalid_identity": "Failed to validate your identity.",
             "max_file_size_exceeded": "One or more assets exceed the allowed limit ({maxFileSizeInMb}MB).\nOptimize or remove large files and try again.",
             "max_scene_size_exceeded": "Your scene exceeds the maximum allowed size.\nReduce the number or size of assets and try again.",
+            "deploy_state_lost": "Lost track of the deployment, which may still finish.\nCheck the scene in the Manage section before publishing again.",
+            "deploy_request_timeout": "The deployment did not finish within 60 minutes and may still be running.\nCheck the scene in the Manage section before publishing again.",
             "unknown": "Something went wrong.\nPlease, try again.",
             "invalid_creator_wallet": "Creator must be a valid Ethereum wallet address."
           },
           "actions": {
             "report_issue": "Report an issue",
-            "retry": "Retry"
+            "retry": "Retry",
+            "cancel": "Cancel",
+            "cancelling": "Cancelling..."
           },
           "redirect": {
             "sign_in": "You will be redirected to Sign In step in {seconds} seconds..."

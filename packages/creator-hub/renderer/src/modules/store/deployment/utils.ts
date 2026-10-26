@@ -51,14 +51,40 @@ export function getInvalidFiles(files: File[]) {
   return files.filter(file => file.size > MAX_FILE_SIZE_BYTES).map(file => file.name);
 }
 
-export const deploy = async (
-  url: string,
-  payload: {
-    address: string;
-    authChain: AuthChain;
-    chainId: ChainId;
-  },
-) => {
+export type DeployPayload = {
+  address: string;
+  authChain: AuthChain;
+  chainId: ChainId;
+};
+
+// The local CLI holds this request until the upload ends and answers it with an error itself
+// when the upload fails, so this only guards against a hung CLI. Large scenes take minutes to
+// upload (sdk-commands allows each upload request 600 s), which a short timeout reported as a
+// failed deployment while the CLI went on to publish it.
+export const DEPLOY_REQUEST_TIMEOUT_MS = minutes(60);
+
+export async function discardBody(resp: Response) {
+  await resp.body?.cancel().catch(() => undefined);
+}
+
+/**
+ * Reports to Sentry a deployment the local CLI reported as failed, and returns its error, keeping
+ * only the catalyst's own message when the CLI wraps a whole catalyst response.
+ */
+export function reportDeployRequestError(message: string, extra: Record<string, unknown>): Error {
+  let error = message;
+  if (/Response was/.test(error)) {
+    error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
+  }
+  const serverError = new Error(error);
+  captureException(serverError, {
+    tags: { source: 'deployment', event: 'deploy-request' },
+    extra,
+  });
+  return serverError;
+}
+
+export const deploy = async (url: string, payload: DeployPayload) => {
   const resp = await fetch(
     `${url}/deploy`,
     {
@@ -66,28 +92,19 @@ export const deploy = async (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     },
-    seconds(30),
+    DEPLOY_REQUEST_TIMEOUT_MS,
   );
 
   if (!resp.ok) {
     const data = await resp.json().catch(() => ({ message: `HTTP ${resp.status}` }));
-    let error = data.message;
     console.log('[DEPLOY ERROR] raw data:', JSON.stringify(data));
-    console.log('[DEPLOY ERROR] error message:', error);
-    if (/Response was/.test(error)) {
-      try {
-        error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
-      } catch (e) {
-        // Keep original error if parsing fails
-      }
-    }
-    const serverError = new Error(error);
-    captureException(serverError, {
-      tags: { source: 'deployment', event: 'deploy-request' },
-      extra: { status: resp.status, url },
+    console.log('[DEPLOY ERROR] error message:', data.message);
+    throw reportDeployRequestError(data.message ?? `HTTP ${resp.status}`, {
+      status: resp.status,
+      url,
     });
-    throw serverError;
   }
+  await discardBody(resp);
 };
 
 export const getInitialDeploymentStatus = (): DeploymentComponentsStatus => ({
@@ -178,7 +195,7 @@ async function fetchEntityStatus(
   if (!response.ok) {
     // A publish polls this until the deployment event reaches the registry, so the 404 branch
     // can run hundreds of times: release the body instead of leaving it to the collector.
-    await response.body?.cancel().catch(() => undefined);
+    await discardBody(response);
     throw new Error(`Error fetching deployment status: ${response.status}`);
   }
 
@@ -335,6 +352,10 @@ export function translateError(error: SerializedError) {
       return t('modal.publish_project.deploy.deploying.errors.invalid_creator_wallet');
     case 'MAX_POINTER_SIZE_EXCEEDED':
       return t('modal.publish_project.deploy.deploying.errors.max_scene_size_exceeded');
+    case 'DEPLOY_STATE_LOST':
+      return t('modal.publish_project.deploy.deploying.errors.deploy_state_lost');
+    case 'DEPLOY_REQUEST_TIMEOUT':
+      return t('modal.publish_project.deploy.deploying.errors.deploy_request_timeout');
     default:
       return t('modal.publish_project.deploy.deploying.errors.unknown');
   }

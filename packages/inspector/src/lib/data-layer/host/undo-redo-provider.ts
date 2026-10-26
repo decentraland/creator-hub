@@ -8,7 +8,7 @@ import { CrdtMessageType } from '@dcl/ecs';
 import type { FileSystemInterface } from '../types';
 import upsertAsset from './upsert-asset';
 import { findPrevValue } from './utils/component';
-import { UndoRedoArray } from './utils/undo-redo-array';
+import { DEFAULT_UNDO_MAX_SIZE, UndoRedoArray } from './utils/undo-redo-array';
 import { isFileInAssetDir, withAssetDir } from './fs-utils';
 import {
   type StateProvider,
@@ -41,6 +41,20 @@ export type FileOperation = {
 };
 
 export type UndoRedo = UndoRedoFile | UndoRedoCrdt | UndoRedoComposite;
+
+/** Appends `incoming` to `existing`; a path touched twice keeps its first `prevValue` and last `newValue`. */
+export function mergeFileOperations(
+  existing: FileOperation[],
+  incoming: FileOperation[],
+): FileOperation[] {
+  const merged = existing.map(operation => ({ ...operation }));
+  for (const operation of incoming) {
+    const previous = merged.find($ => $.path === operation.path);
+    if (previous) previous.newValue = operation.newValue;
+    else merged.push({ ...operation });
+  }
+  return merged;
+}
 export type UndoRedoOp = CrdtOperation | FileOperation;
 export type UndoRedoGetter = <T extends UndoRedoOp>(op: T) => T['newValue'];
 
@@ -122,7 +136,7 @@ export class UndoRedoProvider implements StateProvider {
 
     this.options = {
       maxEntries: options.maxEntries ?? 1024,
-      maxSize: options.maxSize ?? 1024 * 1024 * 100, // 100MB default
+      maxSize: options.maxSize ?? DEFAULT_UNDO_MAX_SIZE,
       enableValidation: options.enableValidation ?? true,
       enableStateVerification: options.enableStateVerification ?? false, // off by default for performance
       persistToStorage: options.persistToStorage ?? false,
@@ -755,7 +769,12 @@ export class UndoRedoProvider implements StateProvider {
       clearTimeout(this.deferredTimeout);
     }
 
-    this.deferredFileOperations = fileOperations;
+    // File operations that land inside the window belong to the same user action (a move is an
+    // import followed by a removal), so they join the pending entry instead of replacing it.
+    this.deferredFileOperations = mergeFileOperations(
+      this.deferredFileOperations ?? [],
+      fileOperations,
+    );
 
     this.deferredTimeout = setTimeout(() => {
       if (this.deferredFileOperations) {
