@@ -30,23 +30,32 @@ input[type="number"] {
   overflow-y: auto;
 }
 
-.contexify_submenu::-webkit-scrollbar {
-  width: 16px;
+.contexify_submenu::-webkit-scrollbar,
+.OptionList::-webkit-scrollbar {
+  width: 6px;
 }
 
-.contexify_submenu::-webkit-scrollbar-track {
+.contexify_submenu::-webkit-scrollbar-track,
+.OptionList::-webkit-scrollbar-track {
   background: transparent;
   margin: var(--contexify-menu-padding) 0;
 }
 
-.contexify_submenu::-webkit-scrollbar-thumb {
-  background-color: var(--palette-blackTransparent-blurry);
-  border: 1px solid var(--palette-whiteTransparent-backdrop);
+.contexify_submenu::-webkit-scrollbar-thumb,
+.contexify_submenu::-webkit-scrollbar-thumb:hover,
+.contexify_submenu::-webkit-scrollbar-thumb:window-inactive,
+.OptionList::-webkit-scrollbar-thumb,
+.OptionList::-webkit-scrollbar-thumb:hover,
+.OptionList::-webkit-scrollbar-thumb:window-inactive {
+  background: var(--palette-blackTransparent-blurry) padding-box;
+  border-inline: 1px solid transparent;
   border-radius: var(--shape-borderRadiusPill);
+  box-shadow: inset 0 0 0 1px var(--palette-whiteTransparent-backdrop);
 }
 
 @supports not selector(::-webkit-scrollbar) {
-  .contexify_submenu {
+  .contexify_submenu,
+  .OptionList {
     scrollbar-color: var(--palette-whiteTransparent-backdrop) transparent;
     scrollbar-width: thin;
   }
