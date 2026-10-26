@@ -17,5 +17,6 @@ export type SceneExportResult = {
   files: number;
   bytes: number;
   recoveredSources: number;
+  recovered: 'none' | 'self-contained' | 'partial';
   skipped: string[];
 };

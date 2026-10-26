@@ -45,12 +45,19 @@ const BUILD_DIR = 'original-build';
 const SOURCE_MAP = `${BUILD_DIR}/bin/index.js.map`;
 const DOWNLOAD_CONCURRENCY = 8;
 
+const RECOVERED_DIR = 'recovered-src';
 const EMPTY_ENTRY_POINT = 'export function main() {}\n';
-const PROJECT_FILES = new Map([
-  ['package.json', PACKAGE_JSON],
-  ['tsconfig.json', TSCONFIG_JSON],
-  ['.dclignore', DCLIGNORE],
-]);
+const PROJECT_FILES = new Set(['package.json', 'tsconfig.json', '.dclignore', 'RECOVERY.md']);
+const PROVIDED_PACKAGES = new Set(['@dcl/sdk', '@dcl/js-runtime']);
+const ALLOWED_SCOPES = ['@dcl/', '@dcl-sdk/'];
+const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
+const IMPORT_SPECIFIERS = [
+  /\b(?:import|export)\s[^'"]*?\bfrom\s*['"]([^'"\n]+)['"]/g,
+  /\bimport\s*['"]([^'"\n]+)['"]/g,
+  /\b(?:import|require)\s*\(\s*['"]([^'"\n]+)['"]\s*\)/g,
+];
+const LINE_COMMENT = /^\s*\/\/.*$/gm;
+const BUNDLED_PACKAGE = /node_modules\/((?:@[^/]+\/)?[^/]+)/g;
 
 type Entity = {
   pointers?: unknown;
@@ -59,6 +66,15 @@ type Entity = {
 };
 
 type Source = { hash: string } | { content: string };
+
+type Recovery = {
+  status: SceneExportResult['recovered'];
+  sources: [string, string][];
+  dependencies: string[];
+  unresolved: string[];
+  missing: [string, string[]][];
+  review: string[];
+};
 
 const running = new Map<string, AbortController>();
 
@@ -80,23 +96,157 @@ function slugify(value: unknown): string {
     .replace(/^-+|-+$/g, '');
 }
 
-function recoverSources(rawMap: string): [string, string][] {
-  let map: { sources?: unknown; sourcesContent?: unknown };
+function parseSourceMap(rawMap: string | undefined): { sources: unknown[]; contents: unknown[] } {
+  let map: { sources?: unknown; sourcesContent?: unknown } | null = null;
   try {
-    map = JSON.parse(rawMap);
+    map = JSON.parse(rawMap ?? 'null');
   } catch {
-    return [];
+    map = null;
   }
-  const { sources, sourcesContent } = map;
-  if (!Array.isArray(sources) || !Array.isArray(sourcesContent)) return [];
-  return sources.flatMap((source, index): [string, string][] => {
-    const content = sourcesContent[index];
+  const { sources, sourcesContent } = map ?? {};
+  return Array.isArray(sources) && Array.isArray(sourcesContent)
+    ? { sources, contents: sourcesContent }
+    : { sources: [], contents: [] };
+}
+
+function packageName(specifier: string): string {
+  const [first, second] = specifier.split('/');
+  return first.startsWith('@') && second ? `${first}/${second}` : first;
+}
+
+function missingImport(importer: string, specifier: string, files: Set<string>): string | null {
+  const target = path.posix.join(path.posix.dirname(importer), specifier);
+  const candidates = [
+    target,
+    target.replace(/\.js$/, '.ts'),
+    ...SOURCE_EXTENSIONS.flatMap(extension => [
+      `${target}${extension}`,
+      `${target}/index${extension}`,
+    ]),
+  ];
+  return candidates.some(candidate => files.has(candidate)) ? null : target;
+}
+
+function recoverSources(rawMap: string | undefined): Recovery {
+  const { sources, contents } = parseSourceMap(rawMap);
+  const recovered = sources.flatMap((source, index): [string, string][] => {
+    const content = contents[index];
     if (typeof source !== 'string' || typeof content !== 'string') return [];
     if (source.startsWith('/') || source.endsWith('.entry-point.ts')) return [];
     const rerooted = path.posix.normalize(`bin/${source}`).replace(/^(\.\.\/)+/, '');
     const file = toExportPath(rerooted);
     return file ? [[file, content]] : [];
   });
+  const bundled = new Set(
+    sources.flatMap(source =>
+      typeof source === 'string'
+        ? [...source.matchAll(BUNDLED_PACKAGE)].map(match => match[1])
+        : [],
+    ),
+  );
+  const files = new Set(recovered.map(([file]) => file));
+  const dependencies = new Set<string>();
+  const unresolved = new Set<string>();
+  const missing = new Map<string, string[]>();
+  const review = new Set<string>();
+  for (const [file, code] of recovered) {
+    const scanned = code.replace(LINE_COMMENT, '');
+    const specifiers = IMPORT_SPECIFIERS.flatMap(pattern =>
+      [...scanned.matchAll(pattern)].map(match => match[1]),
+    );
+    for (const specifier of specifiers) {
+      if (specifier.startsWith('.')) {
+        const target = missingImport(file, specifier, files);
+        if (target) missing.set(target, [...(missing.get(target) ?? []), file]);
+        continue;
+      }
+      const name = packageName(specifier);
+      if (specifier.startsWith('~system/') || PROVIDED_PACKAGES.has(name)) continue;
+      if (!bundled.has(name)) unresolved.add(name);
+      else if (ALLOWED_SCOPES.some(scope => name.startsWith(scope))) dependencies.add(name);
+      else review.add(name);
+    }
+  }
+  const selfContained = !unresolved.size && !missing.size && !review.size;
+  return {
+    status: !recovered.length ? 'none' : selfContained ? 'self-contained' : 'partial',
+    sources: recovered,
+    dependencies: [...dependencies].sort(),
+    unresolved: [...unresolved].sort(),
+    missing: [...missing].sort(([a], [b]) => a.localeCompare(b)),
+    review: [...review].sort(),
+  };
+}
+
+function bulletList(items: string[]): string {
+  return items.map(item => `- \`${item}\``).join('\n');
+}
+
+function missingList(missing: Recovery['missing']): string {
+  return missing
+    .map(([target, importers]) => `- \`${target}\`, imported by \`${importers.join('`, `')}\``)
+    .join('\n');
+}
+
+function recoveryNotes({ status, sources, dependencies, unresolved, missing, review }: Recovery) {
+  const intro =
+    '# About this export\n\nThis project was exported from a scene deployed in Decentraland.';
+  const packages = dependencies.length
+    ? `These packages were added to \`package.json\`:\n\n${bulletList(dependencies)}`
+    : 'No extra packages were added to `package.json`.';
+  if (status === 'none') {
+    return [
+      intro,
+      "The scene's original source code was not part of the deployment, so its custom code could not be recovered. `src/index.ts` is an empty starting point.",
+      `The compiled code that was deployed is kept in \`${BUILD_DIR}/\`. It is the only copy of the scene's custom logic: use it as a reference to rewrite that logic in \`src/\`. It is never published with the scene (\`.dclignore\` lists it).`,
+      '',
+    ].join('\n\n');
+  }
+  const deployedBuild = `The compiled code that was deployed is kept in \`${BUILD_DIR}/\` for reference. It is never published with the scene (\`.dclignore\` lists it).`;
+  if (status === 'self-contained') {
+    return [
+      intro,
+      `The scene's original source code was recovered from the deployed build: ${sources.length} files, at their original paths starting in \`src/\`. They are ready to build.`,
+      packages,
+      deployedBuild,
+      '',
+    ].join('\n\n');
+  }
+  const blockers = [
+    unresolved.length &&
+      `### Imports that don't match any recovered file or package\n\nThese are usually shortcuts set up in the original project's configuration, which is not part of a deployment. Point them at the right files (for example with \`paths\` in \`tsconfig.json\`) or replace them with relative imports:\n\n${bulletList(unresolved)}`,
+    missing.length &&
+      `### Files that weren't recovered\n\nThese imports point at files that are not in \`${RECOVERED_DIR}/\`. Create them or change the imports:\n\n${missingList(missing)}`,
+    review.length &&
+      `### Packages to review before installing\n\nThe scene used these packages, but they don't come from Decentraland, so they were not added to \`package.json\`. Check each one before you install it:\n\n${bulletList(review)}`,
+  ].filter(Boolean);
+  return [
+    intro,
+    `The scene's original source code was recovered from the deployed build (${sources.length} files), but it can't be built as it is. It is kept in \`${RECOVERED_DIR}/\` at its original paths, and the project starts from an empty \`src/index.ts\` so it always opens and builds. \`${RECOVERED_DIR}/\` is not built or published.`,
+    packages,
+    '## What stops the recovered code from building',
+    ...blockers,
+    `## Using the recovered code\n\nOnce the items above are fixed, move the contents of \`${RECOVERED_DIR}/\` to the project root (its \`src/\` replaces the empty one), then remove \`${RECOVERED_DIR}\` from \`tsconfig.json\` and \`.dclignore\`.`,
+    `${deployedBuild} Until the recovered code builds, it is the only working copy of the scene's custom logic.`,
+    '',
+  ].join('\n\n');
+}
+
+function projectFiles(recovery: Recovery): [string, string][] {
+  const partial = recovery.status === 'partial';
+  const dependencies = Object.fromEntries(recovery.dependencies.map(name => [name, 'latest']));
+  const packageJson = recovery.dependencies.length
+    ? `${JSON.stringify({ ...JSON.parse(PACKAGE_JSON), dependencies }, null, 2)}\n`
+    : PACKAGE_JSON;
+  const tsconfig = partial
+    ? `${JSON.stringify({ ...JSON.parse(TSCONFIG_JSON), exclude: [RECOVERED_DIR] }, null, 2)}\n`
+    : TSCONFIG_JSON;
+  return [
+    ['package.json', packageJson],
+    ['tsconfig.json', tsconfig],
+    ['.dclignore', partial ? `${DCLIGNORE}${RECOVERED_DIR}\n` : DCLIGNORE],
+    ['RECOVERY.md', recoveryNotes(recovery)],
+  ];
 }
 
 async function request(url: string, signal: AbortSignal): Promise<Response> {
@@ -128,9 +278,7 @@ export async function exportScene(
 
   try {
     const entity: Entity = await (await request(`${contentUrl}${entityId}`, signal)).json();
-    const files = new Map<string, Source>(
-      [...PROJECT_FILES].map(([file, content]) => [file, { content }]),
-    );
+    const files = new Map<string, Source>();
     const hashes = new Set<string>();
     const skipped: string[] = [];
     for (const item of Array.isArray(entity.content) ? entity.content : []) {
@@ -162,11 +310,14 @@ export async function exportScene(
     if (signal.aborted) throw signal.reason;
 
     const sourceMap = files.get(SOURCE_MAP);
-    const recovered =
+    const recovery = recoverSources(
       sourceMap && 'hash' in sourceMap
-        ? recoverSources(await fs.readFile(path.join(tmp, sourceMap.hash), 'utf8'))
-        : [];
-    for (const [file, content] of recovered) files.set(file, { content });
+        ? await fs.readFile(path.join(tmp, sourceMap.hash), 'utf8')
+        : undefined,
+    );
+    const prefix = recovery.status === 'partial' ? `${RECOVERED_DIR}/` : '';
+    for (const [file, content] of recovery.sources) files.set(`${prefix}${file}`, { content });
+    for (const [file, content] of projectFiles(recovery)) files.set(file, { content });
     if (!files.has('src/index.ts')) files.set('src/index.ts', { content: EMPTY_ENTRY_POINT });
 
     const pointers = Array.isArray(entity.pointers) ? entity.pointers : [];
@@ -195,7 +346,13 @@ export async function exportScene(
     await fs.rename(partialPath, outputPath);
 
     const { size } = await fs.stat(outputPath);
-    return { files: files.size, bytes: size, recoveredSources: recovered.length, skipped };
+    return {
+      files: files.size,
+      bytes: size,
+      recoveredSources: recovery.sources.length,
+      recovered: recovery.status,
+      skipped,
+    };
   } catch (error) {
     controller.abort(error);
     await fs.rm(partialPath, { force: true });

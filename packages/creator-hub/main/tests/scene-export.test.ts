@@ -242,6 +242,169 @@ describe('exportScene', () => {
     it('should add an empty src/index.ts entry point', () => {
       expect(text(entries, 'scene-0-0/src/index.ts')).toBe('export function main() {}\n');
     });
+
+    it('should explain in RECOVERY.md that the deployed build is the only copy of the logic', () => {
+      const notes = text(entries, 'scene-0-0/RECOVERY.md')!;
+      expect(notes).toContain('original-build/');
+      expect(notes).toMatch(/could not be recovered/);
+    });
+  });
+
+  describe('when recovering sources from a source map', () => {
+    async function exportWithMap(map: { sources: string[]; sourcesContent: (string | null)[] }) {
+      serve(
+        { hscene: sceneJson, hindex: 'bundle', hmap: JSON.stringify({ version: 3, ...map }) },
+        {
+          id: ENTITY_ID,
+          pointers: ['0,0'],
+          metadata: { display: { title: 'Recovered' } },
+          content: [
+            { file: 'scene.json', hash: 'hscene' },
+            { file: 'bin/index.js', hash: 'hindex' },
+            { file: 'bin/index.js.map', hash: 'hmap' },
+          ],
+        },
+      );
+      const result = await exportScene({ entityId: ENTITY_ID, peerUrl: PEER, outputPath });
+      return { result, entries: await readZip(outputPath) };
+    }
+
+    describe('and every import resolves to a recovered file or a bundled allowed package', () => {
+      let result: Awaited<ReturnType<typeof exportScene>>;
+      let entries: Map<string, ZipEntry>;
+      const index = [
+        "import { engine } from '@dcl/sdk/ecs'",
+        "import * as utils from '@dcl-sdk/utils'",
+        "import { door } from './systems/door'",
+        "import { movePlayerTo } from '~system/RestrictedActions'",
+        "  //import './retired-feature'",
+        'export function main() { door }',
+      ].join('\n');
+
+      beforeEach(async () => {
+        ({ result, entries } = await exportWithMap({
+          sources: [
+            '../src/index.ts',
+            '../src/systems/door.ts',
+            '../node_modules/@dcl-sdk/utils/dist/index.js',
+            '../node_modules/@dcl/ecs/dist/index.js',
+          ],
+          sourcesContent: [index, 'export const door = 1', 'utils', 'ecs'],
+        }));
+      });
+
+      it('should report the scene as self-contained', () => {
+        expect(result.recovered).toBe('self-contained');
+        expect(result.recoveredSources).toBe(2);
+      });
+
+      it('should put the recovered sources in src', () => {
+        expect(text(entries, 'recovered/src/index.ts')).toBe(index);
+        expect(text(entries, 'recovered/src/systems/door.ts')).toBe('export const door = 1');
+        expect([...entries.keys()].some(name => name.includes('recovered-src'))).toBe(false);
+      });
+
+      it('should add the imported allowed packages as dependencies', () => {
+        const pkg = JSON.parse(text(entries, 'recovered/package.json')!);
+        expect(pkg.dependencies).toEqual({ '@dcl-sdk/utils': 'latest' });
+      });
+
+      it('should describe what was recovered in RECOVERY.md', () => {
+        const notes = text(entries, 'recovered/RECOVERY.md')!;
+        expect(notes).toContain('src/');
+        expect(notes).toContain('@dcl-sdk/utils');
+        expect(notes).toContain('original-build/');
+      });
+    });
+
+    describe('and the sources rely on aliases, missing files and unreviewed packages', () => {
+      let result: Awaited<ReturnType<typeof exportScene>>;
+      let entries: Map<string, ZipEntry>;
+      const index = [
+        "import { artworks } from '@lib'",
+        'import config from "@config"',
+        "import { helper } from '../lib/src'",
+        "import { chunk } from 'lodash'",
+        "import * as utils from '@dcl-sdk/utils'",
+        'export function main() {}',
+      ].join('\n');
+
+      beforeEach(async () => {
+        ({ result, entries } = await exportWithMap({
+          sources: [
+            '../src/index.ts',
+            '../../lib/src/util.ts',
+            '../node_modules/lodash/lodash.js',
+            '../node_modules/@dcl-sdk/utils/dist/index.js',
+          ],
+          sourcesContent: [index, 'export const util = 1', 'lodash', 'utils'],
+        }));
+      });
+
+      it('should report the recovery as partial', () => {
+        expect(result.recovered).toBe('partial');
+        expect(result.recoveredSources).toBe(2);
+      });
+
+      it('should keep the recovered sources under recovered-src and the stub entry point', () => {
+        expect(text(entries, 'recovered/recovered-src/src/index.ts')).toBe(index);
+        expect(text(entries, 'recovered/recovered-src/lib/src/util.ts')).toBe(
+          'export const util = 1',
+        );
+        expect(text(entries, 'recovered/src/index.ts')).toBe('export function main() {}\n');
+        expect(entries.has('recovered/lib/src/util.ts')).toBe(false);
+      });
+
+      it('should exclude recovered-src from the build and from deployments', () => {
+        const tsconfig = JSON.parse(text(entries, 'recovered/tsconfig.json')!);
+        expect(tsconfig.exclude).toContain('recovered-src');
+        expect(text(entries, 'recovered/.dclignore')!.split('\n')).toContain('recovered-src');
+      });
+
+      it('should add only the allowed packages as dependencies', () => {
+        const pkg = JSON.parse(text(entries, 'recovered/package.json')!);
+        expect(pkg.dependencies).toEqual({ '@dcl-sdk/utils': 'latest' });
+      });
+
+      it('should list every build blocker in RECOVERY.md', () => {
+        const notes = text(entries, 'recovered/RECOVERY.md')!;
+        expect(notes).toContain('recovered-src/');
+        expect(notes).toContain('@lib');
+        expect(notes).toContain('@config');
+        expect(notes).toContain('lib/src');
+        expect(notes).toContain('lodash');
+        expect(notes).toContain('original-build/');
+      });
+    });
+
+    describe('and the map names packages outside the allow-list', () => {
+      let result: Awaited<ReturnType<typeof exportScene>>;
+      let entries: Map<string, ZipEntry>;
+
+      beforeEach(async () => {
+        ({ result, entries } = await exportWithMap({
+          sources: [
+            '../src/index.ts',
+            '../node_modules/evil-pkg/index.js',
+            '../node_modules/@dcl-evil/x/index.js',
+          ],
+          sourcesContent: [
+            "import 'evil-pkg'\nconst x = require('@dcl-evil/x')\nexport function main() {}",
+            'evil',
+            'evil',
+          ],
+        }));
+      });
+
+      it('should add neither package and report the recovery as partial', () => {
+        const pkg = JSON.parse(text(entries, 'recovered/package.json')!);
+        expect(pkg.dependencies).toBeUndefined();
+        expect(result.recovered).toBe('partial');
+        const notes = text(entries, 'recovered/RECOVERY.md')!;
+        expect(notes).toContain('evil-pkg');
+        expect(notes).toContain('@dcl-evil/x');
+      });
+    });
   });
 
   describe('when entity file names or hashes are unsafe', () => {
