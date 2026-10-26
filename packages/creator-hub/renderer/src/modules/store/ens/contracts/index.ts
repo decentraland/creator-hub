@@ -1,3 +1,3 @@
 export { ens } from './ens';
-export { ensResolver } from './ensResolver';
+export { ensUniversalResolver } from './ensUniversalResolver';
 export { dclRegistrar } from './dclRegistrar';

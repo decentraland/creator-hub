@@ -15,7 +15,7 @@ import {
   ENSResolver as ensResolverAbi,
   DCLRegistrar as dclRegistrarAbi,
 } from './abis';
-import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
+import { ens as ensContract, ensUniversalResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
 
@@ -67,9 +67,9 @@ export const fetchDCLNames = createAsyncThunk(
 
     const ensData = ensContract[chainId];
     const dclRegistrarData = dclRegistrar[chainId];
-    const resolverData = ensResolver[chainId];
+    const universalResolverAddress = ensUniversalResolver[chainId];
 
-    if (!ensData || !dclRegistrarData || !resolverData) {
+    if (!ensData || !dclRegistrarData || !universalResolverAddress) {
       throw new Error(`ENS contract for chainId ${chainId} not found.`);
     }
 
@@ -82,12 +82,6 @@ export const fetchDCLNames = createAsyncThunk(
     const dclRegistrarImplementation = getContract({
       address: dclRegistrarData.address as Address,
       abi: dclRegistrarAbi,
-      client: provider,
-    });
-
-    const resolverImplementation = getContract({
-      address: resolverData.address as Address,
-      abi: ensResolverAbi,
       client: provider,
     });
 
@@ -116,10 +110,17 @@ export const fetchDCLNames = createAsyncThunk(
         const resolver = resolverAddress.toLowerCase();
 
         try {
-          const resolvedAddress = (await resolverImplementation.read.addr([nodehash])) as Address;
-          ensAddressRecord = resolvedAddress !== zeroAddress ? resolvedAddress : '';
-        } catch (_e) {
-          console.log('Failed to fetch ens address record');
+          // Resolve through the name's current resolver (found by the ENS Universal Resolver,
+          // with CCIP-Read for offchain names), not a hardcoded one it may no longer use.
+          // `null` means the name has no address record.
+          const resolvedAddress = await provider.getEnsAddress({
+            name: subdomain,
+            universalResolverAddress,
+          });
+          ensAddressRecord =
+            resolvedAddress && resolvedAddress !== zeroAddress ? resolvedAddress : '';
+        } catch (error) {
+          console.log('Failed to fetch ens address record', error);
         }
 
         if (resolver !== zeroAddress) {
