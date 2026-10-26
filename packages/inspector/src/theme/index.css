@@ -30,6 +30,28 @@ input[type="number"] {
   overflow-y: auto;
 }
 
+.contexify_submenu::-webkit-scrollbar {
+  width: 16px;
+}
+
+.contexify_submenu::-webkit-scrollbar-track {
+  background: transparent;
+  margin: var(--contexify-menu-padding) 0;
+}
+
+.contexify_submenu::-webkit-scrollbar-thumb {
+  background-color: var(--palette-blackTransparent-blurry);
+  border: 1px solid var(--palette-whiteTransparent-backdrop);
+  border-radius: var(--shape-borderRadiusPill);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .contexify_submenu {
+    scrollbar-color: var(--palette-whiteTransparent-backdrop) transparent;
+    scrollbar-width: thin;
+  }
+}
+
 .contexify {
   border: 1px solid var(--palette-whiteTransparent-subtle);
 }
