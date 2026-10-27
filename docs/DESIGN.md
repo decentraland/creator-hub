@@ -666,7 +666,7 @@ Component [`20932:5388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?no
 
 ### Background (Background)
 
-Component [`20506:31427`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20506-31427), 1 variant and no component set: the page has only this frame plus its title. Code: Creator Hub `theme.css` `.Main` paints `assets/images/background.png` over `#242129` with `background-blend-mode: overlay` under the `--page-shade` wash (below) — the same raster role, a different overlay; inspector none (the editor paints `--base-20`).
+Component [`20506:31427`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20506-31427), 1 variant and no component set: the page has only this frame plus its title. Code: Creator Hub `theme.css` `.Main` paints `assets/images/background.png` over `#242129` with `background-blend-mode: overlay` — the same raster role, a different overlay; inspector none (the editor paints `--base-20`).
 
 | Name | Fill | Overlay | Size | Usage | Contrast |
 | --- | --- | --- | --- | --- | --- |
