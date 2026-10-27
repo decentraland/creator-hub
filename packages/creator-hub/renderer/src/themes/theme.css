@@ -20,6 +20,9 @@
   --dark-gray: #43404a;
   --darker-gray: #242129;
   --palette-neutral-onyx: #35333b;
+  --palette-neutral-softWhite: #fcfcfc;
+  --palette-whiteTransparent-subtle: rgba(255, 255, 255, 0.1);
+  --palette-system-blueLight1: #63b4f6;
 
   --dcl: #ff2d55;
   --dcl-dark: #9c1c34;
@@ -74,6 +77,13 @@
   --toast-text: #ffffff;
   --modal: #242129;
   --modal-surface: #181225;
+  --page-shade: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 52%) 0%,
+    rgb(0 0 0 / 51%) 25%,
+    rgb(0 0 0 / 46%) 37%,
+    rgb(0 0 0 / 20%) 100%
+  );
   --dimmer: #000000dd;
   --text-area-border: #676370;
   --clear-divider: #a09ba8;
@@ -128,6 +138,7 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  font-optical-sizing: none;
 }
 
 footer {
@@ -135,10 +146,12 @@ footer {
 }
 
 .Main {
-  background: url(../../assets/images/background.png) #242129ff;
+  background:
+    var(--page-shade),
+    url(../../assets/images/background.png) #242129ff;
   background-position: center;
   background-size: cover;
-  background-blend-mode: overlay;
+  background-blend-mode: normal, overlay;
   background-attachment: fixed;
   min-height: 100vh;
   display: flex;
