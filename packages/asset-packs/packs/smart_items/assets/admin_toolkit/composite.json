@@ -12,78 +12,17 @@
       }
     },
     {
-      "name": "asset-packs::AdminTools",
+      "name": "asset-packs::Script",
       "data": {
         "0": {
           "json": {
-            "adminPermissions": "PUBLIC",
-            "authorizedAdminUsers": {
-              "me": true,
-              "sceneOwners": true,
-              "allowList": true,
-              "adminAllowList": []
-            },
-            "moderationControl": {
-              "isEnabled": true,
-              "kickCoordinates": {
-                "x": 0,
-                "y": 0,
-                "z": 0
-              },
-              "allowNonOwnersManageAdminAllowList": false
-            },
-            "textAnnouncementControl": {
-              "isEnabled": true,
-              "playSoundOnEachAnnouncement": true,
-              "showAuthorOnEachAnnouncement": true
-            },
-            "videoControl": {
-              "isEnabled": true,
-              "disableVideoPlayersSound": false,
-              "showAuthorOnVideoPlayers": true,
-              "linkAllVideoPlayers": false,
-              "videoPlayers": []
-            },
-            "smartItemsControl": {
-              "isEnabled": true,
-              "linkAllSmartItems": false,
-              "smartItems": []
-            },
-            "rewardsControl": {
-              "isEnabled": true,
-              "rewardItems": []
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Admin Tools",
-            "fields": [
+            "value": [
               {
-                "name": "Controls",
-                "type": "asset-packs::AdminTools"
+                "path": "{assetPath}/AdminTools.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"adminPermissions\":{\"type\":\"enum\",\"value\":\"PUBLIC\",\"options\":[\"PUBLIC\",\"PRIVATE\"],\"optional\":true,\"tooltip\":\"Who is allowed to open the admin panel.\"},\"authorizedAdminUsers\":{\"type\":\"object\",\"value\":{\"me\":true,\"sceneOwners\":true,\"allowList\":true,\"adminAllowList\":[]},\"fields\":{\"me\":{\"type\":\"boolean\",\"value\":false},\"sceneOwners\":{\"type\":\"boolean\",\"value\":false},\"allowList\":{\"type\":\"boolean\",\"value\":false},\"adminAllowList\":{\"type\":\"array\",\"value\":[],\"item\":{\"type\":\"string\",\"value\":\"\"}}},\"optional\":true,\"tooltip\":\"Which groups (you, scene owners, an allow-list) count as admins.\"},\"moderationControl\":{\"type\":\"object\",\"value\":{\"isEnabled\":true,\"kickCoordinates\":{\"x\":0,\"y\":0,\"z\":0},\"allowNonOwnersManageAdminAllowList\":false},\"fields\":{\"isEnabled\":{\"type\":\"boolean\",\"value\":false},\"kickCoordinates\":{\"type\":\"object\",\"value\":{\"x\":0,\"y\":0,\"z\":0},\"fields\":{\"x\":{\"type\":\"number\",\"value\":0},\"y\":{\"type\":\"number\",\"value\":0},\"z\":{\"type\":\"number\",\"value\":0}}},\"allowNonOwnersManageAdminAllowList\":{\"type\":\"boolean\",\"value\":false}},\"optional\":true,\"tooltip\":\"Kick players and manage the admin allow-list.\"},\"textAnnouncementControl\":{\"type\":\"object\",\"value\":{\"isEnabled\":true,\"playSoundOnEachAnnouncement\":true,\"showAuthorOnEachAnnouncement\":true},\"fields\":{\"isEnabled\":{\"type\":\"boolean\",\"value\":false},\"playSoundOnEachAnnouncement\":{\"type\":\"boolean\",\"value\":false},\"showAuthorOnEachAnnouncement\":{\"type\":\"boolean\",\"value\":false}},\"optional\":true,\"tooltip\":\"Scene-wide text announcements.\"},\"videoControl\":{\"type\":\"object\",\"value\":{\"isEnabled\":true,\"disableVideoPlayersSound\":false,\"showAuthorOnVideoPlayers\":true,\"linkAllVideoPlayers\":false,\"videoPlayers\":[]},\"fields\":{\"isEnabled\":{\"type\":\"boolean\",\"value\":false},\"disableVideoPlayersSound\":{\"type\":\"boolean\",\"value\":false},\"showAuthorOnVideoPlayers\":{\"type\":\"boolean\",\"value\":false},\"linkAllVideoPlayers\":{\"type\":\"boolean\",\"value\":false},\"videoPlayers\":{\"type\":\"array\",\"value\":[],\"item\":{\"type\":\"object\",\"value\":{\"entity\":0,\"customName\":\"\"},\"fields\":{\"entity\":{\"type\":\"entity\",\"value\":0},\"customName\":{\"type\":\"string\",\"value\":\"\"}}}}},\"optional\":true,\"tooltip\":\"Video and stream screens the admin can control.\"},\"smartItemsControl\":{\"type\":\"object\",\"value\":{\"isEnabled\":true,\"linkAllSmartItems\":false,\"smartItems\":[]},\"fields\":{\"isEnabled\":{\"type\":\"boolean\",\"value\":false},\"linkAllSmartItems\":{\"type\":\"boolean\",\"value\":false},\"smartItems\":{\"type\":\"array\",\"value\":[],\"item\":{\"type\":\"object\",\"value\":{\"entity\":0,\"customName\":\"\",\"defaultAction\":\"\"},\"fields\":{\"entity\":{\"type\":\"entity\",\"value\":0},\"customName\":{\"type\":\"string\",\"value\":\"\"},\"defaultAction\":{\"type\":\"string\",\"value\":\"\"}}}}},\"optional\":true,\"tooltip\":\"Other smart items whose actions the admin can trigger.\"},\"rewardsControl\":{\"type\":\"object\",\"value\":{\"isEnabled\":true,\"rewardItems\":[]},\"fields\":{\"isEnabled\":{\"type\":\"boolean\",\"value\":false},\"rewardItems\":{\"type\":\"array\",\"value\":[],\"item\":{\"type\":\"object\",\"value\":{\"entity\":0,\"customName\":\"\"},\"fields\":{\"entity\":{\"type\":\"entity\",\"value\":0},\"customName\":{\"type\":\"string\",\"value\":\"\"}}}}},\"optional\":true,\"tooltip\":\"Reward campaigns the admin can dispense.\"}},\"actions\":[],\"events\":[]}"
               }
-            ],
-            "helpTooltip": {
-              "text": "Admin users can play videos, send text announcements, and trigger smart item actions. People with publish permissions are automatically admin users, you can add other users manually after publishing the scene."
-            },
-            "version": 1
-          }
-        }
-      }
-    },
-    {
-      "name": "core-schema::Sync-Components",
-      "data": {
-        "0": {
-          "json": {
-            "value": ["asset-packs::AdminTools"]
+            ]
           }
         }
       }

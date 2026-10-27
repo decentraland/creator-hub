@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Spikes.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"damagePoints\":{\"type\":\"number\",\"value\":15,\"optional\":true,\"tooltip\":\"How much damage each tick deals.\"},\"radius\":{\"type\":\"number\",\"value\":5,\"optional\":true,\"tooltip\":\"How far from the tile the damage reaches.\"},\"interval\":{\"type\":\"number\",\"value\":2,\"optional\":true,\"tooltip\":\"Seconds between damage ticks.\"},\"damageTarget\":{\"type\":\"enum\",\"value\":\"player\",\"options\":[\"all\",\"player\",\"non_player\"],\"optional\":true,\"tooltip\":\"Who takes the damage.\"},\"sound\":{\"type\":\"string\",\"value\":\"spikes.mp3\",\"optional\":true,\"tooltip\":\"Audio file in this item's folder played on each tick (e.g. spikes.mp3). Empty for none.\"}},\"actions\":[{\"methodName\":\"damage\",\"description\":\"Deals one tick of damage in the area right now.\",\"params\":{}}],\"events\":[]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -19,93 +35,11 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Damage Sound",
-                "type": "play_sound",
-                "jsonPayload": "{ \"src\": \"{assetPath}/spikes.mp3\" }"
-              },
-              {
                 "name": "Damage",
-                "type": "damage",
-                "jsonPayload": "{ \"radius\": 5, \"hits\": 15, \"layer\": \"player\" }",
-                "basicViewId": "action-damage"
-              },
-              {
-                "name": "Start Damage",
-                "type": "start_loop",
-                "jsonPayload": "{ \"actions\": [\"Damage Batch\"], \"interval\": 2 }",
-                "basicViewId": "action-damage-interval",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Stop Damage",
-                "type": "stop_loop",
-                "jsonPayload": "{ \"action\": \"Damage Batch\" }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Damage Batch",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Damage\", \"Play Damage Sound\"]}"
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Spikes.ts\",\"methodName\":\"damage\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_player_enters_area",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Start Damage"
-                  }
-                ]
-              },
-              {
-                "type": "on_player_leaves_area",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Stop Damage"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Spikes",
-            "fields": [
-              {
-                "name": "Damage",
-                "type": "asset-packs::Actions",
-                "basicViewId": "action-damage",
-                "layout": "{ \"layer\": { \"field\": \"Dropdown\", \"label\": \"Damage Target\" }, \"hits\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Damage Points\" } }"
-              },
-              {
-                "name": "Interval Damage",
-                "type": "asset-packs::Actions",
-                "basicViewId": "action-damage-interval",
-                "layout": "{\"interval\": { \"field\": \"RangeField\", \"label\": \"Damage Interval\", \"step\": \"0.1\" } }"
-              }
-            ],
-            "helpTooltip": {
-              "text": "A tile of spikes that can be used to damage players. It can be used together with the Health Bar smart item."
-            },
-            "version": 1
           }
         }
       }
