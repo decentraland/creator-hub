@@ -1,6 +1,4 @@
 import React, { useCallback, useMemo } from 'react';
-import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
-import cx from 'classnames';
 import { validateAssetPath } from '@dcl/asset-packs';
 
 import { useAssetOptions } from '../../../../hooks/useAssetOptions';
@@ -9,6 +7,7 @@ import { setMobileHudHighlight } from '../../../../redux/ui-designer';
 import { FileUploadField, InfoTooltip } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { MobileHudIcon } from '../../shared/widget-icons';
+import { EyeIcon, EyeOffIcon } from '../../icons';
 import type { MobileAction, MobileHudConfig } from '../../MobileHud/mobile-hud-config';
 import {
   allActionsHidden,
@@ -67,12 +66,12 @@ const ActionRow: React.FC<{
         </label>
         <button
           type="button"
-          className={cx('ui-designer-mobile-hud-eye', { 'is-hidden': button.hide })}
+          className="ui-designer-mobile-hud-eye ui-designer-toggle ui-designer-compact"
           aria-label={button.hide ? `Show ${action}` : `Hide ${action}`}
           aria-pressed={button.hide}
           onClick={() => setButton({ hide: !button.hide })}
         >
-          {button.hide ? <IoEyeOffOutline aria-hidden /> : <IoEyeOutline aria-hidden />}
+          {button.hide ? <EyeOffIcon /> : <EyeIcon />}
         </button>
       </div>
       <FileUploadField

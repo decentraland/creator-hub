@@ -10,7 +10,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import { useDrop } from 'react-dnd';
 import { useStore } from 'react-redux';
-import { IoAddOutline, IoCopyOutline, IoTrashOutline } from 'react-icons/io5';
+import { IoAddOutline, IoCopyOutline } from 'react-icons/io5';
 import cx from 'classnames';
 import type { Entity, PBUiTransform } from '@dcl/ecs';
 
@@ -68,6 +68,7 @@ import {
   unregisterNodeElement,
 } from '../shared/node-registry';
 import { loadMobileHudConfig, useMobileHudConfig } from '../MobileHud/mobile-hud-store';
+import { DesktopIcon, TrashIcon } from '../icons';
 import { applyCanvasDrop } from './drop';
 import {
   armGroupClickSuppression,
@@ -87,7 +88,7 @@ import { hiddenStyle, nodeStyle, rendersText, TEXT_VALUE_FIELD, textureStyle } f
 import { renderTextMarkup } from './text-markup';
 import { MobileHudPreview } from './MobileHudPreview';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
-import { DesktopIcon, HudGuidesIcon, MobileIcon, SafeAreaFrameIcon } from './toolbar-icons';
+import { HudGuidesIcon, MobileIcon, SafeAreaFrameIcon } from './toolbar-icons';
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
@@ -200,7 +201,7 @@ const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
       <button
         ref={addBtnRef}
         type="button"
-        className="ui-designer-node-action"
+        className="ui-designer-node-action ui-designer-icon-btn"
         aria-label="Add child"
         title="Add child"
         onClick={() => setAddOpen(true)}
@@ -209,7 +210,7 @@ const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
       </button>
       <button
         type="button"
-        className="ui-designer-node-action"
+        className="ui-designer-node-action ui-designer-icon-btn"
         aria-label="Duplicate node"
         title="Duplicate"
         onClick={() => void duplicate(entity)}
@@ -218,12 +219,12 @@ const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
       </button>
       <button
         type="button"
-        className="ui-designer-node-action"
+        className="ui-designer-node-action ui-designer-icon-btn"
         aria-label="Delete node"
         title="Delete"
         onClick={() => remove(entity)}
       >
-        <IoTrashOutline aria-hidden="true" />
+        <TrashIcon />
       </button>
       {addOpen ? (
         <WidgetPicker
@@ -1464,7 +1465,7 @@ const CanvasComponent: React.FC = () => {
                 <div className="ui-designer-toggles">
                   <button
                     type="button"
-                    className={cx('ui-designer-canvas-zoom-btn', { active: hudVisible })}
+                    className="ui-designer-canvas-zoom-btn ui-designer-toggle ui-designer-compact"
                     onClick={() => setHudOverride(!hudVisible)}
                     disabled={device === 'desktop'}
                     title={
@@ -1479,10 +1480,10 @@ const CanvasComponent: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    className={cx('ui-designer-canvas-zoom-btn', {
-                      active: safeAreasVisible,
-                      locked: insetLocked,
-                    })}
+                    className={cx(
+                      'ui-designer-canvas-zoom-btn ui-designer-toggle ui-designer-compact',
+                      { locked: insetLocked },
+                    )}
                     onClick={() => {
                       if (!insetLocked) setShowSafeAreas(s => !s);
                     }}
@@ -1499,15 +1500,13 @@ const CanvasComponent: React.FC = () => {
                   </button>
                 </div>
                 <div
-                  className="ui-designer-device-toggle"
+                  className="ui-designer-device-toggle ui-designer-segmented"
                   role="group"
                   aria-label="Preview device"
                 >
                   <button
                     type="button"
-                    className={cx('ui-designer-device-toggle-btn', {
-                      active: device === 'desktop',
-                    })}
+                    className="ui-designer-device-toggle-btn ui-designer-toggle"
                     onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
                     title="Desktop preview"
                     aria-label="Desktop preview"
@@ -1517,9 +1516,7 @@ const CanvasComponent: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    className={cx('ui-designer-device-toggle-btn', {
-                      active: device === 'mobile',
-                    })}
+                    className="ui-designer-device-toggle-btn ui-designer-toggle"
                     onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
                     title="Mobile preview"
                     aria-label="Mobile preview"
@@ -1533,7 +1530,7 @@ const CanvasComponent: React.FC = () => {
             <div className="ui-designer-zoom-panel">
               <button
                 type="button"
-                className="ui-designer-canvas-zoom-btn"
+                className="ui-designer-canvas-zoom-btn ui-designer-icon-btn"
                 onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
                 aria-label="Zoom out"
               >
@@ -1584,7 +1581,7 @@ const CanvasComponent: React.FC = () => {
               )}
               <button
                 type="button"
-                className="ui-designer-canvas-zoom-btn"
+                className="ui-designer-canvas-zoom-btn ui-designer-icon-btn"
                 onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
                 disabled={scale >= ZOOM_MAX}
                 title={scale >= ZOOM_MAX ? 'Maximum zoom reached' : undefined}

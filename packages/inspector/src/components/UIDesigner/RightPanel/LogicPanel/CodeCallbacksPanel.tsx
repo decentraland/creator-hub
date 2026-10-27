@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
 import { analytics, Event } from '../../../../lib/logic/analytics';
@@ -8,6 +7,7 @@ import { TextField } from '../../../ui';
 import { type CodeAction, isValidTemplate } from '../../code/actions';
 import type { BindVariable } from '../../code/bindings';
 import { addBindAction, removeAction, setActionBody, useCodeState } from '../../code/store';
+import { TrashIcon } from '../../icons';
 
 import './CodeCallbacksPanel.css';
 
@@ -144,12 +144,12 @@ const CallbackCard: React.FC<{ action: CodeAction; vars: BindVariable[] }> = ({ 
       <span className="ui-designer-callback-name">{action.name}</span>
       <button
         type="button"
-        className="ui-designer-callback-delete"
+        className="ui-designer-callback-delete ui-designer-icon-btn ui-designer-compact"
         title={`Delete ${action.name}`}
         aria-label={`Delete ${action.name}`}
         onClick={() => void removeAction(action.name)}
       >
-        <VscTrash aria-hidden />
+        <TrashIcon />
       </button>
     </div>
     <CallbackBodyEditor
@@ -206,7 +206,7 @@ const CodeCallbacksPanelComponent: React.FC = () => {
           />
           <button
             type="button"
-            className="ui-designer-code-add"
+            className="ui-designer-code-add ui-designer-icon-btn"
             aria-label="Add event"
             disabled={!canAdd}
             onClick={add}

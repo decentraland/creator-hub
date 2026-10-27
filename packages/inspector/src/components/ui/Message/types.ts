@@ -3,6 +3,7 @@ export type Props = {
   className?: string;
   type?: MessageType;
   icon?: boolean;
+  id?: string;
 };
 
 export enum MessageType {

@@ -5,6 +5,7 @@ import { Canvas } from './Canvas';
 import { useUINodeHotkeys } from './shared/useUINodeHotkeys';
 
 import './UIDesigner.css';
+import './controls.css';
 
 /** Code-mode canvas host: a live view over the scene's real react-ecs .tsx files. */
 const UIDesigner: React.FC = () => {

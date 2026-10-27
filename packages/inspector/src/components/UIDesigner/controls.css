@@ -1,0 +1,238 @@
+.ui-designer-icon-btn,
+.ui-designer-toggle {
+  --ui-designer-ctl-fg: var(--ui-designer-text-muted);
+  --ui-designer-ctl-fill: transparent;
+  --ui-designer-ctl-rest-edge: transparent;
+  --ui-designer-ctl-edge: var(--ui-designer-ctl-rest-edge);
+  color: var(--ui-designer-ctl-fg);
+  background: var(--ui-designer-ctl-fill);
+  cursor: pointer;
+}
+
+.ui-designer-toggle {
+  border: 1px solid var(--ui-designer-ctl-edge);
+}
+
+.ui-designer-tab,
+.ui-designer-segmented > .ui-designer-toggle {
+  --ui-designer-ctl-rest-edge: var(--palette-neutral-onyx);
+}
+
+.ui-designer-icon-btn:hover:not(:disabled, [aria-disabled="true"]),
+.ui-designer-toggle:hover:not(:disabled, [aria-disabled="true"]) {
+  --ui-designer-ctl-fg: var(--ui-designer-text);
+  --ui-designer-ctl-fill: var(--palette-whiteTransparent-subtle);
+}
+
+.ui-designer-toggle:is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"]) {
+  --ui-designer-ctl-fg: var(--ui-designer-control-active-fg);
+  --ui-designer-ctl-fill: var(--ui-designer-control-active-bg);
+  --ui-designer-ctl-edge: var(--ui-designer-control-active-bg);
+}
+
+.ui-designer-toggle:is(
+    [aria-pressed="true"],
+    [aria-checked="true"],
+    [aria-selected="true"]
+  ):hover:not(:disabled, [aria-disabled="true"]) {
+  --ui-designer-ctl-fill: var(--palette-system-blueDark3);
+  --ui-designer-ctl-edge: var(--palette-system-blueDark3);
+}
+
+.ui-designer-icon-btn:is(:disabled, [aria-disabled="true"]),
+.ui-designer-toggle:is(:disabled, [aria-disabled="true"]) {
+  --ui-designer-ctl-fg: var(--palette-whiteTransparent-soft);
+  --ui-designer-ctl-fill: transparent;
+  --ui-designer-ctl-edge: var(--ui-designer-ctl-rest-edge);
+  cursor: default;
+}
+
+.ui-designer-icon-btn:focus-visible,
+.ui-designer-toggle:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: 1px;
+}
+
+.ui-designer-compact {
+  position: relative;
+  border-radius: 8px;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.ui-designer-compact:focus-visible {
+  outline-offset: -3px;
+}
+
+.ui-designer-compact::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  box-sizing: border-box;
+  border-radius: 4px;
+  background: var(--ui-designer-ctl-fill);
+}
+
+.ui-designer-toggle.ui-designer-compact::before {
+  border: 1px solid var(--ui-designer-ctl-edge);
+}
+
+.ui-designer-segmented {
+  --ui-designer-segmented-radius: var(--ui-designer-radius-field);
+  display: flex;
+}
+
+.ui-designer-segmented > .ui-designer-toggle {
+  border-radius: 0;
+}
+
+.ui-designer-segmented > .ui-designer-toggle + .ui-designer-toggle {
+  margin-left: -1px;
+}
+
+.ui-designer-segmented > .ui-designer-toggle:first-child {
+  border-radius: var(--ui-designer-segmented-radius) 0 0 var(--ui-designer-segmented-radius);
+}
+
+.ui-designer-segmented > .ui-designer-toggle:last-child {
+  border-radius: 0 var(--ui-designer-segmented-radius) var(--ui-designer-segmented-radius) 0;
+}
+
+.ui-designer-segmented > .ui-designer-toggle:only-child {
+  border-radius: var(--ui-designer-segmented-radius);
+}
+
+.ui-designer-segmented
+  > .ui-designer-toggle:is(
+    :hover,
+    [aria-pressed="true"],
+    [aria-checked="true"],
+    [aria-selected="true"]
+  ) {
+  position: relative;
+  z-index: 1;
+}
+
+.ui-designer-segmented > .ui-designer-toggle:focus-visible {
+  position: relative;
+  z-index: 2;
+  outline-offset: -2px;
+}
+
+.ui-designer-left-rail .InfoTooltipTrigger,
+.ui-designer-right-rail .InfoTooltipTrigger {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: -4px;
+}
+
+.ui-designer-left-rail .InfoTooltipTrigger::before,
+.ui-designer-right-rail .InfoTooltipTrigger::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border-radius: 4px;
+}
+
+.ui-designer-left-rail .InfoTooltipTrigger:hover::before,
+.ui-designer-right-rail .InfoTooltipTrigger:hover::before,
+.ui-designer-left-rail .InfoTooltipTrigger.hovered::before,
+.ui-designer-right-rail .InfoTooltipTrigger.hovered::before {
+  background: var(--palette-whiteTransparent-subtle);
+}
+
+.ui-designer-left-rail .InfoTooltipTrigger > svg,
+.ui-designer-right-rail .InfoTooltipTrigger > svg {
+  width: 14px;
+  height: 14px;
+  color: var(--ui-designer-text-muted);
+}
+
+.ui-designer-left-rail .InfoTooltipTrigger:hover > svg,
+.ui-designer-right-rail .InfoTooltipTrigger:hover > svg,
+.ui-designer-left-rail .InfoTooltipTrigger.hovered > svg,
+.ui-designer-right-rail .InfoTooltipTrigger.hovered > svg {
+  color: var(--ui-designer-text);
+}
+
+.ui-designer-toolbar.Toolbar .ToolbarButton:is(.ui-designer-icon-btn, .ui-designer-toggle) {
+  color: var(--ui-designer-ctl-fg);
+  background-color: var(--ui-designer-ctl-fill);
+  background-image: none;
+  opacity: 1;
+}
+
+.ui-designer-toolbar.Toolbar .ToolbarButton.ui-designer-toggle {
+  border: 1px solid var(--ui-designer-ctl-edge);
+}
+
+.ui-designer-toolbar .ui-designer-gizmo-group {
+  --ui-designer-segmented-radius: 4px;
+}
+
+.ui-designer-toolbar .Gizmos .ui-designer-gizmo-group > .gizmo {
+  margin: 0;
+}
+
+.ui-designer-toolbar .Gizmos .ui-designer-gizmo-group > .gizmo + .gizmo {
+  margin-left: -1px;
+}
+
+.ui-designer-toolbar .gizmo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-designer-toolbar .gizmo::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-toolbar .gizmo.free::before {
+  mask-image: url("../Toolbar/Gizmos/icons/free.svg");
+}
+
+.ui-designer-toolbar .gizmo.position::before {
+  mask-image: url("../Toolbar/Gizmos/icons/position.svg");
+}
+
+.ui-designer-toolbar .gizmo.rotation::before {
+  mask-image: url("../Toolbar/Gizmos/icons/rotation.svg");
+}
+
+.ui-designer-toolbar .gizmo.scale::before {
+  mask-image: url("../Toolbar/Gizmos/icons/scale.svg");
+}
+
+.ui-designer-toolbar .open-panel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+}

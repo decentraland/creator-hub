@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useId, useState } from 'react';
 import { VscCode as CodeIcon } from 'react-icons/vsc';
 
 import { Modal } from '../../../Modal';
@@ -13,6 +13,8 @@ const DEFAULT_SCRIPT_NAME = 'NewScript';
 export const CreateScriptModal: React.FC<Props> = ({ isOpen, onClose, onCreate, isValid }) => {
   const [scriptName, setScriptName] = useState(DEFAULT_SCRIPT_NAME);
   const [error, setError] = useState<string | undefined>(undefined);
+  const errorId = useId();
+  const inputId = useId();
 
   useEffect(() => {
     if (isOpen) {
@@ -55,16 +57,31 @@ export const CreateScriptModal: React.FC<Props> = ({ isOpen, onClose, onCreate, 
         <p className="subtitle">A new Script will be placed inside your Scene Assets folder.</p>
 
         <div className="script-preview">
-          <label className="label">Script File</label>
+          <label
+            className="label"
+            htmlFor={inputId}
+          >
+            Script File
+          </label>
           <div className="icon-container">
             <CodeIcon size={64} />
           </div>
           <TextField
+            id={inputId}
+            size="large"
             value={scriptName}
             onChange={handleChange}
             error={!!error}
+            aria-describedby={error ? errorId : undefined}
           />
-          {error && <span className="error-message">{error}</span>}
+          {error && (
+            <span
+              id={errorId}
+              className="error-message"
+            >
+              {error}
+            </span>
+          )}
         </div>
 
         <div className="actions">

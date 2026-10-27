@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 
 import { isValidHttpsUrl } from '../../lib/utils/url';
 import { TextField } from '../ui/TextField';
@@ -23,6 +23,7 @@ export function UrlInputModal({
 }: UrlInputModalProps) {
   const [urlValue, setUrlValue] = useState(initialValue);
   const [error, setError] = useState<string>();
+  const errorId = useId();
 
   useEffect(() => {
     if (isOpen) {
@@ -60,14 +61,17 @@ export function UrlInputModal({
       <div className="UrlInputModalContent">
         <h3>Enter URL</h3>
         <TextField
+          size="large"
           label="URL"
           placeholder="https://..."
           value={urlValue}
           onChange={handleChange}
           error={!!error}
+          aria-describedby={error ? errorId : undefined}
         />
         {error && (
           <Message
+            id={errorId}
             text={error}
             type={MessageType.ERROR}
           />

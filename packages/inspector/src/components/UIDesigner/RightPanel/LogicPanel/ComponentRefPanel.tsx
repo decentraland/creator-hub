@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { IoCubeOutline } from 'react-icons/io5';
-import { VscTrash } from 'react-icons/vsc';
 import type { Entity } from '@dcl/ecs';
 
 import { Container } from '../../../Container';
@@ -17,6 +16,7 @@ import type { CodeUINode, ComponentRefProp } from '../../code/types';
 import { BindAffordance } from '../PropertyPanel/BindAffordance';
 import type { FieldConfig, FieldKind } from '../PropertyPanel/field-configs';
 import { useFieldBinding } from '../PropertyPanel/useFieldBinding';
+import { TrashIcon } from '../../icons';
 
 import './CodeVariablesPanel.css';
 
@@ -89,6 +89,7 @@ const InstancePropRow: React.FC<{
         </em>
       ) : prop.type === 'boolean' ? (
         <CheckboxField
+          color="tertiary"
           aria-label={prop.name}
           checked={current?.value === true || current?.value === 'true'}
           onChange={e =>
@@ -127,12 +128,12 @@ const InstancePropRow: React.FC<{
       {current ? (
         <button
           type="button"
-          className="ui-designer-code-variable-delete"
+          className="ui-designer-code-variable-delete ui-designer-icon-btn ui-designer-compact"
           title={`Clear ${prop.name}`}
           aria-label={`Clear ${prop.name}`}
           onClick={() => void unsetInstanceProp(entity, prop.name)}
         >
-          <VscTrash aria-hidden />
+          <TrashIcon />
         </button>
       ) : null}
     </div>

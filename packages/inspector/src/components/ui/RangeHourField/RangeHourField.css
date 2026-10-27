@@ -1,6 +1,6 @@
-@import '../RangeField/RangeField.css';
+@import "../RangeField/RangeField.css";
 
-.RangeHour.Range.Field .RangeContainer input[type='time'] {
+.RangeHour.Range.Field .RangeContainer input[type="time"] {
   width: 85px;
   padding: 4px 8px;
   background-color: var(--gray-0);
@@ -27,7 +27,7 @@
   cursor: not-allowed;
 }
 
-.RangeHour.Range.Field .RangeContainer input[type='time']::-webkit-calendar-picker-indicator {
+.RangeHour.Range.Field .RangeContainer input[type="time"]::-webkit-calendar-picker-indicator {
   display: none;
 }
 
@@ -42,13 +42,8 @@
     #714171 85%,
     #40247b 100%
   ) !important;
-  height: 8px !important;
-  border-radius: 4px !important;
-}
-
-.RangeHour.Range.Field .RangeContainer .RangeInput::before,
-.RangeHour.Range.Field .RangeContainer .RangeInput::after {
-  background: #361c75 !important;
+  height: var(--slider-track-height) !important;
+  border-radius: 100px !important;
 }
 
 .RangeHour.Range.Field .RangeContainer .RangeInput::-webkit-slider-thumb {
@@ -59,18 +54,10 @@
   background: white !important;
 }
 
-.RangeHour.Range.Field .RangeContainer .RangeInput::-ms-thumb {
-  background: white !important;
-}
-
 .RangeHour.Range.Field .RangeContainer .RangeInput::-webkit-slider-runnable-track {
   background: none !important;
 }
 
 .RangeHour.Range.Field .RangeContainer .RangeInput::-moz-range-track {
-  background: none !important;
-}
-
-.RangeHour.Range.Field .RangeContainer .RangeInput::-ms-track {
   background: none !important;
 }

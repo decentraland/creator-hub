@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { IoListOutline } from 'react-icons/io5';
-import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
 import { analytics, Event } from '../../../../lib/logic/analytics';
@@ -15,6 +14,7 @@ import {
   setStateVariableValue,
   useCodeState,
 } from '../../code/store';
+import { TrashIcon } from '../../icons';
 
 import './CodeVariablesPanel.css';
 
@@ -50,6 +50,7 @@ const CodeVariableRow: React.FC<{ v: BindVariable }> = ({ v }) => {
       />
       {v.type === 'boolean' ? (
         <CheckboxField
+          color="tertiary"
           aria-label={`Default of ${v.name}`}
           checked={v.value === true || v.value === 'true'}
           onChange={e =>
@@ -73,12 +74,12 @@ const CodeVariableRow: React.FC<{ v: BindVariable }> = ({ v }) => {
       )}
       <button
         type="button"
-        className="ui-designer-code-variable-delete"
+        className="ui-designer-code-variable-delete ui-designer-icon-btn ui-designer-compact"
         title={`Delete ${v.name}`}
         aria-label={`Delete ${v.name}`}
         onClick={() => void removeStateVariable(v.name)}
       >
-        <VscTrash aria-hidden />
+        <TrashIcon />
       </button>
     </div>
   );
@@ -192,7 +193,7 @@ const CodeVariablesPanelComponent: React.FC = () => {
           />
           <button
             type="button"
-            className="ui-designer-code-add"
+            className="ui-designer-code-add ui-designer-icon-btn"
             aria-label="Add variable"
             disabled={!canAdd}
             onClick={add}

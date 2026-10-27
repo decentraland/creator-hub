@@ -26,7 +26,7 @@
 
 .Button.MuiButton-colorPrimary:hover,
 .Button.MuiButton-colorPrimary.MuiButtonGroup-grouped:hover {
-  background-color: var(--dcl-dark) !important;
+  background-color: var(--primary-hover) !important;
 }
 
 .Button.MuiButton-colorPrimary:disabled,

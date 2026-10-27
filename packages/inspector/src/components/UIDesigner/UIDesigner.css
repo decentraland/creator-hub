@@ -14,14 +14,6 @@
   --selected-item: var(--ui-designer-control-accent-21);
 }
 
-.ui-designer-toolbar {
-  --selected-item: #244b7d;
-}
-
-.ui-designer-toolbar.Toolbar .scene-info.active {
-  background-color: #244b7d !important;
-}
-
 .ui-designer {
   width: 100%;
   height: 100%;
@@ -240,27 +232,9 @@
   width: 20px;
   height: 20px;
   padding: 0;
-  background: transparent;
   border: 1px solid var(--ui-designer-control-border);
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
   touch-action: manipulation;
-}
-
-.ui-designer-rail-add:hover:not(:disabled) {
-  border-color: var(--ui-designer-control-accent-62);
-  color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-rail-add:focus-visible {
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
-}
-
-.ui-designer-rail-add:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 /* Press feedback on the two "+" buttons: one ripple per click, expanding out of
@@ -403,12 +377,12 @@
 }
 
 .ui-designer-rail-search .ClearSearch {
-  cursor: pointer;
-  color: var(--base-09);
-}
-
-.ui-designer-rail-search .ClearSearch:hover {
-  color: var(--base-01);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  border-radius: 4px;
 }
 
 /* Note shown while a nested component instance is selected: its Variables and
@@ -467,15 +441,8 @@
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fcfcfc;
   font-size: 20px;
-  cursor: pointer;
   transition: background 0.12s;
-}
-
-.ui-designer-variant-remove-modal .close:hover {
-  background: rgba(255, 255, 255, 0.18);
 }
 
 .ui-designer-variant-remove-modal .content {

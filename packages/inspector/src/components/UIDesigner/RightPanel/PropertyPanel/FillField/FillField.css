@@ -15,27 +15,7 @@
   align-items: center;
   justify-content: center;
   padding: 4px;
-  background: transparent;
-  border: 1px solid var(--ui-designer-control-border);
   border-radius: var(--ui-designer-radius-field);
-  color: var(--ui-designer-glyph);
-  cursor: pointer;
-}
-
-.ui-designer-fill-mode:hover {
-  color: var(--title);
-  border-color: var(--ui-designer-control-border-strong);
-}
-
-.ui-designer-fill-mode.selected {
-  color: var(--ui-designer-control-active-fg);
-  border-color: var(--ui-designer-control-active-bg);
-  background: var(--ui-designer-control-active-bg);
-}
-
-.ui-designer-fill-mode:focus-visible {
-  outline: 2px solid var(--border-focused);
-  outline-offset: 1px;
 }
 
 .ui-designer-fill-mode[data-mode="none"]::before,
