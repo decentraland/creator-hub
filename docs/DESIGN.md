@@ -303,6 +303,9 @@ No pair that passed now fails.
 
 ### Conventions
 
+- **Page side margin: 98px**, Figma's, on `.Container` (Scenes, Templates, Analytics, Analytics detail, Manage, Learn, Videos, Docs) and on `SignInPage`, which sits outside `Container` (user decision).
+- **Type rendering: `body { font-optical-sizing: none }`** in `theme.css`, on every page (user decision). The app's variable Inter otherwise applies its optical-size axis automatically (`opsz` = font size, up to 32), which renders 2–3% narrower than Figma, which uses Inter at text optical size. With it, the navbar labels match Figma's widths (HOME 60.8 / 61, MANAGE 89.0 / 89, TEMPLATES 119.1 / 120, ANALYTICS 115.2 / 116).
+- **Page background:** one `.Main` background for every route, Sign In and the editor included; see [Background (Background)](#background-background).
 - Styled components follow CLAUDE.md → "Styled Components Conventions": import from `decentraland-ui2`, use object syntax, take values from the theme, and keep them in `Component.styled.ts`.
 - Reuse a component the renderer already imports, from `decentraland-ui2` or an existing `@mui/material` import, before you build one. Don't add an import of an MUI module the renderer doesn't use yet. Pulling a not-yet-bundled module into a running dev session retriggers Vite's dependency optimizer. When no imported component fits, hand-roll it, as the settings Accordion is.
 - ui2 pins secondary-text buttons to a grey `secondary.contrast` at high specificity. Overriding their color takes a repeated-`&` selector (see `Tabs/AiTab/component.tsx`), not `!important`.
@@ -529,19 +532,17 @@ Set [`10394:80156`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Account | Signed In=Off | none | 1.5px White 40 | 12px | `H6 Semi Caps` Snow, "sign in" | 40 tall, padding 12 / 24 | text 17.81:1; border 3.83:1 (≥ 3:1) | `<button>`; `UserMenu` paints 1px `--transparent-gray-light`, padding 7 / 16 — drift |
 | Create, Sign in | ✱ hover / press / focus / disabled | not drawn on this page; take them from Buttons (Inputs page) when it is extracted | — | — | — | — | — | — |
 
-**Creator Hub navbar as the LAND board draws it** (instances in `5690:7364` and `5660:4203`, read 2026-10-27; this app follows the board where it differs from the DS set above):
+**Creator Hub navbar.** The app follows the navbar instances on the LAND board (`5690:7364`, `5660:4203` in `albOLmqF5fUwmRJ7CjBulU`) on every page (user decision). The DS set draws 70-tall tabs (padding 0 / 4) with White 40 at rest and a 37px divider; the board's instances use 44-tall tabs, Silver at rest and no visible divider. The rules apply to `.Navbar` only; the editor header keeps its own.
 
 | Part | Board value | Code |
 | --- | --- | --- |
 | Bar | 1920 × **100**, padding 0 / 32, `space-between`, items centred vertically, no fill or border; page content starts **30** below it | `.Navbar`: `height: 100px; padding: 0 32px; margin-bottom: 30px; align-items: center` |
 | Left group | logo 40 × 40 disc at x 32, then the tab bar **26** after it | `.Navbar .menu { margin-left: 26px }` |
 | Tab bar | gap **40** | `.Navbar .menu { gap: 40px }` |
-| Tab (`TabHorizontal`) | padding **10 / 4** (44 tall); label `H4 Semi` Inter **600** 20 / 100%, letter-spacing 0, uppercase | `.menu-item { padding: 10px 4px; font-weight: 600; line-height: 24px; letter-spacing: 0 }` |
-| Tab rest / hover / active | Silver `#A09BA8` / White 10 fill (DS) / Snow `#FCFCFC` + 2px Snow bottom border | `var(--dcl-silver)` / `var(--palette-whiteTransparent-subtle)` / `var(--palette-neutral-softWhite)` |
-| Order | HOME · SCENES · **TEMPLATES** · ANALYTICS · MANAGE · LEARN · MORE | add `NavbarItem.TEMPLATES` → `/templates` |
-| Right group | Create split button 155 × 40, then **20**, then the 40 × 40 avatar; avatar right edge 32 from the window edge | gap 20; `UserMenu` avatar 40 (today 44). Button look unchanged (U1) |
-
-The DS set draws 70-tall tabs (padding 0 / 4) with White 40 at rest and a 37px divider; the board's instances use 44-tall tabs, Silver at rest and no visible divider. This app follows the board.
+| Tab (`TabHorizontal`) | padding **10 / 4** (44 tall); label `H4 Semi` Inter **600** 20 / 100%, letter-spacing 0, uppercase. The label widths match Figma only with `font-optical-sizing: none` (see [Conventions](#conventions)) | `.menu-item { padding: 10px 4px; font-weight: 600; line-height: 24px; letter-spacing: 0 }` |
+| Tab rest / hover / active / focus | Silver `#A09BA8` / White 10 fill (DS) / Snow `#FCFCFC` + 2px Snow underline / ✱ 2px Blue Light 1 ring (not drawn) | `var(--dcl-silver)` / `var(--palette-whiteTransparent-subtle)` / `var(--palette-neutral-softWhite)` with `box-shadow: inset 0 -2px 0` / `outline: 2px solid var(--palette-system-blueLight1)` |
+| Order | HOME · SCENES · **TEMPLATES** · ANALYTICS · MANAGE · LEARN · MORE | `NavbarItem.TEMPLATES` → `/templates`. The Templates shortcuts (Home "See all", the Scenes list's "Templates" button) stay beside it (user decision) |
+| Right group | Create split button 155 × 40, then **20**, then the 40 × 40 avatar; avatar right edge 32 from the window edge | gap 20; `UserMenu` avatar 40. The Create button keeps the app's `Button` look (user decision) |
 
 ### TabHorizontal (Tabs)
 
@@ -665,12 +666,19 @@ Component [`20932:5388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?no
 
 ### Background (Background)
 
-Component [`20506:31427`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20506-31427), 1 variant and no component set: the page has only this frame plus its title. Code: Creator Hub `theme.css` `.Main` paints `assets/images/background.png` over `#242129` with `background-blend-mode: overlay` — the same raster role, a different overlay; inspector none (the editor paints `--base-20`).
+Component [`20506:31427`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20506-31427), 1 variant and no component set: the page has only this frame plus its title. Code: Creator Hub `theme.css` `.Main` paints `assets/images/background.png` over `#242129` with `background-blend-mode: overlay` under the `--page-shade` wash (below) — the same raster role, a different overlay; inspector none (the editor paints `--base-20`).
 
 | Name | Fill | Overlay | Size | Usage | Contrast |
 | --- | --- | --- | --- | --- | --- |
 | Background | raster `image.png` — a near-black field with a violet glow bottom-left and a dark-blue glow left (no gradient stops: it is a bitmap, not a Figma gradient) | solid `#000000` 20% | 1720 × 1080, no radius | the app canvas behind cards and pages | text is specified against the solid page colours above; the raster's darkest region reads as `#0a0712`-ish and its glow as `#1d1033`-ish (canvas measurement, ±8 per channel) — treat `#16141a` as the design surface and keep Snow / Silver text ≥ 4.5:1 there |
 | ✱ Page board | `#302C37`, 64px radius, padding 100 | — | 1920 × Hug | Figma presentation frame on every Surfaces page, not a product surface | — |
+
+**Creator Hub page background.** The LAND board's frames (`5690:7364`, `5660:4203` in `albOLmqF5fUwmRJ7CjBulU`) are 1920 × 1080 with an `image.png` fill and a `#000000` 20% layer over it. That `image.png` is darker at the top than the app's `background.png`, so the 20% layer alone matches only the bottom fifth. Measured at 1:1 against the app, the board is the app's image under a vertical black wash: ≈52% at the top, 51% at 25% of the height, ≈46% at 37%, 20% at the bottom (validated on four board frames, rows within ±0.02 after the 25% stop). The app paints that wash as a gradient token rather than shipping the board's image (user decision), on every page, Sign In and the editor included (user decision).
+
+| Part | Rule |
+| --- | --- |
+| `.Main` (`theme.css`) | `background: var(--page-shade), url(background.png) #242129; background-blend-mode: normal, overlay; background-size: cover; background-position: center; background-attachment: fixed`, through the single `<main className="Main">` in `renderer/src/index.tsx` |
+| `--page-shade` | `linear-gradient(180deg, rgb(0 0 0 / 52%) 0%, rgb(0 0 0 / 51%) 25%, rgb(0 0 0 / 46%) 37%, rgb(0 0 0 / 20%) 100%)` |
 
 ### Scene-Card (Cards)
 
@@ -747,13 +755,9 @@ Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | Container | open | Onix | 1px White 10 all sides | 12px | `0 4px 8px rgba(0,0,0,.4)` | 200 × Hug (117 with one entry per slot), padding 10 / 0, gap 10 | Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow and border carry the edge | `role="menu"` with `aria-labelledby` the trigger; Escape closes, arrows move, focus returns to the trigger |
 | Options / Options2 | — | none | none | — | — | Fill × Hug, padding 0 / 10 | — | `role="group"` when a Section labels it |
 | Div | — | as Menu-Entry Div | — | — | — | between the slots | — | `role="separator"` |
-| Container | ✱ Creator Hub width | Onix | — | — | — | min-width 230 for `components/Dropdown` (the ⋮ menus; the Manage card menu `5660:4117` is the only Creator Hub instance drawn); rows hug. Select lists follow Dropdown-Input instead (View bar (Manage)) | — | — |
+| Container | ✱ Creator Hub width | Onix | — | — | — | min-width 230 for `components/Dropdown` (the ⋮ menus; the Manage card menu `5660:4117` is the only Creator Hub instance drawn); rows hug. Select lists follow Dropdown-Input instead ([Manage → View bar](#view-bar)) | — | — |
 
-**Decisions** (Creator Hub `components/Dropdown`):
-
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | The Manage card menu is the DS Menu, and `components/Dropdown` is shared. Restyle it for one surface or for all? | Restyle `components/Dropdown` to the DS Menu and Menu-Entry for every consumer, in the LANDs work, with Before / After shots of each consumer |
+Creator Hub's shared `components/Dropdown` (the ⋮ menus) wears the DS Menu and Menu-Entry for every consumer, not only the Manage card (user decision).
 
 ### Icon system (Icons)
 
@@ -1833,184 +1837,221 @@ Set [`21028:16521`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Off (`21028:16522`) | Play glyph; frame Onix fill + 1px Onix border; `Active` On, `Selected` Off | frame Onix fill + 1px Onix border; `Active` Off, `Selected` Off, `Disabled` true | slot 1 `aria-label="Run scene"`; Pause native `disabled` |
 | On (`21028:16527`) | **Stop** glyph (Gray); frame Onix fill + 1px Onix border; `Active` On, `Selected` Off | frame has no fill and no border; `Active` On, `Selected` On (Blue Dark 2, Snow) | slot 1 named for Stop; Pause named "Pause scene", no `aria-pressed`; Snow on Blue Dark 2 8.61:1 |
 
-### Manage (LANDs in Creator Hub)
+---
 
-From the feature file `albOLmqF5fUwmRJ7CjBulU`, page `💻 High-fi 🟡` (`5660:3959`), read October 26, 2026. Code: Creator Hub `components/ManagePage`. Contrast is against the page `#16141a`, the card (White 5 over the page, `#222025`) or the hovered card (White 10, `#2d2c31`). The sections below are this file's components; the page's frames instance the `Place Entry` set kept on the `🗄️ Archived` page, not the High-fi copies. User-facing strings are as approved on October 26, 2026, with Figma's capitalisation (one grammar fix, "an ENS Domain").
+## Manage (LANDs in Creator Hub)
 
-### Role tag (Manage)
+From the feature file `albOLmqF5fUwmRJ7CjBulU`, page `💻 High-fi 🟡` (`5660:3959`), read October 26–27, 2026. Code: Creator Hub `components/ManagePage`, `components/LandDetailPage`, and the LAND modals in `components/Modals` (`DefaultModal`, `TransferLandModal`, `UnpublishSceneModal`, `TxState`). Contrast is against the page `#16141a`, the card (White 5 over the page, `#222025`) or the hovered card (White 10, `#2d2c31`). A ✱ row departs from Figma or covers a state Figma doesn't draw; "user decision" marks the user's call. User-facing strings keep Figma's capitalisation (one grammar fix, "an ENS Domain").
 
-Set [`5660:4717`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4717), 3 variants (`Owner` `5660:4723`, `Collaborator` `5660:4718`, `Tenat` `5660:4720`, sic). Pill Hug × 27, padding 4 / 10, radius 100, label `H6 Regular` 16 / 400. Not interactive. Code: `PublishedProjectCard` role `Chip` (to be replaced).
+The app-wide changes this feature brought live with the rest of the renderer: the 98px page margin and type rendering in [Creator Hub (renderer)](#creator-hub-renderer) → Conventions, the navbar in [Main Navigation (Header)](#main-navigation-header), and the page shade in [Background (Background)](#background-background).
+
+Order: components (small to big), pages, the detail page's tabs, then modals and transaction states.
+
+### Components
+
+#### Role tag
+
+Set [`5660:4717`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4717), 3 variants (`Owner` `5660:4723`, `Collaborator` `5660:4718`, `Tenat` `5660:4720`, sic). Pill Hug × 27, padding 4 / 10, radius 100, label `H6 Regular` 16 / 400. Not interactive. Shown in the card's place row and the detail page's Role row. Code: `ManagePage/RoleTag`.
 
 | Variant | Roles | Fill | Label | Contrast (card / hovered card) | A11y |
 | --- | --- | --- | --- | --- | --- |
-| Owner | not rendered: owners and lessors (LAND) and World owners carry no tag | White 10 | Snow | 11.64 / 9.86 | — |
-| Collaborator | LAND per-token update operator, World collaborator | Blue Dark 1 `#1A75D2` @ 20% (ui2 `palette.info.dark`) | Blue Light 1 `#63B4F6` (ui2 `palette.info.light`) | 5.89 / 5.11 | text in the card's accessible content; no role |
-| ✱ Manager | LAND UpdateManager | as Collaborator | as Collaborator | 5.89 / 5.11 | not drawn; same look as Collaborator (user decision) |
-| Tenant | LAND tenant | Orange `#FE9C2A` @ 20% (ui2 `palette.warning.main`) | ✱ Orange Light 1 `#FFB95B` (ui2 `palette.warning.light`), not Figma's Orange | 6.37 / 5.54 | Figma's Orange is 5.16 at rest but 3.91 on Figma's White 15 hover |
+| Owner | not rendered: LAND owners and lessors and World owners carry no tag (the `5660:4067` NOTES) | White 10 | Snow | 11.64 / 9.86 | — |
+| Collaborator | LAND update operator, ✱ LAND UpdateManager (no "Manager" tag: user decision), World collaborator | Blue Dark 1 `#1A75D2` @ 20% (ui2 `palette.info.dark`) | Blue Light 1 `#63B4F6` (ui2 `palette.info.light`) | 5.89 / 5.11 | text in the card's accessible content; no role |
+| Tenant | LAND tenant | Orange `#FE9C2A` @ 20% (ui2 `palette.warning.main`) | ✱ Orange Light 1 `#FFB95B` (ui2 `palette.warning.light`), not Figma's Orange, which is 5.16 at rest but 3.91 on Figma's White 15 hover (user decision) | 6.37 / 5.54 | as Collaborator |
 
-**Decisions:**
+#### Place Entry (LAND card)
 
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Which roles carry a tag on the card? | Collaborator, Manager and Tenant. Owners and lessors carry none, as the `5660:4067` NOTES say (re-confirmed against the board, and confirmed with the designer the same day) |
-| 2026-10-26 | Manager has no Figma variant. Which look? | The Collaborator look (blue), labelled "Manager" |
-| 2026-10-26 | Collaborator blue and Tenant orange, as Figma? | Yes |
-| 2026-10-26 | The hovered card drops Collaborator and Tenant under 4.5:1. Fix? | Yes: the card hovers to White 10, not 15, and the Tenant label is Orange Light 1 `#FFB95B` |
-
-### Place Entry (Manage)
-
-Set `Place Entry` [`5655:2522`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5655-2522) on `🗄️ Archived`, 8 variants (`Type` World / LAND × `Status` Unpublished / Published × `Hover` Off / On; LAND: `5738:8200` Unpublished · Off, `5738:8284` Unpublished · On, `5738:8213` Published · Off, `5738:8230` Published · On). The High-fi page's `Land-Card` `5660:4770` and `World-Card` `5660:4725` are copies that every frame ignores. Shared: 416 × 383, radius 16, 1px White 10, clip. Text block Fill × 110, padding 20, gap 10: a place row (16px pin, coords `x,y` or "N LANDs" Inter 16 / 400 / 150% Silver, the Role tag), the name `H4 Semi` 20 Snow with ellipsis, and the kebab (`rounded-button-contained` 40 × 40, radius 100, top 18, right 10, `Kebab` 4 × 20 White 40). Thumbnail fills the rest, radius 16, cover. Published adds `Stats` bottom-left 10 / 10: Black 60, radius 100, padding 6 / 10, 14px glyph + "N Scenes" `H7 Regular` Gray. Unpublished: a world-map texture (image, 3% opacity, `luminosity` blend), "No Scene Published" `H5 Regular` 18 Snow, Secondary `Button-Contained-Text` 160 wide "VIEW SCENES". Code: `ManagePage/PublishedProjectCard` (324 × 428, radius 10, header / thumbnail / body).
+Set `Place Entry` [`5655:2522`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5655-2522) on `🗄️ Archived`, 8 variants (`Type` World / LAND × `Status` Unpublished / Published × `Hover` Off / On; LAND: `5738:8200` Unpublished · Off, `5738:8284` Unpublished · On, `5738:8213` Published · Off, `5738:8230` Published · On). The High-fi page's `Land-Card` `5660:4770` and `World-Card` `5660:4725` are copies that every frame ignores. Shared: 416 × 383, radius 16, 1px White 10, clip. Text block Fill × 110, padding 20, gap 10: a place row (16px pin, coords `x,y` or "N LANDs" Inter 16 / 400 / 150% Silver, the Role tag), the name `H4 Semi` 20 Snow with ellipsis, and the kebab (`rounded-button-contained` 40 × 40, radius 100, top 18, right 10, `Kebab` 4 × 20 White 40). Thumbnail fills the rest, radius 16, cover. Published adds `Stats` bottom-left 10 / 10: Black 60, radius 100, padding 6 / 10, 14px glyph + "N Scenes" `H7 Regular` Gray. Unpublished: a world-map texture (image, 3% opacity, `luminosity` blend), "No Scene Published" `H5 Regular` 18 Snow, Secondary `Button-Contained-Text` 160 wide "VIEW SCENES". Code: `ManagePage/PlaceCard`.
 
 | Variant | State | Fill | Kebab | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
-| Unpublished / Published | rest | White 5 | no fill, White 40 glyph | name 15.73; coords 5.95; kebab 3.73 | the card is one link to the detail page named by the LAND name; the kebab is a separate `<button aria-haspopup="menu">` with an accessible name, 40px target |
-| any | hover | ✱ White 10 (Figma White 15) | White 10 fill | name 13.50; coords 5.11; kebab glyph on its fill 3.06 | — |
+| Unpublished / Published | rest | White 5 | no fill, White 40 glyph | name 15.73; coords 5.95; kebab 3.73 | the card is one link to the detail page, named by the LAND name; the kebab is a separate `<button aria-haspopup="menu">` with an accessible name, 40px target |
+| any | hover | ✱ White 10, not Figma's White 15, so the Role tags keep 4.5:1 (user decision) | White 10 fill | name 13.50; coords 5.11; kebab glyph on its fill 3.06 | — |
 | any | ✱ focus-within / menu open | as hover | White 10 fill | ring ui2 `palette.info.light` 7.22 on the card | `:focus-visible` 2px ring on the card and on the kebab |
-| Published | rest | — | — | ✱ stats Gray on Black 60: 8.02 over a mid-grey thumbnail, 3.65 over white (accepted) | the count is also on the detail page |
+| Published | rest | — | — | ✱ stats Gray on Black 60: 8.02 over a mid-grey thumbnail, 3.65 over white (accepted: user decision) | the count is also on the detail page |
 
-The kebab shows at rest in the LAND Unpublished variants and only on hover elsewhere in the set; the frames show it at rest on every card. Code shows it on every card (keyboard reach).
+| Part | Rule |
+| --- | --- |
+| ✱ Kebab | shown at rest on every card (keyboard reach), as the frames draw it; the set shows it at rest only in the LAND Unpublished variants |
+| Name | the on-chain name; unnamed: "Parcel {x,y}" / "Estate {id}" |
+| Estate size | "1 LAND" / "N LANDs" |
+| Unpublished | "No Scene Published" + "View Scenes" (uppercase by the button style) |
+| ⋮ menu | Jump In, Copy URL, Create Event for every role; Transfer for the owner only, while the LAND is not rented out (hidden for a lessor), its divider hidden with it. No "Parcel" (Builder) and no "View Storage". The menu is the shared `Dropdown`, restyled for every consumer; its trigger is named "Options for {name}" (`menu.options_for`) in every consumer |
+| Create Event | opens `SUBMIT_EVENT_URL` (`https://decentraland.org/events/submit`, which redirects to `/events/new-event`) with no prefill: `x`/`y`, `position` and `coordinates` don't fill its X / Y fields. A prefill parameter is a follow-up with the Events team |
 
-**Decisions:**
+#### View bar
 
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Card hover fill | White 10 (see Role tag) |
-| 2026-10-26 | Name of a LAND with no on-chain name | "Parcel {x,y}" / "Estate {id}" |
-| 2026-10-26 | Estate size wording | "1 LAND" / "N LANDs" |
-| 2026-10-26 | Unpublished copy and CTA | "No Scene Published" and "View Scenes" (shown uppercase by the button style) |
-| 2026-10-26 | ⋮ items on a LAND card | Jump In, Copy URL, Create Event for every role; Transfer only for the owner while the LAND is not rented out (hidden for a lessor), its divider hidden with it. "Parcel" (Builder) and "View Storage" are dropped |
-| 2026-10-26 | Create Event target | `SUBMIT_EVENT_URL` (`https://decentraland.org/events/submit`, which redirects to `/events/new-event`) with no prefill: `x`/`y`, `position` and `coordinates` don't prefill its X / Y fields (checked October 26, 2026). A prefill parameter is a follow-up with the Events team |
-| 2026-10-26 | Stats chip over bright thumbnails (3.65:1) | Accepted (✱ above) |
-| 2026-10-26 | Accessible name of the ⋮ | "Options for {name}", one key `menu.options_for`, for every `Dropdown` consumer |
-
-### View bar (Manage)
-
-Instance `Filter` [`5660:4066`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4066) (main `5645:8124`, not on this page). Fill × 56, radius 999, padding 0 / 10, gap 16, White 10. Left: WORLDS / LANDS `PillIconText` (Selected / Idle, as documented, 20px globe / pin). Right slot, gap 30: `Filter-Dropdown` ("View" Silver 16 + value Snow 16, 10px chevron, input padding 10, radius 6), Sort-By ("Sort by" + value), Search-Bar 300 (100px radius, 1px White 40, padding 10 / 40 / 10 / 10, 24px glyph, "Search" White 40). Code: `ManagePage` `FiltersBar` row.
+Instance `Filter` [`5660:4066`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4066) (main `5645:8124`, not on this page). Fill × 56, radius 999, padding 0 / 10, gap 16, White 10. Left: WORLDS / LANDS `PillIconText` (Selected / Idle, as documented, 20px globe / pin). Right slot, gap 30: `Filter-Dropdown` ("View" Silver 16 + value Snow 16, 10px chevron, input padding 10, radius 6), Sort-By ("Sort by" + value), Search-Bar 300 (100px radius, 1px White 40, padding 10 / 40 / 10 / 10, 24px glyph, "Search" White 40). Code: `ManagePage/ViewBar`.
 
 | Part | State | Look | Contrast (on the bar `#2d2c31`) | A11y |
 | --- | --- | --- | --- | --- |
 | WORLDS / LANDS | selected / idle / hover / selected + hover | per PillIconText | selected 9.86; idle label White 60 6.04 | `role="tablist"` of two `role="tab"` buttons, `aria-selected`, arrow keys move; the list below is the `tabpanel` |
-| View, Sort by | rest | label Silver, value Snow, chevron | label 5.11, value 13.50 | label names the select (`aria-labelledby`) |
+| View, Sort by | rest | label Silver, value Snow, chevron | label 5.11, value 13.50 | the label names the select (`aria-labelledby`) |
 | View, Sort by | ✱ open (not drawn on this board) | the DS Dropdown-Input Selected list: Onix menu, 1px White 10, radius 12, as wide as its longest option (no 230 floor; at least the trigger's width), rows 38 tall, radius 8, inset 10, label Inter 400 16 / 150% Snow; the selected row Pale Black with a 16px Checkmark on its **left**; no focus ring on a row when the list was opened with the mouse | Snow on Pale Black 9.88 | `role="listbox"`, `option`s with `aria-selected`; a row draws the `palette.info.light` ring only after an arrow key |
-| Search | rest | placeholder White 40 | ✱ 3.53 (accepted: Figma's value kept) | `aria-label` "Search" |
+| Search | rest | placeholder White 40 | ✱ 3.53, Figma's value kept (user decision) | `aria-label` "Search" |
 
-**Decisions:**
+| Part | Rule |
+| --- | --- |
+| ✱ View | one "View" dropdown in both tabs: All / Published / Not Published, default All. The LAND frames draw Published / Not published pills instead; no pills anywhere (user decision) |
+| Sort by | "Last Updated" (newest deployment first, never-published last) and "Name" (A–Z), both tabs |
+| Sort and search | always shown, Not Published included |
+| ✱ Item count | none: the "N items" count is not shown (user decision) |
 
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Filter control: "View" dropdown (component) or Published / Not published pills (LAND frames)? | One "View" dropdown in both tabs: All / Published / Not Published, default All. No pills anywhere |
-| 2026-10-26 | Sort options | "Last Updated" (newest deployment first, never-published last) and "Name" (A–Z), both tabs |
-| 2026-10-26 | "N items" count | Dropped |
-| 2026-10-26 | Sort and search under Not Published | Always shown |
-| 2026-10-26 | The LAND frames still draw pills. Keep the one dropdown? | Yes, the "View" dropdown in both tabs |
-| 2026-10-26 | Search placeholder White 40 is 3.53:1 | Keep Figma's White 40 (✱ accepted) |
+#### EmptyState
 
-### EmptyState (Manage)
-
-`EmptyState` in Logged Out [`5660:4686`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4686), Empty Worlds [`5660:4182`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4182) and Empty LANDs [`5660:4203`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4203) (layer named "Empty Worlds", sic). Column 550 × 500, gap 20, centred: 80 × 80 Cerise line icon, title `H1 Semi` 30 / 600 Snow, optional ⓘ, body `H5 Regular` 18 Gray, a 46px `Button-Contained-Text`. The ⓘ opens the DS Tooltip (Onix, radius 12, padding 16 / 20, 14 / 400 Snow, max 300) ending in "Read More →". Code: `ManagePage/SignInCard` and the `EmptyContainer` block.
+`EmptyState` in Logged Out [`5660:4686`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4686), Empty Worlds [`5660:4182`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4182) and Empty LANDs [`5660:4203`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4203) (layer named "Empty Worlds", sic). Column 550 × 500, gap 20, centred: 80 × 80 Cerise line icon, title `H1 Semi` 30 / 600 Snow, optional ⓘ, body `H5 Regular` 18 Gray, a 46px `Button-Contained-Text`. The ⓘ opens the DS Tooltip (Onix, radius 12, padding 16 / 20, 14 / 400 Snow, max 300) ending in "Read More →". Code: `ManagePage/EmptyState`, `ManagePage/manageEmptyState.tsx`.
 
 | View | Icon | CTA | Links | Contrast |
 | --- | --- | --- | --- | --- |
 | Logged out | waving hands | Terciary "SIGN IN" | — | title 17.81; body 11.61; Terciary border 3.83 |
-| Empty Worlds | globe in hand | Primary "MINT NEW NAME" → `https://decentraland.org/marketplace/names/claim` | inline NAME → the same; inline ENS Domain → `https://app.ens.domains/`; Read More → `https://decentraland.org/blog/about-decentraland/decentraland-worlds-your-own-virtual-space` | ✱ Snow on Primary 3.55 (accepted, DS-wide) |
+| Empty Worlds | globe in hand | Primary "MINT NEW NAME" → `https://decentraland.org/marketplace/names/claim` | inline NAME → the same; inline ENS Domain → `https://app.ens.domains/`; Read More → `https://decentraland.org/blog/about-decentraland/decentraland-worlds-your-own-virtual-space` | ✱ Snow on Primary 3.55 (accepted DS-wide: user decision) |
 | Empty LANDs | pin in hand | Primary "RENT OR BUY LAND" → `https://decentraland.org/marketplace/lands` | Read More → `https://docs.decentraland.org/marketplace/land-manager` | ✱ Snow on Primary 3.55 (accepted) |
-| ✱ empty search | none | none | — | as above |
-| ✱ empty filter, WORLDS | none | today's copy and CTAs | — | as above |
+| ✱ empty search | none | "No results found" / "Try a different keyword.", no button | — | as above |
+| ✱ empty filter, WORLDS | none | the Worlds copy and CTAs | — | as above |
 | ✱ empty filter, LANDS | none | Published: "No published places to display" + "View Scenes"; Not Published: "No places to display", no body, no button | — | as above |
 | ✱ fetch error | none | "Something went wrong." / "Please, try again." + Terciary "Try again" (re-runs the tab's fetch) | — | as above |
 
-**Decisions:**
+| Part | Rule |
+| --- | --- |
+| ⓘ | a focusable button named "What is a World?" / "What is LAND?"; the tooltip shows on hover and focus, Escape closes; "Read More →" opens the URLs above |
+| Loading | the existing `Loader` |
+| ✱ Undrawn states | empty search, empty filter and fetch error use this EmptyState with no icon and the copy in the table (user decision) |
 
-| Date | Question | Answer |
+### Pages
+
+#### Manage page
+
+Frames [`5660:4109`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4109) (LANDs, menu open), [`5660:4067`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4067) (LANDs, Not Published) and [`5660:4044`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4044) (Worlds). Content column 1920 wide, padding 0 / 98, gap 30: the DS `TitleBar` "Main Section" (56 tall, "Manage" Inter 48 / 600 / 117% Snow), the View bar, then a card row (gap 20, 416 cards). WORLDS adds a "Space Used" row above the cards: `H5 Regular` 18 Snow label + ⓘ (tooltip "Total storage is calculated based on MANA, LAND, and NAME holdings. View Details →"), the used value `H4 Semi` 20 with " / 900 MB" `H6 Regular` 16, and a `ProgressBar` 501 × 16, radius 100, padding 2, track White 10, fill a raw `#FF2D55 → #FFBC5B` gradient. Code: `ManagePage` (`LandProjectsList`, `ManagedProjectsList`, `SpaceUsed`).
+
+| Part | Rule | Contrast |
 | --- | --- | --- |
-| 2026-10-26 | ⓘ behaviour | A focusable button named "What is a World?" / "What is LAND?"; the tooltip shows on hover and focus, Escape closes; "Read More →" opens the URLs above |
-| 2026-10-26 | Where does "ENS Domain" link? | `https://app.ens.domains/` |
-| 2026-10-26 | Undrawn states | Loading is the existing `Loader`; fetch error, empty search and empty filter use the EmptyState with no icon until design draws them: today's search copy, the per-tab filter copy and the error copy in the table above |
-| 2026-10-26 | Snow on Primary CTA 3.55:1 | Accepted (DS-wide trade-off) |
+| Title | "Manage"; no Refresh button (the data layer polls after a transaction) | — |
+| Space Used | WORLDS only. The bar exactly as Figma, with no border (the DS `ProgressBar` draws 2px Snow); "View Details" opens `WorldsYourStorageModal`; the ⓘ is named "About Space Used". Hidden when the user has no Worlds at all (the `no-worlds` EmptyState); shown with the search and filter empties and with the list | track vs page 1.32 (decorative); fill Ruby end vs track 3.81 |
+| ✱ Card grid at a 1920 window | 4 per row while the list fits; 3 once the page scrolls, because the app's custom 8px classic scrollbar takes layout width (content 1716; Figma 1724). Scrollbars stay custom on every OS: the `OverlayScrollbar` flag has no effect and macOS "Show scroll bars: Always" stays classic (user decision) | — |
 
-### Manage page (Manage)
+#### LAND detail page
 
-Frames [`5660:4109`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4109) (LANDs, menu open), [`5660:4067`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4067) (LANDs, Not Published) and [`5660:4044`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4044) (Worlds). Content column 1920 wide, padding 0 / 98, gap 30: the DS `TitleBar` "Main Section" (56 tall, "Manage" Inter 48 / 600 / 117% Snow), the View bar, then a card row (gap 20, 416 cards). WORLDS adds a "Space Used" row above the cards: `H5 Regular` 18 Snow label + ⓘ (tooltip "Total storage is calculated based on MANA, LAND, and NAME holdings. View Details →"), the used value `H4 Semi` 20 with " / 900 MB" `H6 Regular` 16, and a `ProgressBar` 501 × 16, radius 100, padding 2, track White 10, fill a raw `#FF2D55 → #FFBC5B` gradient. Code: `ManagePage` with the `StorageUsed` donut sidebar.
+Frames [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5690-7364) (Details), [`5660:4356`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4356) (Scenes), [`5660:4484`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4484) and [`5660:4640`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4640) (Collaborators); `Title Bar` `5660:4256`; `tab-bar` `5738:6922` (its LAND variant reads SETTINGS in the component; the frames override it to MANAGERS). Title "Manage - {name}" Inter 600 48; header row "Role [tag] · Owner [avatar] name"; SAVE (Details) + ⋮ (the card menu); tabs `H6 Semi Caps` 16, Silver idle, Snow active + 2px underline, 1px White 20 rule, gap 40. Code: `LandDetailPage` (`landPermissions.ts` holds the role matrix).
 
-| Part | Figma | ✱ Deviation | Contrast |
-| --- | --- | --- | --- |
-| Storage bar | no border | none: kept as drawn, unlike the DS `ProgressBar` (2px Snow) | track vs page 1.32 (decorative); fill Ruby end vs track 3.81 |
-| Space Used row | absent from Empty Worlds `5660:4182` | hidden when the user has no Worlds at all (the `no-worlds` EmptyState); shown with search / filter empties and the list | — |
-| Card grid at a 1920 window | 4 cards per row (1724 content) | ✱ 4 per row while the list fits; **3 once the page scrolls**, because the custom 8px classic scrollbar takes layout width (content 1716). Accepted (user decision, see below) | — |
-
-**Decisions:**
-
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Page title | "Manage" |
-| 2026-10-26 | Storage | The horizontal "Space Used" bar exactly as Figma, with no added border, on WORLDS only; "View Details" opens the existing `WorldsYourStorageModal` |
-| 2026-10-26 | Refresh button beside the title | Removed (the data layer refetches with polling after a transaction) |
-| 2026-10-26 | Page side margin: Figma 98, `Container` 128 | Figma's 98 on every page that uses the shared `Container` (Scenes, Templates, Analytics, Analytics detail, Manage, Learn, Videos, Docs) and on `SignInPage` |
-| 2026-10-26 | Name of the Space Used ⓘ | "About Space Used" |
-| 2026-10-26 | Manage at 1920 fits 4 cards only while the page doesn't scroll (an 8px classic scrollbar takes layout width). Accept 3 when scrolling? | No: scrollbars become overlay app-wide (no layout width), so Manage keeps 4 per row at 1920 when it scrolls. Gated on proof in the built app (client width = window width on a scrolling page) on each platform the team can check; if it can't be done, report back, no fallback |
-| 2026-10-26 | The overlay-scrollbar gate failed in the built app (macOS): the `OverlayScrollbar` feature flag has no effect; with the custom `::-webkit-scrollbar` rules removed, "Show scroll bars: Automatic / When scrolling" goes overlay (client width 1920) but "Always" stays classic (1905); Windows untested. Keep pursuing overlay? | No: the custom scrollbars stay as they are (`theme.css` unchanged). This reverses the overlay decision above: Manage shows 4 cards per row at 1920 while the list fits and 3 once it scrolls, the same on every OS (✱ above) |
-| 2026-10-26 | `SignInPage` copies the old 128 margin outside `Container`. Move it too? | Yes, to 98 |
-
-### Page background and navbar (Creator Hub, every page)
-
-Board frames (`5690:7364`, `5660:4203`, read 2026-10-27) are 1920 × 1080 with an `image.png` fill and a `#000000` 20% fill over it. The app paints one shared background: `.Main` in `theme.css` (`background.png` over `#242129`, `background-blend-mode: overlay`, `cover`, `fixed`), used by every route through the single `<main className="Main">` in `renderer/src/index.tsx`.
-
-Measured at 1:1 against our render, the board's background is our image darkened by a vertical wash. Black at **≈52%** at the top, **≈46%** at 37% of the height and **20%** at the bottom; every row fits within ±0.03. So Figma's `image.png` is darker at the top than `background.png`; the 20% layer alone matches only the bottom fifth.
+| Role | Header row | Tabs | Edit Land Name + Description | Unpublish | ⋮ Transfer |
+| --- | --- | --- | --- | --- | --- |
+| Owner | hidden | Details · Scenes · Collaborators · Managers | ✓ | ✓ | ✓ |
+| Lessor (rented out) | hidden (the owner's header) | Details · Scenes | — (Domain Name only) | — | — |
+| Manager | Role [Collaborator] · Owner | Details · Scenes · Collaborators | ✓ | ✓ | — |
+| Collaborator | Role [Collaborator] · Owner | Details · Scenes | ✓ ✱ (see Details tab) | ✓ | — |
+| Tenant | Role [Tenant] · Owner | Details · Scenes | — (Domain Name only) | ✓ | — |
 
 | Part | Rule |
 | --- | --- |
-| Background | `.Main { background: var(--page-shade), url(background.png) #242129; background-blend-mode: normal, overlay; cover; center; fixed }`: the vertical black wash over the existing image, on every page; Sign In and the editor show it too (user: apply everywhere) |
-| Navbar | see "Creator Hub navbar as the LAND board draws it" under Main Navigation |
-| Type rendering | `body { font-optical-sizing: none }`: Inter renders at text optical size, as Figma does, on every page |
+| Title | "Manage - {name}"; unnamed: "Parcel x,y" / "Estate {id}" |
+| Back | the shared `Title` back control in the DS `BackTitle` look: 40 pill, Primary chevron `ArrowBackIosNewRounded`. It also paints Analytics detail |
+| Route | `/manage/land/:id/:tab`: the tab lives in the route |
+| States | `Loader` while loading; EmptyState "This LAND is no longer in your list." + "Back to Manage" when the LAND is not found or access was lost |
+| Tabs | `tab` padding 10 / 4 / 10 / 4, label `H6 Semi Caps` 16 (19 tall), letter-spacing 0, 2px Snow underline when active; `tab-bar` 1724 × 39, gap 40, 1px White 20 bottom rule |
 
-**Decisions:**
+### LAND detail tabs
 
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-27 | Match the board's page background app-wide in this PR? | Yes (user) |
-| 2026-10-27 | Match the board's navbar (height 100, semibold labels, gap 40, TEMPLATES, 30 to content) app-wide in this PR? | Yes (user); every page's content moves up 18 |
-| 2026-10-27 | Keep the Details counters (L1) with their +28 per field? | Yes (✱, user) |
-| 2026-10-27 | Match the background with a gradient wash over our image, or ship the board's `image.png`? | The gradient wash, `--page-shade` (user) |
-| 2026-10-27 | Nav labels 2–3% narrower than Figma at the same 20 / 600 | Not tolerance: the app's variable Inter applies its optical-size axis automatically (`opsz` = font size, up to 32), Figma renders Inter at text optical size. `font-optical-sizing: none` reproduces Figma's widths (HOME 60.8 / 61, MANAGE 89.0 / 89, TEMPLATES 119.1 / 120, ANALYTICS 115.2 / 116). **Decided (user): app-wide, `font-optical-sizing: none` on `body`** |
-| 2026-10-27 | Keep the Templates shortcuts (Home "See all", the Scenes list's "Templates" button) next to the new TEMPLATES nav entry? | Keep both (user) |
+#### Details tab
 
-### DefaultModal (Creator Hub, Manage)
+Frame [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5690-7364); Domain Name states in Group 23 `5688:7356` (Owns names `5660:4286`, Doesn't have any name `5660:4289`, Name set `5660:4292`). Fields: Land Name (Text-Input, "Write here"), Description (textarea, "Write something about your LAND here"), Domain Name (help line, Dropdown-Input "Choose a NAME", "Claim a NAME" link). Thumbnail and Categories (NICE TO HAVE) are out of scope: on-chain metadata is name + description. Code: `LandDetailPage/DetailsTab`.
 
-The DS `DefaultModal` (Modals) used by the LAND modals: Transfer LAND [`5660:4181`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4181) and Unpublish Scene [`5660:4446`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4446) (read in Chrome on 2026-10-27, Properties panel, 1:1 canvas). Both are `DefaultModalButtonsHorizontal` instances; no transaction-state frame exists. Code: a shared styled `DefaultModal` over ui2 `Dialog` (every other Creator Hub modal keeps ui2's chrome).
+| Part | Rule |
+| --- | --- |
+| ✱ Land Name + Description editable by | owner, manager and **collaborator**, since `updateLandData` accepts the update operator and update managers; read-only for tenant and lessor. The board's NOTES say "collaborators: domain name and scenes only" (user decision) |
+| SAVE | Land Name + Description in one tx; disabled until changed; "Discard" beside it |
+| ✱ Limits | Land Name ≤ 50, Description ≤ 140 (user decision; Builder enforces only a non-empty name). A live "{n}/{max}" counter sits right-aligned inside the 40 gap under its field and takes no layout height, sharing the line with any error; over the limit, the Text-Input Error state and "Use {max} characters or fewer." |
+| ✱ "Enter a name." | only after the field was edited or on a Save attempt, never on a pristine unnamed LAND |
+| ✱ Placeholder | White 40: 3.82:1 in a modal, 3.83:1 on the page, accepted as the search placeholder (user decision) |
+| Domain Name | its own confirm + tx, signed by the NAME's owner. Every role can link a NAME it owns: `setContenthash` on the ENS resolver checks NAME ownership only, as the board's NOTES say ("Domain name can be edited by everyone"); the Figma comment "Tenants and Collaborators can't edit this field" does not apply (user decision). NAMEs used by a World or another LAND are greyed out ("Used by {target}") |
+| NAME dropdown | the bordered Dropdown-Input field (1px White 40, radius 12, full field width), as `5660:4286`; not the borderless View-bar select |
+| ✱ NAME dropdown, no NAMEs owned | always shown, **disabled** (user decision): 1px White 20 (`whiteTransparent.soft`) border, placeholder "Choose a NAME" and chevron White 20, no hover change, `cursor: not-allowed`, `aria-disabled`; "Claim a NAME" 10 below. The DS Dropdown-Input set has no disabled variant; White 20 is the DS's disabled-field border (inspector `TextField` disabled `--palette-whiteTransparent-soft`). Disabled controls are exempt from contrast minimums |
+| Domain "Name set" pencil | the `Edit` glyph 14 × 14 White; re-opens the NAME dropdown, which adds "Remove link" (its own tx; Snow label: red text on the Onix menu is 3.43:1) |
+| "Claim a NAME" | `H7 Semi` 14 / 600 Primary, line height 17, solid underline 1px **3px under the baseline**: `text-underline-offset: 3px; text-decoration-thickness: 1px` |
+| ✱ Read-only empty value (tenant, lessor) | "—" in `neutral.gray3` (user decision) |
+| Geometry | `Metrics` column: tab bar, then 40, then the form. Form `Frame 13`: Fill **1044** wide (beside the out-of-scope Thumbnail column, gap 50), blocks 40 apart. Each `Text-Input`: label `H5 Semi` Inter 600 **18** `#FFFFFF` (22 tall), gap 10, `Container` 1044 × **46**, radius 12, 1px White 40, padding 14 / 16. Description: block Fixed 200 → textarea **168**. Domain `Dropdown-Input` 1044 × 105: title 18 / 600, help `H7 Regular` 14 DCL/White, line height 17, the 46 field; "Claim a NAME" 10 below |
+
+#### Scenes tab
+
+Frame [`5660:4356`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4356); `Scene-entry` [`5660:4823`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4823) (Default `5660:4824`, Hover `5660:4840`: 1724 × 70, padding 10 / 20, 1px White 20 bottom rule; Hover White 10 + download (Silver) + unpublish ✕ (System/Red)). Sub-bar as the Manage View bar: "{n} Scenes · {n} LANDs", Sort by, Search. Code: `LandDetailPage/ScenesTab`.
+
+| Part | Rule |
+| --- | --- |
+| ✱ LIST / MAP toggle | not shipped: the Map view is postponed to a follow-up (user decision); the tab shows the list |
+| ✱ Row tags | none: the "Unsynched" and "SDK 6" tags in `5660:4382` are not shown (user decision) |
+| Sort | "Last Updated" and "Name", the Manage page's options and keys (`manage.sort.*`) |
+| ✱ Columns | Name · Parcels · Location · **Last Updated** · **Deployed by** · actions (user decision; Figma draws neither added column). Name Fixed 700, the four data columns Fill equally, actions 80. Data cells: 18 glyph box + `H6 Semi` 16 / 600 Silver, gap 8. Last Updated: calendar glyph + `dateStyle: 'medium'` date, tooltip `dateStyle: 'long'` + `timeStyle: 'short'`. Deployed by: avatar 20 + display name (profile name, else the shortened address), ellipsis |
+| Column-sort indicator | the Primary `#FF2D55` `arrow-down` (11 × 6.5), always pointing down, 10 after the label of the column "Sort by" sorts by: Last Updated by default (newest first), Name when sorted by Name. Headers are not clickable; "Sort by" is the only sort control |
+| Bulk | checkboxes kept, select-all in the header; "Unpublish selected" appears when ≥ 1 is selected; one empty-scene deploy per scene; the Unpublish modal with plural copy |
+| Unpublish copy | Figma's: "Are you sure you want to unpublish {scene} from {LAND name}?" |
+| Download | warning modal → save dialog → row progress → result snackbar per recovery (`none` / `self-contained` / `partial`) |
+| ✱ Download in progress | the row's unpublish ✕ is hidden; a cancel control (24px close glyph, Snow) named "Cancel download {scene}" takes its place; "Downloading… {done}/{total}" stays on one line |
+| Empty | EmptyState "No scenes published on this LAND." + Secondary "View Scenes" |
+| Sub-bar | `Filter` 56 tall, radius 999, padding left 20 / right 10, gap 16. Stats `H6 Regular` Inter 400 **16** Silver: "{n} Scenes" always, "{n} LANDs" for Estates only. Scenes glyph: `Layers`, a 24 box with a 15 × 16 two-layer outline at 5 / 4, Silver (not the Published card's filled `Scenes` stack); LANDs glyph: `layout-outline` 14 artwork centred in an 18 box; glyph → text gap **5**. The "Sort by" select keeps the Manage View bar chevron (`arrow-down` 10 box, 9.17 × 5.42, Silver; same on `5738:2543`) |
+| Table header | `Subtitle-Navigation` 40 tall, padding 3 / 100 / 3 / 20, labels `H7 Regular` 14 **Gray** `#CFCDD4`, 1px White 20 rule on a whole pixel (every box above it has an integer top and height, so the rule never splits across two device rows), then 20 to the first row |
+| Vertical rhythm | `Metrics` gap 30: tab bar → 30 → sub-bar → 30 → header → 20 → rows |
+| Row | 1724 × 70, padding 10 / 20, 1px White 20 bottom rule; `Header` (Name column) Fixed **700**, gap 20: checkbox **20** (Off: radius 5, 1px White 40, no fill), thumbnail **50 × 50**, name `H6 Semi` 16 Snow; glyph + value gap 8; actions: two 30 × 30 `rounded-button-contained` with no fill at rest and 18 icons (download Silver, unpublish System/Red) |
+
+#### Collaborators tab
+
+Frames [`5660:4484`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4484) (the list with the "Deploy Permissions in" column; it governs the list) and [`5660:4640`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4640) (the add row). Description line; a field with an inline `Button-Contained-Text-Icon` Primary small "+ ADD"; list header (select-all + "Collaborators: N"); rows: checkbox, avatar, name, the parcels dropdown (Estates), trash on hover. Code: `LandDetailPage/CollaboratorsTab` over the shared `LandDetailPage/access` rows.
+
+| Part | Rule |
+| --- | --- |
+| Who edits | owner and manager |
+| ✱ Copy | "Collaborators can publish scenes on this LAND." and "Collaborators: N", LAND-accurate: no "/100", no "up to 100", no "stream", no cap, though the board says otherwise (user decision) |
+| Field | "Wallet address or NAME"; shows the resolved profile (avatar + name + shortened address) before adding; errors "Enter a wallet address or a NAME." / "This NAME doesn't exist." / "You can't add yourself." |
+| Names | every confirm, select label and trash label shows the display name (profile name, else the shortened address), never the raw input; Managers too |
+| Parcel | at most one collaborator (one operator per token); adding when the slot is taken opens a replace-confirm |
+| Estate | one row per distinct parcel operator plus the estate-wide operator. Writes are one `setManyLandUpdateOperator` tx for all selected parcels (no chunking; very large estates may hit the gas limit: follow-up) |
+| "Deploy Permissions in" column | Estates only, always visible in every row (user decision); single-parcel LANDs have no column. Header copy verbatim from the board; es "Permisos de publicación en", zh "部署权限范围" (user decision). Each row's dropdown: "All Parcels" (the estate-wide value) / "{count, plural, one {# Parcel} other {# Parcels}}" / "Custom parcels…", which opens the existing parcel picker |
+| Parcels dropdown | the Dropdown-Input field at **200 × 46**: radius 12, 1px White 40 (hover White 60, open Snow), padding 0 / 16, value `H6 Regular` 16 Snow, `arrow-down` 14 box White 40 |
+| Parcels confirm | "**{name}** will publish on {count, plural, one {# parcel} other {# parcels}}." (en, es; zh has no plural forms and keeps "{count} 个地块") |
+| Remove | the trash, on row hover and focus-within, named "Remove {name}"; a remove-confirm, then the transaction states. Row hover adds White 10 and nothing else. Selected rows offer "Remove selected" |
+| Replace | a replace-confirm, then the transaction states |
+| Add row geometry | description `H6 Regular` 16 Snow, gap 10, field 700 × 40 (radius 12, 1px White 40, padding 10.5 / 16) with the inline ADD (63 × 26, radius 6, padding 2 / 6, gap 6, `plus` 18 box with a 13.5 glyph, label 12 / 600 uppercase, letter-spacing 0, blocked at 20% opacity) |
+| List geometry | header and rows share one grid, `524px 200px minmax(0, 1fr) 40px`, column gap 10, padding 10 left / right. Header 40 tall (padding 3 / 10, 1px White 20 rule), labels `H7 Regular` 14 Gray `#CFCDD4`: "Collaborators: N" beside the select-all (column 1, Fixed 524) and "Deploy Permissions in" (column 2, x 544); 20 to the first row. Row Hug **66** with the dropdown, 52 without; padding 10, items centred, 1px White 20 rule: checkbox 20, `ProfilePic` 32 (avatar 28), name `H6 Semi` 16 Snow |
+| Trash | `rounded-button-contained` **40 × 40**, no fill at rest, White 10 on its own hover; `Delete` in a 24 box, White 40 (3.27–3.78:1, ≥ 3); at the row's right end |
+| Vertical rhythm | `Metrics` gap 40: tab bar → 40 → add row → 40 → header → 20 → rows (Managers too) |
+
+#### Managers tab
+
+No Figma frame (✱): built from the Collaborators pattern and approved by the user. Owner-only; it stays a tab of the LAND page. Description "Managers can publish scenes and add or remove collaborators on all your LAND, not only this one."; "Wallet address or NAME" + "+ Add"; "Managers: N"; rows as Collaborators. Add and remove go through a confirm and the transaction states, always in two steps (one tx per registry: LAND, then Estate), even when the owner holds no Estate, so the manager also covers Estates acquired later (user decision). If step 2 fails, the row shows "Applies to LAND only. Estates not updated." Empty: "No managers yet". Code: `LandDetailPage/ManagersTab`.
+
+### Modals and transaction states
+
+#### DefaultModal (LAND modals)
+
+The DS `DefaultModal` (Modals) as the LAND board instances it: Transfer LAND [`5660:4181`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4181) and Unpublish Scene [`5660:4446`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4446), both `DefaultModalButtonsHorizontal` instances, read in the Properties panel on a 1:1 canvas. Used by Transfer, Unpublish (single and bulk) and the transaction states only; every other Creator Hub modal keeps ui2's chrome (user decision). Code: `Modals/DefaultModal`, a shared styled wrapper over ui2 `Dialog`.
 
 | Part | Figma value | Code (token or ui2 name) |
 | --- | --- | --- |
 | Backdrop | `Modal` 1920 × 1080, `#000000` @ 60% | `blackTransparent.backdrop` |
 | Panel | row, Hug 700 × Hug (473 Transfer, 413 Unpublish), radius 24, 1px White 10 inside stroke, padding 100 on every side, fill `#181225`, no shadow | `--modal-surface`, `whiteTransparent.subtle`; `box-shadow: none`; `box-sizing: border-box` so the stroke sits inside the 100 padding (content stays 500) |
-| Glow | `Glow` ellipse 1037 × 513, `DCL/Rarities/Mythic` `#FF4BED`, layer opacity 30%, layer blur 500; centred horizontally; vertically **centre-constrained**: its centre sits 436 below the panel's centre on both frames (top 416 on the 473 Transfer, 386 on the 413 Unpublish); clipped by the panel. It renders as a vertical wash from `#191226` at the top to `#3D1B45` at the bottom centre (`#33193C` at the bottom corners) | `rarity.mythic` at `opacity: 0.3`, `filter: blur(250px)` (Figma blur 500 = CSS 250), `width: 1037px; height: 513px; left: 50%; top: calc(50% + 179.5px); transform: translateX(-50%)` (centre 436 below the panel's centre, as Figma's centre constraint), panel `overflow: hidden`; decorative, `aria-hidden` |
+| Glow | `Glow` ellipse 1037 × 513, `DCL/Rarities/Mythic` `#FF4BED`, layer opacity 30%, layer blur 500; centred horizontally; vertically **centre-constrained**: its centre sits 436 below the panel's centre on both frames (top 416 on the 473 Transfer, 386 on the 413 Unpublish); clipped by the panel. It renders as a vertical wash from `#191226` at the top to `#3D1B45` at the bottom centre (`#33193C` at the bottom corners) | `rarity.mythic` at `opacity: 0.3`, `filter: blur(250px)` (Figma blur 500 = CSS 250), `width: 1037px; height: 513px; left: 50%; top: calc(50% + 179.5px); transform: translateX(-50%)`; panel `overflow: hidden`; decorative, `aria-hidden` |
 | Content | column, Fixed 500 × Hug, gap 50: title, then `Frame 22`, then `CTAs` | `spacing(6.25)` |
 | Title | Inter 600 24, line height auto (box 29), Snow `#FCFCFC` | `neutral.softWhite`, `line-height: normal` |
 | `Frame 22` | column, gap 20: body, then the field (Transfer only) | `spacing(2.5)` |
 | Body | Inter 400 16, line height auto (19 per line), **Gray `#CFCDD4`**; names in Inter 600 Snow | `neutral.gray4`; `b` → `neutral.softWhite` 600 |
-| Field (Transfer) | `Container` Fixed 500 × 40, radius 12, 1px White 40, padding 10.5 / 16, gap 10; no visible label; placeholder Inter 400 16 White 40 | `whiteTransparent.blurry`; height 40 |
-| CTAs | row, Fill 500, gap 20, two equal `Fill` buttons (240 × 46) | layout only: Button size, fill and opacity are out of scope (U1) |
+| Field (Transfer) | `Container` Fixed 500 × 40, radius 12, 1px White 40, padding 10.5 / 16, gap 10; no visible label; placeholder Inter 400 16 White 40 "Wallet address or NAME" (the copy in Figma's "User ID" slot), `aria-label` the same | `whiteTransparent.blurry`; height 40 |
+| CTAs | row, Fill 500, gap 20, two equal `Fill` buttons (240 × 46) | layout only: the buttons keep the app's `Button` size, fill and opacity (user decision) |
 | Close | `close-button` 36 × 36, radius 100, White 10 fill, at top 20 / right 20 of the panel; `Close` box 21.6 holding a 12.6 Gray `#CFCDD4` vector | `whiteTransparent.subtle`, `neutral.gray4`, icon `fontSize` 21.6px |
 
-The DS page's main component (Modals, read 2026-10-20) draws a 46 Black 60 close pill; the LAND board's instances draw 36 White 10. This feature follows the board; the conflict is a Figma defect, raised with the design team as a PR follow-up.
+The DS page's main component (Modals) draws a 46 Black 60 close pill; the LAND board's instances draw 36 White 10. This feature follows the board; the conflict is a Figma defect, raised with the design team as a PR follow-up.
 
 | Part | State | Look | Contrast | A11y |
 | --- | --- | --- | --- | --- |
 | Primary CTA | blocked (form not valid) | Primary at 20% node opacity | exempt | `disabled` |
-| Close ✕ | ✱ terminal transaction states (done, not confirmed) | hidden: the action button is the only "Close" (one control per name; user, 2026-10-27) | — | — |
-| Body | default | Gray on the glow: 11.54:1 at the top (`#191226`), 9.25:1 at the bottom centre (`#3D1B45`); Snow 14.20:1 at the bottom | ≥ 4.5 | — |
+| ✱ Close ✕ | terminal transaction states (done, not confirmed) | hidden: the action button is the only "Close", one control per name (user decision) | — | — |
+| Body | default | Gray on the glow | 11.54:1 at the top (`#191226`), 9.25:1 at the bottom centre (`#3D1B45`); Snow 14.20:1 at the bottom | — |
 
-**Decisions:**
+| Modal | Rule |
+| --- | --- |
+| Transfer LAND | owner only; the field accepts a 0x address or a NAME, resolves it, and shows the resolved profile (avatar + name + shortened address) before confirming; it blocks the user's own address |
+| Unpublish Scene | Figma's copy (see Scenes tab); the plural copy for a bulk unpublish |
 
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Restyle all Creator Hub modals to the DS DefaultModal? | No: a shared styled `DefaultModal` for Transfer, Unpublish (single and bulk) and the transaction states only; other modals untouched |
-| 2026-10-27 | The glow omitted as an accepted ✱ (Validate 13–19 round 1, D1) | **Revoked.** The user rejected the sign-off: "the modal doesn't follow the background color degraded. nor margins, paddings, font sizes." The ✱ was never the user's call: an accepted deviation on a visible property needs the user's approval. The glow and every value in the table above are in scope |
-| 2026-10-27 | Transfer field: visible label and placeholder (my spec had added a visible "Wallet address or NAME" label and a "0x… or name.dcl.eth" placeholder) | Follow Figma: no visible label; placeholder "Wallet address or NAME" (R2's copy in Figma's "User ID" slot); `aria-label` the same |
-| 2026-10-27 | ✕: the DS main component (Modals, read 2026-10-20) draws a 46 Black 60 pill; the LAND board's instances draw 36 White 10 | This feature follows the LAND board. The conflict is a Figma defect for the design team (PR follow-up) |
+#### Transaction states
 
-### Transaction states (Manage)
-
-Not drawn in Figma (✱ throughout). One block inside the action's `DefaultModal` for every on-chain action (Transfer, Save details, Domain Name set / removed, Collaborator added / removed / replaced, Manager added / removed). `sendLandTransaction` returns `confirmed | failed | unconfirmed` and throws `RelayError` (rejected −32003, expired).
+Not drawn in Figma (✱ throughout); copy approved by the user. One block inside the action's `DefaultModal` for every on-chain action (Transfer, Save details, Domain Name set / removed, Collaborator added / removed / replaced, Manager added / removed). `sendLandTransaction` returns `confirmed | failed | unconfirmed` and throws `RelayError` (rejected −32003, expired). Code: `Modals/TxState`.
 
 | State | Copy | Controls |
 | --- | --- | --- |
@@ -2024,146 +2065,7 @@ Not drawn in Figma (✱ throughout). One block inside the action's `DefaultModal
 | ✱ Multi-step | "Step {n} of {total}" above the state (Managers: one tx per registry) | — |
 
 - **Mounting:** an action modal takes a snapshot of its subject (the LAND, the collaborator) when it opens and renders from that snapshot, never from a live store lookup. Its own transaction can remove the subject from the store (a Transfer drops the LAND from the list), and the modal must survive that to show Done.
-- **Focus on close:** focus returns to the control that opened the modal. When that control is gone (the card of a transferred LAND), focus moves to the page's `h1`. The `h1` takes `tabIndex={-1}` and draws **no focus ring** (decision 2026-10-27): it is a landmark for screen readers and for the next Tab, not a control. Express it on that heading only, as `'&:focus': { outline: 'none' }` scoped to `[tabindex="-1"]`. `:focus:not(:focus-visible)` doesn't apply: after a keyboard-activated Close, Chromium matches `:focus-visible` on the programmatic focus, so the amber UA ring would still draw. Interactive controls keep the 2px `info.light` ring.
-
-**Decisions:**
-
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Transaction state copy | Approved as above |
-
-### LAND detail page (Manage)
-
-Frames [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5690-7364) (Details), [`5660:4356`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4356) (Scenes), [`5660:4640`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4640) (Collaborators); `Title Bar` `5660:4256`; `tab-bar` `5738:6922` (its LAND variant reads SETTINGS in the component; the frames override it to MANAGERS). Route `/manage/land/:id/:tab`. Title "Manage - {name}" Inter 600 48; header row "Role [tag] · Owner [avatar] name"; SAVE (Details) + ⋮ (the card menu); tabs `H6 Semi Caps` 16, Silver idle, Snow active + 2px underline, 1px White 20 rule, gap 40.
-
-| Role | Header row | Tabs | ⋮ Transfer |
-| --- | --- | --- | --- |
-| Owner | hidden | Details · Scenes · Collaborators · Managers | ✓ |
-| Lessor (rented out) | hidden (owner header) | Details (Domain Name only editable) · Scenes | — |
-| Manager | Role [Manager] · Owner | Details · Scenes · Collaborators | — |
-| Collaborator | Role [Collaborator] · Owner | Details · Scenes | — |
-| Tenant | Role [Tenant] · Owner | Details (Domain Name only editable) · Scenes | — |
-
-**Decisions:**
-
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Header Role / Owner row for owners | Hidden for owners and lessors; others see "Role [tag] · Owner [avatar] name" |
-| 2026-10-26 | Page title | "Manage - {name}"; unnamed: "Parcel x,y" / "Estate {id}" |
-| 2026-10-26 | Back control | The shared `Title` back control is restyled to the DS `BackTitle` (40 pill, Primary chevron `ArrowBackIosNewRounded`; the old `back.svg` was a stemmed arrow); this also repaints Analytics detail |
-| 2026-10-26 | Tab state | In the route: `/manage/land/:id/:tab` |
-| 2026-10-26 | Page states | `Loader` while loading; EmptyState "This LAND is no longer in your list." + "Back to Manage" when not found or access was lost |
-| 2026-10-26 | Per-role visibility | As the table above |
-
-### Details tab (Manage)
-
-Frame [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5690-7364); Domain Name states in Group 23 `5688:7356` (Owns names `5660:4286`, Doesn't have any name `5660:4289`, Name set `5660:4292`). Fields: Land Name (Text-Input, "Write here"), Description (textarea, "Write something about your LAND here"), Domain Name (help line, Dropdown-Input "Choose a NAME", "Claim a NAME" link). Thumbnail and Categories (NICE TO HAVE) are out of scope: on-chain metadata is name + description.
-
-| Part | Rule |
-| --- | --- |
-| ✱ Land Name + Description editable by | owner, manager and **collaborator** (`updateLandData` accepts the update operator and update managers); read-only for tenant and lessor. Deviation from the board's NOTES ("collaborators: domain name and scenes only") |
-| SAVE | Land Name + Description in one tx; disabled until changed; "Discard" beside it |
-| Domain Name | its own confirm + tx, signed by the NAME's owner; any role; NAMEs used by a World or another LAND greyed out |
-| Domain "Name set" pencil | the `Edit` glyph 14 × 14 White; re-opens the NAME dropdown, which includes "Remove link" (its own tx; Snow label: red text on the Onix menu is 3.43:1, under 4.5) |
-| NAME dropdown | the bordered Dropdown-Input field (1px White 40, radius 12, full field width), as `5660:4286`; not the borderless View-bar select |
-| ✱ NAME dropdown, no NAMEs owned | always shown (user, 2026-10-27), **disabled**: 1px White 20 (`whiteTransparent.soft`) border, placeholder "Choose a NAME" and chevron White 20, no hover change, `cursor: not-allowed`, `aria-disabled`; "Claim a NAME" 10 below. Not drawn: the DS Dropdown-Input set has no disabled variant; White 20 is the DS's disabled-field border (inspector `TextField` disabled `--palette-whiteTransparent-soft`). Disabled controls are exempt from contrast minimums |
-| "Claim a NAME" underline (read 2026-10-27, 1:1 export) | `H7 Semi` 14 / 600 Primary, solid underline 1px, **3px under the baseline**: `text-underline-offset: 3px; text-decoration-thickness: 1px` |
-| ✱ Read-only empty value (tenant, lessor) | "—" in `neutral.gray3` (user, 2026-10-27) |
-| ✱ "Enter a name." | only after the field was edited or on a Save attempt, never on a pristine unnamed LAND |
-| Geometry (board read 2026-10-27, Properties panel) | `Metrics` column: tab bar, then 40, then the form. Form `Frame 13`: Fill **1044** wide (beside the out-of-scope Thumbnail column, gap 50), blocks 40 apart. Each `Text-Input`: label `H5 Semi` Inter 600 **18** `#FFFFFF` (22 tall), gap 10, `Container` 1044 × **46**, radius 12, 1px White 40, padding 14 / 16. Description: block Fixed 200 → textarea **168**. Domain `Dropdown-Input` 1044 × 105: title 18 / 600, help `H7 Regular` 14 DCL/White, the 46 field; "Claim a NAME" 10 below. The live counters (L1) sit under each field inside its block |
-| Tabs | `tab`: padding 10 / 4 / 10 / 4, label `H6 Semi Caps` 16 (19 tall), 2px Snow underline when active; `tab-bar` 1724 × 39, gap 40, 1px White 20 bottom rule |
-
-**Decisions:**
-
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | One SAVE for the whole form? | SAVE = Land Name + Description (one tx); Domain Name has its own confirm + tx |
-| 2026-10-26 | Can collaborators and managers edit Land Name + Description? | Yes (the contract allows it; Figma's NOTES overridden, ✱ above). Tenants read-only |
-| 2026-10-26 | Field limits | Builder's limits, a live counter, the Text-Input Error state, and "Discard" next to SAVE. Builder's `LandEditPage` enforces only a non-empty name (no length limit) |
-| 2026-10-26 | Limit values (no Builder limit to copy) | Land Name max 50, Description max 140 (our decision), live "{n}/{max}" counters, the Text-Input Error state when over |
-| 2026-10-26 | Field placeholder White 40 is 3.82:1 (modal) / 3.83:1 (page) | Accepted (✱), as the search placeholder |
-| 2026-10-27 | Domain Name when the user owns no NAMEs | The dropdown always shows, disabled, with "Claim a NAME" below (sign-off change 1) |
-| 2026-10-27 | Figma comment #35 on Domain Name ("Tenants and Collaborators can't edit this field") | Ignored: every role can link a NAME it owns (`setContenthash` on the ENS resolver checks NAME ownership only; no LAND contract is involved), per the board's NOTES "Domain name can be edited by everyone". Land Name + Description rights unchanged (2026-10-26) |
-| 2026-10-27 | Disabled Domain field: placeholder and look | "Choose a NAME"; the ✱ disabled look (White 20 border, placeholder and chevron) accepted |
-
-### Scenes tab (Manage)
-
-Frame [`5660:4356`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4356); `Scene-entry` [`5660:4823`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4823) (Default `5660:4824`, Hover `5660:4840`: 1724 × 70, padding 10 / 20, 1px White 20 bottom rule; Hover White 10 + download (Silver) + unpublish ✕ (System/Red)). Sub-bar as the Manage View bar: "{n} Scenes · {n} LANDs", Sort by, Search. Table: checkbox, Name, Parcels, Location.
-
-| Part | Rule |
-| --- | --- |
-| ✱ LIST / MAP toggle | not shipped: the Map view is postponed (follow-up), the tab ships the list only |
-| ✱ Row tags ("Unsynched", "SDK 6" in `5660:4382`) | none |
-| Sort | "Last Updated" and "Name", the Manage page's options and keys |
-| Bulk | checkboxes kept; select-all in the header; "Unpublish selected" appears when ≥ 1 is selected; one empty-scene deploy per scene; the Unpublish modal with plural copy |
-| Download | warning modal → save dialog → row progress → result snackbar per recovery (`none` / `self-contained` / `partial`) |
-| Empty | EmptyState "No scenes published on this LAND." + Secondary "View Scenes" |
-| Sub-bar stats | "{n} Scenes" always; "{n} LANDs" for Estates only; `H6 Regular` Inter 400 **16** Silver |
-| Sub-bar glyphs (read 2026-10-27) | Scenes: the `Layers` glyph, 24 box with a 15 × 16 two-layer outline at 5 / 4, Silver (not the Published card's filled `Scenes` stack); LANDs: `layout-outline` 14 artwork centred in an 18 box; glyph → text gap **5** |
-| Table header rule | 1px White 20 on a whole pixel: every box above the header (tab bar, sub-bar) has an integer top and height, so the rule never splits across two device rows |
-| Table header labels | `H7 Regular` 14 **Gray** `#CFCDD4` |
-| Sub-bar and table header (read 2026-10-27) | `Filter` 56 tall, radius 999, padding left 20 / right 10, gap 16; the LANDs stat takes the grid glyph. Table header `Subtitle-Navigation` 40 tall, padding 3 / 100 / 3 / 20, 1px White 20 rule, 20 above the first row; column-sort indicator (next to the sorted column's header label) `arrow-down` 11 × 6.5 Primary. The "Sort by" select keeps the Manage View bar chevron (`arrow-down` 10 box, 9.17 × 5.42, Silver; same on `5738:2543`). Row actions: 30 circles with no fill at rest, 18 icons |
-| Vertical rhythm and checkbox (read 2026-10-27) | Scenes `Metrics` gap 30: tab bar → 30 → sub-bar → 30 → header → 20 → rows. Collaborators / Managers `Metrics` gap 40: tab bar → 40 → add row → 40 → header → 20 → rows. Column-sort indicator 10 after its label. Checkbox Off: 20, radius 5, 1px White 40, no fill |
-| ✱ Columns (user, 2026-10-27) | Name · Parcels · Location · **Last Updated** · **Deployed by** · actions; Name Fixed 700, the four data columns Fill equally, actions 80. Data cells: 18 glyph box + `H6 Semi` 16 / 600 Silver, gap 8. Last Updated: calendar glyph + `dateStyle: 'medium'` date, tooltip `dateStyle: 'long'` + `timeStyle: 'short'`. Deployed by: avatar 20 + display name (profile name, else shortened address), ellipsis. The Primary `arrow-down` marks the sorted column (Last Updated by default, Name when sorted by Name), always pointing down; headers are not clickable |
-| Row geometry (`Scene-entry` read 2026-10-27) | 1724 × 70, padding 10 / 20, 1px White 20 bottom rule; `Header` (Name column) Fixed **700**, gap 20: checkbox **20**, thumbnail **50 × 50**, name `H6 Semi` 16 Snow; Parcels and Location columns Fill (452 each at 1724), glyph + value gap 8; actions two 30 × 30 `rounded-button-contained` (download Silver, unpublish System/Red) |
-| ✱ Download in progress | the row's unpublish ✕ is hidden; a cancel control (24px close glyph, Snow) named "Cancel download {scene}" takes its place; "Downloading… {done}/{total}" stays on one line |
-
-**Decisions:**
-
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Unpublish copy | Figma's: "Are you sure you want to unpublish {scene} from {LAND name}?" |
-| 2026-10-26 | Bulk checkboxes | Kept, with "Unpublish selected" |
-| 2026-10-26 | Map view | Postponed: a follow-up, not a permanent deviation |
-| 2026-10-26 | Row tags | None (no "SDK 6") |
-| 2026-10-26 | Sort | "Last Updated" + "Name" (reuse `manage.sort.*`) |
-| 2026-10-27 | Column-sort indicator colour | Primary `#FF2D55` |
-| 2026-10-27 | Extra columns | "Last Updated" (absolute localized date, full date and time in a tooltip) and "Deployed by" (profile name, else shortened address); not in Figma (✱) |
-| 2026-10-27 | Which column shows the indicator | The column "Sort by" sorts by: Last Updated by default, Name when sorted by Name; headers are not clickable |
-
-### Collaborators tab (Manage)
-
-Frames [`5660:4484`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4484) (the list with the "Deploy Permissions in" column; governs the list) and [`5660:4640`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5660-4640) (the add row). Description line; a 570-wide field with an inline `Button-Contained-Text-Icon` Primary small "+ ADD" (63 × 26, radius 6, padding 2 / 6, blocked at 20% opacity); list header (select-all + "Collaborators: N"); rows: checkbox, 28px avatar, name `H6 Semi` 16 Snow (max 230), trash on hover.
-
-| Part | Rule |
-| --- | --- |
-| ✱ Copy | "Collaborators can publish scenes on this LAND." and "Collaborators: N": no "up to 100", no "stream", no cap (the board says otherwise) |
-| Field | "Wallet address or NAME"; the resolved profile (avatar + name + shortened address) before adding; errors "Enter a wallet address or a NAME." / "This NAME doesn't exist." / "You can't add yourself." |
-| Parcel | at most one collaborator (one operator per token); adding when the slot is taken opens a replace-confirm |
-| Estate | one row per distinct parcel operator plus the estate-wide operator; each row has an "All Parcels" / "{count, plural, one {# Parcel} other {# Parcels}}" dropdown in the "Deploy Permissions in" column, whose "Custom parcels…" opens the existing parcel picker. Writes are one `setManyLandUpdateOperator` tx for all selected parcels (no chunking; very large estates may hit the gas limit: follow-up) |
-| Remove | trash on hover and focus, named "Remove {name}"; a remove-confirm; then the transaction states |
-| Who edits | owner and manager |
-| Add row geometry (read 2026-10-27) | description `H6 Regular` 16 Snow, gap 10, field 700 × 40 (radius 12, 1px White 40, padding 10.5 / 16) with the inline ADD (63 × 26, radius 6, padding 2 / 6, gap 6, `plus` 18 box with a 13.5 glyph, label 12 / 600 uppercase, letter-spacing 0) |
-| Names | every confirm, select label and trash label shows the display name (profile name, else the shortened address), never the raw input; Managers too |
-| List geometry (`5660:4484`, read 2026-10-27) | header and rows share one grid, `524px 200px minmax(0, 1fr) 40px`, column gap 10, padding 10 left / right; header 40 tall (padding 3 / 10, 1px White 20 rule), labels `H7 Regular` 14 Gray `#CFCDD4`: "Collaborators: N" (beside the select-all, column 1 Fixed 524) and "Deploy Permissions in" (column 2, x 544); 20 to the first row. Row Hug **66** with the dropdown (52 without), padding 10, items centred, 1px White 20 rule: checkbox 20, `ProfilePic` 32 (avatar 28), name `H6 Semi` 16 Snow; Estates only render column 2; single-parcel LANDs have no column (user, 2026-10-27) |
-| Parcels dropdown (`5660:4484`) | the Dropdown-Input field at **200 × 46**: radius 12, 1px White 40 (hover White 60, open Snow), padding 0 / 16, value `H6 Regular` 16 Snow, `arrow-down` 14 box White 40; always visible in every row |
-| Trash (`5660:4484`) | `rounded-button-contained` 40 × 40, no fill at rest, White 10 on its own hover; `Delete` in a 24 box, White 40 (3.27–3.78:1, ≥ 3); at the row's right end, shown on row hover / focus-within; row hover adds White 10 and nothing else |
-| Parcels confirm | "**{name}** will publish on {count, plural, one {# parcel} other {# parcels}}." (en, es; zh has no plural forms and keeps "{count} 个地块") |
-
-**Decisions:**
-
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Collaborators copy | As above (✱ deviation from the board) |
-| 2026-10-26 | Estate rows (Q23; revised 2026-10-27 below) | "All parcels" / "{N} Parcels" select opening the parcel picker |
-| 2026-10-27 | Where the parcel control sits (user, sign-off change 3; **revises the 2026-10-26 "Estate rows" answer, Q23**) | The dropdown stays, as its own always-visible column ("Deploy Permissions in", `5660:4484` / `5660:4486`); row hover shows only the trash. Its menu is All Parcels / {N} Parcels / Custom parcels…, and Custom parcels opens the existing parcel picker |
-| 2026-10-27 | Column header copy | "Deploy Permissions in", verbatim from the board; es "Permisos de publicación en" (the app's "publicar" wording), zh "部署权限范围" (user-approved) |
-| 2026-10-27 | Single-parcel LANDs | No column; rows stay 52 |
-| 2026-10-27 | Estate-wide value | "All Parcels" (title case, as "{N} Parcels") |
-| 2026-10-27 | `5660:4484` copy and tabs | The Managers tab stays for LANDs (SETTINGS belongs to the Worlds board). Copy stays LAND-accurate: "Collaborators: N" (no /100) and "Collaborators can publish scenes on this LAND."; no "up to 100", no "stream", no cap |
-| 2026-10-26 | Row action | Figma's trash, on hover and focus, named "Remove {name}" |
-| 2026-10-26 | Remove and replace | Each through a confirm modal, then the transaction states |
-
-### Managers tab (Manage)
-
-No Figma frame (✱): built from the Collaborators pattern and approved by the user. Owner-only tab. Description "Managers can publish scenes and add or remove collaborators on all your LAND, not only this one."; "Wallet address or NAME" + "+ Add"; "Managers: N"; rows as Collaborators; add / remove through confirm + transaction states, always two steps (one tx per registry: LAND, then Estate), even when the owner holds no Estate, so the manager also covers Estates acquired later. If step 2 fails, the row shows "Applies to LAND only". Empty: "No managers yet".
-
-**Decisions:**
-
-| Date | Question | Answer |
-| --- | --- | --- |
-| 2026-10-26 | Managers draft | Approved; it stays a tab of the LAND page |
-| 2026-10-26 | Sign the Estate registry when the owner has no Estate? | Yes, always both registries (LAND, then Estate) |
+- **Focus on close:** focus returns to the control that opened the modal. When that control is gone (the card of a transferred LAND), focus moves to the page's `h1`. The `h1` takes `tabIndex={-1}` and draws **no focus ring** (user decision): it is a landmark for screen readers and for the next Tab, not a control. Express it on that heading only, as `'&:focus': { outline: 'none' }` scoped to `[tabindex="-1"]`. `:focus:not(:focus-visible)` doesn't apply: after a keyboard-activated Close, Chromium matches `:focus-visible` on the programmatic focus, so the amber UA ring would still draw. Interactive controls keep the 2px `info.light` ring.
 
 ---
 
