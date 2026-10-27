@@ -29,6 +29,7 @@ import {
 } from './scene-mcp';
 import * as optimizer from './optimizer';
 import * as sceneExport from './scene-export';
+import * as landUnpublish from './land-unpublish';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -202,4 +203,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     }),
   );
   handle('sceneExport.cancel', async (_event, entityId) => sceneExport.cancelSceneExport(entityId));
+
+  handle('landUnpublish.prepare', (_event, parcel) => landUnpublish.prepareEmptyScene(parcel));
+  handle('landUnpublish.deploy', (_event, request) => landUnpublish.deployEmptyScene(request));
 }

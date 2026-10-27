@@ -1,35 +1,40 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Scene } from '@dcl/schemas';
 
 import type { Land } from './land';
 import { LandType, RoleType } from './land';
 
-type ContentClientOptions = {
-  url: string;
-  fetcher: { fetch: (url: string, init?: RequestInit) => Promise<Response> };
-};
+const ENTITY_ID = 'bafkreiemptyscene';
+const TIMESTAMP = 1_700_000_000_000;
+const CSP_ERROR = new EvalError(
+  "Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script",
+);
 
-const fetchMock = vi.fn();
+const prepareMock = vi.fn();
 const deployMock = vi.fn();
-const createContentClientMock = vi.fn((_options: ContentClientOptions) => ({
-  deploy: deployMock,
-}));
+const buildEntityMock = vi.fn(() => {
+  throw CSP_ERROR;
+});
 const getIdentityMock = vi.fn();
 const signPayloadMock = vi.fn((_identity: unknown, entityId: string) => [
   { type: 'SIGNER', payload: '0xme', signature: '' },
   { type: 'ECDSA_SIGNED_ENTITY', payload: entityId, signature: '0xsig' },
 ]);
 
-vi.mock('/@/config', () => ({
-  config: { get: () => 'https://peer.example.org' },
+vi.mock('#preload', () => ({
+  env: { getEnv: () => 'dev' },
+  landUnpublish: {
+    prepare: (parcel: string) => prepareMock(parcel),
+    deploy: (request: unknown) => deployMock(request),
+  },
 }));
 
-vi.mock('/shared/fetch', () => ({ fetch: (...args: unknown[]) => fetchMock(...args) }));
-
-vi.mock('dcl-catalyst-client', async importOriginal => ({
-  ...((await importOriginal()) as object),
-  createContentClient: (options: ContentClientOptions) => createContentClientMock(options),
-}));
+vi.mock('dcl-catalyst-client', async importOriginal => {
+  const original = (await importOriginal()) as { DeploymentBuilder: object };
+  return {
+    ...original,
+    DeploymentBuilder: { ...original.DeploymentBuilder, buildEntity: buildEntityMock },
+  };
+});
 
 vi.mock('@dcl/single-sign-on-client', () => ({
   localStorageGetIdentity: (address: string) => getIdentityMock(address),
@@ -42,7 +47,7 @@ vi.mock('@dcl/crypto', async importOriginal => ({
   },
 }));
 
-const { buildEmptyScene, pickUnpublishParcel, clearLandScene } = await import('./landUnpublish');
+const { pickUnpublishParcel, clearLandScene } = await import('./landUnpublish');
 
 const parcel = (x: number, y: number, role: RoleType): Land => ({
   id: `${x},${y}`,
@@ -56,6 +61,7 @@ const parcel = (x: number, y: number, role: RoleType): Land => ({
   description: null,
   owner: '0xowner',
   operators: [],
+  updateOperator: null,
 });
 
 const estate = (id: string, coords: Array<[number, number]>, role: RoleType): Land => ({
@@ -69,10 +75,8 @@ const estate = (id: string, coords: Array<[number, number]>, role: RoleType): La
   description: null,
   owner: '0xowner',
   operators: [],
+  updateOperator: null,
 });
-
-const decodeEntity = (files: Map<string, Uint8Array>, entityId: string) =>
-  JSON.parse(new TextDecoder().decode(files.get(entityId)));
 
 describe('pickUnpublishParcel', () => {
   const scene = { base: '0,0', parcels: ['0,0', '1,0', '2,0'] };
@@ -127,45 +131,13 @@ describe('pickUnpublishParcel', () => {
   });
 });
 
-describe('buildEmptyScene', () => {
-  describe('when building the empty scene for a parcel', () => {
-    let entity: any;
-
-    beforeEach(async () => {
-      const { entityId, files } = await buildEmptyScene('4,-2');
-      entity = decodeEntity(files, entityId);
-    });
-
-    it('should be a scene over that one parcel only', () => {
-      expect(entity.type).toBe('scene');
-      expect(entity.pointers).toEqual(['4,-2']);
-      expect(entity.metadata.scene).toEqual({ base: '4,-2', parcels: ['4,-2'] });
-    });
-
-    it('should be an SDK7 scene whose main file is part of the deployment', () => {
-      expect(entity.metadata.runtimeVersion).toBe('7');
-      expect(entity.content.map((file: { file: string }) => file.file)).toContain(
-        entity.metadata.main,
-      );
-    });
-
-    it('should mark itself as empty, so it never reads as a published scene', () => {
-      expect(entity.metadata.source).toMatchObject({ origin: 'creator-hub', isEmpty: true });
-    });
-
-    it('should carry metadata the catalyst accepts', () => {
-      expect(Scene.validate(entity.metadata)).toBe(true);
-      expect(entity.metadata.display).toBeDefined();
-    });
-  });
-});
-
 describe('clearLandScene', () => {
   const scene = { base: '0,0', parcels: ['0,0', '1,0'] };
   const identity = { ephemeralIdentity: {}, expiration: new Date(), authChain: [] };
 
   beforeEach(() => {
-    deployMock.mockResolvedValue({});
+    prepareMock.mockResolvedValue({ entityId: ENTITY_ID, timestamp: TIMESTAMP });
+    deployMock.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -178,19 +150,32 @@ describe('clearLandScene', () => {
       await clearLandScene(scene, [parcel(1, 0, RoleType.OWNER)], '0xme');
     });
 
-    it('should deploy to the configured catalyst', () => {
-      expect(createContentClientMock).toHaveBeenCalledWith(
-        expect.objectContaining({ url: 'https://peer.example.org/content' }),
-      );
+    it('should ask the main process to build the empty scene over that parcel', () => {
+      expect(prepareMock).toHaveBeenCalledWith('1,0');
     });
 
-    it('should deploy the empty scene over that parcel, signed by the identity', () => {
-      const [{ entityId, files, authChain }] = deployMock.mock.calls[0];
-
+    it("should hand the main process the identity's signature over the entity it built", () => {
       expect(getIdentityMock).toHaveBeenCalledWith('0xme');
-      expect(signPayloadMock).toHaveBeenCalledWith(identity, entityId);
-      expect(authChain).toEqual(signPayloadMock.mock.results[0].value);
-      expect(decodeEntity(files, entityId).pointers).toEqual(['1,0']);
+      expect(signPayloadMock).toHaveBeenCalledWith(identity, ENTITY_ID);
+      expect(deployMock).toHaveBeenCalledWith({
+        parcel: '1,0',
+        timestamp: TIMESTAMP,
+        authChain: signPayloadMock.mock.results[0].value,
+      });
+    });
+  });
+
+  describe("when the renderer's CSP stops the catalyst client from compiling its schema validator", () => {
+    beforeEach(() => {
+      getIdentityMock.mockReturnValue(identity);
+    });
+
+    it('should still unpublish, building the entity outside the renderer', async () => {
+      await expect(
+        clearLandScene(scene, [parcel(1, 0, RoleType.OWNER)], '0xme'),
+      ).resolves.toBeUndefined();
+      expect(buildEntityMock).not.toHaveBeenCalled();
+      expect(deployMock).toHaveBeenCalled();
     });
   });
 
@@ -199,8 +184,9 @@ describe('clearLandScene', () => {
       getIdentityMock.mockReturnValue(null);
     });
 
-    it('should fail without deploying anything', async () => {
+    it('should fail without building or deploying anything', async () => {
       await expect(clearLandScene(scene, [parcel(1, 0, RoleType.OWNER)], '0xme')).rejects.toThrow();
+      expect(prepareMock).not.toHaveBeenCalled();
       expect(deployMock).not.toHaveBeenCalled();
     });
   });
@@ -210,42 +196,22 @@ describe('clearLandScene', () => {
       getIdentityMock.mockReturnValue(identity);
     });
 
-    it('should fail without deploying anything', async () => {
+    it('should fail without building or deploying anything', async () => {
       await expect(clearLandScene(scene, [parcel(5, 5, RoleType.OWNER)], '0xme')).rejects.toThrow();
+      expect(prepareMock).not.toHaveBeenCalled();
       expect(deployMock).not.toHaveBeenCalled();
     });
   });
 
-  describe('when the catalyst answers with an error status', () => {
-    let fetcher: ContentClientOptions['fetcher'];
-
-    beforeEach(async () => {
-      getIdentityMock.mockReturnValue(identity);
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 400,
-        text: () => Promise.resolve('Invalid pointers'),
-      });
-      await clearLandScene(scene, [parcel(0, 0, RoleType.OWNER)], '0xme');
-      fetcher = createContentClientMock.mock.calls[0][0].fetcher;
-    });
-
-    it('should fail with what the catalyst said, rather than read it as deployed', async () => {
-      await expect(fetcher.fetch('https://peer.example.org/content/entities')).rejects.toThrow(
-        'Invalid pointers',
-      );
-    });
-  });
-
-  describe('when the catalyst rejects the deployment', () => {
+  describe('when the main process fails to deploy', () => {
     beforeEach(() => {
       getIdentityMock.mockReturnValue(identity);
-      deployMock.mockRejectedValue(new Error('Catalyst answered 400'));
+      deployMock.mockRejectedValue(new Error('Catalyst answered 400: Invalid pointers'));
     });
 
     it('should fail with the catalyst error', async () => {
       await expect(clearLandScene(scene, [parcel(0, 0, RoleType.OWNER)], '0xme')).rejects.toThrow(
-        'Catalyst answered 400',
+        'Catalyst answered 400: Invalid pointers',
       );
     });
   });

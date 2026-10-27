@@ -4,6 +4,7 @@ import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
 import type { DeployOptions } from '/shared/types/deploy';
 import type { SceneExportOptions, SceneExportResult } from '/shared/types/scene-export';
+import type { EmptySceneDeploy, EmptySceneDraft } from '/shared/types/land-unpublish';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
@@ -178,6 +179,8 @@ export interface Ipc {
   'electron.showSaveDialog': (opts: Partial<SaveDialogOptions>) => Promise<string | null>;
   'sceneExport.export': (options: SceneExportOptions) => Promise<SceneExportResult>;
   'sceneExport.cancel': (entityId: string) => Promise<void>;
+  'landUnpublish.prepare': (parcel: string) => Promise<EmptySceneDraft>;
+  'landUnpublish.deploy': (request: EmptySceneDeploy) => Promise<void>;
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
