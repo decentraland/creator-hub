@@ -4,8 +4,10 @@
  */
 
 import { DIRECTORY, getParentPath } from '../../lib/data-layer/host/fs-utils';
+import { resolveScriptFile } from '../../lib/utils/script-files';
 
 export { getParentPath } from '../../lib/data-layer/host/fs-utils';
+export { joinPath, normalizePath } from '../../lib/utils/path-utils';
 
 /**
  * The scene's own folder (`assets/scene`, holding `main.composite`) is listed like any other
@@ -19,24 +21,6 @@ export function isProtectedPath(path: string): boolean {
 export function getBaseName(path: string): string {
   const idx = path.lastIndexOf('/');
   return idx === -1 ? path : path.slice(idx + 1);
-}
-
-export function joinPath(parent: string, name: string): string {
-  return parent ? `${parent}/${name}` : name;
-}
-
-/**
- * Resolves `.` and `..` segments. Segments that climb above the start are kept (`../x`), so a
- * caller can tell that the path escapes the assets folder.
- */
-export function normalizePath(path: string): string {
-  const parts: string[] = [];
-  for (const part of path.split(/[\\/]/)) {
-    if (!part || part === '.') continue;
-    if (part === '..' && parts.length && parts[parts.length - 1] !== '..') parts.pop();
-    else parts.push(part);
-  }
-  return parts.join('/');
 }
 
 /** Whether a `normalizePath` result is empty, climbs above the assets folder or names a drive. */
@@ -134,17 +118,15 @@ function isScriptLayout(
   return key === SCRIPT_LAYOUT_KEY && typeof child === 'string' && typeof owner.path === 'string';
 }
 
-function isFileName(value: string): boolean {
-  return !value.includes(':') && normalizePath(value) === value;
-}
+type FileParam = { name: string; value: string; file: string };
 
-function getFileParams(layout: string): [name: string, value: string][] {
+function getFileParams(layout: string, scriptPath: string): FileParam[] {
   const { params } = (parseJsonPayload(layout) ?? {}) as ScriptLayout;
-  return Object.entries(params ?? {}).flatMap(([name, param]) =>
-    param?.type === 'string' && typeof param.value === 'string' && isFileName(param.value)
-      ? [[name, param.value] as [string, string]]
-      : [],
-  );
+  return Object.entries(params ?? {}).flatMap(([name, param]) => {
+    if (param?.type !== 'string' || typeof param.value !== 'string') return [];
+    const file = resolveScriptFile(scriptPath, param.value);
+    return file ? [{ name, value: param.value, file }] : [];
+  });
 }
 
 function replaceScriptParams(
@@ -153,12 +135,11 @@ function replaceScriptParams(
   map: PathMap,
   onUnreachable?: OnUnreachable,
 ): string {
-  const folder = getParentPath(scriptPath);
   const newFolder = getParentPath(map(scriptPath) ?? scriptPath);
   const prefix = newFolder ? `${newFolder}/` : '';
   const values: Record<string, string> = {};
-  for (const [name, value] of getFileParams(layout)) {
-    const moved = map(normalizePath(joinPath(folder, value)));
+  for (const { name, value, file } of getFileParams(layout, scriptPath)) {
+    const moved = map(file);
     if (!moved) continue;
     if (!moved.toLowerCase().startsWith(prefix.toLowerCase())) {
       onUnreachable?.(moved);
@@ -233,9 +214,7 @@ export function collectAssetReferences(value: unknown, into: string[] = []): str
     for (const [key, child] of Object.entries(owner)) {
       if (REFERENCE_KEYS.has(key) && typeof child === 'string') into.push(child);
       else if (isScriptLayout(key, child, owner)) {
-        const folder = getParentPath(owner.path as string);
-        for (const [, file] of getFileParams(child))
-          into.push(normalizePath(joinPath(folder, file)));
+        for (const { file } of getFileParams(child, owner.path as string)) into.push(file);
       } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
         collectAssetReferences(parseJsonPayload(child), into);
       } else collectAssetReferences(child, into);
