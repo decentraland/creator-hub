@@ -45,6 +45,7 @@
   --palette-neutral-onyx: #35333b;
   --palette-system-blueDark2: #244b7d;
   --palette-system-blueDark3: #243852;
+  --palette-info-light: #63b4f6;
   --focus-ring: var(--ui-designer-text);
   --menu-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 
