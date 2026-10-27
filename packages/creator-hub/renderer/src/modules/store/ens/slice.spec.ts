@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { zeroAddress } from 'viem';
+import { encodeAbiParameters, zeroAddress } from 'viem';
 import { mainnet, sepolia } from 'viem/chains';
 import type * as Viem from 'viem';
 import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
@@ -24,7 +24,7 @@ const fetchMock = vi.fn();
 
 vi.mock('viem', async importOriginal => ({
   ...(await importOriginal<typeof Viem>()),
-  createPublicClient: () => ({ getEnsAddress: getEnsAddressMock }),
+  createPublicClient: () => ({ getEnsAddress: getEnsAddressMock, readContract: contenthashMock }),
   getContract: (params: { address: string }) => getContractMock(params),
 }));
 
@@ -68,7 +68,10 @@ describe('fetchDCLNames', () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
     fetchNamesMock.mockResolvedValue(['Name.dcl.eth']);
     registryResolverMock.mockResolvedValue(CURRENT_RESOLVER);
-    contenthashMock.mockResolvedValue(CONTENT_HASH);
+    contenthashMock.mockResolvedValue([
+      encodeAbiParameters([{ type: 'bytes' }], [CONTENT_HASH]),
+      CURRENT_RESOLVER,
+    ]);
     getEnsAddressMock.mockResolvedValue(RECORD_ADDRESS);
     vi.spyOn(console, 'log').mockImplementation(() => {});
   });
@@ -97,7 +100,7 @@ describe('fetchDCLNames', () => {
           address !== ensContract[ChainId.ETHEREUM_MAINNET]?.address &&
           address !== dclRegistrar[ChainId.ETHEREUM_MAINNET]?.address,
       );
-    expect(resolverAddresses).toEqual([CURRENT_RESOLVER]);
+    expect(resolverAddresses).toEqual([]);
   });
 
   it('uses the Universal Resolver of the configured chain', async () => {
@@ -140,12 +143,38 @@ describe('fetchDCLNames', () => {
     expect(names[0].content).toBe(CONTENT_HASH);
   });
 
-  it("reads the content hash from the name's current resolver", async () => {
+  it('reads the content hash through the Universal Resolver', async () => {
     const [name] = await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
 
-    expect(contenthashMock).toHaveBeenCalledWith(CURRENT_RESOLVER, [expect.any(String)]);
+    expect(contenthashMock).toHaveBeenCalledWith(
+      expect.objectContaining({ address: UNIVERSAL_RESOLVER, functionName: 'resolve' }),
+    );
     expect(name.resolver).toBe(CURRENT_RESOLVER);
     expect(name.content).toBe(CONTENT_HASH);
+  });
+
+  describe('when a parent resolves a name without a direct resolver', () => {
+    beforeEach(() => {
+      registryResolverMock.mockResolvedValue(zeroAddress);
+    });
+
+    it('should retain the content and effective resolver', async () => {
+      await expect(store.dispatch(fetchDCLNames({ address: OWNER })).unwrap()).resolves.toEqual([
+        expect.objectContaining({ content: CONTENT_HASH, resolver: CURRENT_RESOLVER }),
+      ]);
+    });
+  });
+
+  describe('when content resolution fails', () => {
+    beforeEach(() => {
+      contenthashMock.mockRejectedValue(new Error('Gateway unavailable'));
+    });
+
+    it('should retain the name and its address record', async () => {
+      await expect(store.dispatch(fetchDCLNames({ address: OWNER })).unwrap()).resolves.toEqual([
+        expect.objectContaining({ content: '', ensAddressRecord: RECORD_ADDRESS }),
+      ]);
+    });
   });
 
   it('rejects for a chain without ENS contracts', async () => {
