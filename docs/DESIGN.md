@@ -1611,6 +1611,7 @@ Page `21670:18705`, four boards: Feedback `21673:55006`, Components `21673:54749
 
 - **Editor 3D's hierarchy is stale.** `Editor 3D` → `Editor` `21673:49637` → `WorkSpace&SidePanels` `21673:49639` → `Entity-List` `21673:49646` (312 × 756, 4px radius, Charcoal) is the only in-scope drawing of the 3D Hierarchy. It is an **instance** of the set `Entity-List` `14589:108927` (variants v1 `14589:108024`, SpawnPoints `17931:192310`, v2 `14589:108928`, Script `16335:260763`, beside `Entity-Item` `14589:119035`) on the **Scene Editor 🟡 Outdated** page `20533:81937`. That main draws today's app: ruby selection, white Base-ramp labels (`Base/Base 01` `#FFFFFF`, `Base/Base 06` `#CCCCCC`), 22px `File` / `Folder` rows on a `_ListBase` (padding 3 / 12 / 3 / 24 at level 2, gap 6). The instance only overrides the selected row to Blue Dark 3. The 3D tree has no current set: NodeTypeHierarchy's state rule governs it (user, October 27, 2026; see NodeTypeHierarchy), and the board's rows are a stale kit (G35). The board is still unit 4's reference for the panel's layout.
 - The ids under that instance (`21822:*`, then `21831:*` after a reload) are session-synthetic instance children, not edits.
+- The 3D Hierarchy's info triggers (Player, Camera, the scene root) are not keyboard reachable yet: gap G36, resolved at layer 3b unit 4 (the 3D Hierarchy panel assembly), where their accessible names go to the user.
 
 ### FoldersHierarchy (3D Editor Bottom Panel — Components)
 
