@@ -213,22 +213,6 @@ describe('admin toolkit client', () => {
     });
   });
 
-  describe('when the room is not initialized yet', () => {
-    it('should fall back to applying commands locally', () => {
-      vi.spyOn(console, 'log').mockImplementation(() => {});
-      const scene = createScene();
-      initAdminMessageBus(scene.engine, scene.toolkit, {
-        registerMessages: () => {
-          throw new Error('Room not initialized');
-        },
-      });
-
-      getAdminMessageBus().emitSetVideo(scene.screen, { src: CAST_URL });
-
-      expect(scene.video().src).toBe(CAST_URL);
-    });
-  });
-
   describe('with an authoritative server', () => {
     it('should send commands to the server instead of writing the components', () => {
       const scene = createScene();

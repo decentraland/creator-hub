@@ -44,13 +44,7 @@ export const EMPTY_ANNOUNCEMENT: AnnouncementCommand = { text: '', author: '', i
 
 /** The authoritative-server room, or null when the toolchain provides none (local-only mode). */
 export function connectAdminRoom(sdkHelpers?: ISDKHelpers): RoomSDK | null {
-  if (!sdkHelpers?.registerMessages) return null;
-  try {
-    return sdkHelpers.registerMessages(ADMIN_MESSAGE_SCHEMAS);
-  } catch (error) {
-    console.log('[admin-toolkit] authoritative room unavailable, applying commands locally', error);
-    return null;
-  }
+  return sdkHelpers?.registerMessages?.(ADMIN_MESSAGE_SCHEMAS) ?? null;
 }
 
 export function getAdminToolkitVideoControl(engine: IEngine) {
