@@ -17,14 +17,14 @@ const UNIVERSAL_RESOLVER = '0xeeeeeeee14d718c2b47d9923deab1335e144eeee';
 
 const getEnsAddressMock = vi.fn();
 const registryResolverMock = vi.fn();
-const contenthashMock = vi.fn();
+const readContractMock = vi.fn();
 const getContractMock = vi.fn();
 const fetchNamesMock = vi.fn();
 const fetchMock = vi.fn();
 
 vi.mock('viem', async importOriginal => ({
   ...(await importOriginal<typeof Viem>()),
-  createPublicClient: () => ({ getEnsAddress: getEnsAddressMock, readContract: contenthashMock }),
+  createPublicClient: () => ({ getEnsAddress: getEnsAddressMock, readContract: readContractMock }),
   getContract: (params: { address: string }) => getContractMock(params),
 }));
 
@@ -53,8 +53,7 @@ function fakeContracts(chainId: ChainId) {
     if (address === dclRegistrar[chainId]?.address) {
       return { read: { getTokenId: vi.fn(async () => 42n) } };
     }
-    // Any other address is a resolver contract, read for the content hash.
-    return { read: { contenthash: (args: unknown) => contenthashMock(address, args) } };
+    throw new Error(`Unexpected contract address: ${address}`);
   });
 }
 
@@ -68,7 +67,7 @@ describe('fetchDCLNames', () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
     fetchNamesMock.mockResolvedValue(['Name.dcl.eth']);
     registryResolverMock.mockResolvedValue(CURRENT_RESOLVER);
-    contenthashMock.mockResolvedValue([
+    readContractMock.mockResolvedValue([
       encodeAbiParameters([{ type: 'bytes' }], [CONTENT_HASH]),
       CURRENT_RESOLVER,
     ]);
@@ -146,7 +145,7 @@ describe('fetchDCLNames', () => {
   it('reads the content hash through the Universal Resolver', async () => {
     const [name] = await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
 
-    expect(contenthashMock).toHaveBeenCalledWith(
+    expect(readContractMock).toHaveBeenCalledWith(
       expect.objectContaining({ address: UNIVERSAL_RESOLVER, functionName: 'resolve' }),
     );
     expect(name.resolver).toBe(CURRENT_RESOLVER);
@@ -167,7 +166,7 @@ describe('fetchDCLNames', () => {
 
   describe('when content resolution fails', () => {
     beforeEach(() => {
-      contenthashMock.mockRejectedValue(new Error('Gateway unavailable'));
+      readContractMock.mockRejectedValue(new Error('Gateway unavailable'));
     });
 
     it('should retain the name and its address record', async () => {
