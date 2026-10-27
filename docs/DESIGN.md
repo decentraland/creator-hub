@@ -59,7 +59,7 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-hairline` | `rgba(255,255,255,.07)` | Subtle dividers |
 | `--focus-ring` | `--ui-designer-text` `#fcfcfc` (Snow) | Keyboard focus on the shared controls: the `:focus-visible` ring of `Button`, the `Dropdown` trigger, `CheckboxField`, `ModeSwitcher` and the `RangeField` thumb, and the focus border of `TextField` and `TextArea`. 17.73:1 on `#161518`, 15.45 on `#242129`, 12.13 on Onix, 9.88 on `--gray-0`. A ring on a light surface takes `--text-primary` instead: the `Pill` remove button sits on the `--base-02` `#f0f0f0` pill, where Snow is 1.11:1 and `--text-primary` about 15:1. That ring draws inside the 11px button (`outline-offset: -2px`), because any outer offset covers the end of the pill's label. UI Designer panels keep `--ui-designer-control-accent` |
 | `--menu-shadow` | `0 4px 8px rgba(0,0,0,.4)` | Figma Menu `20749:386` drop shadow (0 / 4 / 8, Black 40, no Figma variable): every menu surface — react-contexify through `--contexify-menu-shadow`, the `Dropdown` `OptionList`, `MoreOptionsMenu`, and the snap card after #1714 (G30) |
-| `--border-focused` | `#127fd4` | VS Code blue: `Tree` drop indicators and older UI Designer rules. Not a focus ring: 2.97:1 on Onix, 2.42 on `--gray-0` |
+| `--border-focused` | `#127fd4` | VS Code blue: `Tree` drop indicators and older UI Designer rules. Not a focus ring: 2.97:1 on Onix, 2.42 on `--gray-0`. The `Tree` drop indicators move to `--palette-info-light` in layer 3b unit 3 (NodeTypeHierarchy, ✱ drop target); `--border-focused` keeps its value for its other consumers (`Tile.css`, `--vscode-blue`) |
 | `--ui-designer-accent` | `rgb(80,200,255)` | **Canvas** selection cyan |
 | `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | Canvas hover/selection fills, drop targets |
 | `--ui-designer-control-accent` | `#63b4f6` | **Panel** focus rings, the Anchor pin, bind affordances, selected rows |
@@ -75,6 +75,7 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--palette-whiteTransparent-backdrop` | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border; `outlined` pressed outline and `text` pressed label (ui2 theme-path name) |
 | `--palette-system-blueDark2` | `#244b7d` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1); the selected toggle fill through `--ui-designer-control-active-bg` |
 | `--palette-system-blueDark3` | `#243852` | Figma System/Blue Dark 3: the fill of a selected toggle under the pointer (Snow glyph 11.61:1). Darker than Blue Dark 2 on purpose, as Figma draws it |
+| `--palette-info-light` | `#63b4f6` | Figma System/Blue Light 1 (ui2 dark `palette.info.light`, `#63B4F6`): the shared `Tree`'s drop target, a 1px inset outline for inside and a 2px line for before / after, in all four trees (user, October 27, 2026; NodeTypeHierarchy ✱ drop target). 7.09:1 on the panel `#242129`, 8.13:1 on the tree `#161518`, 5.33:1 on Blue Dark 3. Same value as `--ui-designer-control-accent`, which stays the UI Designer's panel accent (ui2 theme-path name) |
 | `--palette-neutral-gray2` | `#716b7c` | Figma Neutrals/Cloudy Sky (ui2 `neutral.gray2`): the `RangeField` track; `--ui-designer-glyph` aliases it |
 | `--palette-neutral-gray3` | `#a09ba8` | Figma Neutrals/Silver (ui2 `neutral.gray3`): the camera button's icon stroke (4.59:1 on Onix); `--ui-designer-text-muted` aliases it |
 | `--palette-neutral-gray4` | `#cfcdd4` | Figma Neutrals/Gray (ui2 `neutral.gray4`): the 3D toolbar's resting glyph (11.55:1 on Shadow); `--ui-designer-text-value` aliases it |
@@ -378,7 +379,7 @@ ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.war
 | Blue Dark 1 (swatch) | `#1A75D2` fill; its label reads `#1F87E5` | — | ui2 `palette.info.dark` `#1A75D2` | missing in inspector; the Figma label is stale, the fill is the value |
 | Blue Dark 2 (swatch) | `#244B7D` fill; its label reads `#1764C0` | `--palette-system-blueDark2` | `--ai-session-selected` | match on the fill; Figma label stale |
 | Blue Dark 3 (swatch) | `#243852` | `--palette-system-blueDark3` | `--ai-session-selected-hover` | match |
-| System/Blue Light 1 | `#63B4F6` | `--ui-designer-control-accent` | ui2 `palette.info.light` | match |
+| System/Blue Light 1 | `#63B4F6` | `--palette-info-light` (the `Tree` drop target); `--ui-designer-control-accent` (the UI Designer panel accent) | ui2 `palette.info.light` | match |
 | Blue Light 2 (swatch) | `#BBDEFB` | — | — | missing |
 | — | `#214272` / `#2E4A7A` | — | `--ai-selected` / `--ai-selected-hover` | not in Figma |
 | — | `#127FD4` | `--border-focused` | — | not in Figma (VS Code focus blue); deviation, keep |
@@ -406,7 +407,7 @@ Everything not listed in the four tables above and present in `vars.css` is eith
 
 ## Component specs
 
-Extracted per page with `get_metadata` (sets and variant counts), `get_design_context` and `get_variable_defs` on each set, and `get_screenshot` for reference. One subsection per component set, in page order. A row marked ✱ is a state Figma does not define, proposed here so implementers never invent it silently. Contrast is WCAG against the real surface it renders on: inspector `#161518`, Creator Hub `#16141a` page / `#242129` card. "Code" names the component that renders the role today; "none" is absence, not removal.
+Extracted per page with `get_metadata` (sets and variant counts), `get_design_context` and `get_variable_defs` on each set, and `get_screenshot` for reference. One subsection per component set, in page order. A row marked ✱ is a state Figma does not define, proposed here so implementers never invent it silently. **Standing rule (user, October 27, 2026): always follow Figma.** This is a flow to align the code to Figma: where Figma draws a value or a control, the code follows it, and no deviation from a drawn value is recommended. From layer 3b unit 3 on, a new ✱ is only for a state Figma doesn't draw at all (focus, drop, keyboard), and it takes Figma's nearest drawn value. Contrast is WCAG against the real surface it renders on: inspector `#161518`, Creator Hub `#16141a` page / `#242129` card. "Code" names the component that renders the role today; "none" is absence, not removal.
 
 ### Figma names → code names
 
@@ -1589,7 +1590,7 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | Brand/Lavender | `#C640CD` | — | `--lavender` | demo colour in `ColourPanel` and `AspectRatio/Colour`, not a UI token |
 | Figma chrome | `#8A38F5` | — | — | the dashed frame around every set — never a token |
 
-PROPOSED (names are the user's call, nothing changed): an inspector token for Onix Dark 1 `#2D2A33`, and a decision on the row hover fill (`--ui-designer-control-empty-bg` 5% matches Figma's White 5 rows; the toggle hover is White 10 per `UI Editor Buttons`).
+PROPOSED (names are the user's call, nothing changed): an inspector token for Onix Dark 1 `#2D2A33`. The row hover fill is decided: tree and list rows hover White 5 `--palette-whiteTransparent-faint` (NodeTypeHierarchy, October 27, 2026); toggles and icon buttons hover White 10 per `UI Editor Buttons`.
 
 ### ChatInput (AI Assistant)
 
@@ -1604,20 +1605,37 @@ Page `21206:31202`. The page is a screen plus a component row, not a library: bo
 
 Messages are `#FFFFFF` (not Snow) at 15.79:1; the usage card body is 12.44:1 on Onix; the banner text is 6.27:1 on its tint, and the tint is 1.20:1 against the panel — the icon and the words carry the warning. The hex typed into the page copy ("Claude CLI v…") is placeholder, not spec.
 
+### 3D Editor Bottom Panel (page lead)
+
+Page `21670:18705`, four boards: Feedback `21673:55006`, Components `21673:54749`, Editor 3D `21673:54990` and Editor 3D Bottom Panel `21673:54913`.
+
+- **Editor 3D's hierarchy is stale.** `Editor 3D` → `Editor` `21673:49637` → `WorkSpace&SidePanels` `21673:49639` → `Entity-List` `21673:49646` (312 × 756, 4px radius, Charcoal) is the only in-scope drawing of the 3D Hierarchy. It is an **instance** of the set `Entity-List` `14589:108927` (variants v1 `14589:108024`, SpawnPoints `17931:192310`, v2 `14589:108928`, Script `16335:260763`, beside `Entity-Item` `14589:119035`) on the **Scene Editor 🟡 Outdated** page `20533:81937`. That main draws today's app: ruby selection, white Base-ramp labels (`Base/Base 01` `#FFFFFF`, `Base/Base 06` `#CCCCCC`), 22px `File` / `Folder` rows on a `_ListBase` (padding 3 / 12 / 3 / 24 at level 2, gap 6). The instance only overrides the selected row to Blue Dark 3. The 3D tree has no current set: NodeTypeHierarchy's state rule governs it (user, October 27, 2026; see NodeTypeHierarchy), and the board's rows are a stale kit (G35). The board is still unit 4's reference for the panel's layout.
+- The ids under that instance (`21822:*`, then `21831:*` after a reload) are session-synthetic instance children, not edits.
+
+### FoldersHierarchy (3D Editor Bottom Panel — Components)
+
+Set [`21671:45961`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21671-45961), 3 variants (`Status` = Default `21671:45960` / Hover `21671:45959` / Selected `21671:45958`; read October 27, 2026), on the Components board `21673:54749`. Fixed 223 × 24, horizontal, gap 5, padding 4 / 5 (Hover and Selected 3 / 5); `arrow-right` chevron, `FolderOpen` glyph in Silver `#A09BA8`, label `H8 Regular` (Inter 400 12) Snow. No collapsed, focus or drag state is drawn. Code: the Local Assets tree (`ProjectAssetExplorer/ProjectView.tsx`, `Tree<string>`): 26 tall, ruby hover and selection today. Layer 3b unit 3 gives it the shared tree states; unit 3b gives it this set's size, glyph and label colour.
+
+| Variant | Fill | Contrast (on `#242129`) | A11y |
+| --- | --- | --- | --- |
+| Default | none | Snow 15.45:1; Silver glyph 5.85:1 | `treeitem` in the "Local Assets" tree |
+| Hover | `#FFFFFF` 5% `--palette-whiteTransparent-faint` | Snow 13.37:1 | — |
+| Selected | Blue Dark 3 `--palette-system-blueDark3` | Snow 11.61:1; fill vs panel 1.33:1 | `aria-selected="true"` |
+
 ### UI Editor (page lead)
 
 Page `21028:15887`, two boards. **Panels** `21028:34519` holds the screens: `LeftPanel2D` `21028:34521` (Fixed 312 × Hug 712, vertical, Charcoal, padding-bottom 100), `RightPanel2D` `21028:34544` (Hug 4068 × 1742, 24px radius, padding 20, gap 20: about fourteen right-panel states laid side by side) and the two sets below. **Components** `21028:30543` holds eight sub-boards, each 24px radius, fill Black 40, 1px White 20: `Components` `21028:15991` (956 × 958), `UI Editor Buttons` `21028:16485` (710 × 407), `Icons` `21028:16123` (1477 × 448), `PropertiesSections` `21028:30544` (2648 × 781), `PropertiesSubsections` `21028:30545`, `Variables&EventsMenus` `21032:43793`, `ColourPanel` `21032:44145` (621 × 513) and `InputActions` `21301:5375` (1662 × 336). Every control below maps to the inspector's UI Designer (`components/UIDesigner`; see [`UIDesigner.md`](UIDesigner.md)) — mapped by directory, not line by line. Existing specs reused, never duplicated: `ToolbarButton`, `IconContainedToggle`, `Menu`, `Menu-Entry`, `Close-Button`, `Switch`, `Checkbox Terciary`, `Tooltip`. Each state fill and each child glyph or label colour is read from the layer's own panel (nested glyphs singly; where a variant has two child layers the colour is the "2 Selected" aggregate, which lists one colour, and says so). Body copy and field labels are content, not spec.
 
 ### HierarchySections (UI Editor — Components)
 
-Set [`21078:34715`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21078-34715), 3 variants (`HoverContainer` × `HoverPlus`). Fixed 312 × 28, horizontal, space-between, padding 4 / 10, 1px White 10 top and bottom; label "GUIS" and a `+` chip. Code: `LeftPanel/NodeTree.tsx` section header — inspector tokens `--ui-designer-control-border`, `--ui-designer-control-empty-bg`.
+Set [`21078:34715`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21078-34715), 3 variants (`HoverContainer` × `HoverPlus`; re-read October 27, 2026). Fixed 312 × 28, horizontal, space-between, padding 4 / 10, 1px White 10 top and bottom; label "GUIS" in Inter 600 12 / 100% uppercase Gray `#CFCDD4`, and a `+` chip (`AddCTA`). The `LeftPanel2D` board heads its two lists with it (`21028:34526` GUIS, `21028:34532` NODES). Code: `LeftPanel/LeftPanel.tsx` `.ui-designer-rail-header` with the `.ui-designer-rail-add` buttons ("New GUI", "Add widget"; `UIDesigner.css`): 32 tall, 11px / 400 White 50, no rules; layer 3b unit 4 (the 2D rail assembly).
 
 | Variant | State | Fill | Border | Contrast (on `#242129`) | A11y |
 | --- | --- | --- | --- | --- | --- |
 | Off / Off (`21028:16106`) | default | none | White 10 top + bottom | Gray label 10.07:1 (read in On / On) | section header, `<button aria-expanded>` ✱ |
 | On / Off (`21078:34716`) | row hover | `#FFFFFF` 5% | same | fill vs panel 1.16:1; Gray on it 8.71:1 | hover is a tint, not the only cue ✱ |
 | On / On (`21083:34730`) | row hover + plus hover | `#FFFFFF` 5%; `AddCTA` chip 20 × 20, 5px radius, White 10 fill, `+` 9 × 9 with a 1px Silver stroke | same | Silver `+` on the chip 4.31:1 | `+` named "Add GUI" ✱, ≥ 24px hit target needs a larger box than the 28px row's glyph |
-| any | ✱ focus / press / disabled | — | — | ring `--ui-designer-control-accent` | not drawn |
+| any | ✱ focus / press / disabled | — | — | the `+` takes the icon-button rule's ring (`--ui-designer-control-accent`, offset 1px); the header itself is not focusable | not drawn |
 
 ### PropertiesSections (UI Editor — Components)
 
@@ -1640,26 +1658,67 @@ Set [`21028:16109`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### GUI (UI Editor — Components)
 
-Set [`21085:34793`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21085-34793), 3 variants (`Property 1` = Default `21085:34794` / Hover `21085:34941` / Selected `21085:34947`). Fill 223 × Fixed 30, horizontal, gap 10, padding L / R 10; glyph + "GUI". Code: `LeftPanel/CodeRootsList.tsx` row.
+Set [`21085:34793`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21085-34793), 3 variants (`Property 1` = Default `21085:34794` / Hover `21085:34941` / Selected `21085:34947`; re-read October 27, 2026). Fill 223 × Fixed 30, horizontal, gap 10, padding L / R 10; a 14 × 14 `NodeType/GUIRoot` glyph in Neutrals/White, then the label, Inter 400 12 / 100% Gray `#CFCDD4`. The `LeftPanel2D` board's GUIS list `21028:34527` is four instances (Default, Hover, Default, Selected), with no MobileHUD row and no row actions. Code: `LeftPanel/CodeRootsList.tsx` row (26 tall, 14px Snow label, Cloudy Sky glyph, accent 15% hover, accent 21% selected): layer 3b unit 3c.
 
 | Variant | Padding T / B | Fill | Contrast (on `#242129`) | A11y |
 | --- | --- | --- | --- | --- |
-| Default | 4 | none | Snow 15.45:1 | `role="treeitem"` ✱ |
-| Hover | 3 | `#FFFFFF` 5% | Snow 13.37:1 | — |
-| Selected | 3 | White 10 | fill vs panel 1.36:1; Snow 11.40:1 | `aria-selected="true"`; **Selected here is White 10, `NodeTypeHierarchy` selected is Blue Dark 3 — the two tree rows disagree** |
+| Default | 4 | none | Gray 10.07:1 | `role="button"`, `aria-current` (today's rows) |
+| Hover | 3 | `#FFFFFF` 5% | Gray 8.71:1 | — |
+| Selected | 3 | White 10, as drawn (user, October 27, 2026: GUI rows select White 10, tree rows Blue Dark 3) | fill vs panel 1.36:1; Gray 7.43:1 | `aria-current="true"` |
 
 ### NodeTypeHierarchy (UI Editor — Components)
 
-Set [`21028:16022`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16022), 9 variants (`Property 1`): Default `16027`, Hover `16073`, Selected `16094`, SelectedHover `16099`, InvisibleDefault `16031`, InvisibleHover `16038`, InvisibleSelected `16066`, InvisibleSelectedHover `16059`, PropertiesHeader `16023`. Fill 223 × Fixed 30 (PropertiesHeader Fixed 20), horizontal, gap 10, padding L / R 10; caret + node glyph + "Image"; Hover and Selected add lock and eye glyphs (canvas). Code: `LeftPanel/NodeTree.tsx` (+ `NodeTree.css`), `shared/tree-model.ts`.
+Set [`21028:16022`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16022), 9 variants (`Property 1`; re-read October 27, 2026): Default `16027`, Hover `16073`, Selected `16094`, SelectedHover `16099`, InvisibleDefault `16031`, InvisibleHover `16038`, InvisibleSelected `16066`, InvisibleSelectedHover `16059`, PropertiesHeader `16023`. It draws the UI Designer's 2D node tree; its one board is `LeftPanel2D` `21028:34521`, whose NODES list `21028:34533` is twelve instances of it. The user extended its **state rule** to every inspector tree (decisions below). Shared:
 
-| Variant | Padding T / B | Fill | Contrast (on `#242129`) | A11y |
-| --- | --- | --- | --- | --- |
-| Default / InvisibleDefault | 4 | none | Snow 15.45:1; Invisible label, caret (10 × 6.09, rotated 180°) and node glyph are White 40 — 3.74:1 on panel, eye glyph Gray 10.07:1 | `role="treeitem" aria-expanded` |
-| Hover / InvisibleHover | 3 | `#FFFFFF` 5% | 13.37:1 | lock + eye appear on hover — keyboard users need them on focus ✱ |
-| Selected / InvisibleSelected | 3 | Blue Dark 3 `#243852` | Snow 11.61:1; fill vs panel 1.33:1 — below 3:1, the label weight and the glyphs carry it | `aria-selected="true"` |
-| SelectedHover / InvisibleSelectedHover | 3 | Blue Dark 3 `#243852` | **identical to Selected — no visible hover on a selected row** | Figma defect candidate |
-| PropertiesHeader | — (Fixed 20; padding R 16 L 10, gap 8) | none | column header over the tree | `role="columnheader"` ✱ |
-| any | ✱ focus / press / disabled | — | ring `--ui-designer-control-accent` | not drawn |
+- **Row:** Fill × Fixed 30, horizontal, gap 10, padding 4 / 10 (3 / 10 on the six hover and selected variants; the height is fixed, so nothing moves).
+- **Order:** the caret `Vector` (10 × 6.09, White 40, pointing down in every variant: no closed caret is drawn), the node glyph `NodeType/*` (16 × 16, in the label's colour), the label `Text` (Inter 400 12 / 100%), then `CTAs` (lock + eye, gap 8, Gray, on the right).
+- **Nesting (board):** padding-left is 10 at the root and grows by 30 per level (40, 70). A leaf draws no caret and keeps no slot for one: its glyph starts where a sibling's caret does.
+- **Inherited state (board):** the children of a hidden Container are drawn InvisibleDefault, with LockLayerToggle `Parent = No` dots where their lock and eye go. The 2D tree draws this (user, October 27, 2026); the other trees don't.
+- **Selected** also carries an extra `Label` instance `21028:16098` (73.5 × 15); nothing else in the set uses it.
+
+PropertiesHeader is the `PropertyPanel` header (it sits in `Header` `21067:22621`), not a tree row; it is specced with the right panel.
+
+Code: the 2D tree is `LeftPanel/NodeTree.tsx` (+ `NodeTree.css`) over the shared `components/Tree` (`Tree.tsx`, `Tree.css`, `ActionArea/ActionArea.css`), which also renders the 3D Hierarchy (`Hierarchy.tsx`, plus `PlayerTree.tsx`'s hand-written rows on the same CSS) and the Local Assets tree (`ProjectAssetExplorer/ProjectView.tsx`). Today every tree paints hover and selection in one fill (`--selected-item`: ruby `#731f30`, and accent 21% in the UI Designer), white labels, a react-icons caret, no tree roles and no arrow keys; layer 3b unit 3 aligns them (decisions below).
+
+| Variant | State | Fill | Label / glyph / caret | Row actions | Contrast (on `#242129`; 3D tree `#161518`) | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | rest | none | Gray `#CFCDD4` / Gray / White 40 | hidden | label 10.07:1 (11.55:1); caret 3.74:1 (3.84:1) | `role="treeitem"`, `aria-level`, `aria-selected="false"`, `aria-expanded` on parents only |
+| Hover | pointer over | White 5 `--palette-whiteTransparent-faint` | Gray | lock (open) + eye | fill vs panel 1.16:1; label 8.71:1 (10.17:1) | — |
+| Selected | selected | Blue Dark 3 `--palette-system-blueDark3` | Snow `#FCFCFC` | hidden | label 11.61:1; fill vs panel 1.33:1 (1.53:1), so the Snow label carries it | `aria-selected="true"` |
+| SelectedHover | selected + pointer over | Blue Dark 3, the same as Selected | Snow | lock + eye | as Selected | the row actions appearing is the hover cue (user, October 27, 2026) |
+| InvisibleDefault | hidden | none | White 40 label, glyph and caret | closed lock + eye-off, shown at rest | ✱ label **3.74:1 on the panel**, below 4.5:1 (see the ✱ row) | the eye is pressed |
+| InvisibleHover | hidden + pointer over | White 5 | White 40 | lock + eye-off | label 3.51:1 | — |
+| InvisibleSelected | hidden + selected | Blue Dark 3 | White 40 | lock + eye-off | ✱ label **3.31:1** | `aria-selected="true"` |
+| InvisibleSelectedHover | hidden + selected + pointer over | Blue Dark 3, pixel-identical to InvisibleSelected | White 40 | lock + eye-off | as InvisibleSelected | Figma defect: no hover cue at all (G10) |
+| any | ✱ focus (Figma draws none; unit 1, October 26, 2026) | as the state | as the state | — | Snow `--focus-ring` 11.61:1 on Blue Dark 3, 13.37:1 on White 5, 17.73:1 on the 3D tree | 1px inset Snow `--focus-ring` on `:focus-visible`, the same ring as the menu rows; one roving `tabindex="0"` per tree |
+| any | ✱ hidden label (user, October 27, 2026) | — | White 40 as drawn, in **every** tree: the 2D nodes and the 3D Hierarchy's hidden entities and spawn points (replacing today's `#ccc`) | — | **accepted AA miss: 3.74:1 on the panel, 3.31:1 when selected, 3.84:1 on the 3D tree** (12px text needs 4.5:1) | the eye's `aria-pressed="true"` and its name say the node is hidden |
+| any | ✱ drop target (Figma draws none; user, October 27, 2026) | none | — | — | `--palette-info-light` 7.09:1 on the panel, 8.13:1 on the tree, 5.33:1 on Blue Dark 3 | inside: a 1px inset `--palette-info-light` outline on the target row only, never its open subtree; before / after: a 2px `--palette-info-light` line. All four trees |
+| InvisibleDefault (board) | inherited hidden: a descendant of a hidden node, 2D tree only | as its own state (none, White 5, Blue Dark 3) | White 40 label, glyph and caret | two inert 2 × 2 Gray dots where the lock and eye sit (LockLayerToggle `Parent = No`); the row's own lock and eye return on hover and focus, like every row's actions | label as the ✱ hidden label (3.74:1); dots Gray 10.07:1, decorative | the dots are `aria-hidden`; the row's own toggles keep their names and pressed state |
+
+**Decisions** (layer 3b unit 3; the record for this component and the inspector's trees, so grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-27 | NodeTypeHierarchy draws only the 2D tree. How far does unit 3 reach? | Shared states, 2D size. Hover White 5, selected Blue Dark 3, labels Gray at rest and Snow when selected, Figma's caret, unit 1's focus ring, tree roles and arrow keys go into the shared `Tree`, so the 3D Hierarchy, PlayerTree, Local Assets and the 2D tree change together. The 30px row, the 30-per-level indent, the 16px glyphs and the lock / eye rule stay 2D-only. Before / After covers all four trees. `--selected-item` keeps its value; `Tree.css` stops reading it. |
+| 2026-10-27 | Order of the tree units? | 3 NodeTypeHierarchy → 3b FoldersHierarchy (Local Assets) → 3c GUI (the 2D GUI list) → 4 assemblies: the 3D Hierarchy panel against Editor 3D `Entity-List` `21673:49646`, the 2D rail against `LeftPanel2D` `21028:34521`. |
+| 2026-10-27 | The 3D tree has no current set; the Editor 3D board draws it with stale Base-ramp rows. Which governs its rows? | NodeTypeHierarchy. The board's rows are a stale kit (G35); the 22 vs 24px row height is settled in unit 4. |
+| 2026-10-27 | A selected GUI row is White 10, a selected tree row Blue Dark 3. Which? | Each set as drawn: GUI rows select White 10 (unit 3c), tree rows Blue Dark 3. No ✱. |
+| 2026-10-27 | Figma gives a selected row no hover fill. What does it do on hover? | As Figma: Blue Dark 3 stays, and the lock and eye appearing is the cue. |
+| 2026-10-27 | A hidden node's White 40 label is 3.74:1 (3.31:1 selected), below AA. Which colour? | White 40 as drawn: an accepted AA miss (✱ hidden label). |
+| 2026-10-27 | Every hidden variant draws the lock closed. A rule? | Sample data. Lock and eye stay independent toggles; a pressed toggle stays visible at rest, as #1707 does. |
+| 2026-10-27 | Figma draws no drop target. What does one look like? | An accent outline (✱ drop target): inside is a 1px inset accent outline on the target row only; before / after are accent lines. It reaches every tree, so the shared `Tree` reads `--palette-info-light` (decision below). |
+| 2026-10-27 | The lock and eye flip both their name and `aria-pressed`. Which naming? | A stable name plus pressed: "Lock <label>" and "Hide <label>", with `aria-pressed="true"` when locked or hidden, in both trees. |
+| 2026-10-27 | Standing rule for this flow? | Always follow Figma: this is a flow to align the code to Figma. Where Figma draws a value or a control, the code follows it; a ✱ is only for states Figma doesn't draw at all (focus, drop, keyboard), and those take Figma's nearest drawn value. Applies to layer 3b unit 3 and every unit after it. |
+| 2026-10-27 | Arrow keys and tree semantics (G19)? | The full WAI-ARIA tree pattern, test-first: `role="tree"` with `aria-multiselectable`; `treeitem` with `aria-level`, `aria-expanded` and `aria-selected`; a roving tabindex; Up / Down, Right / Left, Home / End and Enter. All four trees, PlayerTree included. Closes G19. |
+| 2026-10-27 | Each tree's accessible name? | "Hierarchy" (3D), "Nodes" (2D), "Local Assets". |
+| 2026-10-27 | Row delete: Figma's 2D row draws only the lock and eye. Keep the code's hover trash? | Removed, follows Figma (the standing rule above). Delete stays in the right-click menu ("Delete") and on the Delete / Backspace keys (`useUINodeHotkeys`), as in the 3D tree. |
+| 2026-10-27 | No current Figma set draws the 3D tree: its one drawing, Editor 3D `Entity-List` `21673:49646`, is an instance of `Entity-List` `14589:108927` on the Scene Editor 🟡 Outdated page. Does the shared state rule still reach it? | Yes, re-confirmed. NodeTypeHierarchy governs the 3D rows: hover White 5, selected Blue Dark 3, Gray → Snow labels, unit 1's focus ring, tree semantics and arrow keys go to all four trees. The 2D sizing stays 2D-only. Confirmed again on review of the spec: the spec's reading of the newer answers (shared states in all four trees) is right. |
+| 2026-10-27 | The board draws a hidden node's children dimmed with inert lock / eye dots. Add it? | Yes, in the 2D tree only: a descendant of a hidden node renders White 40 with inert lock / eye dots, as `LeftPanel2D` draws. |
+| 2026-10-27 | The 2D tree's nesting? | As the board, under the align-with-Figma rule: padding-left 10 at the root plus 30 per level, and no caret slot on leaf rows (the glyph starts where a sibling's caret does). |
+| 2026-10-27 | Does the ✱ hidden label (White 40) reach the 3D Hierarchy too? | Yes: hidden rows are White 40 in every tree, 3D entities and spawn points included, replacing today's `#ccc`, with the same accepted AA miss (3.84:1 on the tree). The 3D eye-off glyph keeps its look. |
+| 2026-10-27 | The drop target reaches every tree. Which token? | A new `--palette-info-light` = `#63b4f6` (the MUI theme path; ui2's dark `palette.info.light`; Figma System/Blue Light 1). `--border-focused` keeps its value. |
+| 2026-10-27 | Figma indents 30px per level in a 312px rail; ours is about 215px (162px at Creator Hub's 1080 minimum) with 24px row buttons. Which indent? | 30px per level, as Figma. Accepted: deep rows lose label room on hover in a narrow rail. Label room at today's 214.5px rail, rest / hover: level-0 parent 148.5 / 86.5px, level-1 parent 118.5 / 56.5px, level-2 parent 88.5 / 26.5px, level-2 leaf 108.5px at rest (two 24px row buttons, the trash removed); at 162px a level-1 parent has 66 / 4px and a level-2 parent 36px / none. Not a ✱: it matches Figma. |
+| 2026-10-27 | Local Assets already moves and selects on the arrow keys, with Shift extending. One pattern? | One shared pattern in all four trees: the arrows move focus, Enter selects, and Shift + Up / Down move focus and extend the selection. Local Assets keeps range-select, and the other trees gain it. |
 
 ### Input (UI Editor — Components)
 
@@ -1710,7 +1769,7 @@ Joined tab toggles (TextAlign, Flow direction, the device pair, the device-varia
 
 ### DeleteCTA (UI Editor Buttons)
 
-Set [`21107:37893`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37893) (copy `21671:45338`), 2 variants (`Hover` Yes `37894` / No `37892`). 16 × 16 glyph; Hover = Yes adds a 4px radius White 10 fill. Code: every trash / remove / clear in `components/UIDesigner` (Canvas node bar, CodeRootsList, NodeTree, PropertyPanel rows, CallbackField, the Logic panels) through the icon-button rule; glyph `TrashIcon` in `icons.tsx`.
+Set [`21107:37893`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37893) (copy `21671:45338`), 2 variants (`Hover` Yes `37894` / No `37892`). 16 × 16 glyph; Hover = Yes adds a 4px radius White 10 fill. Code: every trash / remove / clear in `components/UIDesigner` (Canvas node bar, CodeRootsList, NodeTree until layer 3b unit 3 removes its row trash, PropertyPanel rows, CallbackField, the Logic panels) through the icon-button rule; glyph `TrashIcon` in `icons.tsx`.
 
 | Variant | Fill | Contrast | A11y |
 | --- | --- | --- | --- |
@@ -1728,7 +1787,7 @@ Set [`21107:37499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### LockLayerToggle (UI Editor Buttons)
 
-Set [`21068:32238`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21068-32238), 6 variants (`Parent` × `Active` × `Hover`): No/Off/No `21086:34988`, No/On/No `21086:34979`, Yes/Off/No `21068:32241`, Yes/Off/Yes `21107:37482`, Yes/On/Yes `21107:37478`, Yes/On/No `21068:32239`. `Parent` = No is 14 × 14 (a small dot-sized state), `Parent` = Yes is 16 × 16; Hover = Yes adds a 4px radius White 10 fill; Active toggles the closed / open lock glyph (shape only). Every variant's glyph is Gray `#CFCDD4` (Parent = Yes: 9.14 × 12; Parent = No: a 2 × 2 dot). No Parent = No / Hover = Yes variant exists. Copy `21671:45320`. Code: lock in `LeftPanel/NodeTree.tsx`, a `<button aria-pressed>` with `LockIcon` / `UnlockIcon` from `icons.tsx`; the code draws no inherited-lock dot. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): single-toggle rule, Silver at rest, Snow on White 10 on hover, Snow on Blue Dark 2 / 3 when locked; no border, as the set.
+Set [`21068:32238`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21068-32238), 6 variants (`Parent` × `Active` × `Hover`): No/Off/No `21086:34988`, No/On/No `21086:34979`, Yes/Off/No `21068:32241`, Yes/Off/Yes `21107:37482`, Yes/On/Yes `21107:37478`, Yes/On/No `21068:32239`. `Parent` = No is 14 × 14 (a small dot-sized state), `Parent` = Yes is 16 × 16; Hover = Yes adds a 4px radius White 10 fill; Active toggles the closed / open lock glyph (shape only). Every variant's glyph is Gray `#CFCDD4` (Parent = Yes: 9.14 × 12; Parent = No: a 2 × 2 dot). No Parent = No / Hover = Yes variant exists. Copy `21671:45320`. Code: lock in `LeftPanel/NodeTree.tsx`, a `<button aria-pressed>` with `LockIcon` / `UnlockIcon` from `icons.tsx`; the code draws no inherited-lock dot. The `LeftPanel2D` board draws `Parent = No` dots on both the lock and the eye of a hidden Container's children; the 2D tree draws them for a hidden node's descendants (user, October 27, 2026; see NodeTypeHierarchy). Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): single-toggle rule, Silver at rest, Snow on White 10 on hover, Snow on Blue Dark 2 / 3 when locked; no border, as the set.
 
 | Parent | Active | Hover | Size | Fill | Contrast / A11y |
 | --- | --- | --- | --- | --- | --- |
