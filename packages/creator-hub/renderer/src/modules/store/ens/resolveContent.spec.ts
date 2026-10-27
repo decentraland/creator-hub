@@ -1,5 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { encodeAbiParameters, type Address, type PublicClient } from 'viem';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  encodeErrorResult,
+  parseAbi,
+  encodeAbiParameters,
+  type Address,
+  type PublicClient,
+} from 'viem';
 import { resolveContent } from './resolveContent';
 
 describe('when resolving ENS content', () => {
@@ -20,20 +28,17 @@ describe('when resolving ENS content', () => {
     client = { readContract };
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('should request contenthash for the same normalized name as the DNS lookup', async () => {
     await resolveContent(client, 'NaMe.DCL.eth', universalResolverAddress);
 
     expect(readContract).toHaveBeenCalledWith({
       address: universalResolverAddress,
       abi: expect.any(Array),
-      functionName: 'resolve',
+      functionName: 'resolveWithGateways',
       args: [
         '0x046e616d650364636c0365746800',
         '0xbc1c58d10b186ec5f7dc9a37a16b2b106ace014ec3bc95448b26f292be904c08b57e8374',
+        ['x-batch-gateway:true'],
       ],
     });
   });
@@ -62,6 +67,79 @@ describe('when resolving ENS content', () => {
         content: '',
         resolver: resolver.toLowerCase(),
       });
+    });
+  });
+
+  describe('and the raw result is empty', () => {
+    beforeEach(() => {
+      readContract.mockResolvedValueOnce(['0x', resolver]);
+    });
+
+    it('should retain the effective resolver with empty content', async () => {
+      await expect(
+        resolveContent(client, 'name.dcl.eth', universalResolverAddress),
+      ).resolves.toEqual({
+        content: '',
+        resolver: resolver.toLowerCase(),
+      });
+    });
+  });
+
+  describe.each([
+    ['ResolverNotFound', 'error ResolverNotFound(bytes name)', ['0x']],
+    [
+      'ResolverNotContract',
+      'error ResolverNotContract(bytes name, address resolver)',
+      ['0x', '0x1111111111111111111111111111111111111111'],
+    ],
+    [
+      'UnsupportedResolverProfile',
+      'error UnsupportedResolverProfile(bytes4 selector)',
+      ['0xbc1c58d1'],
+    ],
+  ])('and the contract returns %s', (errorName, signature, args) => {
+    beforeEach(() => {
+      const abi = parseAbi([signature]);
+      readContract.mockRejectedValueOnce(
+        new BaseError('Contract call failed', {
+          cause: new ContractFunctionRevertedError({
+            abi,
+            data: encodeErrorResult({ abi, errorName, args }),
+            functionName: 'resolveWithGateways',
+          }),
+        }),
+      );
+    });
+
+    it('should return no content without claiming an effective resolver', async () => {
+      await expect(
+        resolveContent(client, 'name.dcl.eth', universalResolverAddress),
+      ).resolves.toEqual({ content: '' });
+    });
+  });
+
+  describe.each([
+    ['HttpError', 'error HttpError(uint16 status, string message)', [503, 'Unavailable']],
+    ['ResolverError', 'error ResolverError(bytes errorData)', ['0x1234']],
+  ])('and the contract reports an operational %s', (errorName, signature, args) => {
+    let error: BaseError;
+
+    beforeEach(() => {
+      const abi = parseAbi([signature]);
+      error = new BaseError('Contract call failed', {
+        cause: new ContractFunctionRevertedError({
+          abi,
+          data: encodeErrorResult({ abi, errorName, args }),
+          functionName: 'resolveWithGateways',
+        }),
+      });
+      readContract.mockRejectedValueOnce(error);
+    });
+
+    it('should preserve the failure', async () => {
+      await expect(resolveContent(client, 'name.dcl.eth', universalResolverAddress)).rejects.toBe(
+        error,
+      );
     });
   });
 

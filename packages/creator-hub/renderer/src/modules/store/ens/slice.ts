@@ -124,7 +124,7 @@ export const fetchDCLNames = createAsyncThunk(
           // An ancestor can resolve the name even without a direct registry resolver.
           const record = await resolveContent(provider, subdomain, universalResolverAddress);
           content = record.content;
-          resolver = record.resolver;
+          resolver = record.resolver ?? resolver;
         } catch (error) {
           console.log('Failed to resolve ens content', error);
         }
