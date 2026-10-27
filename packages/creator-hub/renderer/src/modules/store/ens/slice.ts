@@ -126,7 +126,7 @@ export const fetchDCLNames = createAsyncThunk(
           content = record.content;
           resolver = record.resolver;
         } catch (error) {
-          console.log('Failed to load ens resolver', error);
+          console.log('Failed to resolve ens content', error);
         }
 
         return {
