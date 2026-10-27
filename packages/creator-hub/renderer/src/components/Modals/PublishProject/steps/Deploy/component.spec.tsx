@@ -12,11 +12,13 @@ import { Deploy } from './component';
 const hooks = vi.hoisted(() => ({
   deployment: undefined as Deployment | undefined,
   dispatch: vi.fn(),
+  worldScenes: [] as { parcels: string[] }[],
+  fetchWorldSceneSizeLimit: vi.fn(async () => null),
 }));
 
 vi.mock('#store', () => ({
   useDispatch: () => hooks.dispatch,
-  useSelector: () => [],
+  useSelector: () => hooks.worldScenes,
 }));
 vi.mock('/@/hooks/useAuth', () => ({ useAuth: () => ({ signOut: vi.fn(), wallet: '0xabc' }) }));
 vi.mock('/@/hooks/useWorkspace', () => ({
@@ -27,6 +29,10 @@ vi.mock('/@/hooks/useEditor', () => ({
 }));
 vi.mock('/@/hooks/useDeploy', () => ({
   useDeploy: () => ({ getDeployment: () => hooks.deployment, executeDeployment: vi.fn() }),
+}));
+vi.mock('/@/modules/store/deployment/utils', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  fetchWorldSceneSizeLimit: hooks.fetchWorldSceneSizeLimit,
 }));
 vi.mock('/@/hooks/useSnackbar', () => ({ useSnackbar: () => ({ pushCustom: vi.fn() }) }));
 
@@ -92,6 +98,8 @@ describe('Deploy step', () => {
   afterEach(() => {
     cleanup();
     hooks.deployment = undefined;
+    hooks.worldScenes = [];
+    hooks.fetchWorldSceneSizeLimit.mockClear();
   });
 
   const mount = () => {
@@ -246,6 +254,30 @@ describe('Deploy step', () => {
           name: 'modal.publish_project.deploy.deploying.actions.cancel',
         }) as HTMLButtonElement;
         expect(button.disabled).toBe(false);
+      });
+    });
+  });
+
+  describe('when publishing to a single-scene world whose other scenes get removed first', () => {
+    beforeEach(() => {
+      hooks.worldScenes = [{ parcels: ['5,5'] }];
+      hooks.deployment = createDeployment({
+        status: 'idle',
+        phase: undefined,
+        info: { isWorld: true, rootCID: 'bafy', parcels: ['0,0'] } as Deployment['info'],
+      });
+      props = {
+        ...props,
+        previousStep: 'publish-to-world',
+        project: { ...PROJECT, worldConfiguration: { name: 'name.dcl.eth' } } as typeof PROJECT,
+        deploymentMetadata: { isMultiScene: false } as Props['deploymentMetadata'],
+      };
+      mount();
+    });
+
+    it('should ask for the limit of the whole world, as all of it is credited back', () => {
+      expect(hooks.fetchWorldSceneSizeLimit).toHaveBeenCalledWith('name.dcl.eth', ['0,0'], {
+        replacesWorld: true,
       });
     });
   });

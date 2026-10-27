@@ -276,6 +276,29 @@ describe('fetchWorldSceneSizeLimit', () => {
     });
   });
 
+  describe('when the world is emptied before deploying', () => {
+    beforeEach(async () => {
+      fetchWorldLimitsMock.mockResolvedValueOnce({ maxSceneSizeInBytes: 200 * MiB });
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS, { replacesWorld: true });
+    });
+
+    it('should not look up the overlapping scenes', () => {
+      expect(fetchReplacedScenesParcelsMock).not.toHaveBeenCalled();
+    });
+
+    it('should ask for the limit without parcels, which credits back the whole world', () => {
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith(
+        'name.dcl.eth',
+        [],
+        expect.any(AbortSignal),
+      );
+    });
+
+    it("should use the server's scene size limit", () => {
+      expect(limit).toBe(200 * MiB);
+    });
+  });
+
   describe('when the replaced scenes cannot be looked up', () => {
     beforeEach(async () => {
       fetchReplacedScenesParcelsMock.mockResolvedValueOnce(null);

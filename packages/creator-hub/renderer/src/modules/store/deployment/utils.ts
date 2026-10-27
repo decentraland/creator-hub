@@ -85,12 +85,18 @@ export function getWorldLimitsParcels(parcels: string[], replacedScenesParcels: 
 export async function fetchWorldSceneSizeLimit(
   worldName: string,
   parcels: string[],
+  { replacesWorld = false }: { replacesWorld?: boolean } = {},
 ): Promise<number | null> {
   const worlds = new Worlds();
   // Publish waits for both requests, so one deadline bounds them together.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), WORLD_LIMITS_TIMEOUT_MS);
   try {
+    // The world is emptied before deploying: without parcels the server credits back all of it.
+    if (replacesWorld) {
+      const limits = await worlds.fetchWorldLimits(worldName, [], controller.signal);
+      return limits?.maxSceneSizeInBytes ?? null;
+    }
     const replacedScenesParcels = await worlds.fetchReplacedScenesParcels(
       worldName,
       parcels,

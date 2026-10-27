@@ -92,7 +92,9 @@ describe('useSceneSizeLimit', () => {
     });
 
     it("should fetch the limit for the world and the deployment's parcels", () => {
-      expect(fetchWorldSceneSizeLimitMock).toHaveBeenCalledWith('name.dcl.eth', ['0,0', '0,1']);
+      expect(fetchWorldSceneSizeLimitMock).toHaveBeenCalledWith('name.dcl.eth', ['0,0', '0,1'], {
+        replacesWorld: false,
+      });
     });
 
     it('should report the limit as loading while the request is in flight', () => {
@@ -134,7 +136,9 @@ describe('useSceneSizeLimit', () => {
       });
 
       it('should fetch the limit for the new target', () => {
-        expect(fetchWorldSceneSizeLimitMock).toHaveBeenLastCalledWith('other.dcl.eth', ['0,0']);
+        expect(fetchWorldSceneSizeLimitMock).toHaveBeenLastCalledWith('other.dcl.eth', ['0,0'], {
+          replacesWorld: false,
+        });
       });
 
       describe('and the new limit arrives', () => {
@@ -193,6 +197,61 @@ describe('useSceneSizeLimit', () => {
       it('should ignore the response', () => {
         expect(consoleError).not.toHaveBeenCalled();
         expect(result.current).toEqual({ limit: null, isLoading: true });
+      });
+    });
+  });
+
+  describe('when a new deployment starts on the same world and parcels', () => {
+    beforeEach(async () => {
+      fetchWorldSceneSizeLimitMock.mockResolvedValue(200 * MiB);
+      renderWith({
+        isWorld: true,
+        worldName: 'name.dcl.eth',
+        parcels: ['0,0'],
+        deploymentId: 'deployment-1',
+      });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      rerender({
+        target: {
+          isWorld: true,
+          worldName: 'name.dcl.eth',
+          parcels: ['0,0'],
+          deploymentId: 'deployment-2',
+        },
+      });
+    });
+
+    it('should fetch the limit again, as the earlier deployment changed what the world holds', () => {
+      expect(fetchWorldSceneSizeLimitMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when publishing to a world whose scenes are all removed before deploying', () => {
+    beforeEach(() => {
+      fetchWorldSceneSizeLimitMock.mockResolvedValue(200 * MiB);
+      renderWith({
+        isWorld: true,
+        worldName: 'name.dcl.eth',
+        parcels: ['0,0'],
+        replacesWorld: true,
+      });
+    });
+
+    it('should ask for the limit with the whole world credited back', () => {
+      expect(fetchWorldSceneSizeLimitMock).toHaveBeenCalledWith('name.dcl.eth', ['0,0'], {
+        replacesWorld: true,
+      });
+    });
+
+    describe('and the world turns out not to be emptied', () => {
+      beforeEach(() => {
+        rerender({ target: { isWorld: true, worldName: 'name.dcl.eth', parcels: ['0,0'] } });
+      });
+
+      it('should fetch the limit again for the scene alone', () => {
+        expect(fetchWorldSceneSizeLimitMock).toHaveBeenLastCalledWith('name.dcl.eth', ['0,0'], {
+          replacesWorld: false,
+        });
       });
     });
   });

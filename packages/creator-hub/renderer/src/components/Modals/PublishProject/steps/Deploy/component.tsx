@@ -70,13 +70,6 @@ export function Deploy(props: Props) {
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
-  const { limit: sceneSizeLimit, isLoading: isSceneSizeLimitLoading } = useSceneSizeLimit(
-    deployment && {
-      isWorld,
-      worldName: project.worldConfiguration?.name,
-      parcels: deployment.info.parcels,
-    },
-  );
 
   /** True if the project needs to undeploy existing world scenes before deploying the new one.
    * True when deploying to a single-scene world and there are existing scenes in the world that do not overlap with the project parcels. */
@@ -89,6 +82,16 @@ export function Deploy(props: Props) {
       worldScenes.some(scene => scene.parcels.every(parcel => !projectParcelsSet.has(parcel)))
     );
   }, [isWorld, deploymentMetadata?.isMultiScene, worldScenes]);
+
+  const { limit: sceneSizeLimit, isLoading: isSceneSizeLimitLoading } = useSceneSizeLimit(
+    deployment && {
+      isWorld,
+      worldName: project.worldConfiguration?.name,
+      parcels: deployment.info.parcels,
+      replacesWorld: needsUndeploy,
+      deploymentId: deployment.id,
+    },
+  );
 
   /** True if any of the project parcels overlap with any of the existing world scenes parcels */
   const isReplacingWorldContent: boolean = useMemo(() => {

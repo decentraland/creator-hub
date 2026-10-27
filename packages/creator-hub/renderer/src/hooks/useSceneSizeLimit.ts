@@ -16,13 +16,20 @@ export function useSceneSizeLimit(target?: {
   isWorld: boolean;
   worldName?: string;
   parcels: string[];
+  /** The world's scenes are all removed before deploying, so the whole world is credited back. */
+  replacesWorld?: boolean;
+  /** Fetches the limit again for every deployment, as earlier ones change what the world holds. */
+  deploymentId?: string;
 }): SceneSizeLimit {
   const isWorld = target?.isWorld;
   const worldName = target?.worldName;
+  const replacesWorld = !!target?.replacesWorld;
   const parcelCount = target?.parcels.length;
   const parcelsKey = target?.parcels.join(';');
   const worldRequestKey =
-    isWorld && worldName && parcelsKey !== undefined ? `${worldName}|${parcelsKey}` : null;
+    isWorld && worldName && parcelsKey !== undefined
+      ? `${worldName}|${replacesWorld ? '*' : parcelsKey}|${target?.deploymentId ?? ''}`
+      : null;
 
   // Tagged with the request it answers, so a stale result is never read as the current target's.
   const [worldLimit, setWorldLimit] = useState<{ requestKey: string; limit: number | null }>();
@@ -32,7 +39,7 @@ export function useSceneSizeLimit(target?: {
 
     let cancelled = false;
     const parcels = parcelsKey ? parcelsKey.split(';') : [];
-    void fetchWorldSceneSizeLimit(worldName, parcels)
+    void fetchWorldSceneSizeLimit(worldName, parcels, { replacesWorld })
       .catch(() => null)
       .then(limit => {
         if (!cancelled) setWorldLimit({ requestKey: worldRequestKey, limit });
@@ -40,7 +47,7 @@ export function useSceneSizeLimit(target?: {
     return () => {
       cancelled = true;
     };
-  }, [worldRequestKey, worldName, parcelsKey]);
+  }, [worldRequestKey, worldName, parcelsKey, replacesWorld]);
 
   return useMemo(() => {
     if (isWorld === false && parcelCount !== undefined) {
