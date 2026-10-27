@@ -2,13 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createPublicClient,
   custom,
-  decodeAbiParameters,
+  decodeFunctionData,
   encodeAbiParameters,
   encodeErrorResult,
   encodeFunctionData,
   parseAbi,
   type Address,
-  type Hex,
   type PublicClient,
 } from 'viem';
 import { resolveContent } from './resolveContent';
@@ -19,7 +18,6 @@ describe('when viem handles a local CCIP batch for ENS content', () => {
   let client: Pick<PublicClient, 'readContract'>;
   let universalResolverAddress: Address;
   let resolver: Address;
-  let callbackData: Hex;
 
   beforeEach(() => {
     universalResolverAddress = '0xeeeeeeee14d718c2b47d9923deab1335e144eeee';
@@ -35,28 +33,44 @@ describe('when viem handles a local CCIP batch for ENS content', () => {
       functionName: 'query',
       args: [[{ sender: resolver, urls: ['https://resolver.example/lookup'], data: '0x1234' }]],
     });
-    request = vi.fn().mockRejectedValueOnce({
-      code: 3,
-      message: 'execution reverted',
-      data: encodeErrorResult({
-        abi: offchainAbi,
-        errorName: 'OffchainLookup',
+    request = vi.fn().mockImplementationOnce(async ({ params }) => {
+      expect(
+        decodeFunctionData({
+          abi: parseAbi([
+            'function resolveWithGateways(bytes name, bytes data, string[] gateways) view returns (bytes result, address resolver)',
+          ]),
+          data: params[0].data,
+        }),
+      ).toEqual({
+        functionName: 'resolveWithGateways',
         args: [
-          universalResolverAddress,
+          '0x046e616d650364636c0365746800',
+          '0xbc1c58d10b186ec5f7dc9a37a16b2b106ace014ec3bc95448b26f292be904c08b57e8374',
           ['x-batch-gateway:true'],
-          batchData,
-          '0x12345678',
-          '0x9876',
         ],
-      }),
+      });
+      throw {
+        code: 3,
+        message: 'execution reverted',
+        data: encodeErrorResult({
+          abi: offchainAbi,
+          errorName: 'OffchainLookup',
+          args: [
+            universalResolverAddress,
+            ['x-batch-gateway:true'],
+            batchData,
+            '0x12345678',
+            '0x9876',
+          ],
+        }),
+      };
     });
-    request.mockImplementationOnce(async ({ params }) => {
-      callbackData = params[0].data;
-      return encodeAbiParameters(
+    request.mockResolvedValueOnce(
+      encodeAbiParameters(
         [{ type: 'bytes' }, { type: 'address' }],
         [encodeAbiParameters([{ type: 'bytes' }], ['0xe301017012201234']), resolver],
-      );
-    });
+      ),
+    );
     gatewayRequest = vi.fn().mockResolvedValueOnce('0xabcd');
     client = createPublicClient({
       transport: custom({ request }, { retryCount: 0 }),
@@ -74,12 +88,5 @@ describe('when viem handles a local CCIP batch for ENS content', () => {
       urls: ['https://resolver.example/lookup'],
       data: '0x1234',
     });
-    expect(callbackData.slice(0, 10)).toBe('0x12345678');
-    expect(
-      decodeAbiParameters([{ type: 'bytes' }, { type: 'bytes' }], `0x${callbackData.slice(10)}`),
-    ).toEqual([
-      encodeAbiParameters([{ type: 'bool[]' }, { type: 'bytes[]' }], [[false], ['0xabcd']]),
-      '0x9876',
-    ]);
   });
 });

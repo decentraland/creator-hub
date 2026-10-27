@@ -145,9 +145,14 @@ describe('fetchDCLNames', () => {
     expect(names[0].content).toBe(CONTENT_HASH);
   });
 
-  it('reads the content hash through the Universal Resolver', async () => {
+  it('should read the content hash through the Universal Resolver', async () => {
     const [name] = await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
 
+    expect(resolveContent).toHaveBeenCalledWith(
+      expect.anything(),
+      'name.dcl.eth',
+      UNIVERSAL_RESOLVER,
+    );
     expect(name.resolver).toBe(CURRENT_RESOLVER);
     expect(name.content).toBe(CONTENT_HASH);
   });

@@ -118,9 +118,41 @@ describe('when resolving ENS content', () => {
     });
   });
 
+  describe('and an ancestor resolver reports an unreachable child', () => {
+    beforeEach(() => {
+      const abi = parseAbi(['error ResolverError(bytes errorData)']);
+      readContract.mockRejectedValueOnce(
+        new BaseError('Contract call failed', {
+          cause: new ContractFunctionRevertedError({
+            abi,
+            data: encodeErrorResult({
+              abi,
+              errorName: 'ResolverError',
+              args: [
+                encodeErrorResult({
+                  abi: parseAbi(['error UnreachableName(bytes name)']),
+                  errorName: 'UnreachableName',
+                  args: ['0x0c67656e65736973706c617a610364636c0365746800'],
+                }),
+              ],
+            }),
+            functionName: 'resolveWithGateways',
+          }),
+        }),
+      );
+    });
+
+    it('should return no content and retain the caller registry fallback', async () => {
+      await expect(
+        resolveContent(client, 'genesisplaza.dcl.eth', universalResolverAddress),
+      ).resolves.toEqual({ content: '' });
+    });
+  });
+
   describe.each([
     ['HttpError', 'error HttpError(uint16 status, string message)', [503, 'Unavailable']],
     ['ResolverError', 'error ResolverError(bytes errorData)', ['0x1234']],
+    ['ResolverError', 'error ResolverError(bytes errorData)', ['0x5fe9a5df']],
   ])('and the contract reports an operational %s', (errorName, signature, args) => {
     let error: BaseError;
 
