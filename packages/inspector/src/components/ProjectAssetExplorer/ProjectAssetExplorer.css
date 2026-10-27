@@ -8,10 +8,9 @@
   border-left: 0.1px solid var(--border-gray);
 }
 
-.ProjectView > .Tree-View > .with-context-menu > .editor-assets-tree {
+.ProjectView > .Tree-View > .TreeRoot > .with-context-menu > .editor-assets-tree {
   overflow-y: auto;
   width: 260px;
-  /* Search height */
   height: calc(100% - 34px);
   padding: 0 8px 8px 8px;
 }
@@ -47,6 +46,7 @@
   height: 100%;
 }
 
+.ProjectView .TreeRoot,
 .ProjectView .with-context-menu {
   height: 100%;
 }

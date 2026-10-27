@@ -12,7 +12,10 @@ const isBuiltIn = ({ props }: { props?: unknown }) => {
 
 export function CatalogAssetContextMenu() {
   return (
-    <ContextMenu id={CATALOG_ASSET_CONTEXT_MENU_ID}>
+    <ContextMenu
+      id={CATALOG_ASSET_CONTEXT_MENU_ID}
+      label="Catalog Asset Options"
+    >
       <Item
         hidden={isBuiltIn}
         onClick={({ props }) => {
@@ -20,7 +23,7 @@ export function CatalogAssetContextMenu() {
           onAddToFilesystem?.(asset);
         }}
       >
-        Add to filesystem
+        Add to Filesystem
       </Item>
       <Item
         hidden={args => !isBuiltIn(args)}
@@ -29,7 +32,7 @@ export function CatalogAssetContextMenu() {
           void copyBuiltInEmoteName(getBuiltInEmote(asset)!);
         }}
       >
-        Copy name
+        Copy Name
       </Item>
     </ContextMenu>
   );

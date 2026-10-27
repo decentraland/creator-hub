@@ -28,16 +28,38 @@ describe('ActionArea', () => {
     onRowClick = vi.fn();
     render(
       <div onClick={onRowClick}>
-        <ActionArea entity={entity} />
+        <ActionArea
+          entity={entity}
+          label="Magic Cube"
+          tabIndex={-1}
+        />
       </div>,
     );
   });
 
   afterEach(cleanup);
 
+  it('should render the lock and eye as unpressed toggle buttons named by the label', () => {
+    const lock = screen.getByRole('button', { name: 'Lock Magic Cube' });
+    const eye = screen.getByRole('button', { name: 'Hide Magic Cube' });
+    expect(lock.tagName).toBe('BUTTON');
+    expect(eye.tagName).toBe('BUTTON');
+    expect(lock.getAttribute('aria-pressed')).toBe('false');
+    expect(eye.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it("should give both toggles the row's tabIndex", () => {
+    expect(screen.getByRole('button', { name: 'Lock Magic Cube' }).getAttribute('tabindex')).toBe(
+      '-1',
+    );
+    expect(screen.getByRole('button', { name: 'Hide Magic Cube' }).getAttribute('tabindex')).toBe(
+      '-1',
+    );
+  });
+
   describe('when the visibility toggle is clicked', () => {
     beforeEach(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Hide item' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Hide Magic Cube' }));
     });
 
     it('should toggle the Hide component', () => {
@@ -55,7 +77,7 @@ describe('ActionArea', () => {
 
   describe('when the lock toggle is clicked', () => {
     beforeEach(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Lock item' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Lock Magic Cube' }));
     });
 
     it('should toggle the Lock component', () => {

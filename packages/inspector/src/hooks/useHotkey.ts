@@ -41,6 +41,8 @@ export const EXTEND_DOWN = `${SHIFT}+down`;
 export const FOCUS_SELECTED = 'f';
 export const TOGGLE_FREE_CAMERA = '`';
 
+const isMenuOpen = () => document.querySelector('[role="menu"]') !== null;
+
 interface UseHotkeyOptions {
   /** Skip registration entirely while false (default true). */
   enabled?: boolean;
@@ -48,6 +50,7 @@ interface UseHotkeyOptions {
 
 /**
  * Hook that listens for key presses and triggers a callback function when the specified keys are pressed.
+ * While a `role="menu"` is open the key is left to the menu, untouched.
  *
  * @param keys - An array of strings representing the keys to listen for.
  * @param callback - The callback function to be executed when the specified keys are pressed.
@@ -69,10 +72,10 @@ export const useHotkey = (
   const formattedKeys = Array.isArray(keys) ? keys.join(',') : keys;
 
   useEffect(() => {
-    // Uses document when the node is undefined
     const targetDocument = node !== undefined ? node : document;
     if (!targetDocument || !enabled) return;
     const handler: KeyHandler = (event, hotkeysEvent) => {
+      if (isMenuOpen()) return;
       event.preventDefault();
       callbackRef.current(event, hotkeysEvent);
     };

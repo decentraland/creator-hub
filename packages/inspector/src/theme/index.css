@@ -35,3 +35,87 @@ textarea::selection {
   max-height: calc(30vh);
   overflow-y: auto;
 }
+
+.contexify_submenu::-webkit-scrollbar,
+.OptionList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.contexify_submenu::-webkit-scrollbar-track,
+.OptionList::-webkit-scrollbar-track {
+  background: transparent;
+  margin: var(--contexify-menu-padding) 0;
+}
+
+.contexify_submenu::-webkit-scrollbar-thumb,
+.contexify_submenu::-webkit-scrollbar-thumb:hover,
+.contexify_submenu::-webkit-scrollbar-thumb:window-inactive,
+.OptionList::-webkit-scrollbar-thumb,
+.OptionList::-webkit-scrollbar-thumb:hover,
+.OptionList::-webkit-scrollbar-thumb:window-inactive {
+  background: var(--palette-blackTransparent-blurry) padding-box;
+  border-inline: 1px solid transparent;
+  border-radius: var(--shape-borderRadiusPill);
+  box-shadow: inset 0 0 0 1px var(--palette-whiteTransparent-backdrop);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .contexify_submenu,
+  .OptionList {
+    scrollbar-color: var(--palette-whiteTransparent-backdrop) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+.contexify {
+  border: 1px solid var(--palette-whiteTransparent-subtle);
+}
+
+.contexify_itemContent {
+  min-height: 38px;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.contexify_itemContent > svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  color: var(--ui-designer-text-muted);
+}
+
+.contexify_item:focus-visible > .contexify_itemContent {
+  box-shadow: inset 0 0 0 1px var(--focus-ring);
+}
+
+.contexify .contexify_item > .contexify_submenu {
+  left: calc(100% + var(--contexify-menu-padding) + 11px);
+  pointer-events: initial;
+  visibility: hidden;
+  transition:
+    opacity 0s 400ms,
+    visibility 0s 400ms;
+}
+
+.contexify .contexify_item > .contexify_submenu-right {
+  right: calc(100% + var(--contexify-menu-padding) + 11px);
+  left: unset;
+}
+
+.contexify .contexify_submenu-isOpen > .contexify_submenu,
+.contexify_item:not(.contexify_item-disabled):hover > .contexify_submenu {
+  visibility: visible;
+  transition: none;
+}
+
+.contexify .contexify_item:focus > .contexify_submenu {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contexify.contexify_willEnter-fade {
+    animation: none;
+  }
+}

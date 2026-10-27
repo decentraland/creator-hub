@@ -1,5 +1,5 @@
 import React from 'react';
-import { Item } from 'react-contexify';
+import { Item, Separator } from 'react-contexify';
 import { AiFillFileAdd as AddChildIcon } from 'react-icons/ai';
 
 import { ContextMenu as Menu } from '../../ContexMenu';
@@ -8,6 +8,7 @@ import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 
 export interface Props {
   id: string;
+  label: string;
   enableAdd?: boolean;
   enableEdit?: boolean;
   enableRemove?: boolean;
@@ -23,11 +24,12 @@ export interface Props {
 
 function ContextMenu({
   id,
+  label,
   enableAdd = true,
   enableEdit = true,
   enableRemove = true,
   enableDuplicate = true,
-  addChildLabel = 'Add child',
+  addChildLabel = 'Add Child',
   addChildIcon = <AddChildIcon />,
   onAddChild,
   onEdit,
@@ -41,7 +43,10 @@ function ContextMenu({
   if (!someActionIsEnabled && !extra) return null;
 
   return (
-    <Menu id={id}>
+    <Menu
+      id={id}
+      label={label}
+    >
       <Item
         hidden={!enableEdit}
         itemID="rename"
@@ -74,6 +79,7 @@ function ContextMenu({
       >
         <DeleteIcon /> Delete
       </Item>
+      {someActionIsEnabled && extra && <Separator />}
       {extra}
     </Menu>
   );

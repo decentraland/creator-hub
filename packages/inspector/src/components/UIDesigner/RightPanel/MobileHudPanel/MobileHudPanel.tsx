@@ -66,7 +66,7 @@ const ActionRow: React.FC<{
         </label>
         <button
           type="button"
-          className="ui-designer-mobile-hud-eye ui-designer-toggle ui-designer-compact"
+          className="ui-designer-mobile-hud-eye ui-designer-toggle ui-designer-compact ui-designer-layer-toggle"
           aria-label={button.hide ? `Show ${action}` : `Hide ${action}`}
           aria-pressed={button.hide}
           onClick={() => setButton({ hide: !button.hide })}

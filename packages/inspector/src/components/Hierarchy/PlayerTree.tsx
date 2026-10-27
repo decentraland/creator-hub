@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 
 import { useContextMenu, Item } from 'react-contexify';
-import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
 import { IoEyeOutline as VisibleIcon, IoEyeOffOutline as InvisibleIcon } from 'react-icons/io5';
 import { AiFillDelete as DeleteIcon } from 'react-icons/ai';
 import {
@@ -29,6 +28,8 @@ import {
 import { ContextMenu as Menu } from '../ContexMenu';
 import { useContextMenu as useContextMenuAction } from '../../hooks/sdk/useContextMenu';
 import { Edit } from '../Tree/Edit';
+import { DisclosureWidget } from '../Tree/Tree';
+import { useTreeItem, type TreeItemActions } from '../Tree/TreeRoot';
 import { InfoTooltip } from '../ui';
 
 import './PlayerTree.css';
@@ -42,8 +43,46 @@ type PlayerTreeProps = {
   onSelect: (entity: Entity, multiple?: boolean) => void;
 };
 
-const DISCLOSURE_SPACER_STYLE = { marginLeft: '12px' } as const;
-const getLevelStyles = (level: number) => ({ paddingLeft: `${level * 10}px` });
+const getLevelStyles = (level: number) => ({ '--tree-level': level }) as React.CSSProperties;
+
+type PlayerTreeItemProps = {
+  id: string;
+  level: number;
+  selected: boolean;
+  expanded?: boolean;
+  actions: TreeItemActions;
+  onContextMenu?: (e: React.MouseEvent) => void;
+  children: (row: { tabIndex: 0 | -1; labelId: string }) => React.ReactNode;
+};
+
+function PlayerTreeItem({
+  id,
+  level,
+  selected,
+  expanded,
+  actions,
+  onContextMenu,
+  children,
+}: PlayerTreeItemProps) {
+  const { tabIndex } = useTreeItem(id, actions);
+  const labelId = useId();
+  return (
+    <div
+      style={getLevelStyles(level)}
+      className={cx('item', { selected })}
+      role="treeitem"
+      aria-level={level + 1}
+      aria-selected={selected ? 'true' : 'false'}
+      aria-expanded={expanded}
+      aria-labelledby={labelId}
+      data-tree-id={id}
+      tabIndex={tabIndex}
+      onContextMenu={onContextMenu}
+    >
+      {children({ tabIndex, labelId })}
+    </div>
+  );
+}
 
 const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect }) => {
   const { Scene } = sdk.components;
@@ -142,18 +181,25 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
     [spawnPointManager, hiddenNames],
   );
 
-  const handleToggleSpawnAreaOpen = useCallback((e: React.MouseEvent, index: number) => {
-    e.stopPropagation();
+  const setSpawnAreaOpen = useCallback((index: number, open: boolean) => {
     setOpenIndices(prev => {
       const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
+      if (open) {
         next.add(index);
+      } else {
+        next.delete(index);
       }
       return next;
     });
   }, []);
+
+  const handleToggleSpawnAreaOpen = useCallback(
+    (e: React.MouseEvent, index: number) => {
+      e.stopPropagation();
+      setSpawnAreaOpen(index, !openIndices.has(index));
+    },
+    [openIndices, setSpawnAreaOpen],
+  );
 
   const handleSpawnAreaContextMenu = useCallback(
     (e: React.MouseEvent, index: number) => {
@@ -266,67 +312,101 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
             className="Tree"
             key={`spawn-area-${sp.name}-${index}`}
           >
-            <div
-              style={getLevelStyles(1)}
-              className={cx('item', {
-                selected: isSpawnAreaSelected,
-              })}
+            <PlayerTreeItem
+              id={`spawn-${index}`}
+              level={1}
+              selected={isSpawnAreaSelected}
+              expanded={isOpen}
+              actions={{
+                select: mode => {
+                  if (mode === 'single') handleSpawnAreaClick(index);
+                },
+                setOpen: open => setSpawnAreaOpen(index, open),
+              }}
               onContextMenu={e => handleSpawnAreaContextMenu(e, index)}
             >
-              <div className="item-area">
-                <DisclosureWidget
-                  enabled
-                  isOpen={isOpen}
-                  onOpen={e => handleToggleSpawnAreaOpen(e, index)}
-                />
-                <div
-                  onClick={() => handleSpawnAreaClick(index)}
-                  className="selectable-area"
-                >
-                  <span className="tree-icon spawn-area-icon" />
-                  {editingIndex === index ? (
-                    <Edit
-                      value={sp.name}
-                      onSubmit={newName => handleRename(index, newName)}
-                      onCancel={handleCancelRename}
-                    />
-                  ) : (
-                    <div>
-                      {sp.name}
-                      {isDefault && <span className="main-badge">(Main)</span>}
-                    </div>
-                  )}
-                  <div className="action-area">
-                    <div className="action-button">
-                      <VisibilityIcon
-                        isHidden={isHidden}
-                        onClick={e => handleToggleVisibility(e, index, sp.name)}
+              {({ tabIndex, labelId }) => (
+                <div className="item-area">
+                  <DisclosureWidget
+                    enabled
+                    isOpen={isOpen}
+                    onOpen={e => handleToggleSpawnAreaOpen(e, index)}
+                  />
+                  <div
+                    onClick={() => handleSpawnAreaClick(index)}
+                    className="selectable-area"
+                  >
+                    <span className="tree-icon spawn-area-icon" />
+                    {editingIndex === index ? (
+                      <Edit
+                        value={sp.name}
+                        onSubmit={newName => handleRename(index, newName)}
+                        onCancel={handleCancelRename}
                       />
+                    ) : (
+                      <div
+                        className="label"
+                        id={labelId}
+                      >
+                        {sp.name}
+                        {isDefault && (
+                          <>
+                            {' '}
+                            <span className="main-badge">(Main)</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <div className={cx('action-area', { 'is-hidden': isHidden })}>
+                      <button
+                        type="button"
+                        className="action-button"
+                        aria-label={`Hide ${sp.name}`}
+                        aria-pressed={isHidden}
+                        tabIndex={tabIndex}
+                        onClick={e => handleToggleVisibility(e, index, sp.name)}
+                      >
+                        <VisibilityIcon isHidden={isHidden} />
+                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              )}
+            </PlayerTreeItem>
 
             {isOpen && (
               <div className="Tree">
-                <div
-                  style={getLevelStyles(2)}
-                  className={cx('item', {
-                    selected: isCameraTargetSelected,
-                  })}
+                <PlayerTreeItem
+                  id={`camera-target-${index}`}
+                  level={2}
+                  selected={isCameraTargetSelected}
+                  actions={{
+                    select: mode => {
+                      if (mode === 'single') handleCameraTargetClick(index);
+                    },
+                  }}
                 >
-                  <div className="item-area">
-                    <span style={DISCLOSURE_SPACER_STYLE} />
-                    <div
-                      onClick={() => handleCameraTargetClick(index)}
-                      className="selectable-area"
-                    >
-                      <span className="tree-icon camera-target-icon" />
-                      <div>Camera Target</div>
+                  {({ labelId }) => (
+                    <div className="item-area">
+                      <span
+                        className="caret"
+                        aria-hidden="true"
+                      />
+                      <div
+                        onClick={() => handleCameraTargetClick(index)}
+                        className="selectable-area"
+                      >
+                        <span className="tree-icon camera-target-icon" />
+                        <div
+                          className="label"
+                          id={labelId}
+                        >
+                          Camera Target
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  )}
+                </PlayerTreeItem>
               </div>
             )}
           </div>
@@ -342,6 +422,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
       handleCameraTargetClick,
       handleToggleVisibility,
       handleToggleSpawnAreaOpen,
+      setSpawnAreaOpen,
       handleSpawnAreaContextMenu,
       handleRename,
       handleCancelRename,
@@ -350,50 +431,69 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
 
   return (
     <div className="Tree PlayerTree">
-      <div
-        style={getLevelStyles(0)}
-        className={cx('item', { selected: isPlayerRowHighlighted })}
+      <PlayerTreeItem
+        id="player"
+        level={0}
+        selected={isPlayerRowHighlighted}
+        expanded={spawnPoints.length > 0 ? isPlayerOpen : undefined}
+        actions={{
+          select: mode => {
+            spawnPointManager.select(null);
+            onSelect(PLAYER, mode === 'extend');
+          },
+          setOpen: spawnPoints.length > 0 ? setIsPlayerOpen : undefined,
+        }}
       >
-        <div className="item-area">
-          <DisclosureWidget
-            enabled={spawnPoints.length > 0}
-            isOpen={isPlayerOpen}
-            onOpen={handlePlayerToggle}
-          />
-          <div
-            onClick={handlePlayerClick}
-            className="selectable-area"
-          >
-            <span className="tree-icon player-icon" />
-            <div>Player</div>
-            <div className="action-area">
-              <div className="action-button">
-                <InfoTooltip
-                  text={
-                    <>
-                      The player&apos;s avatar. Nested items are fixed to the player&apos;s
-                      position.&nbsp;
-                      <a
-                        href="https://docs.decentraland.org/creator/scene-editor/get-started/scene-editor-essentials#special-entities"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Learn more
-                      </a>
-                    </>
-                  }
-                  type="info"
-                  position="right center"
-                />
+        {({ labelId }) => (
+          <div className="item-area">
+            <DisclosureWidget
+              enabled={spawnPoints.length > 0}
+              isOpen={isPlayerOpen}
+              onOpen={handlePlayerToggle}
+            />
+            <div
+              onClick={handlePlayerClick}
+              className="selectable-area"
+            >
+              <span className="tree-icon player-icon" />
+              <div
+                className="label"
+                id={labelId}
+              >
+                Player
+              </div>
+              <div className="action-area">
+                <div className="action-button">
+                  <InfoTooltip
+                    text={
+                      <>
+                        The player&apos;s avatar. Nested items are fixed to the player&apos;s
+                        position.&nbsp;
+                        <a
+                          href="https://docs.decentraland.org/creator/scene-editor/get-started/scene-editor-essentials#special-entities"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Learn more
+                        </a>
+                      </>
+                    }
+                    type="info"
+                    position="right center"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        )}
+      </PlayerTreeItem>
 
       {isPlayerOpen && spawnAreaNodes}
 
-      <Menu id={menuId}>
+      <Menu
+        id={menuId}
+        label="Spawn Point Options"
+      >
         <Item
           onClick={handleAction(() => {
             if (contextMenuIndex !== null) setEditingIndex(contextMenuIndex);
@@ -421,36 +521,16 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
   );
 };
 
-function VisibilityIcon({
-  isHidden,
-  onClick,
-}: {
-  isHidden: boolean;
-  onClick: (e: React.MouseEvent) => void;
-}) {
+function VisibilityIcon({ isHidden }: { isHidden: boolean }) {
   const Icon = isHidden ? InvisibleIcon : VisibleIcon;
   const className = isHidden ? 'invisible-icon' : 'visible-icon';
   return (
     <Icon
       className={className}
       size={16}
-      onClick={onClick}
+      aria-hidden="true"
     />
   );
-}
-
-interface DisclosureWidgetProps {
-  enabled: boolean;
-  isOpen: boolean;
-  onOpen: (e: React.MouseEvent) => void;
-}
-
-function DisclosureWidget({ enabled, isOpen, onOpen }: DisclosureWidgetProps) {
-  if (!enabled) {
-    return <span style={DISCLOSURE_SPACER_STYLE} />;
-  }
-  const Arrow = isOpen ? IoIosArrowDown : IoIosArrowForward;
-  return <Arrow onClick={onOpen} />;
 }
 
 export default React.memo(withSdk(PlayerTree));

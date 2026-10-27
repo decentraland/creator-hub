@@ -26,6 +26,7 @@ import {
   toggleNodeSelection,
 } from '../../../redux/ui-designer';
 import { Tree } from '../../Tree';
+import { TreeRoot } from '../../Tree/TreeRoot';
 import type { DropType } from '../../Tree/utils';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 import { useUINodeActions } from '../shared/useUINodeActions';
@@ -37,6 +38,7 @@ import { PLATFORMS } from '../code/platform-convention';
 import type { CodeUINode } from '../code/types';
 import {
   classifyNode,
+  collectInheritedHidden,
   matchesFilter,
   nodeLabelText,
   soleComponentRef,
@@ -93,6 +95,10 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const platform = useAppSelector(getPlatform);
 
   const NodeTreeComponent = useMemo(() => Tree<UINode>(), []);
+  const inheritedHidden = useMemo(
+    () => (tree ? collectInheritedHidden(tree, hiddenNodes) : new Set<Entity>()),
+    [tree, hiddenNodes],
+  );
 
   const lastRevealed = useRef<Entity | null>(null);
   useEffect(() => {
@@ -213,7 +219,7 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const noop = useCallback(() => undefined, []);
 
   const renderActionArea = useCallback(
-    (n: UINode) => {
+    (n: UINode, tabIndex: 0 | -1) => {
       const id = n.entity as unknown as number;
       const cn = n as CodeUINode;
       if (cn.platformVariant) {
@@ -228,6 +234,7 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
                 className="action-button ui-designer-icon-btn"
                 aria-label={`Add ${PLATFORM_LABELS[p]} variant`}
                 title={`Add a ${PLATFORM_LABELS[p]} variant`}
+                tabIndex={tabIndex}
                 onClick={e => {
                   e.stopPropagation();
                   void addPlatformBranch(id, p);
@@ -242,13 +249,21 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
       }
       const isLocked = !!lockedNodes[id];
       const isNodeHidden = !!hiddenNodes[id];
+      const isInherited = !isNodeHidden && inheritedHidden.has(n.entity);
+      const label = nodeLabelText(n);
       return (
-        <div className={cx('action-area', { 'is-hidden': isNodeHidden })}>
+        <div
+          className={cx('action-area', {
+            'is-hidden': isNodeHidden,
+            'is-hidden-inherited': isInherited,
+          })}
+        >
           <button
             type="button"
-            className="action-button ui-designer-toggle ui-designer-compact"
-            aria-label={isLocked ? 'Unlock node' : 'Lock node'}
+            className="action-button ui-designer-toggle ui-designer-compact ui-designer-layer-toggle"
+            aria-label={`Lock ${label}`}
             aria-pressed={isLocked}
+            tabIndex={tabIndex}
             onClick={e => {
               e.stopPropagation();
               dispatch(setNodeLocked({ entity: n.entity, locked: !isLocked }));
@@ -256,11 +271,18 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
           >
             {isLocked ? <LockIcon /> : <UnlockIcon />}
           </button>
+          {isInherited ? (
+            <span
+              className="inherited-dot"
+              aria-hidden="true"
+            />
+          ) : null}
           <button
             type="button"
-            className="action-button ui-designer-toggle ui-designer-compact"
-            aria-label={isNodeHidden ? 'Show node' : 'Hide node'}
+            className="action-button ui-designer-toggle ui-designer-compact ui-designer-layer-toggle"
+            aria-label={`Hide ${label}`}
             aria-pressed={isNodeHidden}
+            tabIndex={tabIndex}
             onClick={e => {
               e.stopPropagation();
               dispatch(setNodeHidden({ entity: n.entity, hidden: !isNodeHidden }));
@@ -271,7 +293,8 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
           <button
             type="button"
             className="action-button ui-designer-icon-btn ui-designer-compact"
-            aria-label={`Delete ${nodeLabelText(n)}`}
+            aria-label={`Delete ${label}`}
+            tabIndex={tabIndex}
             onClick={e => {
               e.stopPropagation();
               handleRemove(n);
@@ -282,7 +305,7 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
         </div>
       );
     },
-    [hiddenNodes, lockedNodes, dispatch, handleRemove],
+    [hiddenNodes, lockedNodes, inheritedHidden, dispatch, handleRemove],
   );
 
   const canDrag = useCallback(
@@ -294,32 +317,35 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
 
   return (
     <div className="ui-designer-nodetree">
-      <NodeTreeComponent
-        value={tree}
-        getId={getId}
-        getChildren={getChildren}
-        getLabel={getLabel}
-        getIcon={getIcon}
-        isOpen={isOpen}
-        isSelected={isSelected}
-        isHidden={isHidden}
-        canAddChild={canAddChild}
-        canRename={canRename}
-        onSetOpen={handleSetOpen}
-        onSelect={handleSelect}
-        onLastSelectedChange={handleLastSelectedChange}
-        onDrop={handleDrop}
-        onRename={handleRename}
-        onAddChild={noop}
-        onRemove={handleRemove}
-        onDuplicate={handleDuplicate}
-        canDrag={canDrag}
-        renderActionArea={renderActionArea}
-        dndType={NODE_TREE_DND_TYPE}
-        externalDndTypes={EXTERNAL_DND_TYPES}
-        onExternalDrop={handleExternalDrop}
-        allowBeforeDrop
-      />
+      <TreeRoot label="Nodes">
+        <NodeTreeComponent
+          value={tree}
+          contextMenuLabel="Node Options"
+          getId={getId}
+          getChildren={getChildren}
+          getLabel={getLabel}
+          getIcon={getIcon}
+          isOpen={isOpen}
+          isSelected={isSelected}
+          isHidden={isHidden}
+          canAddChild={canAddChild}
+          canRename={canRename}
+          onSetOpen={handleSetOpen}
+          onSelect={handleSelect}
+          onLastSelectedChange={handleLastSelectedChange}
+          onDrop={handleDrop}
+          onRename={handleRename}
+          onAddChild={noop}
+          onRemove={handleRemove}
+          onDuplicate={handleDuplicate}
+          canDrag={canDrag}
+          renderActionArea={renderActionArea}
+          dndType={NODE_TREE_DND_TYPE}
+          externalDndTypes={EXTERNAL_DND_TYPES}
+          onExternalDrop={handleExternalDrop}
+          allowBeforeDrop
+        />
+      </TreeRoot>
     </div>
   );
 };

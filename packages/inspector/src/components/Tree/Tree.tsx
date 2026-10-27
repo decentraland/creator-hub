@@ -1,7 +1,6 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useId, useMemo, useRef, useState } from 'react';
 import type { XYCoord } from 'react-dnd';
 import { useDrag, useDrop } from 'react-dnd';
-import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
 import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
@@ -13,11 +12,13 @@ import { useAppSelector } from '../../redux/hooks';
 import type { GizmoType } from '../../lib/utils/gizmo';
 import { getEntitiesOutOfBoundaries } from '../../redux/scene-metrics';
 import { InfoTooltip } from '../ui';
+import { CaretIcon } from '../Icons/Caret';
 import { ContextMenu } from './ContextMenu';
 import { ActionArea } from './ActionArea';
 import { Edit as EditInput } from './Edit';
 import type { DropType } from './utils';
 import { calculateDropType } from './utils';
+import { useTreeItem } from './TreeRoot';
 
 import './Tree.css';
 
@@ -25,6 +26,7 @@ type Props<T> = {
   value: T;
   className?: string;
   getExtraContextMenu?: (value: T) => JSX.Element | null;
+  contextMenuLabel: string;
   level?: number;
   getId: (value: T) => string;
   getChildren: (value: T) => T[];
@@ -58,13 +60,13 @@ type Props<T> = {
   allowBeforeDrop?: boolean;
   onLastSelectedChange?: (value: T) => void;
   isRoot?: (value: T) => boolean;
-  renderActionArea?: (value: T) => React.ReactNode;
+  renderActionArea?: (value: T, tabIndex: 0 | -1) => React.ReactNode;
 };
 
 type EmptyString = '';
 
 const getDefaultLevel = () => 0;
-const getLevelStyles = (level: number) => ({ paddingLeft: `${level * 10}px` });
+const getLevelStyles = (level: number) => ({ '--tree-level': level }) as React.CSSProperties;
 const getExpandStyles = (active: boolean) => ({
   height: active ? 'auto' : '0',
   overflow: 'hidden',
@@ -77,6 +79,7 @@ export function Tree<T>() {
     withContextMenu<Props<T>>(props => {
       const {
         getExtraContextMenu,
+        contextMenuLabel,
         className,
         contextMenuId,
         value,
@@ -126,10 +129,18 @@ export function Tree<T>() {
       const enableDuplicate = canDuplicate ? canDuplicate(value) : true;
       const enableDrag = canDrag ? canDrag(value) : true;
       const extraContextMenu = getExtraContextMenu ? getExtraContextMenu(value) : null;
+      const labelId = useId();
+      const { tabIndex } = useTreeItem(id, {
+        select: mode => {
+          if (mode === 'extend') return onSelect(value, 'shift');
+          onLastSelectedChange?.(value);
+          onSelect(value, 'single');
+        },
+        setOpen: enableOpen ? isOpening => onSetOpen(value, isOpening) : undefined,
+      });
       const [editMode, setEditMode] = useState(false);
       const [insertMode, setInsertMode] = useState(false);
       const [dropType, setDropType] = useState<DropType | EmptyString>('');
-      // we need this ref just for the e2e tests to work since it's caching "dropType" value for some reason...
       const dropTypeRef = useRef<DropType | EmptyString>('');
       const canDrop = useCallback(
         (target: T, source: T): boolean => {
@@ -278,7 +289,6 @@ export function Tree<T>() {
           canDrag: enableDrag,
           item: () => {
             const selectedItems = getSelectedItems ? getSelectedItems() : [];
-            // if this item is selected and there are multiple selections, drag all selected items
             const isPartOfSelection =
               selectedItems.length > 1 && selectedItems.some(item => getId(item) === getId(value));
             const items = isPartOfSelection ? selectedItems : [value];
@@ -362,6 +372,7 @@ export function Tree<T>() {
 
       const controlsProps = {
         id: contextMenuId,
+        label: contextMenuLabel,
         enableAdd: enableAddChild,
         enableEdit:
           (enableRename &&
@@ -393,6 +404,13 @@ export function Tree<T>() {
           <div
             style={getLevelStyles(level)}
             className={cx({ selected, item: true, hidden })}
+            role="treeitem"
+            aria-level={level + 1}
+            aria-selected={selected ? 'true' : 'false'}
+            aria-expanded={enableOpen ? open : undefined}
+            aria-labelledby={labelId}
+            data-tree-id={id}
+            tabIndex={tabIndex}
           >
             <ContextMenu {...controlsProps} />
             <div
@@ -410,10 +428,21 @@ export function Tree<T>() {
                 className="selectable-area"
               >
                 {props.getIcon && props.getIcon(value)}
-                <div>{label || id}</div>
+                <div
+                  className="label"
+                  id={labelId}
+                >
+                  {label || id}
+                </div>
                 {props.renderActionArea
-                  ? props.renderActionArea(value)
-                  : isEntity && <ActionArea entity={value as Entity} />}
+                  ? props.renderActionArea(value, tabIndex)
+                  : isEntity && (
+                      <ActionArea
+                        entity={value as Entity}
+                        label={typeof label === 'string' ? label : id}
+                        tabIndex={tabIndex}
+                      />
+                    )}
                 {!isRoot?.(value as T) && isEntityOutOfBoundaries && (
                   <InfoTooltip
                     text="This entity is out of bounds and might not display correctly in-world."
@@ -452,18 +481,27 @@ interface DisclosureWidgetProps {
   onOpen: (e: React.MouseEvent) => void;
 }
 
-// fun naming? https://en.wikipedia.org/wiki/Disclosure_widget
-function DisclosureWidget({ enabled, isOpen, onOpen }: DisclosureWidgetProps) {
+export function DisclosureWidget({ enabled, isOpen, onOpen }: DisclosureWidgetProps) {
   if (!enabled) {
-    return <span style={{ marginLeft: '12px' }}></span>;
+    return (
+      <span
+        className="caret"
+        aria-hidden="true"
+      />
+    );
   }
-  const Arrow = isOpen ? IoIosArrowDown : IoIosArrowForward;
-  return <Arrow onClick={onOpen} />;
+  return (
+    <span
+      className={cx('caret', { closed: !isOpen })}
+      aria-hidden="true"
+      onClick={onOpen}
+    >
+      <CaretIcon />
+    </span>
+  );
 }
 
 function TreeChildren<T>(props: Props<T>) {
-  // `Tree<T>()` builds a fresh component each call; memoize so children
-  // keep a stable identity across re-renders and don't remount on engine updates.
   const CompTree = useMemo(() => Tree<T>(), []);
   const { value, level = getDefaultLevel(), getChildren, getId, isOpen, isHidden } = props;
   const children = getChildren(value);

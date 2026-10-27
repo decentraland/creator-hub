@@ -132,7 +132,7 @@ const RootRow: React.FC<{
       <div className="ui-designer-code-root-actions">
         <button
           type="button"
-          className="ui-designer-code-root-toplevel ui-designer-toggle ui-designer-compact"
+          className="ui-designer-code-root-toplevel ui-designer-toggle ui-designer-compact ui-designer-layer-toggle"
           title={
             root.topLevel
               ? 'Top-level: rendered on its own. Click to make it a nested-only component.'

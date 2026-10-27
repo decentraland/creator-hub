@@ -68,6 +68,18 @@ export function visibleRange(
   return from <= to ? slice : slice.reverse();
 }
 
+/** Every descendant of a hidden node (not the hidden node itself). */
+export function collectInheritedHidden(root: UINode, hidden: Record<number, boolean>): Set<Entity> {
+  const result = new Set<Entity>();
+  const walk = (n: UINode, underHidden: boolean): void => {
+    if (underHidden) result.add(n.entity);
+    const hides = underHidden || !!hidden[n.entity as unknown as number];
+    n.children.forEach(child => walk(child, hides));
+  };
+  walk(root, false);
+  return result;
+}
+
 /** Compose the canvas preview for a (possibly bound) text field. */
 export function previewBoundText(
   bindings: CanvasBindingRow[] | undefined,

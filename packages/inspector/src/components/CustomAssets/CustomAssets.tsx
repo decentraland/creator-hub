@@ -48,6 +48,7 @@ const CustomAssetItem: React.FC<CustomAssetItemProps> = ({
       <div
         className="custom-asset-item"
         onContextMenu={handleContextMenu}
+        tabIndex={-1}
       >
         <div
           className="custom-asset-item-box"
