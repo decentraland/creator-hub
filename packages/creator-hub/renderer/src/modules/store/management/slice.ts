@@ -65,6 +65,7 @@ export type WorldPermissionsState = {
 export type LandProjectsState = {
   projects: ManagedProject[];
   deployments: Record<string, LandDeployment[]>;
+  deployers: Record<string, string>;
   requestId: string | null;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
@@ -102,7 +103,14 @@ export const initialState: Async<ManagementState> = {
   error: null,
   worldSettings: getWorldSettingsInitialState(),
   worldPermissions: getWorldPermissionsInitialState(),
-  lands: { projects: [], deployments: {}, requestId: null, status: 'idle', error: null },
+  lands: {
+    projects: [],
+    deployments: {},
+    deployers: {},
+    requestId: null,
+    status: 'idle',
+    error: null,
+  },
 };
 
 const PROJECTS_PAGE_LIMIT = 50;
@@ -509,6 +517,16 @@ export const fetchLandProjects = createAsyncThunk(
   },
 );
 
+/** Fetches who deployed each of the given scene entities, skipping the ones already known. */
+export const fetchLandDeployers = createAsyncThunk(
+  'management/fetchLandDeployers',
+  async (entityIds: string[], { getState }) => {
+    const known = getState().management.lands.deployers;
+    const unknown = entityIds.filter(id => !(id in known));
+    return unknown.length ? new Lands().fetchDeployers(unknown) : {};
+  },
+);
+
 /** Unpublishes a LAND scene by deploying an empty scene over it, then refetches the LAND projects */
 export const unpublishLandScene = createAsyncThunk(
   'management/unpublishLandScene',
@@ -696,6 +714,9 @@ const slice = createSlice({
           state.worldPermissions.parcels[walletAddress].status = 'failed';
         }
       })
+      .addCase(fetchLandDeployers.fulfilled, (state, action) => {
+        Object.assign(state.lands.deployers, action.payload);
+      })
       .addCase(fetchLandProjects.pending, (state, action) => {
         state.lands.requestId = action.meta.requestId;
         state.lands.status = 'loading';
@@ -788,6 +809,7 @@ export const actions = {
   fetchParcelsPermission,
   addParcelsPermission,
   removeParcelsPermission,
+  fetchLandDeployers,
   fetchLandProjects,
   unpublishLandScene,
 };

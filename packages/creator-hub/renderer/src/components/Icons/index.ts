@@ -1,9 +1,15 @@
+export { ArrowDownIcon } from './ArrowDownIcon';
 export { AssistantIcon } from './AssistantIcon';
 export { CalendarIcon } from './CalendarIcon';
 export { ChevronDownIcon } from './ChevronDownIcon';
+export { ClockIcon } from './ClockIcon';
+export { DeleteIcon } from './DeleteIcon';
+export { EditIcon } from './EditIcon';
 export { InfoIcon } from './InfoIcon';
 export { JumpInIcon } from './JumpInIcon';
 export { KebabIcon } from './KebabIcon';
+export { LayersIcon } from './LayersIcon';
+export { LayoutOutlineIcon } from './LayoutOutlineIcon';
 export { LinkIcon } from './LinkIcon';
 export { MapPinIcon } from './MapPinIcon';
 export { PublicIcon } from './PublicIcon';

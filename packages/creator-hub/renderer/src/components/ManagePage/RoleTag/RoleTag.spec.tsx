@@ -19,16 +19,11 @@ describe('getRoleTag', () => {
     });
   });
 
-  describe('when the account is a token update operator or a World collaborator', () => {
+  describe('when the account is a token update operator, an UpdateManager or a World collaborator', () => {
     it('should tag it Collaborator', () => {
       expect(getRoleTag(RoleType.OPERATOR)).toBe('collaborator');
+      expect(getRoleTag(RoleType.MANAGER)).toBe('collaborator');
       expect(getRoleTag(WorldRoleType.COLLABORATOR)).toBe('collaborator');
-    });
-  });
-
-  describe('when the account is an UpdateManager', () => {
-    it('should tag it Manager', () => {
-      expect(getRoleTag(RoleType.MANAGER)).toBe('manager');
     });
   });
 
@@ -46,15 +41,15 @@ describe('RoleTag', () => {
 
   afterEach(cleanup);
 
-  describe('when rendered as a manager', () => {
+  describe('when rendered as a collaborator', () => {
     it('should read as plain text, with no role of its own', () => {
       const { container } = render(
         <ThemeProvider theme={dark}>
-          <RoleTag variant="manager" />
+          <RoleTag variant="collaborator" />
         </ThemeProvider>,
       );
 
-      expect(screen.getByText('Manager').tagName).toBe('SPAN');
+      expect(screen.getByText('Collaborator').tagName).toBe('SPAN');
       expect(container.querySelector('[role]')).toBeNull();
     });
   });

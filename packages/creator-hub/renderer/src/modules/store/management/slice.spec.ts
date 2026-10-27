@@ -29,6 +29,7 @@ import {
   fetchWorlds,
   fetchEmptyWorlds,
   updateWorldSettings,
+  fetchLandDeployers,
   fetchLandProjects,
   unpublishLandScene,
 } from './slice';
@@ -69,6 +70,7 @@ const createMockWorldsAPI = () => ({
 
 const createMockLandsAPI = () => ({
   fetchLandPublishedScenes: vi.fn(),
+  fetchDeployers: vi.fn(),
   getContentSrcUrl: vi.fn((hash: string) => `https://land-content.com/${hash}`),
 });
 
@@ -1871,6 +1873,53 @@ describe('management slice', () => {
     beforeEach(() => {
       landListResolves([ownedParcel, managedEstate]);
       mockLandsAPI.fetchLandPublishedScenes.mockResolvedValue([sceneOnCorner]);
+    });
+
+    describe('fetchLandDeployers', () => {
+      const ALICE = '0x00000000000000000000000000000000000000a1';
+      const BOB = '0x00000000000000000000000000000000000000b2';
+
+      describe('when none of the scenes have a known deployer', () => {
+        beforeEach(async () => {
+          mockLandsAPI.fetchDeployers.mockResolvedValue({ scene1: ALICE, scene2: BOB });
+          await store.dispatch(fetchLandDeployers(['scene1', 'scene2']));
+        });
+
+        it('should ask for all of them and keep the answers by entity id', () => {
+          expect(mockLandsAPI.fetchDeployers).toHaveBeenCalledWith(['scene1', 'scene2']);
+          expect(store.getState().management.lands.deployers).toEqual({
+            scene1: ALICE,
+            scene2: BOB,
+          });
+        });
+      });
+
+      describe('when some deployers are already known', () => {
+        beforeEach(async () => {
+          mockLandsAPI.fetchDeployers.mockResolvedValueOnce({ scene1: ALICE });
+          await store.dispatch(fetchLandDeployers(['scene1']));
+          mockLandsAPI.fetchDeployers.mockResolvedValueOnce({ scene2: BOB });
+          await store.dispatch(fetchLandDeployers(['scene1', 'scene2']));
+        });
+
+        it('should only ask for the unknown ones and merge them in', () => {
+          expect(mockLandsAPI.fetchDeployers).toHaveBeenLastCalledWith(['scene2']);
+          expect(store.getState().management.lands.deployers).toEqual({
+            scene1: ALICE,
+            scene2: BOB,
+          });
+        });
+      });
+
+      describe('when every deployer is already known', () => {
+        it('should not call the catalyst again', async () => {
+          mockLandsAPI.fetchDeployers.mockResolvedValueOnce({ scene1: ALICE });
+          await store.dispatch(fetchLandDeployers(['scene1']));
+          await store.dispatch(fetchLandDeployers(['scene1']));
+
+          expect(mockLandsAPI.fetchDeployers).toHaveBeenCalledTimes(1);
+        });
+      });
     });
 
     describe('fetchLandProjects', () => {

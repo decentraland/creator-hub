@@ -9,6 +9,7 @@ export type Option = {
 export type Props = {
   label: string;
   options: Option[];
+  variant?: 'ghost' | 'filled';
   className?: string;
   selected?: string;
 };

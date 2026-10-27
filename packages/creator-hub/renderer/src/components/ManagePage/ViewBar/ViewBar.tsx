@@ -23,7 +23,7 @@ const VIEW_OPTIONS: Array<{ value: ViewValue; label: TranslationPath }> = [
   { value: FilterBy.UNPUBLISHED, label: 'manage.filters.unpublished' },
 ];
 
-const SORT_OPTIONS: Array<{ value: SortBy; label: TranslationPath }> = [
+export const SORT_OPTIONS: Array<{ value: SortBy; label: TranslationPath }> = [
   { value: SortBy.LATEST, label: 'manage.sort.latest' },
   { value: SortBy.NAME, label: 'manage.sort.name' },
 ];
@@ -37,7 +37,34 @@ type SelectFieldProps<T extends string> = {
   onChange: (value: T) => void;
 };
 
-function SelectField<T extends string>({ label, value, options, onChange }: SelectFieldProps<T>) {
+/** The View-bar search box, its icon at the start. */
+export function SearchField({
+  defaultValue,
+  onSearch,
+}: {
+  defaultValue?: string;
+  onSearch: (query: string) => void;
+}) {
+  return (
+    <SearchBox
+      type="search"
+      placeholder={t('manage.search')}
+      defaultValue={defaultValue}
+      startAdornment={<SearchIcon aria-hidden />}
+      endAdornment={null}
+      inputProps={{ 'aria-label': t('manage.search') }}
+      onChange={onSearch}
+    />
+  );
+}
+
+/** A labelled select in the DS Dropdown-Input look. */
+export function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: SelectFieldProps<T>) {
   const labelId = useId();
   const { arrowKeyedClass, onKeyDownCapture, resetArrowKeyed } = useArrowKeyed();
   const labelOf = (selected: T) => t(options.find(option => option.value === selected)!.label);
@@ -106,14 +133,9 @@ export function ManageViewBar(props: Props) {
           options={SORT_OPTIONS}
           onChange={props.onSortChange}
         />
-        <SearchBox
-          type="search"
-          placeholder={t('manage.search')}
+        <SearchField
           defaultValue={props.searchQuery}
-          startAdornment={<SearchIcon aria-hidden />}
-          endAdornment={null}
-          inputProps={{ 'aria-label': t('manage.search') }}
-          onChange={props.onSearch}
+          onSearch={props.onSearch}
         />
       </>
     </Bar>

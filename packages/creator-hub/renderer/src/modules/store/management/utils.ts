@@ -2,7 +2,7 @@ import type { LandPlace, ManagedProject } from '/shared/types/manage';
 import { FilterBy, ManagedProjectType, SortBy } from '/shared/types/manage';
 import { retry } from '/shared/utils';
 
-import type { Land, LandDeployment } from '/@/lib/land';
+import type { Authorization, Land, LandDeployment } from '/@/lib/land';
 import { coordsToId, LandType, ownedCoords, parseCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
 import type { WorldData, WorldScene, Worlds } from '/@/lib/worlds';
@@ -252,10 +252,7 @@ export function toLandProject(
   };
 }
 
-/**
- * The Worlds list: the published worlds in the server's order (already searched and sorted
- * there), then the empty worlds, which the server search never sees, narrowed and sorted here.
- */
+/** The Worlds list: published worlds in server order, then the empty worlds narrowed by search and sorted. */
 export function selectWorldProjects(
   published: ManagedProject[],
   empty: ManagedProject[],
@@ -269,6 +266,47 @@ export function selectWorldProjects(
   return filters.sortBy === SortBy.NAME
     ? [...published, ...matches].sort(byName)
     : [...published, ...matches.sort(byName)];
+}
+
+/** A scene deployed on a LAND, as the Scenes tab lists it. */
+export type LandScene = {
+  id: string;
+  title: string;
+  base: string;
+  parcels: string[];
+  timestamp: number;
+  thumbnail: string;
+};
+
+/** The LAND's deployments as Scenes-tab rows. */
+export function toLandScenes(
+  deployments: LandDeployment[],
+  getContentSrcUrl: (hash: string) => string,
+): LandScene[] {
+  return deployments.map(deployment => ({
+    id: deployment.id,
+    title: deployment.metadata.display?.title || deployment.metadata.scene?.base || deployment.id,
+    base: deployment.metadata.scene?.base ?? deployment.pointers[0] ?? '',
+    parcels: deployment.metadata.scene?.parcels ?? deployment.pointers,
+    timestamp: deployment.timestamp,
+    thumbnail: getThumbnailUrlFromDeployment(deployment, getContentSrcUrl),
+  }));
+}
+
+export type ManagerState = 'full' | 'land-only';
+
+/** The account's UpdateManagers, one per address; `land-only` when only the LAND registry approved it. */
+export function getManagers(
+  authorizations: Authorization[],
+): Array<{ address: string; state: ManagerState }> {
+  const types = new Map<string, Set<LandType>>();
+  for (const { address, type } of authorizations) {
+    types.set(address, (types.get(address) ?? new Set()).add(type));
+  }
+  return [...types].map(([address, registries]) => ({
+    address,
+    state: registries.has(LandType.ESTATE) ? 'full' : 'land-only',
+  }));
 }
 
 /** LAND projects narrowed by the publish filter and search (name or `x,y`), then sorted. */

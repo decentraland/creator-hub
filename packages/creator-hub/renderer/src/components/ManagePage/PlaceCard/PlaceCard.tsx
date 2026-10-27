@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Link } from 'react-router-dom';
 
 import { coordsToId } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
@@ -34,7 +35,7 @@ type Props = {
   scenesCount: number;
   menuOptions: Option[];
   onViewScenes: () => void;
-  href?: string;
+  to?: string;
 };
 
 function placeText(place: LandPlace) {
@@ -55,7 +56,7 @@ export function PlaceCard(props: Props) {
           <span>{placeText(props.place)}</span>
           {props.role && <RoleTag variant={props.role} />}
         </PlaceRow>
-        <Name id={nameId}>{props.href ? <a href={props.href}>{props.name}</a> : props.name}</Name>
+        <Name id={nameId}>{props.to ? <Link to={props.to}>{props.name}</Link> : props.name}</Name>
       </TextBlock>
       <Kebab>
         <Dropdown

@@ -8,7 +8,7 @@ import { MenuSeparator, StyledMenu, Trigger } from './component.styled';
 import { useArrowKeyed } from './useArrowKeyed';
 
 function Dropdown(props: Props) {
-  const { label, options, className, selected } = props;
+  const { label, options, className, selected, variant = 'ghost' } = props;
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const { arrowKeyedClass, onKeyDownCapture, resetArrowKeyed } = useArrowKeyed();
@@ -35,6 +35,7 @@ function Dropdown(props: Props) {
   return (
     <>
       <Trigger
+        look={variant}
         onClick={handleClick}
         aria-label={label}
         aria-haspopup="menu"

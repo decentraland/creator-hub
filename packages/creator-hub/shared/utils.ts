@@ -118,6 +118,18 @@ export async function retry<T>(attempt: () => Promise<T>, attempts = 2, pauseMs 
   }
 }
 
+/** Runs `check` until it returns true or the attempts run out, pausing `intervalMs` between tries. */
+export async function pollUntil(
+  check: () => Promise<boolean>,
+  { intervalMs, attempts }: { intervalMs: number; attempts: number },
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    if (await check()) return true;
+    if (attempt < attempts) await delay(intervalMs);
+  }
+  return false;
+}
+
 export function debounce<F extends (...args: any[]) => void>(func: F, delay: number) {
   let timer: ReturnType<typeof setTimeout>;
   return function (...args: Parameters<F>) {

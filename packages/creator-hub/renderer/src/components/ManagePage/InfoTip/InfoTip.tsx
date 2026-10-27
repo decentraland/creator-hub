@@ -7,18 +7,26 @@ import {
   type ReactNode,
 } from 'react';
 
-import { InfoIcon } from '../../Icons';
+import { InfoIcon, WarningCircleIcon } from '../../Icons';
 import { Bubble, InfoButton, Peak, TipPopper, Wrapper } from './InfoTip.styled';
 
 const CLOSE_GRACE_MS = 150;
 
+type Variant = 'info' | 'warning';
+
+const GLYPH: Record<Variant, ReactNode> = {
+  info: <InfoIcon />,
+  warning: <WarningCircleIcon size={18} />,
+};
+
 type Props = {
   label: string;
+  variant?: Variant;
   children: ReactNode;
 };
 
-/** An ⓘ toggletip: opens on hover, focus or click; Escape, click-away or leaving it closes it. */
-export function InfoTip({ label, children }: Props) {
+/** A toggletip behind an ⓘ or ⚠ glyph: opens on hover, focus or click; Escape, click-away or leaving it closes it. */
+export function InfoTip({ label, variant = 'info', children }: Props) {
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -65,12 +73,13 @@ export function InfoTip({ label, children }: Props) {
       <InfoButton
         ref={setAnchor}
         type="button"
+        look={variant}
         aria-label={label}
         aria-expanded={open}
         aria-controls={bubbleId}
         onClick={show}
       >
-        <InfoIcon />
+        {GLYPH[variant]}
       </InfoButton>
       <TipPopper
         open={open}

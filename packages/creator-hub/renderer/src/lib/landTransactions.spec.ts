@@ -242,6 +242,18 @@ describe('sendLandTransaction', () => {
       ]);
     });
 
+    it('should report the hash as soon as the relay returns it, before the receipt', async () => {
+      const order: string[] = [];
+      waitForReceiptMock.mockImplementation(async () => {
+        order.push('receipt');
+        return { status: 'success', to: getAddress(LAND_REGISTRY) };
+      });
+
+      await sendLandTransaction(tx, { onSent: hash => order.push(`sent ${hash}`) });
+
+      expect(order).toEqual([`sent ${HASH}`, 'receipt']);
+    });
+
     it('should wait for the receipt of the returned hash', async () => {
       await sendLandTransaction(tx, { receiptTimeoutMs: 1000 });
 

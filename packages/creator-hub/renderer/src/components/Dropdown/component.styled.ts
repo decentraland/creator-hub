@@ -70,8 +70,11 @@ const MenuSeparator = styled('li')(({ theme }) => ({
 
 const StyledMenu = styled(Menu)(menuSurfaceStyles, dropdownRowStyles);
 
-const Trigger = styled(IconButton)(({ theme }) => ({
+const Trigger = styled(IconButton, {
+  shouldForwardProp: prop => prop !== 'look',
+})<{ look: 'ghost' | 'filled' }>(({ theme, look }) => ({
   width: 40,
+  backgroundColor: look === 'filled' ? whiteTransparent.subtle : 'transparent',
   height: 40,
   borderRadius: 100,
   color: whiteTransparent.blurry,

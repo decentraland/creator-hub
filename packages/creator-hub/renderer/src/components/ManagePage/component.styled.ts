@@ -10,11 +10,25 @@ const Content = styled('div')(({ theme }) => ({
   paddingBottom: theme.spacing(12.5),
 }));
 
+const Panel = styled('div')({
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  '& > .Loader': { flex: 1, height: 'auto' },
+});
+
+const Page = styled('main')({
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+});
+
 const Title = styled(Typography)({
   display: 'flex',
   alignItems: 'center',
   minHeight: 56,
   color: neutral.softWhite,
+  '&[tabindex="-1"]:focus': { outline: 'none' },
 }) as typeof Typography;
 
-export { Content, Title };
+export { Content, Page, Panel, Title };

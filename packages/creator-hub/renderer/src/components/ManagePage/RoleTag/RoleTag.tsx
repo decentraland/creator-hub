@@ -8,14 +8,13 @@ import { Tag } from './RoleTag.styled';
 
 const TAG_BY_ROLE: Partial<Record<ManagedProject['role'], RoleTagVariant>> = {
   [RoleType.OPERATOR]: 'collaborator',
-  [RoleType.MANAGER]: 'manager',
+  [RoleType.MANAGER]: 'collaborator',
   [RoleType.TENANT]: 'tenant',
   [WorldRoleType.COLLABORATOR]: 'collaborator',
 };
 
 const LABELS = {
   collaborator: 'manage.cards.roles.collaborator',
-  manager: 'manage.cards.roles.manager',
   tenant: 'manage.cards.roles.tenant',
 } as const satisfies Record<RoleTagVariant, string>;
 

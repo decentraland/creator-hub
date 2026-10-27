@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -13,18 +14,20 @@ type CardProps = Parameters<typeof PlaceCard>[0];
 function renderCard(props: Partial<CardProps> = {}) {
   const onViewScenes = vi.fn();
   render(
-    <ThemeProvider theme={dark}>
-      <PlaceCard
-        name="Land Name"
-        place={{ kind: 'parcel', x: 96, y: 15 }}
-        status="published"
-        thumbnail="thumb.png"
-        scenesCount={1}
-        menuOptions={[{ text: 'Jump In', handler: () => {} }]}
-        onViewScenes={onViewScenes}
-        {...props}
-      />
-    </ThemeProvider>,
+    <MemoryRouter>
+      <ThemeProvider theme={dark}>
+        <PlaceCard
+          name="Land Name"
+          place={{ kind: 'parcel', x: 96, y: 15 }}
+          status="published"
+          thumbnail="thumb.png"
+          scenesCount={1}
+          menuOptions={[{ text: 'Jump In', handler: () => {} }]}
+          onViewScenes={onViewScenes}
+          {...props}
+        />
+      </ThemeProvider>
+    </MemoryRouter>,
   );
   return { onViewScenes };
 }
@@ -83,10 +86,10 @@ describe('PlaceCard', () => {
 
   describe('when the card links to a detail page', () => {
     it('should make the name its one link', () => {
-      renderCard({ href: '#/manage/land/96,15' });
+      renderCard({ to: '/manage/land/96%2C15/details' });
 
       expect(screen.getByRole('link', { name: 'Land Name' }).getAttribute('href')).toBe(
-        '#/manage/land/96,15',
+        '/manage/land/96%2C15/details',
       );
     });
   });

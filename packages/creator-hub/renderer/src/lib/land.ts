@@ -14,6 +14,8 @@ const MAX_POINTERS_PER_REQUEST = 100;
  * it runs to hundreds of kilobytes and outlasts the default timeout on a cold cache.
  */
 const ENTITIES_TIMEOUT_MS = 30_000;
+const MAX_ENTITY_IDS_PER_REQUEST = 50;
+const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 
 const SEPARATOR = ',';
 
@@ -67,6 +69,8 @@ const fromParcel = (parcel: ParcelFields, role: RoleType) => {
     y: parseInt(parcel.y, 10),
     owner: parcel.owner.address,
     operators: [],
+    updateOperator:
+      parcel.updateOperator && !isZero(parcel.updateOperator) ? parcel.updateOperator : null,
   };
 
   if (parcel.updateOperator) {
@@ -97,6 +101,8 @@ const fromEstate = (estate: EstateFields, role: RoleType) => {
     })),
     owner: estate.owner.address,
     operators: [],
+    updateOperator:
+      estate.updateOperator && !isZero(estate.updateOperator) ? estate.updateOperator : null,
   };
 
   if (estate.updateOperator) {
@@ -228,6 +234,8 @@ export type Land = {
   description: string | null;
   owner: string;
   operators: string[];
+  /** The token's own update operator (a collaborator), apart from managers; null when unset. */
+  updateOperator: string | null;
 };
 
 export type ParcelFields = {
@@ -550,6 +558,41 @@ export class Lands {
         .map(scene => [scene.id, scene]),
     );
     return [...byEntityId.values()];
+  }
+
+  /**
+   * Who deployed each scene entity, as a lowercased address keyed by entity id.
+   * Best effort: a chunk that fails leaves its ids out instead of failing the rest.
+   */
+  public async fetchDeployers(entityIds: string[]): Promise<Record<string, string>> {
+    const asked = new Set(entityIds);
+    const chunks = await Promise.allSettled(
+      chunk(entityIds, MAX_ENTITY_IDS_PER_REQUEST).map(async group => {
+        const query = group.map(id => `entityId=${encodeURIComponent(id)}`).join('&');
+        const result = await fetch(
+          `${this.PEER_URL}/content/deployments?${query}`,
+          undefined,
+          ENTITIES_TIMEOUT_MS,
+        );
+        if (!result.ok)
+          throw new Error(`Failed to read ${group.length} deployers: ${result.status}`);
+        const body = (await result.json()) as {
+          deployments?: Array<{ entityId?: unknown; deployedBy?: unknown }>;
+        };
+        return body.deployments ?? [];
+      }),
+    );
+
+    const deployers: Record<string, string> = {};
+    for (const outcome of chunks) {
+      if (outcome.status !== 'fulfilled') continue;
+      for (const { entityId, deployedBy } of outcome.value) {
+        if (typeof entityId !== 'string' || !asked.has(entityId)) continue;
+        if (typeof deployedBy !== 'string' || !ADDRESS.test(deployedBy)) continue;
+        deployers[entityId] = deployedBy.toLowerCase();
+      }
+    }
+    return deployers;
   }
 }
 

@@ -12,6 +12,7 @@ import {
   fetchAllDeployedWorlds,
   fetchWorldSceneCoords,
   getLandName,
+  getManagers,
   groupLandDeployments,
   selectLandProjects,
   selectWorldProjects,
@@ -514,6 +515,27 @@ describe('selectLandProjects', () => {
 
     it('should find it by the name the card shows', () => {
       expect(named({ searchQuery: 'parcel 40' })).toEqual(['Parcel 40,40']);
+    });
+  });
+});
+
+describe('getManagers', () => {
+  describe('when an account manages both registries', () => {
+    it('should list it once, as a full manager', () => {
+      expect(
+        getManagers([
+          { address: '0xa', type: LandType.PARCEL },
+          { address: '0xa', type: LandType.ESTATE },
+        ]),
+      ).toEqual([{ address: '0xa', state: 'full' }]);
+    });
+  });
+
+  describe('when an account manages only the LAND registry', () => {
+    it('should flag it as applying to LAND only', () => {
+      expect(getManagers([{ address: '0xb', type: LandType.PARCEL }])).toEqual([
+        { address: '0xb', state: 'land-only' },
+      ]);
     });
   });
 });

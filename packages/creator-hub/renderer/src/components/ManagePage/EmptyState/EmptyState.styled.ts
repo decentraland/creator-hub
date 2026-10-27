@@ -1,6 +1,6 @@
 import { dclColors, styled } from 'decentraland-ui2';
 
-import { ExternalLink } from './ExternalLink';
+import { ExternalLink } from '../../ExternalLink';
 
 const { neutral } = dclColors;
 

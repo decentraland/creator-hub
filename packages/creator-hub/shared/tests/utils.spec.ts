@@ -5,6 +5,7 @@ import {
   formatBytes,
   isValidFolderName,
   getBaseName,
+  pollUntil,
   retry,
 } from '../utils';
 
@@ -245,6 +246,26 @@ describe('retry', () => {
 
       expect(await retry(attempt, 3, 0)).toBe('ok');
       expect(attempt).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+describe('pollUntil', () => {
+  describe('when the check passes on a later attempt', () => {
+    it('should stop there and report success', async () => {
+      const check = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+      expect(await pollUntil(check, { intervalMs: 0, attempts: 5 })).toBe(true);
+      expect(check).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when the check never passes', () => {
+    it('should give up after the last attempt', async () => {
+      const check = vi.fn().mockResolvedValue(false);
+
+      expect(await pollUntil(check, { intervalMs: 0, attempts: 3 })).toBe(false);
+      expect(check).toHaveBeenCalledTimes(3);
     });
   });
 });

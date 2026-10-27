@@ -1,1 +1,1 @@
-export type RoleTagVariant = 'collaborator' | 'manager' | 'tenant';
+export type RoleTagVariant = 'collaborator' | 'tenant';

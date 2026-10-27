@@ -20,7 +20,9 @@ const Bubble = styled('div')(({ theme }) => ({
   textAlign: 'left',
 }));
 
-const InfoButton = styled('button')(({ theme }) => ({
+const InfoButton = styled('button', {
+  shouldForwardProp: prop => prop !== 'look',
+})<{ look: 'info' | 'warning' }>(({ theme, look }) => ({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -30,7 +32,7 @@ const InfoButton = styled('button')(({ theme }) => ({
   border: 'none',
   borderRadius: 100,
   backgroundColor: 'transparent',
-  color: neutral.softWhite,
+  color: look === 'warning' ? theme.palette.warning.main : neutral.softWhite,
   cursor: 'pointer',
   '& svg': { fontSize: theme.typography.pxToRem(18) },
   '&:hover, &[aria-expanded="true"]': {

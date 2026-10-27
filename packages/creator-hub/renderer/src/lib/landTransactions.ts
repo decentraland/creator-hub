@@ -160,7 +160,10 @@ export function buildSetUpdateManager(
 /** @throws RelayError when rejected, expired, or there is no identity. */
 export async function sendLandTransaction(
   tx: LandTransaction,
-  { receiptTimeoutMs = DEFAULT_RECEIPT_TIMEOUT_MS }: { receiptTimeoutMs?: number } = {},
+  {
+    receiptTimeoutMs = DEFAULT_RECEIPT_TIMEOUT_MS,
+    onSent,
+  }: { receiptTimeoutMs?: number; onSent?: (hash: Hex) => void } = {},
 ): Promise<LandTransactionResult> {
   const provider = new AuthServerProvider();
   await provider.request({
@@ -175,6 +178,7 @@ export async function sendLandTransaction(
   if (typeof hash !== 'string' || !isHash(hash)) {
     throw new Error(`Unexpected transaction hash: ${String(hash)}`);
   }
+  onSent?.(hash);
 
   const client = createPublicClient({ transport: http(config.get('RPC_URL')) });
   try {

@@ -37,6 +37,7 @@ export function LandProjectsList({ projects, onViewScenes, onTransfer }: Props) 
                   onUrlCopied,
                 })}
                 onViewScenes={onViewScenes}
+                to={`/manage/land/${encodeURIComponent(project.id)}/details`}
               />,
             ]
           : [],
