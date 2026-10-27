@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import { setNodeHidden, setNodeLocked } from '../../../redux/ui-designer';
 import type { UINode } from '../shared/tree-model';
@@ -8,16 +8,20 @@ import { NodeTree } from './NodeTree';
 
 const mocks = vi.hoisted(() => ({
   dispatch: vi.fn(),
+  remove: vi.fn(),
   tree: null as UINode | null,
   locked: {} as Record<number, boolean>,
   hidden: {} as Record<number, boolean>,
 }));
 
 vi.mock('../../Tree', () => {
-  type RowProps = { value: UINode; renderActionArea: (n: UINode) => React.ReactNode };
+  type RowProps = {
+    value: UINode;
+    renderActionArea: (n: UINode, tabIndex: 0 | -1) => React.ReactNode;
+  };
   const Row = ({ value, renderActionArea }: RowProps): JSX.Element => (
     <div>
-      {renderActionArea(value)}
+      {renderActionArea(value, 0)}
       {value.children.map(child => (
         <Row
           key={child.entity}
@@ -32,7 +36,7 @@ vi.mock('../../Tree', () => {
 
 vi.mock('../shared/useUINodeTree', () => ({ useUINodeTree: () => mocks.tree }));
 vi.mock('../shared/useUINodeActions', () => ({
-  useUINodeActions: () => ({ remove: vi.fn(), duplicate: vi.fn() }),
+  useUINodeActions: () => ({ remove: mocks.remove, duplicate: vi.fn() }),
 }));
 vi.mock('../code/store', () => ({
   addPlatformBranch: vi.fn(),
@@ -68,6 +72,7 @@ const node = (over: Partial<UINode> = {}): UINode =>
 describe('NodeTree row actions', () => {
   beforeEach(() => {
     mocks.dispatch.mockClear();
+    mocks.remove.mockClear();
     mocks.tree = node();
     mocks.locked = {};
     mocks.hidden = {};
@@ -84,9 +89,27 @@ describe('NodeTree row actions', () => {
       expect(eye.getAttribute('aria-pressed')).toBe('false');
     });
 
-    it('should render no delete button in the row', () => {
+    it('should render a delete button named after the node', () => {
       render(<NodeTree />);
-      expect(screen.queryByRole('button', { name: /^Delete / })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Delete Panel' }).tagName).toBe('BUTTON');
+    });
+
+    it('should put the actions in Tab order lock, eye, delete', () => {
+      render(<NodeTree />);
+      const area = screen.getByRole('button', { name: 'Lock Panel' }).closest('.action-area');
+      const buttons = within(area as HTMLElement).getAllByRole('button');
+      expect(buttons.map(b => b.getAttribute('aria-label'))).toEqual([
+        'Lock Panel',
+        'Hide Panel',
+        'Delete Panel',
+      ]);
+      buttons.forEach(b => expect(b.tabIndex).toBe(0));
+    });
+
+    it('should remove the node when delete is clicked', () => {
+      render(<NodeTree />);
+      fireEvent.click(screen.getByRole('button', { name: 'Delete Panel' }));
+      expect(mocks.remove).toHaveBeenCalledWith(7);
     });
 
     it('should lock the node when the lock is clicked', () => {
@@ -139,11 +162,12 @@ describe('NodeTree row actions', () => {
       expect(childArea().classList.contains('is-hidden-inherited')).toBe(true);
     });
 
-    it('should render two inert dots in place of the toggles', () => {
+    it('should render one inert dot, in place of the eye only', () => {
       render(<NodeTree />);
       const dots = childArea().querySelectorAll('.inherited-dot');
-      expect(dots).toHaveLength(2);
-      dots.forEach(dot => expect(dot.getAttribute('aria-hidden')).toBe('true'));
+      expect(dots).toHaveLength(1);
+      expect(dots[0].getAttribute('aria-hidden')).toBe('true');
+      expect(dots[0].nextElementSibling).toBe(screen.getByRole('button', { name: 'Hide Title' }));
     });
 
     it("should keep the child's own unpressed lock and eye", () => {

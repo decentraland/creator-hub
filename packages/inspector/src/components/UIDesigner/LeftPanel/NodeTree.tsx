@@ -32,7 +32,7 @@ import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 import { useUINodeActions } from '../shared/useUINodeActions';
 import { useUINodeTree } from '../shared/useUINodeTree';
 import { WIDGET_ICONS } from '../shared/widget-catalog';
-import { DesktopIcon, EyeIcon, EyeOffIcon, LockIcon, UnlockIcon } from '../icons';
+import { DesktopIcon, EyeIcon, EyeOffIcon, LockIcon, TrashIcon, UnlockIcon } from '../icons';
 import { addPlatformBranch, spliceAddWidget, spliceMove, spliceRenameNode } from '../code/store';
 import { PLATFORMS } from '../code/platform-convention';
 import type { CodeUINode } from '../code/types';
@@ -251,13 +251,6 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
       const isNodeHidden = !!hiddenNodes[id];
       const isInherited = !isNodeHidden && inheritedHidden.has(n.entity);
       const label = nodeLabelText(n);
-      const dot = (pressed: boolean) =>
-        isInherited && !pressed ? (
-          <span
-            className="inherited-dot"
-            aria-hidden="true"
-          />
-        ) : null;
       return (
         <div
           className={cx('action-area', {
@@ -265,10 +258,9 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
             'is-hidden-inherited': isInherited,
           })}
         >
-          {dot(isLocked)}
           <button
             type="button"
-            className="action-button ui-designer-toggle ui-designer-compact"
+            className="action-button ui-designer-toggle ui-designer-compact ui-designer-layer-toggle"
             aria-label={`Lock ${label}`}
             aria-pressed={isLocked}
             tabIndex={tabIndex}
@@ -279,10 +271,15 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
           >
             {isLocked ? <LockIcon /> : <UnlockIcon />}
           </button>
-          {dot(isNodeHidden)}
+          {isInherited ? (
+            <span
+              className="inherited-dot"
+              aria-hidden="true"
+            />
+          ) : null}
           <button
             type="button"
-            className="action-button ui-designer-toggle ui-designer-compact"
+            className="action-button ui-designer-toggle ui-designer-compact ui-designer-layer-toggle"
             aria-label={`Hide ${label}`}
             aria-pressed={isNodeHidden}
             tabIndex={tabIndex}
@@ -293,10 +290,22 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
           >
             {isNodeHidden ? <EyeOffIcon /> : <EyeIcon />}
           </button>
+          <button
+            type="button"
+            className="action-button ui-designer-icon-btn ui-designer-compact"
+            aria-label={`Delete ${label}`}
+            tabIndex={tabIndex}
+            onClick={e => {
+              e.stopPropagation();
+              handleRemove(n);
+            }}
+          >
+            <TrashIcon />
+          </button>
         </div>
       );
     },
-    [hiddenNodes, lockedNodes, inheritedHidden, dispatch],
+    [hiddenNodes, lockedNodes, inheritedHidden, dispatch, handleRemove],
   );
 
   const canDrag = useCallback(

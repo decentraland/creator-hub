@@ -56,6 +56,13 @@
 }
 
 .ui-designer-nodetree
+  .action-area.is-hidden-inherited
+  .action-button:not([aria-pressed="true"], .inherited-dot + *) {
+  display: flex;
+  visibility: hidden;
+}
+
+.ui-designer-nodetree
   .item:is(
     :hover,
     :focus-within:not(:focus:not(:focus-visible)):not(:has(:focus:not(:focus-visible)))

@@ -33,18 +33,6 @@
   visibility: visible;
 }
 
-.action-area .action-button .unlock-icon > path:last-of-type,
-.action-area .action-button .visible-icon > circle,
-.action-area .action-button .visible-icon > path,
-.action-area .action-button .invisible-icon > circle,
-.action-area .action-button .invisible-icon > path {
-  color: var(--base-02);
-}
-
-.Tree .item .selectable-area .action-area .action-button .invisible-icon > path {
-  color: var(--base-06);
-}
-
 .action-area .action-button {
   display: flex;
   align-items: center;
@@ -58,6 +46,15 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+.Hierarchy .action-area .action-button[aria-pressed] {
+  border-radius: 4px;
+  color: var(--palette-neutral-gray4);
+}
+
+.Hierarchy .action-area .action-button[aria-pressed]:hover {
+  background: var(--palette-whiteTransparent-subtle);
 }
 
 .Hierarchy .action-area .action-button:focus-visible {

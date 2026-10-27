@@ -434,7 +434,7 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
     {node.opaque ? null : (
       <button
         type="button"
-        className="ui-designer-panel-header-eye ui-designer-toggle ui-designer-compact"
+        className="ui-designer-panel-header-eye ui-designer-toggle ui-designer-compact ui-designer-layer-toggle"
         aria-pressed={hidden}
         aria-label={hidden ? 'Show this node on the canvas' : 'Hide this node on the canvas'}
         title={

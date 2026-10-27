@@ -87,6 +87,31 @@
   border: 1px solid var(--ui-designer-ctl-edge);
 }
 
+.ui-designer-toggle.ui-designer-layer-toggle {
+  color: var(--palette-neutral-gray4);
+}
+
+.ui-designer-toggle.ui-designer-layer-toggle::before {
+  background: none;
+  border-color: transparent;
+}
+
+.ui-designer-toggle.ui-designer-layer-toggle:hover:not(:disabled, [aria-disabled="true"])::before {
+  background: var(--palette-whiteTransparent-subtle);
+}
+
+.ui-designer-toggle.ui-designer-layer-toggle.ui-designer-mobile-hud-eye::before {
+  inset: 3px;
+}
+
+.ui-designer-toggle.ui-designer-layer-toggle.ui-designer-mobile-hud-eye[aria-pressed="true"] {
+  color: var(--palette-info-light);
+}
+
+.ui-designer-toggle.ui-designer-layer-toggle.ui-designer-mobile-hud-eye[aria-pressed="true"]::before {
+  background: var(--palette-system-blueDark3);
+}
+
 .ui-designer-segmented {
   --ui-designer-segmented-radius: var(--ui-designer-radius-field);
   display: flex;
