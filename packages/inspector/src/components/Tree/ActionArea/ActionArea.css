@@ -4,14 +4,32 @@
   align-items: center;
   justify-content: flex-end;
   column-gap: 4px;
-  visibility: hidden;
 }
 
 .Tree .item .selectable-area .action-area {
   padding-right: 4px;
 }
 
-.Tree .item:hover:not(:has(input)) .selectable-area .action-area .action-button {
+.Tree .action-area .action-button:not([aria-pressed="true"]) {
+  display: none;
+}
+
+.Tree
+  .action-area:not(.is-hidden-inherited):has([aria-pressed="true"])
+  .action-button:not([aria-pressed="true"]) {
+  display: flex;
+  visibility: hidden;
+}
+
+.Tree
+  .item:is(
+    :hover,
+    :focus-within:not(:focus:not(:focus-visible)):not(:has(:focus:not(:focus-visible)))
+  ):not(:has(input))
+  .selectable-area
+  .action-area
+  .action-button {
+  display: flex;
   visibility: visible;
 }
 
@@ -23,12 +41,6 @@
   color: var(--base-02);
 }
 
-.Tree .item:not(:has(input)) .selectable-area .action-area .action-button .lock-icon,
-.Tree .item:not(:has(input)) .selectable-area .action-area .action-button .invisible-icon {
-  visibility: visible;
-}
-
-.Tree .item .selectable-area:has(.action-area .action-button .invisible-icon),
 .Tree .item .selectable-area .action-area .action-button .invisible-icon > path {
   color: var(--base-06);
 }
@@ -37,4 +49,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.Hierarchy .action-area .action-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.Hierarchy .action-area .action-button:focus-visible {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: 1px;
 }

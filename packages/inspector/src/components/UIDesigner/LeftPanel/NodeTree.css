@@ -7,39 +7,90 @@
   font-size: 12px;
 }
 
-/* The shared Tree renders the type icon as an <svg> directly inside
-   .selectable-area, which the generic `.item > div > svg` margin rule in
-   Tree.css does not match — so the icon sits flush against the label. Add the
-   gap on the flex row (scoped to the UI Designer trees so the Hierarchy tree
-   is untouched). Also give each row a little breathing room. */
-.ui-designer-nodetree .selectable-area {
-  gap: var(--uid-space-2);
+.ui-designer-nodetree .Tree,
+.ui-designer-nodetree .Tree .item-area {
+  border-top-width: 0;
+  border-bottom-width: 0;
+}
+
+.ui-designer-nodetree .Tree .item {
+  padding: 0 10px 0 calc(10px + var(--tree-level, 0) * 30px);
 }
 
 .ui-designer-nodetree .item-area {
-  padding-top: 3px;
-  padding-bottom: 3px;
+  min-height: 30px;
+  gap: 10px;
+}
+
+.ui-designer-nodetree .selectable-area {
+  gap: 10px;
+}
+
+.ui-designer-nodetree .caret {
+  flex-basis: 10px;
+}
+
+.ui-designer-nodetree .caret:empty {
+  display: none;
 }
 
 .ui-designer-nodetree .selectable-area > svg {
-  color: rgba(255, 255, 255, 0.6);
+  width: 16px;
+  height: 16px;
+  color: currentColor;
 }
 
-/* A platform-variant branch for the device that isn't being edited: still listed
-   (clicking it switches device) but visibly not the live one. */
 .ui-designer-tree-branch.inactive {
   color: var(--sub-text);
   opacity: 0.55;
 }
 
-.ui-designer-nodetree .selectable-area:has(.action-area.is-hidden) {
-  color: var(--ui-designer-text-muted);
+.ui-designer-nodetree .Tree .item .selectable-area .action-area {
+  column-gap: 0;
+  padding-right: 0;
+  margin-right: -4px;
 }
 
-.ui-designer-nodetree .selectable-area:has(.action-area.is-hidden) > svg {
-  color: var(--ui-designer-glyph);
+.ui-designer-nodetree .action-area:not(:has([aria-pressed="true"], .inherited-dot)) {
+  display: none;
 }
 
-.ui-designer-nodetree .action-area .action-button[aria-pressed="true"] {
-  visibility: visible;
+.ui-designer-nodetree
+  .item:is(
+    :hover,
+    :focus-within:not(:focus:not(:focus-visible)):not(:has(:focus:not(:focus-visible)))
+  )
+  .action-area {
+  display: flex;
+}
+
+.ui-designer-nodetree
+  .item:has(> .item-area .action-area.is-hidden-inherited)
+  :is(.label, .caret, .selectable-area > svg) {
+  color: var(--palette-whiteTransparent-blurry);
+}
+
+.ui-designer-nodetree .inherited-dot {
+  display: inline-flex;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+}
+
+.ui-designer-nodetree .inherited-dot::before {
+  content: "";
+  width: 2px;
+  height: 2px;
+  border-radius: var(--shape-borderRadiusPill);
+  background: var(--palette-neutral-gray4);
+}
+
+.ui-designer-nodetree
+  .item:is(
+    :hover,
+    :focus-within:not(:focus:not(:focus-visible)):not(:has(:focus:not(:focus-visible)))
+  )
+  .inherited-dot {
+  display: none;
 }

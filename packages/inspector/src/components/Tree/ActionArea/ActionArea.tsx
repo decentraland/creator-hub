@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { IoEyeOutline as VisibleIcon, IoEyeOffOutline as InvisibleIcon } from 'react-icons/io5';
 import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
+import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
 
 import type { WithSdkProps } from '../../../hoc/withSdk';
@@ -14,23 +15,19 @@ import { Event, analytics } from '../../../lib/logic/analytics';
 
 type Props = {
   entity: Entity;
+  label: string;
+  tabIndex?: 0 | -1;
 };
 
 const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   const {
     components: { Lock, Hide },
   } = sdk;
-  const { entity } = props;
+  const { entity, label, tabIndex } = props;
 
-  // Subscribe to the components so the icon + toggle closure recompute when the
-  // component is added/removed (a plain useMemo over getOrNull never re-fires —
-  // its deps [entity, sdk] don't change on a component write — so the button
-  // would freeze on its first state and look dead after one click).
   const isEntityLocked = useHasComponent(entity, Lock);
   const isEntityHidden = useHasComponent(entity, Hide);
 
-  // lock/hide only write the component; dispatch flushes it to the engine. The row's
-  // selection handler used to do that as the click bubbled, which it no longer does.
   const lock = useCallback(
     (value: boolean) => {
       sdk.operations.lock(entity, value);
@@ -47,9 +44,6 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
     [entity, sdk],
   );
 
-  // The buttons sit inside the row's selectable area, whose click handler treats
-  // event.detail > 1 as a double-click that focuses the camera. Rapidly toggling an
-  // icon must not select the row, let alone fly the camera to it (#368).
   const handleToggleHideComponent = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
@@ -72,10 +66,12 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
 
   const toggleLockButton = useCallback(() => {
     return (
-      <div
+      <button
+        type="button"
         className="action-button"
-        role="button"
-        aria-label={isEntityLocked ? 'Unlock item' : 'Lock item'}
+        aria-label={`Lock ${label}`}
+        aria-pressed={isEntityLocked}
+        tabIndex={tabIndex}
         onClick={handleToggleLockComponent}
       >
         {isEntityLocked ? (
@@ -89,16 +85,18 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
             size={16}
           />
         )}
-      </div>
+      </button>
     );
-  }, [isEntityLocked, handleToggleLockComponent]);
+  }, [isEntityLocked, handleToggleLockComponent, label, tabIndex]);
 
   const toggleVisibleButton = useCallback(() => {
     return (
-      <div
+      <button
+        type="button"
         className="action-button"
-        role="button"
-        aria-label={isEntityHidden ? 'Show item' : 'Hide item'}
+        aria-label={`Hide ${label}`}
+        aria-pressed={isEntityHidden}
+        tabIndex={tabIndex}
         onClick={handleToggleHideComponent}
       >
         {isEntityHidden ? (
@@ -112,9 +110,9 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
             size={16}
           />
         )}
-      </div>
+      </button>
     );
-  }, [isEntityHidden, handleToggleHideComponent]);
+  }, [isEntityHidden, handleToggleHideComponent, label, tabIndex]);
 
   const isRoot = entity === ROOT;
   const isPlayer = entity === PLAYER;
@@ -151,7 +149,7 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   );
 
   return (
-    <div className="action-area">
+    <div className={cx('action-area', { 'is-hidden': isEntityHidden })}>
       {isEntity && toggleLockButton()}
       {isEntity && toggleVisibleButton()}
       {isPlayer &&

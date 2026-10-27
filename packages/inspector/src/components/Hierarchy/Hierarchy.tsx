@@ -7,6 +7,7 @@ import { CAMERA, PLAYER, ROOT, findParent } from '../../lib/sdk/tree';
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useTree } from '../../hooks/sdk/useTree';
 import { Tree } from '../Tree';
+import { TreeRoot } from '../Tree/TreeRoot';
 import { withSdk } from '../../hoc/withSdk';
 import './Hierarchy.css';
 import { useAppSelector } from '../../redux/hooks';
@@ -102,7 +103,6 @@ const Hierarchy = withSdk(({ sdk }) => {
 
   const searchTerm = search.trim().toLowerCase();
 
-  // Entities that match the search (or have a matching descendant), or null when not filtering
   const visibleEntities = useMemo(
     () => (searchTerm ? filterEntityTree([ROOT, CAMERA], getChildren, getLabel, searchTerm) : null),
     [searchTerm, getChildren, getLabel],
@@ -129,7 +129,6 @@ const Hierarchy = withSdk(({ sdk }) => {
 
   const handleSetOpen = useCallback(
     (entity: Entity, open: boolean) => {
-      // while filtering, matches are forced open; don't touch the persisted open state
       if (isFiltering) return;
       void setOpen(entity, open);
     },
@@ -233,7 +232,6 @@ const Hierarchy = withSdk(({ sdk }) => {
 
   const handleClearSearch = useCallback(() => {
     setSearch('');
-    // keep the current selection visible after the filter is removed
     const selected = selectedEntities.find(entity => entity !== ROOT && entity !== PLAYER);
     if (selected !== undefined) {
       void revealInTree(selected);
@@ -255,15 +253,12 @@ const Hierarchy = withSdk(({ sdk }) => {
   const revealAndScrollTo = useCallback(
     (entity: Entity) => {
       if (entity === ROOT || entity === PLAYER) return;
-      // while filtering every visible row is already revealed; don't touch persisted open state
       if (!isFiltering) void revealInTree(entity);
       setScrollTarget(entity);
     },
     [isFiltering, revealInTree],
   );
 
-  // auto-scroll to a newly selected entity (e.g. picked in the 3D viewport) so the
-  // selection is always visible in the tree
   const prevSelectedRef = useRef<Entity[]>([]);
   useEffect(() => {
     const prev = prevSelectedRef.current;
@@ -272,16 +267,12 @@ const Hierarchy = withSdk(({ sdk }) => {
     if (added.length === 1) revealAndScrollTo(added[0]);
   }, [selectedEntities, revealAndScrollTo]);
 
-  // scroll to the entity the camera focuses on (F key), even if it was already selected
   useEffect(() => {
     const handleFocusEntity = ({ entity }: { entity: Entity }) => revealAndScrollTo(entity);
     sdk.events.on('focusEntity', handleFocusEntity);
     return () => sdk.events.off('focusEntity', handleFocusEntity);
   }, [sdk, revealAndScrollTo]);
 
-  // scroll to the pending target once its row exists — collapsed ancestors may need to be
-  // re-opened first, and a filtered-out row only appears after the search is cleared;
-  // rows already fully in view are left alone so tree clicks never cause jumps
   useEffect(() => {
     if (scrollTarget === null) return;
     const container = treeRef.current;
@@ -351,17 +342,19 @@ const Hierarchy = withSdk(({ sdk }) => {
         ref={treeRef}
         onClick={handleBackgroundDeselect}
       >
-        {showPlayer && (
-          <PlayerTree onSelect={(entity, multiple) => void select(entity, !!multiple)} />
-        )}
-        <EntityTree
-          value={CAMERA}
-          {...props}
-        />
-        <EntityTree
-          value={ROOT}
-          {...props}
-        />
+        <TreeRoot label="Hierarchy">
+          {showPlayer && (
+            <PlayerTree onSelect={(entity, multiple) => void select(entity, !!multiple)} />
+          )}
+          <EntityTree
+            value={CAMERA}
+            {...props}
+          />
+          <EntityTree
+            value={ROOT}
+            {...props}
+          />
+        </TreeRoot>
       </div>
     </div>
   );

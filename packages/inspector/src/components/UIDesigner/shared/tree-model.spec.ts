@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   classifyNode,
+  collectInheritedHidden,
   matchesFilter,
   nodeLabelText,
   previewBoundText,
@@ -12,10 +13,9 @@ import type { UINode } from './tree-model';
 describe('visibleRange', () => {
   const node = (entity: number, children: UINode[] = []): UINode =>
     ({ entity, type: 'UiEntity', name: 'UiEntity', children }) as unknown as UINode;
-  // 1 ── 2 ── 3
-  //  │    └── 4
-  //  └── 5
-  const tree = node(1, [node(2, [node(3), node(4)]), node(5)]);
+  const branchWithTwoLeaves = node(2, [node(3), node(4)]);
+  const leaf = node(5);
+  const tree = node(1, [branchWithTwoLeaves, leaf]);
   const children = (n: UINode) => n.children;
   const allOpen = () => true;
   const e = (n: number) => n as unknown as UINode['entity'];
@@ -150,9 +150,7 @@ describe('when filtering the node tree by name', () => {
     expect(matchesFilter(tree, 'dropdown')).toBe(false);
   });
 
-  it('should label a plain UiEntity by its classified widget kind', () => {
-    // The raw parse-side name is "UiEntity" for both Container and Image, so the
-    // filter has to see the classified label or neither would ever match.
+  it('should label a plain UiEntity by its classified widget kind, not its raw parse-side name', () => {
     expect(nodeLabelText(node({ entity: 1 }))).toBe('Container');
   });
 
@@ -177,5 +175,35 @@ describe('when filtering the node tree by name', () => {
       children: [{ ...node({ entity: 2 }), componentRef: { name: 'Card', props: [] } } as UINode],
     });
     expect(nodeLabelText(wrapper)).toBe('Card');
+  });
+});
+
+describe('collectInheritedHidden', () => {
+  const node = (entity: number, children: UINode[] = []): UINode =>
+    ({ entity, type: 'UiEntity', name: 'UiEntity', children }) as unknown as UINode;
+  const branchWithTwoLeaves = node(2, [node(3), node(4)]);
+  const leaf = node(5);
+  const tree = node(1, [branchWithTwoLeaves, leaf]);
+
+  describe('when the root is hidden', () => {
+    it('should return every descendant but not the root itself', () => {
+      expect([...collectInheritedHidden(tree, { 1: true })].sort()).toEqual([2, 3, 4, 5]);
+    });
+  });
+
+  describe('when a mid node is hidden', () => {
+    it('should return only its subtree', () => {
+      expect([...collectInheritedHidden(tree, { 2: true })].sort()).toEqual([3, 4]);
+    });
+
+    it('should not return its visible sibling', () => {
+      expect(collectInheritedHidden(tree, { 2: true }).has(5 as never)).toBe(false);
+    });
+  });
+
+  describe('when nothing is hidden', () => {
+    it('should return an empty set', () => {
+      expect(collectInheritedHidden(tree, {}).size).toBe(0);
+    });
   });
 });
