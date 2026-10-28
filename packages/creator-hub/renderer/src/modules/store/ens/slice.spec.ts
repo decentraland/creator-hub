@@ -9,6 +9,7 @@ import { createTestStore } from '../../../../tests/utils/testStore';
 import { ens as ensContract, dclRegistrar } from './contracts';
 import { actions, fetchDCLNames } from './slice';
 import { resolveContent } from './resolveContent';
+import { ENS_RECORD_TIMEOUT_MS } from './ccipRead';
 
 vi.mock('./resolveContent', () => ({ resolveContent: vi.fn() }));
 
@@ -60,7 +61,7 @@ function fakeContracts(chainId: ChainId) {
   });
 }
 
-describe('fetchDCLNames', () => {
+describe('when fetching DCL names', () => {
   let store: ReturnType<typeof createTestStore>;
 
   beforeEach(() => {
@@ -82,17 +83,18 @@ describe('fetchDCLNames', () => {
     vi.restoreAllMocks();
   });
 
-  it('resolves the address record through the ENS Universal Resolver', async () => {
+  it('should resolve the address record through the ENS Universal Resolver', async () => {
     const [name] = await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
 
     expect(getEnsAddressMock).toHaveBeenCalledWith({
       name: 'name.dcl.eth',
       universalResolverAddress: UNIVERSAL_RESOLVER,
+      strict: true,
     });
     expect(name.ensAddressRecord).toBe(RECORD_ADDRESS);
   });
 
-  it("does not read the address record from a hardcoded resolver, only the name's current one", async () => {
+  it("should not read the address record from a hardcoded resolver, only the name's current one", async () => {
     await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
 
     const resolverAddresses = getContractMock.mock.calls
@@ -105,7 +107,7 @@ describe('fetchDCLNames', () => {
     expect(resolverAddresses).toEqual([]);
   });
 
-  it('uses the Universal Resolver of the configured chain', async () => {
+  it('should use the Universal Resolver of the configured chain', async () => {
     store.dispatch(actions.setChainId(ChainId.ETHEREUM_SEPOLIA));
     fakeContracts(ChainId.ETHEREUM_SEPOLIA);
 
@@ -119,7 +121,7 @@ describe('fetchDCLNames', () => {
     expect(mainnet.contracts.ensUniversalResolver.address).toBe(UNIVERSAL_RESOLVER);
   });
 
-  it('stores an empty record when the name has no address record', async () => {
+  it('should store an empty record when the name has no address record', async () => {
     getEnsAddressMock.mockResolvedValue(null);
 
     const [name] = await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
@@ -127,7 +129,7 @@ describe('fetchDCLNames', () => {
     expect(name.ensAddressRecord).toBe('');
   });
 
-  it('stores an empty record when the address record is the zero address', async () => {
+  it('should store an empty record when the address record is the zero address', async () => {
     getEnsAddressMock.mockResolvedValue(zeroAddress);
 
     const [name] = await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
@@ -135,7 +137,7 @@ describe('fetchDCLNames', () => {
     expect(name.ensAddressRecord).toBe('');
   });
 
-  it('keeps the name with an empty record when resolution fails', async () => {
+  it('should keep the name with an empty record when resolution fails', async () => {
     getEnsAddressMock.mockRejectedValue(new Error('RPC error'));
 
     const names = await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
@@ -143,6 +145,10 @@ describe('fetchDCLNames', () => {
     expect(names).toHaveLength(1);
     expect(names[0].ensAddressRecord).toBe('');
     expect(names[0].content).toBe(CONTENT_HASH);
+    expect(console.log).toHaveBeenCalledWith(
+      'Failed to fetch ens address record',
+      expect.any(Error),
+    );
   });
 
   it('should read the content hash through the Universal Resolver', async () => {
@@ -194,7 +200,35 @@ describe('fetchDCLNames', () => {
     });
   });
 
-  it('rejects for a chain without ENS contracts', async () => {
+  describe.each(['address', 'content'])('and the %s lookup never settles', record => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      if (record === 'address')
+        getEnsAddressMock.mockImplementationOnce(() => new Promise(() => {}));
+      else vi.mocked(resolveContent).mockImplementationOnce(() => new Promise(() => {}));
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+    it('should finish the list after the deadline and retain the other record', async () => {
+      const names = store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
+      await vi.advanceTimersByTimeAsync(ENS_RECORD_TIMEOUT_MS);
+      await expect(names).resolves.toEqual([
+        expect.objectContaining({
+          ensAddressRecord: record === 'address' ? '' : RECORD_ADDRESS,
+          content: record === 'content' ? '' : CONTENT_HASH,
+        }),
+      ]);
+      expect(console.log).toHaveBeenCalledWith(
+        record === 'address'
+          ? 'Failed to fetch ens address record'
+          : 'Failed to resolve ens content',
+        expect.any(Error),
+      );
+    });
+  });
+
+  it('should reject for a chain without ENS contracts', async () => {
     store.dispatch(actions.setChainId(ChainId.MATIC_MAINNET));
 
     await expect(store.dispatch(fetchDCLNames({ address: OWNER })).unwrap()).rejects.toThrow(

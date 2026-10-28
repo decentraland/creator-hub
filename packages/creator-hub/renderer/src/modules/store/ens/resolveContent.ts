@@ -41,7 +41,9 @@ export async function resolveContent(
           functionName: 'contenthash',
           args: [namehash(normalizedName)],
         }),
-        // ENSIP-21 public protocol marker, supported by viem 2.46.2. Avoid a private viem import.
+        // Coupled to viem 2.46.2 (package-lock.json): its localBatchGatewayUrl and error ABI.
+        // On viem upgrades, rerun resolveContent.ccip.spec.ts (ENSIP-21 batch wire format)
+        // and resolveContent.spec.ts (error classification). Avoid a private viem import.
         // https://docs.ens.domains/ensip/21/
         ['x-batch-gateway:true'],
       ],

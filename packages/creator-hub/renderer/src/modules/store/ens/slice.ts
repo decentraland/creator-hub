@@ -14,6 +14,7 @@ import { ENS as ensAbi, DCLRegistrar as dclRegistrarAbi } from './abis';
 import { ens as ensContract, ensUniversalResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
 import { resolveContent } from './resolveContent';
+import { withENSRecordClient } from './ccipRead';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
 
 const DEFAULT_CHAIN_ID: ChainId = Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
@@ -110,10 +111,13 @@ export const fetchDCLNames = createAsyncThunk(
           // Resolve through the name's current resolver (found by the ENS Universal Resolver,
           // with CCIP-Read for offchain names), not a hardcoded one it may no longer use.
           // `null` means the name has no address record.
-          const resolvedAddress = await provider.getEnsAddress({
-            name: subdomain,
-            universalResolverAddress,
-          });
+          const resolvedAddress = await withENSRecordClient(config.get('RPC_URL'), client =>
+            client.getEnsAddress({
+              name: subdomain,
+              universalResolverAddress,
+              strict: true,
+            }),
+          );
           ensAddressRecord =
             resolvedAddress && resolvedAddress !== zeroAddress ? resolvedAddress : '';
         } catch (error) {
@@ -122,7 +126,9 @@ export const fetchDCLNames = createAsyncThunk(
 
         try {
           // An ancestor can resolve the name even without a direct registry resolver.
-          const record = await resolveContent(provider, subdomain, universalResolverAddress);
+          const record = await withENSRecordClient(config.get('RPC_URL'), client =>
+            resolveContent(client, subdomain, universalResolverAddress),
+          );
           content = record.content;
           resolver = record.resolver ?? resolver;
         } catch (error) {
