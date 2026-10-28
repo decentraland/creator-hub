@@ -36,7 +36,7 @@
 }
 
 .Navbar .menu .menu-item:focus-visible {
-  outline: 2px solid var(--palette-system-blueLight1);
+  outline: 2px solid var(--palette-info-light);
   outline-offset: -2px;
 }
 
