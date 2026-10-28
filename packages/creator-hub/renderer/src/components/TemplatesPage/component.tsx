@@ -68,14 +68,6 @@ export function TemplatesPage() {
     [createProject],
   );
 
-  const handlePreviewTemplate = useCallback(
-    ({ playUrl }: Template) =>
-      () => {
-        if (playUrl) misc.openExternal(playUrl);
-      },
-    [],
-  );
-
   const handleViewCode = useCallback(
     ({ repo }: Template) =>
       () => {
@@ -93,24 +85,15 @@ export function TemplatesPage() {
     setSortBy(value);
   }, []);
 
-  const dropdownOptions = useCallback((template: Template) => {
-    const previewOption = template.playUrl
-      ? [
-          {
-            text: t('templates.actions.preview'),
-            handler: handlePreviewTemplate(template),
-          },
-        ]
-      : [];
-
-    return [
-      ...previewOption,
+  const dropdownOptions = useCallback(
+    (template: Template) => [
       {
         text: t('templates.actions.code'),
         handler: handleViewCode(template),
       },
-    ];
-  }, []);
+    ],
+    [],
+  );
 
   const count = templates.length + 1; // +1 for empty scene...
 

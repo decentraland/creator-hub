@@ -27,8 +27,6 @@ export type Template = {
   tags: string[];
   difficulty: Difficulty;
   repo: string;
-  /** Deep link into the explorer; shown as a "Preview" action when present. */
-  playUrl?: string;
   /** Card artwork; with a `videoUrl` it becomes the video's poster frame. */
   imageUrl?: string;
   /** Hover preview, muted and looped. */
@@ -54,8 +52,6 @@ export const TEMPLATES: Template[] = [
     tags: ['Event hosting', 'Video', 'Streaming', 'Community'],
     difficulty: Difficulty.EASY,
     repo: 'https://github.com/decentraland-scenes/Video-Streaming-Template',
-    playUrl:
-      'decentraland://?realm=https://sdk-team-cdn.decentraland.org/ipfs/goerli-plaza-main-latest&position=78,-3',
     imageUrl: videoStreamingImage,
     createdAt: '2023-04-19T20:54:05.256Z',
   },

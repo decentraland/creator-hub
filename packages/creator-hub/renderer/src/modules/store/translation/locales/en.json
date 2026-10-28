@@ -1022,7 +1022,6 @@
     "title": "Choose a Template",
     "results": "{count} {count, plural, one {template} other {templates}}",
     "actions": {
-      "preview": "Preview Template",
       "code": "View Code"
     },
     "new_scene": {
