@@ -23,6 +23,15 @@ import { sortTemplatesBy } from './utils';
 
 import './styles.css';
 
+// A chip that matches no template would only ever filter down to the Empty Scene card.
+const DIFFICULTY_FILTERS = (
+  [
+    { value: Difficulty.EASY, label: 'templates.filters.difficulty.easy' },
+    { value: Difficulty.INTERMEDIATE, label: 'templates.filters.difficulty.medium' },
+    { value: Difficulty.HARD, label: 'templates.filters.difficulty.hard' },
+  ] as const
+).filter(({ value }) => TEMPLATES.some($ => $.difficulty === value));
+
 export function TemplatesPage() {
   const navigate = useNavigate();
   const { createProject, getAvailableProject } = useWorkspace();
@@ -190,30 +199,17 @@ function Filters({
   return (
     <div className="filter-by">
       <Typography variant="body1">{t('templates.filters.title')}</Typography>
-      <Chip
-        label={t('templates.filters.difficulty.easy')}
-        color="default"
-        size="medium"
-        variant={value === Difficulty.EASY ? 'filled' : 'outlined'}
-        clickable
-        onClick={handleClick(Difficulty.EASY)}
-      />
-      <Chip
-        label={t('templates.filters.difficulty.medium')}
-        color="default"
-        size="medium"
-        variant={value === Difficulty.INTERMEDIATE ? 'filled' : 'outlined'}
-        clickable
-        onClick={handleClick(Difficulty.INTERMEDIATE)}
-      />
-      <Chip
-        label={t('templates.filters.difficulty.hard')}
-        color="default"
-        size="medium"
-        variant={value === Difficulty.HARD ? 'filled' : 'outlined'}
-        clickable
-        onClick={handleClick(Difficulty.HARD)}
-      />
+      {DIFFICULTY_FILTERS.map(filter => (
+        <Chip
+          key={filter.value}
+          label={t(filter.label)}
+          color="default"
+          size="medium"
+          variant={value === filter.value ? 'filled' : 'outlined'}
+          clickable
+          onClick={handleClick(filter.value)}
+        />
+      ))}
     </div>
   );
 }

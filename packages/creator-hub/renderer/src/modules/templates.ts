@@ -8,7 +8,6 @@ import partyPadImage from '/assets/templates/party-pad.webp';
 import partyPadVideo from '/assets/templates/party-pad.mp4';
 import spookyHouseImage from '/assets/templates/spooky-house.webp';
 import storeVideo from '/assets/templates/store.mp4';
-import streamStudioImage from '/assets/templates/stream-studio.webp';
 import streamStudioVideo from '/assets/templates/stream-studio.mp4';
 import streamingTheatreImage from '/assets/templates/streaming-theatre.webp';
 import teamHubImage from '/assets/templates/team-hub.webp';
@@ -30,8 +29,9 @@ export type Template = {
   repo: string;
   /** Deep link into the explorer; shown as a "Preview" action when present. */
   playUrl?: string;
+  /** Card artwork; with a `videoUrl` it becomes the video's poster frame. */
   imageUrl?: string;
-  /** Takes precedence over `imageUrl` on cards: it is the hover preview, muted and looped. */
+  /** Hover preview, muted and looped. */
   videoUrl?: string;
   /** ISO date; drives the "Newest" sort. */
   createdAt: string;
@@ -63,7 +63,7 @@ export const TEMPLATES: Template[] = [
     id: 'mansion',
     title: 'Mansion template',
     description:
-      "A large template scene with default art, meant for using in Worlds, 10 x 10 parcels. The scene doesn't include anything interactive.",
+      "A large template scene with default art, meant for using in Worlds, 20 x 20 parcels. The scene doesn't include anything interactive.",
     tags: ['Template', 'Event hosting'],
     difficulty: Difficulty.EASY,
     repo: 'https://github.com/decentraland-scenes/mansion-template-scene',
@@ -95,7 +95,7 @@ export const TEMPLATES: Template[] = [
     id: 'store',
     title: 'Store template scene',
     description:
-      "A large template scene with default art, meant for using in Worlds, 10 x 10 parcels. The scene doesn't include anything interactive.",
+      "A luxury boutique for Worlds, 8 x 8 parcels: a red-carpet entrance, a round showroom with a mannequin on a central stand, empty wall frames, sofas and plants. The scene doesn't include anything interactive.",
     tags: ['Template'],
     difficulty: Difficulty.EASY,
     repo: 'https://github.com/decentraland-scenes/store-template-scene',
@@ -157,7 +157,6 @@ export const TEMPLATES: Template[] = [
     tags: ['Event hosting', 'Streaming', 'Live', 'Interview', 'Show'],
     difficulty: Difficulty.EASY,
     repo: 'https://github.com/decentraland-scenes/stream-studio-template',
-    imageUrl: streamStudioImage,
     videoUrl: streamStudioVideo,
     createdAt: '2025-12-01T11:30:27.042Z',
   },

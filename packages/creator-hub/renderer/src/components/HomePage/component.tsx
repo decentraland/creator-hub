@@ -65,6 +65,7 @@ const HomeCard: React.FC<HomeCardProps> = React.memo(
         <video
           className="HomeCardThumbnail"
           src={videoUrl}
+          poster={imageUrl}
           muted
           loop
         />
