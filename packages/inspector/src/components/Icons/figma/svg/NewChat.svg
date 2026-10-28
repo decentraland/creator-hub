@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g transform="matrix(1 0 0 -1 0 24)">
+<g id="NewChat">
+<g id="Union">
+<path d="M12.4287 13.6855L15.8174 13.6855L15.8174 14.4697L12.4287 14.4697V17.5752H11.5742V14.4697H8.18652V13.6855H11.5742V10.5801H12.4287V13.6855Z" fill="white"/>
+<path d="M6 6.66699L20 6.66699C21.1 6.66699 22 7.49167 22 8.5V19.5C22 20.5083 21.1 21.333 20 21.333L4 21.333C2.90001 21.333 2.00001 20.5083 2 19.5L2 3L6 6.66699ZM4 18.583C4 19.0872 4.45 19.5 5 19.5L19 19.5C19.55 19.5 20 19.0872 20 18.583V9.41699C20 8.91283 19.55 8.5 19 8.5L6 8.5L4 6.66699L4 18.583Z" fill-rule="evenodd" clip-rule="evenodd" fill="white"/>
+</g>
+</g>
+</g>
+</svg>

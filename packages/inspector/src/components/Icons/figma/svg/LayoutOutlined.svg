@@ -1,0 +1,8 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="layout-outline">
+<mask id="stroke0_0_62" fill="white">
+<path d="M21 3V10.7734H13.2256L13.2165 3H21ZM10.7724 10.7734H3V3H10.7632L10.7724 10.7734ZM21 13.2266V21H13.2368L13.2276 13.2266H21ZM10.7836 21H3V13.2266H10.7744L10.7836 21Z"/>
+</mask>
+<path id="Vector" d="M21 3V10.7734H13.2256L13.2165 3H21ZM10.7724 10.7734H3V3H10.7632L10.7724 10.7734ZM21 13.2266V21H13.2368L13.2276 13.2266H21ZM10.7836 21H3V13.2266H10.7744L10.7836 21Z" stroke-width="2" stroke="white" mask="url(#stroke0_0_62)"/>
+</g>
+</svg>

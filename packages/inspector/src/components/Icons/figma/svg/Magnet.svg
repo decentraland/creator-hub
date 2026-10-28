@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(1.38 0.76)">
+<g id="Container">
+<mask id="stroke0_0_202" maskUnits="userSpaceOnUse" x="-0.500001" y="-0.878692" width="24" height="24" fill="black">
+<rect fill="white" x="-0.500001" y="-0.878692" width="24" height="24"/>
+<path d="M17.3492 8.98943L10.481 15.8574C9.48898 16.8494 7.88642 16.8494 6.89436 15.8574C5.9023 14.8653 5.9023 13.2628 6.89436 12.2707L13.7625 5.40274L10.481 2.12131L3.61292 8.98926C0.808442 11.7747 0.789364 16.3153 3.59385 19.1388C4.94839 20.4934 6.77989 21.2565 8.70678 21.2565C10.6146 21.2565 12.4461 20.4934 13.7816 19.1388L20.6497 12.2709L17.3492 8.98943Z"/>
+</mask>
+<path id="Vector" d="M17.3492 8.98943L10.481 15.8574C9.48898 16.8494 7.88642 16.8494 6.89436 15.8574C5.9023 14.8653 5.9023 13.2628 6.89436 12.2707L13.7625 5.40274L10.481 2.12131L3.61292 8.98926C0.808442 11.7747 0.789364 16.3153 3.59385 19.1388C4.94839 20.4934 6.77989 21.2565 8.70678 21.2565C10.6146 21.2565 12.4461 20.4934 13.7816 19.1388L20.6497 12.2709L17.3492 8.98943Z" stroke-width="3" stroke-linecap="round" stroke="white" mask="url(#stroke0_0_202)"/>
+<path id="Vector 476" d="M7.58691 4.91503L10.8171 8.14519" stroke-linejoin="round" stroke="white"/>
+<path id="Vector 477" d="M14.3901 11.6889L17.6203 14.9191" stroke-linejoin="round" stroke="white"/>
+</g>
+</g>
+</svg>

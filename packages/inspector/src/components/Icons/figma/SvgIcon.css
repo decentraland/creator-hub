@@ -1,0 +1,49 @@
+:where(.SvgIcon) {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+:where(.SvgIcon--fontSizeSmall) {
+  font-size: 16px;
+}
+
+:where(.SvgIcon--fontSizeMedium) {
+  font-size: 24px;
+}
+
+:where(.SvgIcon--fontSizeInherit) {
+  font-size: inherit;
+}
+
+:where(.SvgIcon--colorPrimary) {
+  color: var(--primary-main);
+}
+
+:where(.SvgIcon--colorSecondary) {
+  color: var(--white);
+}
+
+:where(.SvgIcon--colorError) {
+  color: var(--error-main);
+}
+
+:where(.SvgIcon--colorWarning) {
+  color: var(--warning-main);
+}
+
+:where(.SvgIcon--colorInfo) {
+  color: var(--palette-info-main);
+}
+
+:where(.SvgIcon--colorSuccess) {
+  color: var(--success-main);
+}
+
+:where(.SvgIcon--colorAction) {
+  color: var(--ui-designer-text-muted);
+}
+
+:where(.SvgIcon--colorDisabled) {
+  color: var(--palette-whiteTransparent-soft);
+}

@@ -63,6 +63,7 @@
   },
   "files": [
     "dist",
+    "icons",
     "public"
   ],
   "main": "dist/tooling-entrypoint.js",
@@ -76,6 +77,7 @@
     "copy-bevy-agent": "ts-node --project ./scripts/tsconfig.json ./scripts/copy-bevy-agent.ts",
     "copy-bevy-engine": "ts-node --project ./scripts/tsconfig.json ./scripts/copy-bevy-engine.ts",
     "copy-bin": "ts-node --project ./scripts/tsconfig.json ./scripts/copy-bin.ts",
+    "generate:icons": "ts-node --project ./scripts/tsconfig.json ./scripts/generate-icons.ts",
     "start": "npm run copy-bin && npm run copy-bevy-engine && npm run copy-bevy-agent && node ./build.js --watch",
     "test": "npm run test:unit",
     "test:e2e": "vitest run --config vitest.e2e.config.js",

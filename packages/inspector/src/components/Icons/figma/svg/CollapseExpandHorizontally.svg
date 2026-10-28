@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(2 2)">
+<g id="Expand/Retract">
+<g clip-path="url(#clip0_0_302)">
+<path id="Rectangle 5 (Stroke)" d="M7 0V20H-1V0H7ZM0 19H6V1H0V19Z" fill="white"/>
+<path id="&#194;&#160;&#226;&#134;&#144;" d="M11.7707 14L8 10L11.7707 6L12.5714 6.84124L10.173 9.38557H16V10.6144H10.173L12.5714 13.1546L11.7707 14Z" fill="white"/>
+</g>
+<rect x="0.5" y="0.5" width="19" height="19" rx="4.5" stroke="white"/>
+</g>
+<defs>
+<clipPath id="clip0_0_302">
+<rect width="20" height="20" rx="5" fill="white"/>
+</clipPath>
+</defs>
+</g>
+</svg>
