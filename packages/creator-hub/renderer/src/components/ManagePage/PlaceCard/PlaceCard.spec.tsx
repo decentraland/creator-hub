@@ -149,5 +149,44 @@ describe('PlaceCard', () => {
       expect(card.querySelector('h2')?.getAttribute('aria-hidden')).toBe('true');
       expect(screen.getByText('No Scene Published')).toBeTruthy();
     });
+
+    it('should make the domain line its one link to the detail page, keeping VIEW SCENES', () => {
+      const { onViewScenes } = renderCard({
+        name: 'plaza.dcl.eth',
+        place: { kind: 'world', domain: 'plaza.dcl.eth' },
+        status: 'unpublished',
+        scenesCount: 0,
+        to: '/manage/world/plaza.dcl.eth/details',
+      });
+
+      const links = screen.getAllByRole('link');
+      expect(links).toHaveLength(1);
+      expect(links[0].textContent).toBe('plaza.dcl.eth');
+      expect(links[0].getAttribute('href')).toBe('/manage/world/plaza.dcl.eth/details');
+      expect(screen.getByRole('article', { name: 'plaza.dcl.eth' })).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'View Scenes' }));
+      expect(onViewScenes).toHaveBeenCalled();
+    });
+
+    it('should not link the domain when it has nowhere to go', () => {
+      renderCard({
+        name: 'plaza.dcl.eth',
+        place: { kind: 'world', domain: 'plaza.dcl.eth' },
+        status: 'unpublished',
+        scenesCount: 0,
+      });
+
+      expect(screen.queryByRole('link')).toBeNull();
+    });
+  });
+
+  describe('when nothing is published on the LAND', () => {
+    it('should keep its name as its one link', () => {
+      renderCard({ status: 'unpublished', scenesCount: 0, to: '/manage/land/96%2C15/details' });
+
+      const links = screen.getAllByRole('link');
+      expect(links).toHaveLength(1);
+      expect(links[0].textContent).toBe('Land Name');
+    });
   });
 });

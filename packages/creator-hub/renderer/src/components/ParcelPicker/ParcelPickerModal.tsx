@@ -4,7 +4,7 @@ import { t } from '/@/modules/store/translation/utils';
 import type { AtlasScene } from '/@/components/WorldAtlas';
 
 import { DefaultModal, type ModalStep } from '../Modals/DefaultModal';
-import { WorldPermissionsAvatarWithInfo } from '../Modals/WorldPermissionsModal/WorldPermissionsAvatarWithInfo';
+import { AvatarWithInfo } from '../AvatarWithInfo';
 import { ParcelPickerMap } from './ParcelPickerMap';
 import { AtlasBlock, Count, Description } from './ParcelPicker.styled';
 
@@ -55,7 +55,7 @@ export function ParcelPickerModal({
         onClick: () => onConfirm([...selected]),
       }}
     >
-      <WorldPermissionsAvatarWithInfo value={walletAddress} />
+      <AvatarWithInfo value={walletAddress} />
       <Description>{t('parcel_picker.description')}</Description>
       <AtlasBlock>
         <ParcelPickerMap

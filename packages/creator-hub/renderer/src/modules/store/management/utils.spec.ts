@@ -6,6 +6,7 @@ import { FilterBy, ManagedProjectType, SortBy } from '../../../../../shared/type
 import type { Land, LandDeployment } from '../../../lib/land';
 import { LandType, RoleType } from '../../../lib/land';
 import type { WorldData, WorldScene, Worlds } from '../../../lib/worlds';
+import { WorldRoleType } from '../../../lib/worlds';
 import { en } from '../translation/locales';
 import { setCurrentLocale } from '../translation/utils';
 import {
@@ -14,6 +15,7 @@ import {
   getLandName,
   getManagers,
   groupLandDeployments,
+  resolveWorldProject,
   selectLandProjects,
   selectWorldProjects,
   toLandProject,
@@ -158,6 +160,21 @@ describe('toManagedProject', () => {
 
       expect(project.title).toBe('Plaza');
       expect(project.deployment?.title).toBe('Scene X');
+    });
+  });
+
+  describe('when someone else owns the World', () => {
+    it('should carry its owner', async () => {
+      const worldsApi = createWorldsApi();
+      worldsApi.fetchWorldScenes.mockResolvedValue({ scenes: [titledScene()], total: 1 });
+
+      const project = await toManagedProject(
+        worldsApi,
+        { ...world('plaza.dcl.eth'), owner: '0xother' },
+        TEST_ADDRESS,
+      );
+
+      expect(project.owner).toBe('0xother');
     });
   });
 
@@ -466,6 +483,49 @@ describe('toStreamOnlyProject', () => {
 
       expect(project.deployment).toBeUndefined();
       expect(project.access).toBe('stream');
+    });
+  });
+});
+
+describe('resolveWorldProject', () => {
+  const worldsApi = () => {
+    const api = createWorldsApi() as ReturnType<typeof createWorldsApi> & {
+      fetchWorldSettings: ReturnType<typeof vi.fn>;
+    };
+    api.fetchWorldSettings = vi.fn(async () => ({ title: 'Plaza' }));
+    api.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 1 });
+    return api;
+  };
+
+  describe('when the account holds the NAME', () => {
+    it('should resolve it as an owned, deployable World named from its Details', async () => {
+      const project = await resolveWorldProject(
+        worldsApi() as never,
+        { subdomain: 'plaza.dcl.eth', nftOwnerAddress: TEST_ADDRESS.toUpperCase() },
+        TEST_ADDRESS,
+      );
+
+      expect(project).toMatchObject({
+        id: 'plaza.dcl.eth',
+        role: WorldRoleType.OWNER,
+        owner: TEST_ADDRESS.toUpperCase(),
+        title: 'Plaza',
+      });
+      expect(project.access).toBeUndefined();
+      expect(project.deployment?.scenesCount).toBe(1);
+    });
+  });
+
+  describe('when someone else holds the NAME', () => {
+    it('should resolve it as a collaborator World', async () => {
+      const project = await resolveWorldProject(
+        worldsApi() as never,
+        { subdomain: 'plaza.dcl.eth', nftOwnerAddress: '0xother' },
+        TEST_ADDRESS,
+      );
+
+      expect(project.role).toBe(WorldRoleType.COLLABORATOR);
+      expect(project.owner).toBe('0xother');
     });
   });
 });

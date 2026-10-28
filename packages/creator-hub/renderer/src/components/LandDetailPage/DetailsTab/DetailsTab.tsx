@@ -1,5 +1,4 @@
 import { useCallback, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 import { useLandTxFlow } from '/@/hooks/useLandTxFlow';
 import type { Land } from '/@/lib/land';
@@ -8,7 +7,7 @@ import type { AppState } from '/@/modules/store';
 import { t } from '/@/modules/store/translation/utils';
 import type { ManagedProject } from '/shared/types/manage';
 
-import { Button } from '../../Button';
+import { useDraft } from '../../DetailShell';
 import { DefaultModal } from '../../Modals/DefaultModal';
 import { TxState, txCorner } from '../../Modals/TxState';
 import { FormTextInput } from '../../TextInput';
@@ -31,7 +30,6 @@ type Props = {
   land: Land;
   project: ManagedProject;
   mode: 'edit' | 'read';
-  actionsSlot: HTMLElement | null;
 };
 
 const INPUT = { single: FormTextInput, multi: DescriptionInput };
@@ -83,7 +81,7 @@ function DetailsField({
 }
 
 /** The LAND's name and description, saved together on-chain, and its Domain Name. */
-export function DetailsTab({ land, project, mode, actionsSlot }: Props) {
+export function DetailsTab({ land, project, mode }: Props) {
   const saved = { name: land.name, description: land.description ?? '' };
   const [name, setName] = useState(saved.name);
   const [description, setDescription] = useState(saved.description);
@@ -105,6 +103,7 @@ export function DetailsTab({ land, project, mode, actionsSlot }: Props) {
     setName(saved.name);
     setDescription(saved.description);
   };
+  useDraft({ dirty, valid, onCancel: discard, onSave: () => setConfirming(true) });
   const closeConfirm = () => {
     setConfirming(false);
     reset();
@@ -129,29 +128,6 @@ export function DetailsTab({ land, project, mode, actionsSlot }: Props) {
 
   return (
     <Root>
-      {actionsSlot &&
-        createPortal(
-          <>
-            {dirty && (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={discard}
-              >
-                {t('land_detail.discard')}
-              </Button>
-            )}
-            <Button
-              variant="contained"
-              color="primary"
-              disabled={!dirty || !valid}
-              onClick={() => setConfirming(true)}
-            >
-              {t('land_detail.save')}
-            </Button>
-          </>,
-          actionsSlot,
-        )}
       <DetailsField
         label={t('land_detail.details.name')}
         value={name}

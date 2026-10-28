@@ -231,6 +231,7 @@ export const fetchEmptyWorlds = createAsyncThunk(
           ens.nftOwnerAddress && ens.nftOwnerAddress?.toLowerCase() === address?.toLowerCase()
             ? WorldRoleType.OWNER
             : WorldRoleType.COLLABORATOR,
+        owner: ens.nftOwnerAddress || undefined,
         type: ManagedProjectType.WORLD,
         deployment: undefined,
       } as ManagedProject;

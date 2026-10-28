@@ -125,6 +125,7 @@ export async function toManagedProject(
       world.owner?.toLowerCase() === address.toLowerCase()
         ? WorldRoleType.OWNER
         : WorldRoleType.COLLABORATOR,
+    owner: world.owner || undefined,
     title: world.title || undefined,
     deployment: hasEverBeenDeployed
       ? {
@@ -170,6 +171,23 @@ export async function toStreamOnlyProject(
           scenesCount: scenes.total,
         }
       : undefined,
+  };
+}
+
+/** A World resolved by its NAME, for a detail page whose World the loaded Manage lists miss. */
+export async function resolveWorldProject(
+  worldsApi: Worlds,
+  ens: { subdomain: string; nftOwnerAddress: string },
+  address: string,
+): Promise<ManagedProject> {
+  const { access: _access, ...project } = await toStreamOnlyProject(worldsApi, ens.subdomain);
+  return {
+    ...project,
+    role:
+      ens.nftOwnerAddress.toLowerCase() === address.toLowerCase()
+        ? WorldRoleType.OWNER
+        : WorldRoleType.COLLABORATOR,
+    owner: ens.nftOwnerAddress,
   };
 }
 

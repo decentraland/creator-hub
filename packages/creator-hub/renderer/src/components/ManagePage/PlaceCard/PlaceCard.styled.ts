@@ -106,6 +106,16 @@ const PlaceRow = styled('div')(({ theme }) => ({
   lineHeight: 1.5,
   '& > svg': { fontSize: theme.typography.pxToRem(16) },
   '& > span + span': { marginLeft: theme.spacing(0.5) },
+  '& a': {
+    color: 'inherit',
+    textDecoration: 'none',
+    outline: 'none',
+  },
+  '& a::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+  },
 }));
 
 const Stats = styled('span')(({ theme }) => ({

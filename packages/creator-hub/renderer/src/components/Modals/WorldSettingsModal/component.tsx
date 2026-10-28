@@ -120,9 +120,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
             )}
             {activeTab !== WorldSettingsTab.LAYOUT && hasChanges && (
               <Box className="ActionsContainer">
-                <Typography className="UnsavedChangesText">
-                  {t('modal.world_settings.discard_confirmation')}
-                </Typography>
+                <Typography className="UnsavedChangesText">{t('detail_shell.unsaved')}</Typography>
                 <Button
                   variant="text"
                   color="secondary"

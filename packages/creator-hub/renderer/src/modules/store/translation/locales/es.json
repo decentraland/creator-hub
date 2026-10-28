@@ -660,7 +660,6 @@
           "label": "Varios"
         }
       },
-      "discard_confirmation": "Tienes cambios sin guardar. ¿Guardar antes de salir?",
       "actions": {
         "save": "Guardar",
         "discard": "Descartar"
@@ -1230,7 +1229,6 @@
     "not_found": "Esta LAND ya no está en tu lista.",
     "back_to_manage": "Volver a Gestionar",
     "save": "Guardar",
-    "discard": "Descartar",
     "details": {
       "name": "Nombre de la LAND",
       "name_placeholder": "Escribe aquí",
@@ -1318,6 +1316,19 @@
       "step_estates": "Estates",
       "land_only": "Solo aplica a LAND. Los Estates no se actualizaron."
     }
+  },
+  "world_detail": {
+    "tabs": {
+      "details": "Detalles",
+      "scenes": "Escenas",
+      "settings": "Configuración",
+      "collaborators": "Colaboradores"
+    },
+    "owner_you": "{name} (Tú)",
+    "not_found": "Este Mundo ya no está en tu lista."
+  },
+  "detail_shell": {
+    "unsaved": "Tienes cambios sin guardar. ¿Guardar antes de salir?"
   },
   "parcel_picker": {
     "title": "Actualizar parcelas",

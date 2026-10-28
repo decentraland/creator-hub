@@ -28,8 +28,8 @@ vi.mock('/@/components/WorldAtlas', async importOriginal => ({
     return null;
   },
 }));
-vi.mock('../Modals/WorldPermissionsModal/WorldPermissionsAvatarWithInfo', () => ({
-  WorldPermissionsAvatarWithInfo: ({ value }: { value: string }) => <span>{value}</span>,
+vi.mock('../AvatarWithInfo', () => ({
+  AvatarWithInfo: ({ value }: { value: string }) => <span>{value}</span>,
 }));
 
 const ALLOWED = ['0,0', '1,0', '3,0', '1,1'];

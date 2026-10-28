@@ -660,7 +660,6 @@
           "label": "其他"
         }
       },
-      "discard_confirmation": "您有未保存的更改。离开前保存？",
       "actions": {
         "save": "保存更改",
         "discard": "放弃"
@@ -1230,7 +1229,6 @@
     "not_found": "此 LAND 已不在你的列表中。",
     "back_to_manage": "返回管理",
     "save": "保存",
-    "discard": "放弃",
     "details": {
       "name": "LAND 名称",
       "name_placeholder": "在此输入",
@@ -1318,6 +1316,19 @@
       "step_estates": "Estates",
       "land_only": "仅适用于 LAND。Estates 未更新。"
     }
+  },
+  "world_detail": {
+    "tabs": {
+      "details": "详情",
+      "scenes": "场景",
+      "settings": "设置",
+      "collaborators": "协作者"
+    },
+    "owner_you": "{name}（你）",
+    "not_found": "此世界已不在你的列表中。"
+  },
+  "detail_shell": {
+    "unsaved": "您有未保存的更改。离开前保存？"
   },
   "parcel_picker": {
     "title": "更新地块",

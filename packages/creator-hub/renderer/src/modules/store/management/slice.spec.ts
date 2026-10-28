@@ -1385,6 +1385,7 @@ describe('management slice', () => {
 
       const collabWorld = result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth');
       expect(collabWorld?.role).toBe('collaborator');
+      expect(collabWorld?.owner).toBe('0xotheraddress');
     });
 
     it('should set deployment to undefined for unpublished worlds', async () => {

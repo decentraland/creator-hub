@@ -22,9 +22,31 @@ const Header = styled('div')(({ theme }) => ({
 const HeaderActions = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(1.25),
+  gap: theme.spacing(2.5),
   flexShrink: 0,
   paddingTop: theme.spacing(1),
+  '&&&&&&& .MuiButton-root': {
+    height: 40,
+    margin: 0,
+    padding: theme.spacing(1, 3),
+    borderRadius: 12,
+    fontSize: theme.typography.pxToRem(16),
+    fontWeight: 600,
+    lineHeight: theme.typography.pxToRem(24),
+    textTransform: 'uppercase',
+  },
+}));
+
+const OwnerName = styled('span')(({ theme }) => ({
+  color: neutral.softWhite,
+  fontSize: theme.typography.pxToRem(16),
+  fontWeight: 600,
+}));
+
+const SelfOwner = styled('span')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.75),
 }));
 
 const Page = styled('main')({
@@ -54,10 +76,18 @@ const RoleRow = styled('dl')(({ theme }) => ({
     alignItems: 'center',
     margin: 0,
   },
+  '& > div:last-child': { gap: theme.spacing(1.25) },
+  '& dd .Avatar': { gap: theme.spacing(0.75) },
+  '& dd .MuiAvatar-root': {
+    boxSizing: 'border-box',
+    width: 28,
+    height: 28,
+    border: `2px solid ${whiteTransparent.soft}`,
+  },
   '& dd .Avatar .Paragraph span': {
     color: neutral.softWhite,
     fontSize: theme.typography.pxToRem(16),
-    fontWeight: 400,
+    fontWeight: 600,
   },
 }));
 
@@ -91,4 +121,4 @@ const TitleBlock = styled('div')(({ theme }) => ({
   minWidth: 0,
 }));
 
-export { Content, Header, HeaderActions, Page, RoleRow, TabBar, TitleBlock };
+export { Content, Header, HeaderActions, OwnerName, Page, RoleRow, SelfOwner, TabBar, TitleBlock };

@@ -14,7 +14,7 @@ export type Props = {
   subtitle?: string;
 };
 
-export const WorldPermissionsAvatarWithInfo: React.FC<Props> = React.memo(
+export const AvatarWithInfo: React.FC<Props> = React.memo(
   ({ value, isLoading: externalIsLoading, size = 'small', icon, name, subtitle }) => {
     const skipProfile = !!icon;
     const { avatar, isLoading: isFetchingProfile } = useProfile(skipProfile ? '' : value);

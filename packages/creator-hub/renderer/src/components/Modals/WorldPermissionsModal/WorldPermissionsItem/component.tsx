@@ -8,7 +8,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { Dropdown } from '/@/components/Dropdown';
 import { Select } from '/@/components/Select';
 import { WorldRoleType } from '/@/lib/worlds';
-import { WorldPermissionsAvatarWithInfo } from '../WorldPermissionsAvatarWithInfo';
+import { AvatarWithInfo } from '../../../AvatarWithInfo';
 import type { AccessItemProps, BaseProps, CollaboratorsItemProps, DeploymentOption } from './types';
 import { DeploymentOptionValue } from './types';
 import './styles.css';
@@ -18,7 +18,7 @@ export const WorldPermissionsItem: React.FC<BaseProps> = React.memo(
     return (
       <Box className={cx('WorldPermissionsItem', className)}>
         <Row className="WorldPermissionsItemInfo">
-          <WorldPermissionsAvatarWithInfo
+          <AvatarWithInfo
             value={walletAddress}
             icon={icon}
             name={name}
@@ -41,7 +41,7 @@ export const WorldPermissionsItem: React.FC<BaseProps> = React.memo(
 export const WorldPermissionsLoadingItem: React.FC = React.memo(() => {
   return (
     <Row className="WorldPermissionsItem">
-      <WorldPermissionsAvatarWithInfo
+      <AvatarWithInfo
         isLoading
         value=""
       />

@@ -5,7 +5,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { type AtlasScene } from '/@/components/WorldAtlas';
 import { Button } from '/@/components/Button';
 import { Loader } from '/@/components/Loader';
-import { WorldPermissionsAvatarWithInfo } from '../Modals/WorldPermissionsModal/WorldPermissionsAvatarWithInfo';
+import { AvatarWithInfo } from '../AvatarWithInfo';
 import { ParcelPickerMap } from './ParcelPickerMap';
 import './styles.css';
 
@@ -75,7 +75,7 @@ export const ParcelPicker: React.FC<Props> = React.memo(
           selected={selectedParcels}
           onChange={handleChange}
           floatingContent={
-            <WorldPermissionsAvatarWithInfo
+            <AvatarWithInfo
               value={walletAddress}
               size="tiny"
             />

@@ -661,7 +661,6 @@
           "label": "Misc."
         }
       },
-      "discard_confirmation": "You have unsaved changes. Save before leaving?",
       "actions": {
         "save": "Save changes",
         "discard": "Discard"
@@ -1231,7 +1230,6 @@
     "not_found": "This LAND is no longer in your list.",
     "back_to_manage": "Back to Manage",
     "save": "Save",
-    "discard": "Discard",
     "details": {
       "name": "Land Name",
       "name_placeholder": "Write here",
@@ -1319,6 +1317,19 @@
       "step_estates": "Estates",
       "land_only": "Applies to LAND only. Estates not updated."
     }
+  },
+  "world_detail": {
+    "tabs": {
+      "details": "Details",
+      "scenes": "Scenes",
+      "settings": "Settings",
+      "collaborators": "Collaborators"
+    },
+    "owner_you": "{name} (You)",
+    "not_found": "This World is no longer in your list."
+  },
+  "detail_shell": {
+    "unsaved": "You have unsaved changes. Save before leaving?"
   },
   "parcel_picker": {
     "title": "Update parcels",

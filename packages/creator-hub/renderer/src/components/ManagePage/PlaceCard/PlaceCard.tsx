@@ -53,20 +53,21 @@ export function PlaceCard(props: Props) {
   const nameId = useId();
   const domain = props.place.kind === 'world' ? props.place.domain : undefined;
   const isNameHidden = !!domain && props.status === 'unpublished';
+  const linkTo = (label: string) => (props.to ? <Link to={props.to}>{label}</Link> : label);
 
   return (
     <Card {...(isNameHidden ? { 'aria-label': domain } : { 'aria-labelledby': nameId })}>
       <TextBlock>
         <PlaceRow>
           {domain ? <PlaceGlyph /> : <MapPinIcon />}
-          <span>{placeText(props.place)}</span>
+          <span>{isNameHidden ? linkTo(placeText(props.place)) : placeText(props.place)}</span>
           {props.role && <RoleTag variant={props.role} />}
         </PlaceRow>
         <Name
           id={nameId}
           aria-hidden={isNameHidden || undefined}
         >
-          {props.to ? <Link to={props.to}>{props.name}</Link> : props.name}
+          {isNameHidden ? props.name : linkTo(props.name)}
         </Name>
       </TextBlock>
       <Kebab>

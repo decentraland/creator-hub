@@ -35,10 +35,10 @@ const ESTATE_REGISTRY = '0x959e104e1a4db6317fa58f8295f586e1a978c297';
 /** Which LAND fixtures (spec-00 P1–P5) the subgraph answers with. */
 export type LandFixture = 'P1' | 'P2' | 'P3' | 'P4' | 'P5';
 /**
- * Which World fixtures (W1 published owner, W2 empty collaborator, W3 published stream-only)
- * the Worlds sources answer with.
+ * Which World fixtures (W1 published owner, W2 empty collaborator, W3 published stream-only,
+ * W4 published deploy collaborator) the Worlds sources answer with.
  */
-export type WorldFixture = 'W1' | 'W2' | 'W3';
+export type WorldFixture = 'W1' | 'W2' | 'W3' | 'W4';
 
 type RelayOutcome = 'sign' | 'reject' | 'expire';
 
@@ -230,6 +230,17 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
         },
       ]
     : [];
+  if (worlds.includes('W4')) {
+    published.push({
+      name: 'fixture-team.dcl.eth',
+      owner: OTHER_OWNER,
+      title: 'Fixture Team',
+      description: '',
+      thumbnailHash: 'thumb-grey',
+      lastDeployedAt: '2026-09-01T00:00:00Z',
+      deployedScenes: 1,
+    });
+  }
   return [
     {
       match: 'subgraph.decentraland.org/land-manager',
@@ -323,6 +334,15 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
       },
     },
     { match: '/world/fixture-two.dcl.eth/scenes', body: { scenes: [], total: 0 } },
+    {
+      match: '/world/fixture-team.dcl.eth/scenes',
+      body: {
+        scenes: [
+          { entityId: 'w4', parcels: ['0,0'], entity: { metadata: { scene: { base: '0,0' } } } },
+        ],
+        total: 1,
+      },
+    },
     {
       match: '/world/fixture-stream.dcl.eth/scenes',
       body: {
