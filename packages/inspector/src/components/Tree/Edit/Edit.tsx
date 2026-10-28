@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { Modal } from '../../Modal';
 import { Button } from '../../Button';
 import { Input } from '../../Input';
-import { Props } from './types';
+import type { Props } from './types';
 
 import './Edit.css';
 
@@ -42,14 +42,17 @@ export function Edit({ value, onCancel, onSubmit }: Props) {
         </span>
         <div>
           <Button
-            type="danger"
-            size="big"
+            variant="contained"
+            color="primary"
+            size="large"
             onClick={handleConfirm}
           >
             Yes
           </Button>
           <Button
-            size="big"
+            variant="contained"
+            color="secondary"
+            size="large"
             onClick={handleModalClose}
           >
             Cancel

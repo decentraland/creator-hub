@@ -151,14 +151,17 @@ const CreateCustomAsset: React.FC = () => {
             />
             <div className="button-container">
               <Button
-                size="big"
-                type="danger"
+                variant="contained"
+                color="primary"
+                size="large"
                 onClick={handleCreate}
               >
                 Create
               </Button>
               <Button
-                size="big"
+                variant="contained"
+                color="secondary"
+                size="large"
                 onClick={handleCancel}
               >
                 Cancel

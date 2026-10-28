@@ -4,7 +4,7 @@ import cx from 'classnames';
 import { Button } from '../../Button';
 import './RemoveButton.css';
 
-interface RemoveButtonProps extends HTMLAttributes<HTMLButtonElement> {
+interface RemoveButtonProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'color'> {
   variant?: 'default' | 'add';
 }
 
@@ -24,6 +24,9 @@ const RemoveButton = memo<RemoveButtonProps>(props => {
 
   return (
     <Button
+      variant="contained"
+      color="secondary"
+      size="small"
       className={cx('RemoveButton', className)}
       {...rest}
     >

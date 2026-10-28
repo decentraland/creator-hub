@@ -21,6 +21,9 @@ const AdminListRow: React.FC<React.PropsWithChildren<Props>> = ({ index, onRemov
     <div className="RightMenu">
       <MoreOptionsMenu>
         <Button
+          variant="contained"
+          color="secondary"
+          size="small"
           className="RemoveButton"
           onClick={onRemove}
         >
