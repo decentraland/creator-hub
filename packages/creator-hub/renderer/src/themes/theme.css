@@ -14,6 +14,16 @@
   --gradient-flare: linear-gradient(135deg, #ff2d55, #ffbc5b);
   --gradient-cerise: linear-gradient(135deg, #ff2d55, #c640cd);
   --gradient-amin: linear-gradient(135deg, #c640cd, #691fa9);
+  --gradient-skybox: linear-gradient(
+    90deg,
+    #361c75 0%,
+    #534787 12.5%,
+    #bf8dac 27.2%,
+    #46cee9 44.5%,
+    #af80a9 70.3%,
+    #714171 86.5%,
+    #40247b 100%
+  );
   --purple-banner: #691ea9;
   --lavender: #c640cd;
   --purplish-grey-raw: 115, 110, 125;
