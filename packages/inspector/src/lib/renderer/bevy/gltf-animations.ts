@@ -1,5 +1,7 @@
 import type { Entity } from '@dcl/ecs';
 
+import { parseGltfJson } from '../../utils/gltf';
+
 /**
  * Animation clip names of an entity's GLTF, read from the model FILE itself.
  *
@@ -15,38 +17,11 @@ import type { Entity } from '@dcl/ecs';
  * gltf_container.rs): an unnamed animation is `Animation<index>`, zero-based.
  */
 
-const GLB_MAGIC = 0x46546c67;
-const GLB_CHUNK_JSON = 0x4e4f534a;
-const GLB_HEADER_BYTES = 12;
-const GLB_CHUNK_HEADER_BYTES = 8;
-
-interface GltfJson {
-  animations?: { name?: unknown }[];
-}
-
-function readGlbJsonChunk(bytes: Uint8Array): string | null {
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  if (bytes.byteLength < GLB_HEADER_BYTES + GLB_CHUNK_HEADER_BYTES) return null;
-  if (view.getUint32(0, true) !== GLB_MAGIC) return null;
-  const chunkLength = view.getUint32(GLB_HEADER_BYTES, true);
-  const chunkType = view.getUint32(GLB_HEADER_BYTES + 4, true);
-  if (chunkType !== GLB_CHUNK_JSON) return null;
-  const start = GLB_HEADER_BYTES + GLB_CHUNK_HEADER_BYTES;
-  const end = Math.min(start + chunkLength, bytes.byteLength);
-  return new TextDecoder().decode(bytes.subarray(start, end));
-}
-
 /** The animation clip names declared by a GLB or glTF file; [] when it has none or is malformed. */
 export function parseGltfAnimationNames(bytes: Uint8Array): string[] {
-  const json = readGlbJsonChunk(bytes) ?? new TextDecoder().decode(bytes);
-  let gltf: GltfJson;
-  try {
-    gltf = JSON.parse(json) as GltfJson;
-  } catch {
-    return [];
-  }
-  if (!Array.isArray(gltf.animations)) return [];
-  return gltf.animations.map((animation, index) =>
+  const animations = parseGltfJson(bytes)?.animations as { name?: unknown }[] | undefined;
+  if (!Array.isArray(animations)) return [];
+  return animations.map((animation, index) =>
     typeof animation?.name === 'string' && animation.name !== ''
       ? animation.name
       : `Animation${index}`,
