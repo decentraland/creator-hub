@@ -4,14 +4,14 @@
   padding-bottom: 32px;
 }
 
-.AnalyticsDetailPage .Header {
+.AnalyticsDetailPage .DetailHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
 }
 
-.AnalyticsDetailPage .Header .Title {
+.AnalyticsDetailPage .DetailHeader .Title {
   margin: 0;
 }
 
