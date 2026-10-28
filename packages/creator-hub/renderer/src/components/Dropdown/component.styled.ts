@@ -7,9 +7,8 @@ const menuSurfaceStyles = ({ theme }: { theme: Theme }) => ({
   '& .MuiPaper-root': {
     backgroundColor: 'var(--palette-neutral-onyx)',
     backgroundImage: 'none',
-    border: `1px solid ${whiteTransparent.subtle}`,
     borderRadius: '12px',
-    boxShadow: `0 4px 8px ${blackTransparent.blurry}`,
+    boxShadow: `inset 0 0 0 1px ${whiteTransparent.subtle}, 0 4px 8px ${blackTransparent.blurry}`,
   },
   '& .MuiMenu-list': {
     padding: theme.spacing(1.25, 0),
@@ -25,6 +24,16 @@ const menuSurfaceStyles = ({ theme }: { theme: Theme }) => ({
       flexShrink: 0,
       fontSize: theme.typography.pxToRem(16),
     },
+    '& .MenuGlyph': {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: '0 0 16px',
+      width: 16,
+      height: 16,
+      overflow: 'visible',
+    },
+    '&.Danger .MenuGlyph svg': { color: theme.palette.error.main },
     '&.Mui-focusVisible': {
       backgroundColor: 'transparent',
     },
@@ -49,7 +58,7 @@ const menuSurfaceStyles = ({ theme }: { theme: Theme }) => ({
 });
 
 const dropdownRowStyles = ({ theme }: { theme: Theme }) => ({
-  '& .MuiMenu-list': {
+  '& .MuiPaper-root': {
     minWidth: '230px',
   },
   '& .MuiMenuItem-root': {
@@ -63,7 +72,7 @@ const dropdownRowStyles = ({ theme }: { theme: Theme }) => ({
 
 const MenuSeparator = styled('li')(({ theme }) => ({
   height: 1,
-  margin: theme.spacing(1.25),
+  margin: theme.spacing(1.25, 0),
   backgroundColor: whiteTransparent.subtle,
   listStyle: 'none',
 }));

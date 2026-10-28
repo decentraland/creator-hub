@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
+import { useTheme } from 'decentraland-ui2';
 
 import { Dropdown } from '.';
 
@@ -70,6 +71,54 @@ describe('Dropdown', () => {
     it('should leave the page scrollbar alone, so the layout around the card does not reflow', () => {
       expect(document.body.style.overflow).not.toBe('hidden');
       expect(document.body.style.paddingRight).toBe('');
+    });
+  });
+
+  describe('when an option has the danger tone', () => {
+    const computedColor = (color: string) => {
+      const probe = document.createElement('div');
+      probe.style.color = color;
+      document.body.appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    };
+
+    let errorMain = '';
+    const ThemeProbe = () => {
+      errorMain = useTheme().palette.error.main;
+      return null;
+    };
+
+    beforeEach(() => {
+      render(
+        <ThemeProvider theme={dark}>
+          <ThemeProbe />
+          <Dropdown
+            label="Options for Plaza"
+            options={[
+              { text: 'Copy URL', handler: () => {}, icon: <svg data-testid="plain-glyph" /> },
+              {
+                text: 'Unpublish',
+                handler: () => {},
+                tone: 'danger',
+                icon: <svg data-testid="danger-glyph" />,
+              },
+            ]}
+          />
+        </ThemeProvider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Options for Plaza' }));
+    });
+
+    it('should paint only its glyph in the error colour, leaving its label and the other glyphs alone', () => {
+      const error = computedColor(errorMain);
+
+      expect(getComputedStyle(screen.getByTestId('danger-glyph')).color).toBe(error);
+      expect(getComputedStyle(screen.getByTestId('plain-glyph')).color).not.toBe(error);
+      expect(getComputedStyle(screen.getByRole('menuitem', { name: 'Unpublish' })).color).not.toBe(
+        error,
+      );
     });
   });
 

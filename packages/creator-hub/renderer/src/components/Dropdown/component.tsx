@@ -58,11 +58,12 @@ function Dropdown(props: Props) {
         {options.flatMap(option => [
           <MenuItem
             key={option.text}
+            className={option.tone === 'danger' ? 'Danger' : undefined}
             selected={option.text === selected}
             onClick={e => handleSelect(e, option)}
             disabled={option.disabled}
           >
-            {option.icon}
+            {option.icon && <span className="MenuGlyph">{option.icon}</span>}
             {option.text}
           </MenuItem>,
           ...(option.divider

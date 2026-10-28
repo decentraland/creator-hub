@@ -4,6 +4,7 @@ export type Option = {
   disabled?: boolean;
   icon?: React.ReactNode;
   divider?: boolean;
+  tone?: 'default' | 'danger';
 };
 
 export type Props = {

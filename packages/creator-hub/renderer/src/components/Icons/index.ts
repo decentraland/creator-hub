@@ -14,5 +14,7 @@ export { LinkIcon } from './LinkIcon';
 export { MapPinIcon } from './MapPinIcon';
 export { PublicIcon } from './PublicIcon';
 export { ScenesIcon } from './ScenesIcon';
+export { StorageIcon } from './StorageIcon';
 export { SwapIcon } from './SwapIcon';
+export { UnpublishIcon } from './UnpublishIcon';
 export { WarningCircleIcon } from './WarningCircleIcon';

@@ -1,12 +1,11 @@
 import { misc } from '#preload';
 import { RoleType } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
-import { getSceneJumpInUrl, SUBMIT_EVENT_URL } from '/@/modules/utils';
+import { CREATE_EVENT_URL, getSceneJumpInUrl } from '/@/modules/utils';
 import type { ManagedProject } from '/shared/types/manage';
 
 import type { Option } from '../../Dropdown';
-import { CalendarIcon, LinkIcon, SwapIcon } from '../../Icons';
-import { JumpInGlyph } from './LandProjectsList.styled';
+import { CalendarGlyph, JumpInGlyph, LinkGlyph, SwapGlyph } from '../cardMenuGlyphs.styled';
 
 type Actions = {
   onTransfer: () => void;
@@ -30,7 +29,7 @@ export function getLandMenuOptions(project: ManagedProject, actions: Actions): O
     },
     {
       text: t('manage.cards.menu.copy_url'),
-      icon: <LinkIcon />,
+      icon: <LinkGlyph />,
       handler: () => {
         void misc.copyToClipboard(url);
         actions.onUrlCopied();
@@ -38,14 +37,14 @@ export function getLandMenuOptions(project: ManagedProject, actions: Actions): O
     },
     {
       text: t('manage.cards.menu.create_event'),
-      icon: <CalendarIcon />,
-      handler: () => misc.openExternal(SUBMIT_EVENT_URL),
+      icon: <CalendarGlyph />,
+      handler: () => misc.openExternal(CREATE_EVENT_URL),
       divider: isOwner,
     },
   ];
   if (!isOwner) return options;
   return [
     ...options,
-    { text: t('manage.cards.menu.transfer'), icon: <SwapIcon />, handler: actions.onTransfer },
+    { text: t('manage.cards.menu.transfer'), icon: <SwapGlyph />, handler: actions.onTransfer },
   ];
 }

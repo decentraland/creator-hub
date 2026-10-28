@@ -2,10 +2,10 @@ import { flatten } from 'flat';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { misc } from '#preload';
+import { config } from '/@/config';
 import { RoleType } from '/@/lib/land';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
-import { SUBMIT_EVENT_URL } from '/@/modules/utils';
 import { ManagedProjectType, type ManagedProject } from '/shared/types/manage';
 
 import { getLandMenuOptions } from './landMenu';
@@ -95,12 +95,15 @@ describe('getLandMenuOptions', () => {
   });
 
   describe('when creating an event', () => {
-    it('should open the Events submit form, with nothing prefilled', () => {
+    it("should open What's On's new-hangout page from the env config, with nothing prefilled", () => {
       const { options } = menu(parcel(RoleType.TENANT));
 
       pick(options, 'Create Event').handler();
 
-      expect(misc.openExternal).toHaveBeenCalledWith(SUBMIT_EVENT_URL);
+      expect(config.get('CREATE_EVENT_URL')).toMatch(
+        /^https:\/\/decentraland\.(org|zone)\/whats-on\/new-hangout$/,
+      );
+      expect(misc.openExternal).toHaveBeenCalledWith(config.get('CREATE_EVENT_URL'));
     });
   });
 });
