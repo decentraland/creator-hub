@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
 import { Box, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
-import { coordsToId } from '/@/lib/land';
-import { MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/world';
-import { WorldAtlas, WorldAtlasColors, type AtlasScene } from '/@/components/WorldAtlas';
+import { type AtlasScene } from '/@/components/WorldAtlas';
 import { Button } from '/@/components/Button';
 import { Loader } from '/@/components/Loader';
 import { WorldPermissionsAvatarWithInfo } from '../Modals/WorldPermissionsModal/WorldPermissionsAvatarWithInfo';
+import { ParcelPickerMap } from './ParcelPickerMap';
 import './styles.css';
 
 type Props = {
@@ -22,8 +21,6 @@ type Props = {
   onGoBack: () => void;
 };
 
-const RIGHT_MOUSE_BUTTON_CLICK = 2;
-
 /** Picks parcels on the atlas by click or drag, optionally limited to an allowed set. */
 export const ParcelPicker: React.FC<Props> = React.memo(
   ({
@@ -37,12 +34,7 @@ export const ParcelPicker: React.FC<Props> = React.memo(
     onConfirm,
     onGoBack,
   }) => {
-    const [selectedParcels, setSelectedParcels] = useState<Set<string>>(new Set());
-    const [dragStatus, setDragStatus] = useState<{
-      isSelectingParcels: boolean;
-      from: { x: number; y: number } | null;
-      to: { x: number; y: number } | null;
-    }>({ isSelectingParcels: false, from: null, to: null });
+    const [selectedParcels, setSelectedParcels] = useState<Set<string>>(initialParcels);
     const hasChangesRef = useRef(false);
 
     useEffect(() => {
@@ -50,116 +42,15 @@ export const ParcelPicker: React.FC<Props> = React.memo(
       hasChangesRef.current = false;
     }, [initialParcels]);
 
-    const isWithinWorldBounds = useCallback(
-      (x: number, y: number) =>
-        allowed
-          ? allowed.has(coordsToId(x, y))
-          : x >= MIN_COORDINATE &&
-            x <= MAX_COORDINATE &&
-            y >= MIN_COORDINATE &&
-            y <= MAX_COORDINATE,
-      [allowed],
-    );
+    const handleChange = (next: Set<string>) => {
+      setSelectedParcels(next);
+      hasChangesRef.current = true;
+    };
 
-    const isHoverSelectedParcel = useCallback(
-      (x: number, y: number) => {
-        return (
-          dragStatus.isSelectingParcels &&
-          dragStatus.from &&
-          dragStatus.to &&
-          x >= Math.min(dragStatus.from.x, dragStatus.to.x) &&
-          x <= Math.max(dragStatus.from.x, dragStatus.to.x) &&
-          y >= Math.min(dragStatus.from.y, dragStatus.to.y) &&
-          y <= Math.max(dragStatus.from.y, dragStatus.to.y)
-        );
-      },
-      [dragStatus],
-    );
-
-    const selectedParcelsLayer = useCallback(
-      (x: number, y: number) => {
-        const key = coordsToId(x, y);
-        return selectedParcels.has(key) || isHoverSelectedParcel(x, y)
-          ? { color: WorldAtlasColors.selectedParcel, scale: 1.0 }
-          : null;
-      },
-      [selectedParcels, isHoverSelectedParcel],
-    );
-
-    const selectedParcelsStrokeLayer = useCallback(
-      (x: number, y: number) => {
-        const key = coordsToId(x, y);
-        return selectedParcels.has(key) || isHoverSelectedParcel(x, y)
-          ? { color: WorldAtlasColors.selectedStroke, scale: 1.3 }
-          : null;
-      },
-      [selectedParcels, isHoverSelectedParcel],
-    );
-
-    const handleMouseDownClickType = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.button !== RIGHT_MOUSE_BUTTON_CLICK) {
-        setDragStatus(prevDragStatus => ({ ...prevDragStatus, isSelectingParcels: true }));
-      }
-    }, []);
-
-    const handleParcelClick = useCallback(
-      (x: number, y: number) => {
-        if (!isWithinWorldBounds(x, y)) return;
-
-        const key = coordsToId(x, y);
-        setSelectedParcels(prevParcels => {
-          const nextParcels = new Set(prevParcels);
-          if (nextParcels.has(key)) nextParcels.delete(key);
-          else nextParcels.add(key);
-          return nextParcels;
-        });
-        hasChangesRef.current = true;
-      },
-      [isWithinWorldBounds],
-    );
-
-    const handleMouseDown = useCallback((x: number, y: number) => {
-      setDragStatus(prevDragStatus => ({ ...prevDragStatus, from: { x, y }, to: { x, y } }));
-    }, []);
-
-    const handleParcelHover = useCallback(
-      (x: number, y: number) => {
-        if (dragStatus.isSelectingParcels && dragStatus.from && isWithinWorldBounds(x, y)) {
-          setDragStatus(prevDragStatus => ({ ...prevDragStatus, to: { x, y } }));
-        }
-      },
-      [dragStatus, isWithinWorldBounds],
-    );
-
-    const handleMouseUp = useCallback(() => {
-      if (
-        dragStatus.isSelectingParcels &&
-        dragStatus.from &&
-        dragStatus.to &&
-        (dragStatus.from.x !== dragStatus.to.x || dragStatus.from.y !== dragStatus.to.y)
-      ) {
-        const minX = Math.min(dragStatus.from.x, dragStatus.to.x);
-        const maxX = Math.max(dragStatus.from.x, dragStatus.to.x);
-        const minY = Math.min(dragStatus.from.y, dragStatus.to.y);
-        const maxY = Math.max(dragStatus.from.y, dragStatus.to.y);
-        setSelectedParcels(prevParcels => {
-          const nextParcels = new Set(prevParcels);
-          for (let px = minX; px <= maxX; px++) {
-            for (let py = minY; py <= maxY; py++) {
-              if (isWithinWorldBounds(px, py)) nextParcels.add(coordsToId(px, py));
-            }
-          }
-          return nextParcels;
-        });
-        hasChangesRef.current = true;
-      }
-      setDragStatus({ isSelectingParcels: false, from: null, to: null });
-    }, [dragStatus, isWithinWorldBounds]);
-
-    const handleReset = useCallback(() => {
+    const handleReset = () => {
       setSelectedParcels(initialParcels);
       hasChangesRef.current = false;
-    }, [initialParcels]);
+    };
 
     return (
       <Box className="ParcelPicker">
@@ -176,24 +67,19 @@ export const ParcelPicker: React.FC<Props> = React.memo(
         >
           {description}
         </Typography>
-        <WorldAtlas
+        <ParcelPickerMap
+          label={title}
           height={350}
-          worldScenes={scenes}
-          showWorldSize={false}
+          scenes={scenes}
+          allowed={allowed}
+          selected={selectedParcels}
+          onChange={handleChange}
           floatingContent={
             <WorldPermissionsAvatarWithInfo
               value={walletAddress}
               size="tiny"
             />
           }
-          isDraggable={!dragStatus.isSelectingParcels}
-          layers={[selectedParcelsStrokeLayer, selectedParcelsLayer]}
-          onClick={handleParcelClick}
-          onHover={handleParcelHover}
-          onMouseDownEvent={handleMouseDownClickType}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
         />
         <Box className="ActionsContainer">
           {hasChangesRef.current && (
@@ -206,7 +92,7 @@ export const ParcelPicker: React.FC<Props> = React.memo(
             </Button>
           )}
           <Typography>
-            {t('modal.world_permissions.parcels.parcels_count', {
+            {t('parcel_picker.count', {
               count: selectedParcels.size || '',
             })}
           </Typography>

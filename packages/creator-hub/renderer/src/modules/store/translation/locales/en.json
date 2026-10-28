@@ -849,8 +849,6 @@
       },
       "parcels": {
         "title": "Custom Coordinates",
-        "description": "Click individual tiles to include/exclude them in the layout.",
-        "parcels_count": "Selecting {count} {count, plural, one {parcel} other {parcels}}",
         "actions": {
           "discard": "Discard",
           "confirm": "Confirm"
@@ -1306,7 +1304,6 @@
       "remove_body": "They will no longer be able to publish on this LAND.",
       "remove_confirm": "Remove",
       "remove_many_title": "Remove {count} collaborators?",
-      "parcels_title": "Update parcels",
       "parcels_body": "<b>{name}</b> will publish on {count, plural, one {# parcel} other {# parcels}}.",
       "empty": "No collaborators yet"
     },
@@ -1322,6 +1319,16 @@
       "step_estates": "Estates",
       "land_only": "Applies to LAND only. Estates not updated."
     }
+  },
+  "parcel_picker": {
+    "title": "Update parcels",
+    "description": "Click individual tiles to include/exclude them in the layout.",
+    "count": "Selecting {count} {count, plural, one {parcel} other {parcels}}",
+    "map_label": "Parcels for {name}",
+    "map_instructions": "Use the arrow keys to move between parcels and Space or Enter to select or deselect one.",
+    "map_role": "parcel map",
+    "cursor_selected": "Parcel {x},{y}, selected",
+    "cursor_not_selected": "Parcel {x},{y}, not selected"
   },
   "analytics": {
     "header": {

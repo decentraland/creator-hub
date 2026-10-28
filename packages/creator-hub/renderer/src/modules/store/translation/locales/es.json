@@ -848,8 +848,6 @@
       },
       "parcels": {
         "title": "Coordenadas Personalizadas",
-        "description": "Haz clic en las celdas individuales para incluirlas/excluirlas del diseño.",
-        "parcels_count": "Seleccionando {count} {count, plural, one {parcela} other {parcelas}}",
         "actions": {
           "discard": "Descartar",
           "confirm": "Confirmar"
@@ -1305,7 +1303,6 @@
       "remove_body": "Ya no podrá publicar en esta LAND.",
       "remove_confirm": "Eliminar",
       "remove_many_title": "¿Eliminar {count} colaboradores?",
-      "parcels_title": "Actualizar parcelas",
       "parcels_body": "<b>{name}</b> publicará en {count, plural, one {# parcela} other {# parcelas}}.",
       "empty": "Aún no hay colaboradores"
     },
@@ -1321,6 +1318,16 @@
       "step_estates": "Estates",
       "land_only": "Solo aplica a LAND. Los Estates no se actualizaron."
     }
+  },
+  "parcel_picker": {
+    "title": "Actualizar parcelas",
+    "description": "Haz clic en las celdas individuales para incluirlas/excluirlas del diseño.",
+    "count": "Seleccionando {count} {count, plural, one {parcela} other {parcelas}}",
+    "map_label": "Parcelas de {name}",
+    "map_instructions": "Usa las flechas para moverte entre parcelas y Espacio o Intro para seleccionar o deseleccionar una.",
+    "map_role": "mapa de parcelas",
+    "cursor_selected": "Parcela {x},{y}, seleccionada",
+    "cursor_not_selected": "Parcela {x},{y}, no seleccionada"
   },
   "analytics": {
     "header": {

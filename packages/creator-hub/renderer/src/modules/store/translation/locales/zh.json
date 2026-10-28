@@ -848,8 +848,6 @@
       },
       "parcels": {
         "title": "自定义坐标",
-        "description": "点击单个瓷砖以将它们包含/排除在布局中。",
-        "parcels_count": "正在选择 {count} 个{count, plural, one {地块} other {地块}}",
         "actions": {
           "discard": "丢弃",
           "confirm": "确认"
@@ -1305,7 +1303,6 @@
       "remove_body": "对方将无法再在此 LAND 上发布。",
       "remove_confirm": "移除",
       "remove_many_title": "移除 {count} 个协作者？",
-      "parcels_title": "更新地块",
       "parcels_body": "<b>{name}</b> 将在 {count} 个地块上发布。",
       "empty": "还没有协作者"
     },
@@ -1321,6 +1318,16 @@
       "step_estates": "Estates",
       "land_only": "仅适用于 LAND。Estates 未更新。"
     }
+  },
+  "parcel_picker": {
+    "title": "更新地块",
+    "description": "点击单个瓷砖以将它们包含/排除在布局中。",
+    "count": "正在选择 {count} 个{count, plural, one {地块} other {地块}}",
+    "map_label": "{name} 的地块",
+    "map_instructions": "使用方向键在地块之间移动，按空格键或回车键选择或取消选择地块。",
+    "map_role": "地块地图",
+    "cursor_selected": "地块 {x},{y}，已选择",
+    "cursor_not_selected": "地块 {x},{y}，未选择"
   },
   "analytics": {
     "header": {

@@ -1,7 +1,7 @@
 import { Provider } from 'react-redux';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { flatten } from 'flat';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import { useAuth } from '/@/hooks/useAuth';
@@ -24,10 +24,13 @@ vi.mock('/@/modules/store/ens/names', async importOriginal => ({
   ...(await importOriginal<object>()),
   resolveNameOwner: vi.fn(),
 }));
-vi.mock('../../ParcelPicker', () => ({
-  ParcelPicker: ({ onConfirm }: { onConfirm: (parcels: string[]) => void }) => (
-    <button onClick={() => onConfirm(['0,0'])}>pick parcel 0,0</button>
-  ),
+let clickParcel: (x: number, y: number) => void = () => {};
+vi.mock('/@/components/WorldAtlas', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  WorldAtlas: ({ onClick }: { onClick: (x: number, y: number) => void }) => {
+    clickParcel = onClick;
+    return null;
+  },
 }));
 vi.mock('../../Modals/WorldPermissionsModal/WorldPermissionsAvatarWithInfo', () => ({
   WorldPermissionsAvatarWithInfo: ({ value }: { value: string }) => <span>{value}</span>,
@@ -159,10 +162,46 @@ describe('CollaboratorsTab', () => {
 
       fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Parcels for Fixture Ben' }));
       fireEvent.click(screen.getByRole('option', { name: 'Custom parcels…' }));
-      fireEvent.click(screen.getByRole('button', { name: 'pick parcel 0,0' }));
+      act(() => clickParcel(0, 0));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
-      expect(screen.getByRole('dialog').textContent).toContain(
+      expect(screen.getAllByRole('dialog')).toHaveLength(1);
+      expect(screen.getByRole('dialog', { name: 'Update parcels' }).textContent).toContain(
         'Fixture Ben will publish on 1 parcel.',
+      );
+    });
+  });
+
+  describe('when Custom parcels… is chosen for an estate-wide collaborator', () => {
+    const estate: Land = {
+      ...base,
+      id: '501',
+      type: LandType.ESTATE,
+      parcels: [
+        { x: 0, y: 0, id: '0,0', updateOperator: null },
+        { x: 1, y: 0, id: '1,0', updateOperator: null },
+      ],
+      updateOperator: ANA,
+    };
+
+    beforeEach(() => {
+      renderTab(estate);
+      fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Parcels for 0x0000…00a1' }));
+      fireEvent.click(screen.getByRole('option', { name: 'Custom parcels…' }));
+    });
+
+    it('should open the picker as a dialog over the list, with CONFIRM blocked until a parcel is picked', () => {
+      expect(screen.getByRole('dialog', { name: 'Update parcels' })).toBeTruthy();
+      expect(screen.getByText('Deploy Permissions in')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Confirm' })).toHaveProperty('disabled', true);
+    });
+
+    it('should close on CANCEL and keep the row on All Parcels', async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(screen.getByRole('combobox', { name: 'Parcels for 0x0000…00a1' }).textContent).toBe(
+        'All Parcels',
       );
     });
   });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MenuItem } from 'decentraland-ui2';
 
 import type { Land } from '/@/lib/land';
@@ -11,8 +11,13 @@ import { menuSurfaceStyles } from '../../Dropdown/component.styled';
 import { ChevronDownIcon } from '../../Icons';
 import { EmptyState } from '../../ManagePage/EmptyState';
 import { selectRowStyles } from '../../ManagePage/ViewBar/ViewBar.styled';
-import { ParcelPicker } from '../../ParcelPicker';
-import { AccessChangeModal, landIn, type AccessRequest } from '../access/AccessChangeModal';
+import { ParcelPickerModal } from '../../ParcelPicker';
+import {
+  AccessChangeModal,
+  landIn,
+  useAccessChange,
+  type AccessRequest,
+} from '../access/AccessChangeModal';
 import { AccessRow } from '../access/AccessRow';
 import { AddRecipient } from '../access/AddRecipient';
 import {
@@ -34,6 +39,50 @@ const bold = (chunks: string) => <b>{chunks}</b>;
 const coordKey = ({ x, y }: Coord) => `${x},${y}`;
 
 type Props = { land: Land; landName: string };
+
+type PickParcelsProps = {
+  land: Land;
+  collaborator: Collaborator;
+  name: string;
+  request: AccessRequest | null;
+  onConfirm: (parcels: Coord[]) => void;
+  onClose: () => void;
+};
+
+function PickParcels({ land, collaborator, name, request, onConfirm, onClose }: PickParcelsProps) {
+  const next = useAccessChange(request, onClose);
+  const estateParcels = useMemo(() => (land.parcels ?? []).map(parcel => parcel.id), [land]);
+  const scenes = useMemo(() => [{ parcels: estateParcels }], [estateParcels]);
+  const allowed = useMemo(() => new Set(estateParcels), [estateParcels]);
+  const initialParcels = useMemo(
+    () =>
+      new Set(
+        collaborator.scope.kind === 'parcels' ? collaborator.scope.parcels.map(coordKey) : [],
+      ),
+    [collaborator],
+  );
+
+  return (
+    <ParcelPickerModal
+      open
+      name={name}
+      walletAddress={collaborator.address}
+      scenes={scenes}
+      initialParcels={initialParcels}
+      allowed={allowed}
+      onCancel={onClose}
+      onConfirm={parcels =>
+        onConfirm(
+          parcels.map(id => {
+            const [x, y] = id.split(',').map(Number);
+            return { x, y };
+          }),
+        )
+      }
+      next={next}
+    />
+  );
+}
 
 /** The LAND's per-token update operators: add, replace, remove and, on estates, per-parcel scopes. */
 export function CollaboratorsTab({ land, landName }: Props) {
@@ -103,43 +152,14 @@ export function CollaboratorsTab({ land, landName }: Props) {
       },
     );
 
+  const close = () => {
+    setRequest(null);
+    setPicking(null);
+    setSelected(new Set());
+  };
+
   const rowKey = (row: Collaborator) => `${row.address}-${row.scope.kind}`;
   const selectedRows = collaborators.filter(row => selected.has(rowKey(row)));
-
-  if (picking && picking.scope.kind === 'parcels') {
-    const previous = picking.scope.parcels;
-    return (
-      <ParcelPicker
-        walletAddress={picking.address}
-        scenes={[{ parcels: (land.parcels ?? []).map(parcel => parcel.id) }]}
-        initialParcels={new Set(previous.map(coordKey))}
-        allowed={new Set((land.parcels ?? []).map(parcel => parcel.id))}
-        title={t('land_detail.collaborators.parcels_title')}
-        description={t('land_detail.collaborators.description')}
-        saving={false}
-        onGoBack={() => setPicking(null)}
-        onConfirm={parcels => {
-          const chosen = parcels.map(id => {
-            const [x, y] = id.split(',').map(Number);
-            return { x, y };
-          });
-          setPicking(null);
-          ask(
-            { kind: 'parcels', address: picking.address, parcels: chosen, previous },
-            {
-              title: t('land_detail.collaborators.parcels_title'),
-              body: t('land_detail.collaborators.parcels_body', {
-                name: displayName(picking.address),
-                count: chosen.length,
-                b: bold,
-              }),
-              confirmLabel: t('modal.confirm'),
-            },
-          );
-        }}
-      />
-    );
-  }
 
   return (
     <Root>
@@ -268,13 +288,38 @@ export function CollaboratorsTab({ land, landName }: Props) {
           description={t('land_detail.collaborators.description')}
         />
       )}
-      {request && (
+      {picking && (
+        <PickParcels
+          land={land}
+          collaborator={picking}
+          name={displayName(picking.address)}
+          request={request}
+          onConfirm={chosen =>
+            ask(
+              {
+                kind: 'parcels',
+                address: picking.address,
+                parcels: chosen,
+                previous: picking.scope.kind === 'parcels' ? picking.scope.parcels : [],
+              },
+              {
+                title: t('parcel_picker.title'),
+                body: t('land_detail.collaborators.parcels_body', {
+                  name: displayName(picking.address),
+                  count: chosen.length,
+                  b: bold,
+                }),
+                confirmLabel: t('modal.confirm'),
+              },
+            )
+          }
+          onClose={close}
+        />
+      )}
+      {request && !picking && (
         <AccessChangeModal
           request={request}
-          onClose={() => {
-            setRequest(null);
-            setSelected(new Set());
-          }}
+          onClose={close}
         />
       )}
     </Root>

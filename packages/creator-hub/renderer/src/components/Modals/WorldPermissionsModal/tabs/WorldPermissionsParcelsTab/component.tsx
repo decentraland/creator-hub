@@ -80,7 +80,7 @@ const WorldPermissionsParcelsTab: React.FC<Props> = React.memo(
         scenes={worldScenes}
         initialParcels={initialParcels}
         title={t('modal.world_permissions.parcels.title')}
-        description={t('modal.world_permissions.parcels.description')}
+        description={t('parcel_picker.description')}
         saving={isSaving}
         onConfirm={parcels => void handleSave(parcels)}
         onGoBack={onGoBack}
