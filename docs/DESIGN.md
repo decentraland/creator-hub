@@ -147,14 +147,14 @@ Swatch chrome on the page (not tokens): radius 8px, a 312 × 82 fill, the name i
 | --- | --- | --- | --- | --- | --- |
 | Primary/Primary · Brand/Ruby | `#FF2D55` | Brand pink — **CTAs and main buttons only**, plus the "armed/active tool" signal: the `.Button.primary` fill and the `text` + `primary` label. Not for panel chrome (that's `--ui-designer-control-accent`); don't use it for field errors. | `--primary-main` `#ff2d55` | `--primary`, `--dcl` `#ff2d55` · ui2 `palette.primary.main` | match |
 | Primary/Primary Dark 1 | `#F70038` | `.Button.primary` pressed; ui2's contained-primary hover | `--primary-dark` `#f70038` | `--dcl-hover` `#f70038` (no consumer) · ui2 `palette.primary.dark` | match |
-| Primary/Primary Dark 2 | `#D80029` | — | PROPOSED `--palette-primary-dark2` | ui2 `colors.base.primaryDark2` `#D80029` | missing in inspector |
+| Primary/Primary Dark 2 | `#D80029` | — | `--palette-primary-dark2` `#d80029` | ui2 `colors.base.primaryDark2` `#D80029` | match |
 | Primary/Primary Light 1 | `#FF6280` | `.Button.primary` hover and active fill, and the `text` + `primary` hover label (ui2 theme-path name); Creator Hub's primary hover | `--palette-primary-light` `#ff6280` | `--primary-hover` `#ff6280` · ui2 `palette.primary.light` `#F26276` · ui2 `colors.base.primaryLight1` `#F8919D` | match in inspector; `--primary-hover` ships in #1703; ui2 drifts (upstream) |
-| Primary/Primary Light 2 | `#FF93A8` | — | PROPOSED `--palette-primary-light2` | ui2 `colors.base.primaryLight2` `#FFC9D5` | missing in inspector; ui2 drifts (upstream) |
+| Primary/Primary Light 2 | `#FF93A8` | — | `--palette-primary-light2` `#ff93a8` | ui2 `colors.base.primaryLight2` `#FFC9D5` | match in inspector; ui2 drifts (upstream) |
 | Primary Alt/Primary Alt · Brand/Orange | `#FF7439` | Brand orange | `--secondary-main` `#ff7439` | — · ui2 `brand.orange` | match |
 | Primary Alt/Primary Alt Dark 1 | `#F45708` | Brand orange shade (no consumers yet) | `--secondary-dark` `#f45708` | — | ships in #1703 |
-| Primary Alt/Primary Alt Dark 2 | `#D84900` | — | PROPOSED `--palette-primaryAlt-dark2` | — | missing |
+| Primary Alt/Primary Alt Dark 2 | `#D84900` | — | `--palette-primaryAlt-dark2` `#d84900` | — | match |
 | Primary Alt/Primary Alt Light 1 | `#FFAD8D` | Brand orange shade (no consumers yet) | `--secondary-light` `#ffad8d` | — | ships in #1703 |
-| Primary Alt/Primary Alt Light 2 | `#FFCDBA` | — | PROPOSED `--palette-primaryAlt-light2` | — | missing |
+| Primary Alt/Primary Alt Light 2 | `#FFCDBA` | — | `--palette-primaryAlt-light2` `#ffcdba` | — | match |
 
 #### Neutrals (text, surfaces, borders)
 
@@ -164,14 +164,14 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | --- | --- | --- | --- | --- | --- |
 | Neutrals/White | `#FFFFFF` | Glyphs on dark boards (every icon frame) | `--white` `#ffffff`, `--base-01` | `--white`, `--text` `#ffffff` · ui2 `neutral.white` | match |
 | Neutrals/Snow (also DCL/Snow) | `#FCFCFC` | Figma Neutrals/Snow (ui2 `neutral.softWhite`): the 3D toolbar's hover and selected glyph; `--ui-designer-text` aliases it, and `--focus-ring` reads it through that alias | `--palette-neutral-softWhite` `#fcfcfc` | ui2 `neutral.softWhite` | match |
-| Neutrals/Pearl | `#ECEBED` | Light surface (the Typography sheet) | PROPOSED `--palette-neutral-gray5` | ui2 `neutral.gray5` | missing in inspector |
+| Neutrals/Pearl | `#ECEBED` | Light surface (the Typography sheet) | `--palette-neutral-gray5` `#ecebed` | ui2 `neutral.gray5` | match |
 | Neutrals/Gray | `#CFCDD4` | Figma Neutrals/Gray (ui2 `neutral.gray4`): the 3D toolbar's resting glyph (11.55:1 on Shadow); `--ui-designer-text-value` aliases it | `--palette-neutral-gray4` `#cfcdd4` | ui2 `neutral.gray4` | match |
 | Neutrals/Silver | `#A09BA8` | Figma Neutrals/Silver (ui2 `neutral.gray3`): the camera button's icon stroke (4.59:1 on Onix); `--ui-designer-text-muted` aliases it | `--palette-neutral-gray3` `#a09ba8`, `--neutral-grey-3` `#a09ba8` | `--dcl-silver` `#a09ba8`, `--clear-divider` `#a09ba8` · ui2 `neutral.gray3` | match |
 | Neutrals/Cloudy Sky | `#716B7C` | Figma Neutrals/Cloudy Sky (ui2 `neutral.gray2`): the `RangeField` track; `--ui-designer-glyph` aliases it | `--palette-neutral-gray2` `#716b7c` | `--dropdown` `#716b7c` · ui2 `neutral.gray2` | match |
-| Neutrals/Graffito | `#5E5B67` | The Switch Off track | PROPOSED `--palette-neutral-gray1` | `--light-gray` `#5e5b67` · ui2 `neutral.gray1` | missing in inspector |
+| Neutrals/Graffito | `#5E5B67` | The Switch Off track | `--palette-neutral-gray1` `#5e5b67` | `--light-gray` `#5e5b67` · ui2 `neutral.gray1` | match |
 | Neutrals/Pale Black | `#43404A` | Control fill, the icon boards | `--gray-0` `#43404a` | `--dark-gray` `#43404a` · ui2 `neutral.gray0` | match |
 | Onix (swatch) | `#35333B` | Figma Neutrals/Onyx: field and control chrome, UI Designer menus (`--ui-designer-control-bg`), and the 1px border of an unselected UI Designer tab toggle, at rest, on hover and disabled (1.27:1 against the panel: an edge, not the state cue) | `--palette-neutral-onyx` `#35333b`, `--ui-designer-control-bg` `#35333b` | — | match in inspector; missing in Creator Hub |
-| Onix Dark 1 (swatch) | `#2D2A33` | Title-bar button, the 2D viewport fill, `InputAction` rest, the AI `ChatInput` container | PROPOSED `--palette-neutral-onyxDark1` | `--title-bar-button` `#2d2a33` | missing in inspector |
+| Onix Dark 1 (swatch) | `#2D2A33` | Title-bar button, the 2D viewport fill, `InputAction` rest, the AI `ChatInput` container | `--palette-neutral-onyxDark1` `#2d2a33` | `--title-bar-button` `#2d2a33` | match |
 | Charcoal (swatch) | `#25212A` | Panel frame | `--ui-designer-panel-bg` → `--base-19` `#242129` | `--card`, `--modal`, `--secondary`, `--darker-gray` `#242129` · ui2 `neutral.softBlack2` `#242129` | **✱ deviation**: both worlds follow ui2's `#242129`, 1/255 from Figma; keep |
 | Neutrals/Shadow | `#161518` | Tree and page surface | `--base-20` `#161518`, `--tree-bg-color` | `--black` `#161518`, `--bg` and `--background` `#161518` · ui2 `neutral.softBlack1` | match in inspector; `--bg` ships in #1703, `--background` ships in #1703 |
 | Neutrals/Black | `#000000` | — | `--black` `#000000`, `--base-21` | `--bg-inspector` `#000` · ui2 `neutral.black` | match |
@@ -187,18 +187,18 @@ Figma names four steps per base colour, Backdrop 60% · Blurry 40% · Soft 20% �
 
 | Figma variable | Value | Use | `vars.css` | `theme.css` / ui2 | Status |
 | --- | --- | --- | --- | --- | --- |
-| Transparency (White)/Subtle · White 10 | `rgba(255,255,255,.1)` | Figma White Subtle · White 10: checkbox hover halo; `Button` Secondary fill (contained + secondary) and its pressed state; `--ui-designer-control-border` aliases it (ui2 theme-path name). `--ui-designer-control-selected-bg` holds the same value: the hover and selected fill on a menu **row** | `--palette-whiteTransparent-subtle` `rgba(255,255,255,.1)`, `--ui-designer-control-selected-bg` `rgba(255,255,255,.1)` | ui2 `whiteTransparent.subtle` | match in inspector; missing in `theme.css` |
-| Transparency (White)/Soft · White 20 | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `Button` Secondary hover and `.active`; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) | `--palette-whiteTransparent-soft` `rgba(255,255,255,.2)` | ui2 `whiteTransparent.soft` | match in inspector; missing in `theme.css` |
-| Transparency (White)/Blurry · White 40 | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `Button variant="outlined"` outline; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) | `--palette-whiteTransparent-blurry` `rgba(255,255,255,.4)` | ui2 `whiteTransparent.blurry` | match in inspector; missing in `theme.css` |
-| Transparency (White)/Backdrop · White 60 | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border; `outlined` pressed outline and `text` pressed label (ui2 theme-path name) | `--palette-whiteTransparent-backdrop` `rgba(255,255,255,.6)` | ui2 `whiteTransparent.backdrop` | match in inspector; missing in `theme.css` |
-| Transparency (Black)/Subtle · Black 10 | `rgba(0,0,0,.1)` | The light-swatch border on the Colors page | PROPOSED `--palette-blackTransparent-subtle` | ui2 `blackTransparent.subtle` | missing (no consumer) |
-| Transparency (Black)/Soft · Black 20 | `rgba(0,0,0,.2)` | The Background overlay, the modal and Settings title bars, react-contexify separators | `--contexify-separator-color` `rgba(0,0,0,.2)`; PROPOSED `--palette-blackTransparent-soft` for the overlay role | ui2 `blackTransparent.soft` | match in value; the role name is missing |
-| Transparency (Black)/Blurry · Black 40 | `rgba(0,0,0,.4)` | Figma Black Blurry · Black 40: the thin menu scrollbar's thumb fill, on the react-contexify submenu and the `Dropdown` `OptionList` (user, October 26, 2026). 1.32:1 on Onix and 1.48:1 on `--gray-0` on its own; the White 60 thumb outline carries it | `--palette-blackTransparent-blurry` `rgba(0,0,0,.4)` | ui2 `blackTransparent.blurry` | match in inspector; missing in `theme.css` |
+| Transparency (White)/Subtle · White 10 | `rgba(255,255,255,.1)` | Figma White Subtle · White 10: checkbox hover halo; `Button` Secondary fill (contained + secondary) and its pressed state; `--ui-designer-control-border` aliases it (ui2 theme-path name). `--ui-designer-control-selected-bg` holds the same value: the hover and selected fill on a menu **row** | `--palette-whiteTransparent-subtle` `rgba(255,255,255,.1)`, `--ui-designer-control-selected-bg` `rgba(255,255,255,.1)` | `--palette-whiteTransparent-subtle` `rgba(255,255,255,.1)` · ui2 `whiteTransparent.subtle` | match |
+| Transparency (White)/Soft · White 20 | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `Button` Secondary hover and `.active`; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) | `--palette-whiteTransparent-soft` `rgba(255,255,255,.2)` | `--palette-whiteTransparent-soft` `rgba(255,255,255,.2)` · ui2 `whiteTransparent.soft` | match |
+| Transparency (White)/Blurry · White 40 | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `Button variant="outlined"` outline; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) | `--palette-whiteTransparent-blurry` `rgba(255,255,255,.4)` | `--palette-whiteTransparent-blurry` `rgba(255,255,255,.4)` · ui2 `whiteTransparent.blurry` | match |
+| Transparency (White)/Backdrop · White 60 | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border; `outlined` pressed outline and `text` pressed label (ui2 theme-path name) | `--palette-whiteTransparent-backdrop` `rgba(255,255,255,.6)` | `--palette-whiteTransparent-backdrop` `rgba(255,255,255,.6)` · ui2 `whiteTransparent.backdrop` | match |
+| Transparency (Black)/Subtle · Black 10 | `rgba(0,0,0,.1)` | The light-swatch border on the Colors page | `--palette-blackTransparent-subtle` `rgba(0,0,0,.1)` | `--palette-blackTransparent-subtle` `rgba(0,0,0,.1)` · ui2 `blackTransparent.subtle` | match (no consumer) |
+| Transparency (Black)/Soft · Black 20 | `rgba(0,0,0,.2)` | The Background overlay, the modal and Settings title bars, react-contexify separators | `--palette-blackTransparent-soft` `rgba(0,0,0,.2)` (the overlay role), `--contexify-separator-color` `rgba(0,0,0,.2)` (the react-contexify role) | `--palette-blackTransparent-soft` `rgba(0,0,0,.2)` · ui2 `blackTransparent.soft` | match |
+| Transparency (Black)/Blurry · Black 40 | `rgba(0,0,0,.4)` | Figma Black Blurry · Black 40: the thin menu scrollbar's thumb fill, on the react-contexify submenu and the `Dropdown` `OptionList` (user, October 26, 2026). 1.32:1 on Onix and 1.48:1 on `--gray-0` on its own; the White 60 thumb outline carries it | `--palette-blackTransparent-blurry` `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` `rgba(0,0,0,.4)` · ui2 `blackTransparent.blurry` | match |
 | Transparency (Black)/Backdrop · Black 60 | `rgba(0,0,0,.6)` | Modal overlay | `--modal-overlay-bg-color` `rgba(0,0,0,.6)` | ui2 `blackTransparent.backdrop` | match |
 | Transparency (White)/Transparent | empty variable | — | `--transparent` `transparent` | — | Figma defect: the variable has no value |
-| — | `rgba(255,255,255,.05)` | Figma's unnamed `#FFFFFF` 5% (no Figma variable; ui2's `whiteTransparent` stops at `subtle`): the AccordionEntry hover fill, and its `:focus-visible` fill under the Snow ring (user, October 26, 2026). 1.16:1 against the `#242129` panel on its own, so it never carries a state alone: hover doesn't need to, and focus adds the ring | `--palette-whiteTransparent-faint` `rgba(255,255,255,.05)` | `--transparent-gray-dark` `rgba(255,255,255,.05)` | not a Figma step; user decision |
-| — | `rgba(255,255,255,.08)` | The MobileHUD `InputAction` texture-input fill | PROPOSED `--palette-whiteTransparent-hint` | — | missing (or White 10, if design confirms a typo) |
-| — | `rgba(255,255,255,.15)` | Card hover | PROPOSED `--palette-whiteTransparent-hover` | — | missing |
+| — | `rgba(255,255,255,.05)` | Figma's unnamed `#FFFFFF` 5% (no Figma variable; ui2's `whiteTransparent` stops at `subtle`): the AccordionEntry hover fill, and its `:focus-visible` fill under the Snow ring (user, October 26, 2026). 1.16:1 against the `#242129` panel on its own, so it never carries a state alone: hover doesn't need to, and focus adds the ring | `--palette-whiteTransparent-faint` `rgba(255,255,255,.05)` | `--palette-whiteTransparent-faint` `rgba(255,255,255,.05)`, `--transparent-gray-dark` `rgba(255,255,255,.05)` | not a Figma step; user decision |
+| — | `rgba(255,255,255,.08)` | The MobileHUD `InputAction` texture-input fill | `--palette-whiteTransparent-hint` `rgba(255,255,255,.08)` | — | match (design may still call the .08 a typo for White 10) |
+| — | `rgba(255,255,255,.15)` | Card hover | `--palette-whiteTransparent-hover` `rgba(255,255,255,.15)` | `--palette-whiteTransparent-hover` `rgba(255,255,255,.15)` | match |
 | — | `.05` / `.07` white | Placeholder or unbound field fill; subtle dividers | `--ui-designer-control-empty-bg` `rgba(255,255,255,.05)`, `--ui-designer-hairline` `rgba(255,255,255,.07)` | — | not Figma steps; **✱ deviation**, keep (solved for contrast, see the accent note) |
 | — | `.23` white · `#ffffffb2` (70%) · `#000000dd` (87%) | Creator Hub only | — | `--transparent-gray-light`, `--text-on-secondary`, `--dimmer` | not Figma steps |
 
@@ -211,18 +211,18 @@ ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.war
 | System/Green | `#34CE77` | Success | `--success-main` `#34ce77` | `--success` `#34ce77` · ui2 `palette.success.main` | `--success-main` ships in #1703; match in Creator Hub |
 | System/Green Dark 1 | `#00B453` | Status shade (no consumers yet) | `--success-dark` `#00b453` | ui2 `palette.success.dark` | ships in #1703 |
 | System/Green Light 1 | `#65D890` | Status shade (no consumers yet) | `--success-light` `#65d890` | ui2 `palette.success.light` | ships in #1703 |
-| System/Green Dark 2 | `#00A146` | — | PROPOSED `--palette-success-dark2` | ui2 alert success background `rgba(0,161,70,.24)` | missing |
-| System/Green Light 2 | `#C1EECF` | — | PROPOSED `--palette-success-light2` | ui2 light-scheme alert | missing |
+| System/Green Dark 2 | `#00A146` | — | `--palette-success-dark2` `#00a146` | `--palette-success-dark2` `#00a146` · ui2 alert success background `rgba(0,161,70,.24)` | match |
+| System/Green Light 2 | `#C1EECF` | — | `--palette-success-light2` `#c1eecf` | `--palette-success-light2` `#c1eecf` · ui2 light-scheme alert | match |
 | System/Orange | `#FE9C2A` | Warning | `--warning-main` `#fe9c2a` | `--danger` `#fe9c2a` · ui2 `palette.warning.main` | ships in #1703 (both) |
 | System/Orange Dark 1 | `#F38025` | Warning shade (no consumers yet) | `--warning-dark` `#f38025` | ui2 `palette.warning.dark` | ships in #1703 |
-| System/Orange Light 1 | `#FFB95B` | — | PROPOSED `--palette-warning-light` | ui2 `palette.warning.light` | missing in inspector |
-| System/Orange Dark 2 | `#EC7122` | — | PROPOSED `--palette-warning-dark2` | ui2 alert warning background `rgba(236,113,34,.24)` | missing |
-| System/Orange Light 2 | `#FFCD88` | — | PROPOSED `--palette-warning-light2` | ui2 alert warning text | missing |
+| System/Orange Light 1 | `#FFB95B` | — | `--palette-warning-light` `#ffb95b` | ui2 `palette.warning.light` | match |
+| System/Orange Dark 2 | `#EC7122` | — | `--palette-warning-dark2` `#ec7122` | `--palette-warning-dark2` `#ec7122` · ui2 alert warning background `rgba(236,113,34,.24)` | match |
+| System/Orange Light 2 | `#FFCD88` | — | `--palette-warning-light2` `#ffcd88` | `--palette-warning-light2` `#ffcd88` · ui2 alert warning text | match |
 | System/Red | `#FB3B3B` | Error | `--error-main` `#fb3b3b` | `--error` `#fb3b3b` · ui2 `palette.error.main` | ships in #1703 (both) |
 | System/Red Dark 1 | `#EC303A` | Error shade (no consumers yet) | `--error-dark` `#ec303a` | ui2 `palette.error.dark` | ships in #1703 |
 | System/Red Light 1 | `#E97177` | The hover and focus border of an errored field, and the 10–13px error text | `--error-light` `#e97177` | ui2 `palette.error.light` | ships in #1703 |
-| System/Red Dark 2 | `#CC1D2C` | — | PROPOSED `--palette-error-dark2` | ui2 alert error background `rgba(204,29,44,.24)` | missing |
-| System/Red Light 2 | `#FFCDD4` | — | PROPOSED `--palette-error-light2` | — | missing |
+| System/Red Dark 2 | `#CC1D2C` | — | `--palette-error-dark2` `#cc1d2c` | `--palette-error-dark2` `#cc1d2c` · ui2 alert error background `rgba(204,29,44,.24)` | match |
+| System/Red Light 2 | `#FFCDD4` | — | `--palette-error-light2` `#ffcdd4` | `--palette-error-light2` `#ffcdd4` | match |
 | `DCL/Red` (legacy) | `#FF0000` | Not the error role | — | — | legacy variable |
 
 Contrast of the status text and icon colours at these values, on the surfaces they sit on: `#161518` inspector page, `#242129` card, modal and UI Designer panel, `#35333b` Onix.
@@ -239,12 +239,12 @@ Contrast of the status text and icon colours at these values, on the surfaces th
 
 | Figma name | Value | Use | `vars.css` | `theme.css` / ui2 | Status |
 | --- | --- | --- | --- | --- | --- |
-| Blue | `#2196F3` | The pinned edge in `ConstraintsIcons` | PROPOSED `--palette-info-main` | ui2 `palette.info.main` | missing in inspector |
-| Blue Dark 1 | `#1A75D2` | — | PROPOSED `--palette-info-dark1` | ui2 `palette.info.dark` `#1A75D2` | missing in inspector; the fill is the value (Figma's label reads `#1F87E5`) |
+| Blue | `#2196F3` | The pinned edge in `ConstraintsIcons` | `--palette-info-main` `#2196f3` | ui2 `palette.info.main` | match |
+| Blue Dark 1 | `#1A75D2` | — | `--palette-info-dark1` `#1a75d2` | ui2 `palette.info.dark` `#1A75D2` | match; the fill is the value (Figma's label reads `#1F87E5`) |
 | Blue Dark 2 | `#244B7D` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1); the selected toggle fill through `--ui-designer-control-active-bg` | `--palette-system-blueDark2` `#244b7d` | `--ai-session-selected` `#244b7d` | match on the fill (Figma's label reads `#1764C0`) |
 | Blue Dark 3 | `#243852` | Figma System/Blue Dark 3: the fill of a selected toggle under the pointer (Snow glyph 11.61:1). Darker than Blue Dark 2 on purpose, as Figma draws it | `--palette-system-blueDark3` `#243852` | `--ai-session-selected-hover` `#243852` | match |
 | System/Blue Light 1 | `#63B4F6` | Figma System/Blue Light 1 (ui2 dark `palette.info.light`, `#63B4F6`): the shared `Tree`'s drop target, a 1px inset outline for inside and a 2px line for before / after, in all four trees (user, October 27, 2026; NodeTypeHierarchy ✱ drop target). 7.09:1 on the panel `#242129`, 8.13:1 on the tree `#161518`, 5.33:1 on Blue Dark 3. Same value as `--ui-designer-control-accent`, which stays the UI Designer's panel accent (ui2 theme-path name) | `--palette-info-light` `#63b4f6`, `--ui-designer-control-accent` `#63b4f6`, `--built-in-badge-bg-color` `#63b4f6` | ui2 `palette.info.light` | match |
-| Blue Light 2 | `#BBDEFB` | — | PROPOSED `--palette-info-light2` | ui2 alert info text | missing |
+| Blue Light 2 | `#BBDEFB` | — | `--palette-info-light2` `#bbdefb` | `--palette-info-light2` `#bbdefb` · ui2 alert info text | match |
 | — | `#214272` / `#2E4A7A` | AI selection | — | `--ai-selected` `#214272` / `--ai-selected-hover` `#2e4a7a` | not in Figma |
 | — | `#127FD4` | VS Code focus blue | `--border-focused` `#127fd4` | — | not in Figma; **✱ deviation**, keep |
 
@@ -262,36 +262,36 @@ Contrast of the status text and icon colours at these values, on the surfaces th
 
 #### Rarities
 
-Base values come from the `Rarities/*` variables; Common Light and Exotic Light from `DCL/Rarities/*`. No rarity colour has a consumer in either world, and the rarity names are the user's call.
+Base values come from the `Rarities/*` variables; Common Light and Exotic Light from `DCL/Rarities/*`. No rarity colour has a consumer in either world.
 
 | Figma variable | Value | Use | `vars.css` | `theme.css` / ui2 | Status |
 | --- | --- | --- | --- | --- | --- |
-| Rarities/Common | `#73D3D3` | — | PROPOSED `--palette-rarity-common` | ui2 `colors.rarity` `#73D3D3` | missing |
-| DCL/Rarities/Common Light | `#ACF8F8` | — | PROPOSED `--palette-rarity-common-light` | ui2 `rarityLight` `#D2F9F9` | missing; ui2 drifts |
-| Rarities/Uncommon | `#FF8362` | — | PROPOSED `--palette-rarity-uncommon` | ui2 `#FF8362` | missing |
-| Rarities/Uncommon Light | `#FFE0B2` | — | PROPOSED `--palette-rarity-uncommon-light` | ui2 `#F9E4DF` | missing; ui2 drifts |
-| Rarities/Rare | `#34CE76` | — | PROPOSED `--palette-rarity-rare` | ui2 `#34CE76` | missing |
-| Rarities/Rare Light | `#73FFAF` | — | PROPOSED `--palette-rarity-rare-light` | ui2 `#C1F2D6` | missing; ui2 drifts |
-| Rarities/Epic | `#438FFF` | — | PROPOSED `--palette-rarity-epic` | ui2 `#438FFF` | missing |
-| Rarities/Epic Light | `#81E1FF` | — | PROPOSED `--palette-rarity-epic-light` | ui2 `#C0D3EF` | missing; ui2 drifts |
-| Rarities/Legendary | `#A14BF3` | — | PROPOSED `--palette-rarity-legendary` | ui2 `#A14BF3` | missing |
-| Rarities/Legendary Light | `#E8B9FF` | — | PROPOSED `--palette-rarity-legendary-light` | ui2 `#E1C1FF` | missing; ui2 drifts |
-| Rarities/Mythic | `#FF4BED` | The Settings glow (an asset) | PROPOSED `--palette-rarity-mythic` | ui2 `#FF4BED` | missing |
-| Rarities/Mythic Light | `#F6C1FF` | — | PROPOSED `--palette-rarity-mythic-light` | ui2 `#FDC4F7` | missing; ui2 drifts |
-| Rarities/Exotic | `#CAFF73` | — | PROPOSED `--palette-rarity-exotic` | not in ui2 | missing |
-| DCL/Rarities/Exotic Light | `#E4FFB8` | — | PROPOSED `--palette-rarity-exotic-light` | not in ui2 | missing |
-| Rarities/Unique | `#FEA217` | — | PROPOSED `--palette-rarity-unique` | ui2 `#FEA217` | missing |
-| Rarities/Unique Light | `#FFF280` | — | PROPOSED `--palette-rarity-unique-light` | ui2 `#F3E5CF` | missing; ui2 drifts |
+| Rarities/Common | `#73D3D3` | — | `--palette-rarity-common` `#73d3d3` | `--palette-rarity-common` `#73d3d3` · ui2 `colors.rarity` `#73D3D3` | match |
+| DCL/Rarities/Common Light | `#ACF8F8` | — | `--palette-rarity-common-light` `#acf8f8` | `--palette-rarity-common-light` `#acf8f8` · ui2 `rarityLight` `#D2F9F9` | match; ui2 drifts (upstream) |
+| Rarities/Uncommon | `#FF8362` | — | `--palette-rarity-uncommon` `#ff8362` | `--palette-rarity-uncommon` `#ff8362` · ui2 `#FF8362` | match |
+| Rarities/Uncommon Light | `#FFE0B2` | — | `--palette-rarity-uncommon-light` `#ffe0b2` | `--palette-rarity-uncommon-light` `#ffe0b2` · ui2 `#F9E4DF` | match; ui2 drifts (upstream) |
+| Rarities/Rare | `#34CE76` | — | `--palette-rarity-rare` `#34ce76` | `--palette-rarity-rare` `#34ce76` · ui2 `#34CE76` | match |
+| Rarities/Rare Light | `#73FFAF` | — | `--palette-rarity-rare-light` `#73ffaf` | `--palette-rarity-rare-light` `#73ffaf` · ui2 `#C1F2D6` | match; ui2 drifts (upstream) |
+| Rarities/Epic | `#438FFF` | — | `--palette-rarity-epic` `#438fff` | `--palette-rarity-epic` `#438fff` · ui2 `#438FFF` | match |
+| Rarities/Epic Light | `#81E1FF` | — | `--palette-rarity-epic-light` `#81e1ff` | `--palette-rarity-epic-light` `#81e1ff` · ui2 `#C0D3EF` | match; ui2 drifts (upstream) |
+| Rarities/Legendary | `#A14BF3` | — | `--palette-rarity-legendary` `#a14bf3` | `--palette-rarity-legendary` `#a14bf3` · ui2 `#A14BF3` | match |
+| Rarities/Legendary Light | `#E8B9FF` | — | `--palette-rarity-legendary-light` `#e8b9ff` | `--palette-rarity-legendary-light` `#e8b9ff` · ui2 `#E1C1FF` | match; ui2 drifts (upstream) |
+| Rarities/Mythic | `#FF4BED` | The Settings glow (an asset) | `--palette-rarity-mythic` `#ff4bed` | `--palette-rarity-mythic` `#ff4bed` · ui2 `#FF4BED` | match |
+| Rarities/Mythic Light | `#F6C1FF` | — | `--palette-rarity-mythic-light` `#f6c1ff` | `--palette-rarity-mythic-light` `#f6c1ff` · ui2 `#FDC4F7` | match; ui2 drifts (upstream) |
+| Rarities/Exotic | `#CAFF73` | — | `--palette-rarity-exotic` `#caff73` | `--palette-rarity-exotic` `#caff73` · not in ui2 | match |
+| DCL/Rarities/Exotic Light | `#E4FFB8` | — | `--palette-rarity-exotic-light` `#e4ffb8` | `--palette-rarity-exotic-light` `#e4ffb8` · not in ui2 | match |
+| Rarities/Unique | `#FEA217` | — | `--palette-rarity-unique` `#fea217` | `--palette-rarity-unique` `#fea217` · ui2 `#FEA217` | match |
+| Rarities/Unique Light | `#FFF280` | — | `--palette-rarity-unique-light` `#fff280` | `--palette-rarity-unique-light` `#fff280` · ui2 `#F3E5CF` | match; ui2 drifts (upstream) |
 
 #### Gradients
 
-The three gradients are image fills: their variables carry no stops, so the ends below are sampled from the exported swatch. Both axes change, consistent with 135°.
+The three gradients are image fills whose variables carry no stops. Each stop takes its Brand variable (Ruby `#FF2D55`, Lavender `#C640CD`, Purple `#691FA9`); Flare's end is `#FFBC5B`, ui2's value, since no variable holds it. The exported swatch samples 1/255 off (`#FE2D55`, `#FEBC59`), which is PNG compression, not the design. Both axes change, consistent with 135°. Each token is `linear-gradient(135deg, <start>, <end>)`.
 
 | Figma variable | Value | Use | `vars.css` | `theme.css` / ui2 | Status |
 | --- | --- | --- | --- | --- | --- |
-| Brand/Flare (Ruby to Yellow) | `#FE2D55` → `#FEBC59` | — | PROPOSED `--gradient-flare` | ui2 `gradient.flare` `linear-gradient(135deg, #FF2D55 0%, #FFBC5B 100%)` | missing; the drawn end matches ui2's `#FFBC5B`, not Brand/Yellow `#FFC95B` |
-| Brand/Cerise (Ruby to Lavender) | `#FE2D55` → `#C640CD` | — | PROPOSED `--gradient-cerise` | ui2 `gradient.cerise` 135° | missing |
-| Brand/Amin (Lavender to Purple) | `#C640CD` → `#691FA9` | — | PROPOSED `--gradient-amin` | ui2 `gradient.amin` 135° | missing |
+| Brand/Flare (Ruby to Yellow) | `#FF2D55` → `#FFBC5B` | — | `--gradient-flare` | `--gradient-flare` · ui2 `gradient.flare` `linear-gradient(135deg, #FF2D55 0%, #FFBC5B 100%)` | match; the end is ui2's `#FFBC5B`, not Brand/Yellow `#FFC95B` |
+| Brand/Cerise (Ruby to Lavender) | `#FF2D55` → `#C640CD` | — | `--gradient-cerise` | `--gradient-cerise` · ui2 `gradient.cerise` 135° | match |
+| Brand/Amin (Lavender to Purple) | `#C640CD` → `#691FA9` | — | `--gradient-amin` | `--gradient-amin` · ui2 `gradient.amin` 135° | match |
 | — | `#060d2b` → `#132d7d` 52% → `#9763c1` | — | — | `--metaverse-gradient` | not in Figma |
 
 Everything in `vars.css` that these tables and [Inspector role tokens](#inspector-role-tokens) don't list is VS Code-derived (`--vscode-*` passthroughs, `--dropdown-*`, `--list-item-*`) or a Smart Item colour (`--list-smart-item-*`, `--ground-icon-bg-color`) with no Figma counterpart. Value changes and new tokens arising from these tables go to the user first (names are theirs), ship with before/after screenshots of every consumer, and land in the same commit as their row here.
@@ -340,7 +340,7 @@ Inspector tokens that name a role rather than a Figma variable: surfaces, foregr
 | --- | --- | --- | --- |
 | `--main-bg-color` | `--vscode-editor-background` → `--background` | — | App/editor background |
 | `--tree-bg-color` | `--base-20` `#161518` | Neutrals/Shadow | Panels, trees, **dropdown/popover surfaces** |
-| `--modal-content-bg-color` | `--tree-bg-color` | Modal shell `#181225` (a raw fill, no variable): drift → `#181225` (pending spoke), or PROPOSED `--modal-surface` | Modals |
+| `--modal-content-bg-color` | `--tree-bg-color` | Modal shell `#181225` (a raw fill, no variable): drift → `#181225` (pending spoke) | Modals |
 | `--ui-designer-panel-bg` | `--base-19` `#242129` | Charcoal `#25212a` (**✱ deviation**, within 1/255) | UI Designer panel frame |
 | `--ui-designer-control-bg` | `#35333b` | Neutrals/Onix | Inputs/selects/textarea chrome, and UI Designer menus |
 | `--disabled-bg-color` | `#323036` | — | Disabled control fill |
@@ -401,12 +401,12 @@ There is no single `--text` token — pick the foreground that matches the surfa
 Every icon control in the UI Designer panels and canvas takes one of three rules (user decision, October 22, 2026; it overrides the `UI Editor Buttons` sets where they differ, see the ✱ deviations in those sets under [Editor](#editor)). The lock and eye take none of them: they follow their own sets as drawn (user decision, October 27, 2026), in every tree. The 2D toolbar takes the `ToolbarButton` set and the Viewport Toolbar's 2D variant instead (user decision October 23, 2026; shipped in `73a26ea5f`), so the toolbar controls the rules below name are styled by those sets.
 
 - **Icon button** (any icon control that is not a toggle: trash, help, bind link, add, copy, the toolbar's save / undo / redo): Silver `--ui-designer-text-muted` glyph and no container at rest; on hover a Snow `--ui-designer-text` glyph on a White 10 `--palette-whiteTransparent-subtle` container, 4px radius.
-- **Tab toggle** (one choice out of a set: TextAlign, Flow direction, the canvas device pair, the device-variant tabs, the interaction-state tabs, the fill-mode chips, the 2D toolbar gizmos): unselected is a Silver glyph, no fill and a 1px `--palette-neutral-onyx` border; unselected + hover is Snow on White 10 with the same Onyx border; selected is a Snow glyph on `--ui-designer-control-active-bg` (Blue Dark 2); selected + hover is Snow on `--palette-system-blueDark3`; disabled is a White 20 glyph with the Onyx border. A selected tab toggle shows no Onyx: its 1px border takes the fill colour, so the box never changes size.
+- **Tab toggle** (one choice out of a set: TextAlign, Flow direction, the canvas device pair, the interaction-state tabs, the fill-mode chips, the 2D toolbar gizmos; the `PropertyPanel` device-variant chips follow the `Devices` set instead): unselected is a Silver glyph, no fill and a 1px `--palette-neutral-onyx` border; unselected + hover is Snow on White 10 with the same Onyx border; selected is a Snow glyph on `--ui-designer-control-active-bg` (Blue Dark 2); selected + hover is Snow on `--palette-system-blueDark3`; disabled is a White 20 glyph with the Onyx border. A selected tab toggle shows no Onyx: its 1px border takes the fill colour, so the box never changes size.
 - **Single toggle** (on / off: wrap, the aspect lock, the canvas HUD / safe-area toggles, the toolbar Run / Scene Info): the tab-toggle colours with no border in any state. Silver at rest, Snow on White 10 on hover, Snow on Blue Dark 2 when selected, Snow on Blue Dark 3 when selected + hover, White 20 when disabled.
 - **Lock and eye** (every lock and eye: the 2D tree rows, the node-header and GUI-list eyes, the 3D trees' lock and eye and the spawn-point eye; the MobileHUD input-action eye follows InputAction, below): LockLayerToggle and VisibilityToggle as drawn. A Gray `--palette-neutral-gray4` glyph in every state; no fill at rest; a White 10 `--palette-whiteTransparent-subtle` fill with a 4px radius on hover; locked or hidden is the same Gray glyph with no fill, and the glyph's shape (closed lock, eye-off) is the only indicator, announced by `aria-pressed="true"`. Pressed + hover is White 10, as any hover. Focus is unchanged: the accent ring in the UI Designer, the 1px Snow `--focus-ring` in the 3D trees.
 - **MobileHUD input-action eye:** the InputAction set as drawn, an 18 × 18 VisibilityToggle instance. Visible is a Gray eye with no fill, White 10 on hover; hidden is a System/Blue Light 1 `--palette-info-light` eye-off on a System/Blue Dark 3 `--palette-system-blueDark3` fill (5.33:1), the same on hover.
 - **State hook:** the ARIA attribute (`aria-pressed`, `aria-checked` or `aria-selected`), never a class. The kind, not the attribute, decides the border.
-- **Segmented group** (the tab toggles that sit joined: TextAlign, Flow direction, the canvas device pair, the device-variant tabs, the 2D toolbar gizmos): each cell draws its own 1px border and every cell after the first overlaps its neighbour by `margin-left: -1px`, so a seam is one pixel, never two. The first cell carries the group's left radii and the last its right radii, at the radius the group already had: `--ui-designer-radius-field` (6px) for alignment and flow, 4px for the canvas device pair, the device-variant tabs and the gizmos. The wrapper draws no border of its own. A selected cell (and the hovered one) sits above its neighbours (`z-index: 1`), so the shared seam shows its colour, not Onyx. The fill-mode and interaction-state chips are tab toggles that stand apart (a 2px gap): each keeps its full border and radius.
+- **Segmented group** (the tab toggles that sit joined: TextAlign, Flow direction, the canvas device pair, the 2D toolbar gizmos): each cell draws its own 1px border and every cell after the first overlaps its neighbour by `margin-left: -1px`, so a seam is one pixel, never two. The first cell carries the group's left radii and the last its right radii, at the radius the group already had: `--ui-designer-radius-field` (6px) for alignment and flow, 4px for the canvas device pair and the gizmos. The wrapper draws no border of its own. A selected cell (and the hovered one) sits above its neighbours (`z-index: 1`), so the shared seam shows its colour, not Onyx. The fill-mode and interaction-state chips are tab toggles that stand apart (a 2px gap): each keeps its full border and radius.
 - **Focus:** one 2px `--ui-designer-control-accent` ring in every state, offset 1px on a standalone control and −2px inside a segmented cell.
 - **Disabled:** WrapToggle's Blocked look for every icon control: White 20 `--palette-whiteTransparent-soft` glyph, no fill, no hover; a tab toggle keeps its Onyx border, a single toggle and an icon button draw none. No separate pressed state.
 - **Hit target:** a control drawn smaller than 24px is a 24 × 24 transparent button whose Figma-size container is its `::before`. Its focus ring hugs that container (1px outside it, concentric corners), not the 24px box.
@@ -460,7 +460,7 @@ Figma's Font frame ([node `20717:328`](https://www.figma.com/design/5ecKgNHjChZE
 
 #### Type scale
 
-Read on October 27, 2026 from the Typography page's Size frame ([node `20717:350`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20717-350)), labelled "Perfect Fourth (1,5)". Line-height in the variables is a percentage (100) on the H styles and a ratio on Body and Overline. Caps means `text-transform: uppercase`; the variable carries no case. Neither token file declares a size, weight, line-height or letter-spacing token, so every size below is a literal in component CSS or an MUI `variant` today.
+Read on October 27, 2026 from the Typography page's Size frame ([node `20717:350`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20717-350)), labelled "Perfect Fourth (1,5)". Line-height in the variables is a percentage (100) on the H styles and a ratio on Body and Overline. Caps means `text-transform: uppercase`; the variable carries no case. Both token files declare one `--type-<style>-*` set per style ([Type tokens](#type-tokens)); no component reads them yet, so every size below is still a literal in component CSS or an MUI `variant`.
 
 | Figma style | Size | Weight | Line-height | Letter-spacing | Case | Sample node |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -486,11 +486,11 @@ Read on October 27, 2026 from the Typography page's Size frame ([node `20717:350
 
 `Body/Body - 14` and `Other/Overline` carry MUI-style metrics. They are MUI's default `body2` and `overline` metrics, which ui2 keeps (its `theme/typography.js` only sets the family), so Creator Hub takes them from the `Typography` variant rather than declaring them.
 
-#### Proposed type tokens
+#### Type tokens
 
-**PROPOSED, names pending the user.** One prefix per Figma style, in both `vars.css` and `theme.css`, each with four suffixes: `-size`, `-weight`, `-line-height` and `-letter-spacing`. Case stays with the consumer (`text-transform: uppercase` on a `-caps` style).
+One prefix per Figma style, declared in both `vars.css` and `theme.css`, each with four suffixes: `-size`, `-weight`, `-line-height` and `-letter-spacing`. Case stays with the consumer (`text-transform: uppercase` on a `-caps` style). `--type-caption-size` is declared in `vars.css` only. No component reads a `--type-*` token yet.
 
-| Proposed prefix | Figma style | Values (size / weight / line-height / letter-spacing) |
+| Prefix | Figma style | Values (size / weight / line-height / letter-spacing) |
 | --- | --- | --- |
 | `--type-display-semi-*` | Display H1 Semi | 48px / 600 / normal / 0 |
 | `--type-display-regular-*` | Display H1 Regular | 48px / 400 / normal / 0 |
@@ -511,7 +511,8 @@ Read on October 27, 2026 from the Typography page's Size frame ([node `20717:350
 | `--type-h8-regular-*` | `H8 Regular` | 12px / 400 / 100% / 0 |
 | `--type-body14-*` | `Body/Body - 14` | 14px / 400 / 1.43 / 0.17px |
 | `--type-overline-*` | `Other/Overline` | 12px / 400 / 2.66 / 1px |
-| `--type-caption-size` | none (the NodeLogic descriptions and hint, Inter 400) | 10px |
+| `--type-button-small-*` | `button/small` (legacy; the Editor Toolbar set) | 13px / 600 / 24px / 0.46px, uppercase |
+| `--type-caption-size` | none (the NodeLogic descriptions and hint, Inter 400; `vars.css` only) | 10px |
 
 ### Spacing · Radius · Effects
 
@@ -534,11 +535,11 @@ Every corner radius Figma draws, with its token:
 | --- | --- | --- | --- |
 | 4px | Icon-button hover container, lock and eye hover fill, `ToolbarButton` cells, the small `Button` | — (literal) | the small `Button` hardcodes it |
 | 6px | Dense field, dropdown and textarea corners | `--shape-borderRadius` `6px` (aliased by `--ui-designer-radius-field`) · Creator Hub `--mui-shape-borderRadius` `6px` | match (ui2 theme-path name) |
-| 8px | Colour swatches, list rows, the Toast tooltip of rounded-button-contained | PROPOSED `--shape-borderRadiusMedium` | missing |
+| 8px | Colour swatches, list rows, the Toast tooltip of rounded-button-contained | `--shape-borderRadiusMedium` `8px` · Creator Hub `--shape-borderRadiusMedium` `8px` | match |
 | 10px | The Toast tooltip of IconContainedToggle and TextureContainedRoundedButton | — | Figma defect: the three Toast tooltips disagree |
 | 12px | Large field, `.Button.medium` and `.Button.large` corners, option lists and popovers, the LabelAccordion frame | `--shape-borderRadiusLarge` `12px` (aliased by `--ui-designer-radius-menu`) | match (ui2 theme-path name) |
-| 16px | Cards | PROPOSED `--shape-borderRadiusXLarge` | missing |
-| 24px | Modals | PROPOSED `--shape-borderRadiusXXLarge` | missing |
+| 16px | Cards | `--shape-borderRadiusXLarge` `16px` · Creator Hub `--shape-borderRadiusXLarge` `16px` | match |
+| 24px | Modals | `--shape-borderRadiusXXLarge` `24px` · Creator Hub `--shape-borderRadiusXXLarge` `24px` | match |
 | 64px | The icon boards and the Typography sheet (page chrome) | — | not a component value |
 | 100px | Figma's 100px pill: the thin menu scrollbar's thumb, on the react-contexify submenu and the `Dropdown` `OptionList` (user, October 26, 2026); the other pills listed under Figma values take it as they are re-themed | `--shape-borderRadiusPill` `100px` | match (ui2 theme-path name) |
 
@@ -548,10 +549,10 @@ Every shadow Figma draws, with its token:
 
 | Shadow | Where Figma draws it | Token | Status |
 | --- | --- | --- | --- |
-| `0 4px 8px rgba(0,0,0,.4)` | Menu `20749:386`, every menu surface | `--menu-shadow` | match |
-| `0 2px 3px rgba(0,0,0,.25)` | Tooltip | PROPOSED `--shadow-tooltip` | missing |
-| `0 4px 4px rgba(0,0,0,.1)` | The Toast tooltip of rounded-button-contained, IconContainedToggle and TextureContainedRoundedButton | PROPOSED `--shadow-toast` | missing |
-| `0 4px 10px rgba(0,0,0,.25)` | `ColourPanel` | — | missing; whether it unifies with `--menu-shadow` is a question for design |
+| `0 4px 8px rgba(0,0,0,.4)` | Menu `20749:386`, every menu surface | `--menu-shadow`, both worlds | match |
+| `0 2px 3px rgba(0,0,0,.25)` | Tooltip | `--shadow-tooltip`, both worlds | match |
+| `0 4px 4px rgba(0,0,0,.1)` | The Toast tooltip of rounded-button-contained, IconContainedToggle and TextureContainedRoundedButton | `--shadow-toast`, both worlds | match |
+| `0 4px 10px rgba(0,0,0,.25)` | `ColourPanel` | `--shadow-popover` (inspector) | match; kept apart from `--menu-shadow`, as Figma draws it |
 | `2px 2px 10px rgba(0,0,0,.5)` | none (react-contexify default) | `--contexify-menu-shadow` | menus read `--menu-shadow` through it |
 
 ### Icons
@@ -628,9 +629,9 @@ A pill: 100px radius, padding 4 / 10, label `H6 Regular` (Inter 16/400/normal/0)
 
 | Variant | Fill | Border | Radius | Text | Padding | Inspector token | Creator Hub token | Contrast |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Owner ("Owner") | `rgba(255,255,255,0.1)` Transparencies/White 10 | none | 100px | `H6 Regular` · `#FCFCFC` Snow | 4 / 10 | fill `--palette-whiteTransparent-subtle`; text `--ui-designer-text`; radius `--shape-borderRadiusPill` | ui2 `neutral.softWhite`, `whiteTransparent.subtle`; `theme.css` missing | Snow on the composite (`#2D2C2F` over `#161518`) 13.53:1; over `#242129` 11.40:1 |
+| Owner ("Owner") | `rgba(255,255,255,0.1)` Transparencies/White 10 | none | 100px | `H6 Regular` · `#FCFCFC` Snow | 4 / 10 | fill `--palette-whiteTransparent-subtle`; text `--ui-designer-text`; radius `--shape-borderRadiusPill` | ui2 `neutral.softWhite`, `whiteTransparent.subtle`; `theme.css` `--palette-whiteTransparent-subtle`; the rest missing | Snow on the composite (`#2D2C2F` over `#161518`) 13.53:1; over `#242129` 11.40:1 |
 | Tenat ("Tenant") | `rgba(254,156,42,0.2)` System/Orange at 20% | none | 100px | `H6 Regular` · `#FE9C2A` System/Orange | 4 / 10 | text `--warning-main` (ships in #1703); fill `color-mix` of `--warning-main` at 20% | `--danger` (ships in #1703) · ui2 `palette.warning.main` | `#FE9C2A` on `#44301C` (over `#161518`) 5.94:1; on `#503A29` (over `#242129`) 5.06:1 |
-| Collaborator | `rgba(26,117,210,0.2)` Blue Dark 1 `#1A75D2` at 20% | none | 100px | `H6 Regular` · `#63B4F6` System/Blue Light 1 | 4 / 10 | text `--palette-info-light`; fill `color-mix` of PROPOSED `--palette-info-dark1` at 20% | ui2 `palette.info.light`; fill ui2 `palette.info.dark` at 20% | `#63B4F6` on `#17283D` (over `#161518`) 6.67:1; on `#22324B` (over `#242129`) 5.78:1 |
+| Collaborator | `rgba(26,117,210,0.2)` Blue Dark 1 `#1A75D2` at 20% | none | 100px | `H6 Regular` · `#63B4F6` System/Blue Light 1 | 4 / 10 | text `--palette-info-light`; fill `color-mix` of `--palette-info-dark1` at 20% | ui2 `palette.info.light`; fill ui2 `palette.info.dark` at 20% | `#63B4F6` on `#17283D` (over `#161518`) 6.67:1; on `#22324B` (over `#242129`) 5.78:1 |
 
 ## Feedback
 
@@ -646,14 +647,14 @@ Every literal the Feedback pages use, mapped once; the variant tables below refe
 | `#FF2D55` action text, spinner arc | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
 | `#161518` snackbar fill | Neutrals/Shadow | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` |
 | `#35333B` tooltip fill | Neutrals/Onix (a Figma variable on this page) | `--ui-designer-control-bg`, `--palette-neutral-onyx` | missing (ui2 `_components.tooltip.fill` is `#242129`, upstream) |
-| `rgba(255,255,255,.1)` progress track | DCL/White10% | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`) | missing |
+| `rgba(255,255,255,.1)` progress track | DCL/White10% | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`) | `--palette-whiteTransparent-subtle` |
 | Snow @ .3 spinner track | not a Figma step (ramp is 60/40/20/10); drawn inside an SVG asset | missing | missing |
-| Ruby → Yellow progress fill | Brand/Flare, as an image fill | PROPOSED `--gradient-flare` | missing (`--metaverse-gradient` differs) |
+| Ruby → Yellow progress fill | Brand/Flare, as an image fill | `--gradient-flare` | `--gradient-flare` (`--metaverse-gradient` differs) |
 | 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px) |
 | 100px pill radius | — | `--shape-borderRadiusPill` | missing |
-| `0 2px 3px rgba(0,0,0,.25)` tooltip shadow | — | PROPOSED `--shadow-tooltip` (`--contexify-menu-shadow` differs) | missing |
-| Inter 14 / 400 / 100% | `H7 Regular` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
-| Inter 14 / 600 / 100% uppercase | `H7 Semi Caps` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+| `0 2px 3px rgba(0,0,0,.25)` tooltip shadow | — | `--shadow-tooltip` (`--contexify-menu-shadow` differs) | `--shadow-tooltip` |
+| Inter 14 / 400 / 100% | `H7 Regular` | `--font-family` + `--type-h7-regular-*` | `--font-family` + `--type-h7-regular-*` or `Typography` |
+| Inter 14 / 600 / 100% uppercase | `H7 Semi Caps` | `--font-family` + `--type-h7-semi-caps-*` | `--font-family` + `--type-h7-semi-caps-*` or `Typography` |
 
 ### Spinner Animation (Progress)
 
@@ -676,7 +677,7 @@ Component [`20827:581`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 
 | Variant | State | Fill | Border | Radius | Spacing / size | Inspector token | Creator Hub token | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ProgressBar | determinate | track White 10; bar Ruby → Yellow (Brand/Flare as a PNG image fill; placeholder width 194 of the 292 inner width, ≈ 66%) | 2px Snow | 100px pill (track and bar) | 300 × 16; padding 2 / 100 / 2 / 2 (top / right / bottom / left, the right padding sets the placeholder fill); bar 12 tall, flex-fill | track `--palette-whiteTransparent-subtle`; border `--ui-designer-text`; radius `--shape-borderRadiusPill`; fill PROPOSED `--gradient-flare` | ui2 `whiteTransparent.subtle`, `neutral.softWhite`; `theme.css` missing | border 17.73:1; bar vs track 3.81:1 at the Ruby end (≥ 3:1); track vs page 1.31:1, the border carries the edge | `role="progressbar"` with `aria-valuenow/min/max` and a visible or `aria-label` name |
+| ProgressBar | determinate | track White 10; bar Ruby → Yellow (Brand/Flare as a PNG image fill; placeholder width 194 of the 292 inner width, ≈ 66%) | 2px Snow | 100px pill (track and bar) | 300 × 16; padding 2 / 100 / 2 / 2 (top / right / bottom / left, the right padding sets the placeholder fill); bar 12 tall, flex-fill | track `--palette-whiteTransparent-subtle`; border `--ui-designer-text`; radius `--shape-borderRadiusPill`; fill `--gradient-flare` | ui2 `whiteTransparent.subtle`, `neutral.softWhite`; `theme.css` `--palette-whiteTransparent-subtle`, `--gradient-flare`; the rest missing | border 17.73:1; bar vs track 3.81:1 at the Ruby end (≥ 3:1); track vs page 1.31:1, the border carries the edge | `role="progressbar"` with `aria-valuenow/min/max` and a visible or `aria-label` name |
 | ProgressBar | ✱ indeterminate | same chrome, bar animates | same | same | same | — | — | same | `role="progressbar"` without `aria-valuenow`; honour `prefers-reduced-motion` |
 
 ### Snackbars (Snackbars)
@@ -703,7 +704,7 @@ Placement variants, no states. Shared: container fill Onix, 12px radius, padding
 
 | Variant | State | Peak | Size (with "Text") | Inspector token | Creator Hub token | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Top | default | below the container, centred | 69 × 59.77 | fill `--ui-designer-control-bg`; radius `--ui-designer-radius-menu`; text `--ui-designer-text`; shadow PROPOSED `--shadow-tooltip` | fill missing (ui2 `_components.tooltip.fill` `#242129`, upstream drift from Onix) | text 12.13:1; Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow carries the edge | `role="tooltip"`, trigger `aria-describedby`; shows on hover and focus, dismisses on Escape |
+| Top | default | below the container, centred | 69 × 59.77 | fill `--ui-designer-control-bg`; radius `--ui-designer-radius-menu`; text `--ui-designer-text`; shadow `--shadow-tooltip` | fill missing (ui2 `_components.tooltip.fill` `#242129`, upstream drift from Onix) | text 12.13:1; Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow carries the edge | `role="tooltip"`, trigger `aria-describedby`; shows on hover and focus, dismisses on Escape |
 | Bottom | default | above the container | 69 × 59.77 | same | same | same | same |
 | Right | default | left of the container | 79.77 × 49 | same | same | same | same |
 | Left | default | right of the container | 79.77 × 49 | same | same | same | same |
@@ -721,15 +722,15 @@ Every literal the Navigation pages use, mapped once; the variant tables below re
 | `#FCFCFC` active tab label and underline, button text, logo disc | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
 | `#A09BA8` resting tab label | Neutrals/Silver | `--palette-neutral-gray3` (aliased by `--ui-designer-text-muted`) | `--dcl-silver` · ui2 `neutral.gray3` |
 | `#FF2D55` Create button fill, notification dot | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
-| `rgba(255,255,255,.4)` Sign-in border | Transparencies/White 40 | `--palette-whiteTransparent-blurry` (aliased by `--ui-designer-checkbox-border`) | missing (`--transparent-gray-light` is .23) |
-| `rgba(255,255,255,.1)` tab hover fill | Transparencies/White 10 | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`), `--ui-designer-control-selected-bg` (menu rows) | missing (`Navbar` paints `#ffffff0d`, White 5) |
-| `rgba(255,255,255,.2)` Create split divider | Transparencies/White 20 | `--palette-whiteTransparent-soft` (aliased by `--ui-designer-control-border-strong`) | missing (`CreateButton` carries the literal) |
-| `#A14BF3` avatar disc behind the placeholder snapshot | Rarities/Legendary | PROPOSED `--palette-rarity-legendary` | missing (ui2 `rarity.legendary`); a wearable-rarity colour, not a navigation token — the real avatar decides |
+| `rgba(255,255,255,.4)` Sign-in border | Transparencies/White 40 | `--palette-whiteTransparent-blurry` (aliased by `--ui-designer-checkbox-border`) | `--palette-whiteTransparent-blurry` (`--transparent-gray-light` is .23) |
+| `rgba(255,255,255,.1)` tab hover fill | Transparencies/White 10 | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`), `--ui-designer-control-selected-bg` (menu rows) | `--palette-whiteTransparent-subtle` (`Navbar` paints `#ffffff0d`, White 5) |
+| `rgba(255,255,255,.2)` Create split divider | Transparencies/White 20 | `--palette-whiteTransparent-soft` (aliased by `--ui-designer-control-border-strong`) | `--palette-whiteTransparent-soft` (`CreateButton` carries the literal) |
+| `#A14BF3` avatar disc behind the placeholder snapshot | Rarities/Legendary | `--palette-rarity-legendary` | `--palette-rarity-legendary` · ui2 `rarity.legendary`; a wearable-rarity colour, not a navigation token — the real avatar decides |
 | 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px; `CreateButton` and `UserMenu` carry the literal) |
 | 100px pill radius (logo, avatar, dot) | — | `--shape-borderRadiusPill` | missing |
 | 2px active indicator (bottom on horizontal, right on vertical) | — | literal | literal |
-| Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
-| Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+| Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + `--type-h4-semi-*` | `--font-family` + `--type-h4-semi-*` or `Typography` |
+| Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + `--type-h6-semi-caps-*` | `--font-family` + `--type-h6-semi-caps-*` or `Typography` |
 
 ### Main Navigation (Header)
 
@@ -742,10 +743,10 @@ No interaction states drawn on the bar itself; the tabs it embeds are the `tab-b
 | Logo disc (TextureContainedRoundedButton `21232:42112`) | both | Snow, logo asset 64 in a 44 box (SVG asset) | none | 100px | — | 40 × 40 | `--ui-designer-text`; `--shape-borderRadiusPill` | `LogoButton`; ui2 `neutral.softWhite` | disc vs `#16141a` 17.81:1 | `<button aria-label>`; `LogoButton` matches at 40px, adds a 2px white hover outline and a `--dcl` focus ring Figma does not draw |
 | Tab bar | both | none | none | — | `H4 Semi`, Silver at rest | 8 tabs (HOME, SCENES, TEMPLATES, ANALYTICS, MANAGE, BADGES, LEARN, MORE), gap 40, tab padding 10 / 4 | `--palette-neutral-gray3` / `--ui-designer-text-muted` | `--dcl-silver` · ui2 `neutral.gray3` | Silver on `#16141a` 6.74:1, on `#161518` 6.71:1 | `<nav>`; `Navbar` uses gap 8 and tab padding 19 / 16 / 17 — drift |
 | Create (label half, `20817:810`) | both | Primary | none | 12px, on the outer row | `H6 Semi Caps` Snow, line-height 22 | 40 tall, padding 0 / 14, gap 6, icon 18 | `--primary-main`; `--ui-designer-text` | `--primary`, `--dcl` | Snow on Primary 3.55:1 — **fails 4.5:1** (16px / 600 is not large text); Primary Dark 1 4.08:1 also fails | `<button>`; `CreateButton` matches geometry and paints hover `#F70038` as a literal |
-| Create (menu half, `20817:813`) | both | Primary | 1px White 20 left | 12px, on the outer row | chevron 8.5 × 5 Snow | 40 × 40 | `--palette-whiteTransparent-soft` | missing (`CreateButton` carries the literal) | divider on Primary 1.20:1, decorative; chevron 3.55:1 (≥ 3:1 non-text) | `aria-haspopup="menu"`, `aria-expanded`, `aria-label`; `CreateButton` matches |
+| Create (menu half, `20817:813`) | both | Primary | 1px White 20 left | 12px, on the outer row | chevron 8.5 × 5 Snow | 40 × 40 | `--palette-whiteTransparent-soft` | `--palette-whiteTransparent-soft` (`CreateButton` carries the literal) | divider on Primary 1.20:1, decorative; chevron 3.55:1 (≥ 3:1 non-text) | `aria-haspopup="menu"`, `aria-expanded`, `aria-label`; `CreateButton` matches |
 | Divider | both | — | 37px vertical hairline (SVG asset; its stroke colour is not in the node tree) | — | — | 0 × 37 | — | — | — | `aria-hidden`; `Navbar` has none |
-| Account (TextureContainedRoundedButton `21232:42212`) | Signed In=On | Legendary `#A14BF3` under the avatar snapshot | none | 100px | — | 40 × 40 | PROPOSED `--palette-rarity-legendary` | missing; ui2 `rarity.legendary` | placeholder disc vs page 4.19:1; the real avatar decides | `<button aria-label>`; `UserMenu` renders the avatar at 44px — drift |
-| Account (Button-Contained-Text `20960:6432`) | Signed In=Off | none | 1.5px White 40 | 12px | `H6 Semi Caps` Snow, "sign in" | 40 tall, padding 12 / 24 | `--palette-whiteTransparent-blurry`; `--borderWidth-strong` | missing; `--transparent-gray-light` is .23 | text 17.81:1; border 3.83:1 (≥ 3:1) | `<button>`; `UserMenu` paints 1px `--transparent-gray-light`, padding 7 / 16 — drift |
+| Account (TextureContainedRoundedButton `21232:42212`) | Signed In=On | Legendary `#A14BF3` under the avatar snapshot | none | 100px | — | 40 × 40 | `--palette-rarity-legendary` | `--palette-rarity-legendary`; ui2 `rarity.legendary` | placeholder disc vs page 4.19:1; the real avatar decides | `<button aria-label>`; `UserMenu` renders the avatar at 44px — drift |
+| Account (Button-Contained-Text `20960:6432`) | Signed In=Off | none | 1.5px White 40 | 12px | `H6 Semi Caps` Snow, "sign in" | 40 tall, padding 12 / 24 | `--palette-whiteTransparent-blurry`; `--borderWidth-strong` | `--palette-whiteTransparent-blurry`; the rest missing; `--transparent-gray-light` is .23 | text 17.81:1; border 3.83:1 (≥ 3:1) | `<button>`; `UserMenu` paints 1px `--transparent-gray-light`, padding 7 / 16 — drift |
 | Create, Sign in | ✱ hover / press / focus / disabled | not drawn on this page; take them from Buttons (Inputs page) when it is extracted | — | — | — | — | — | — | — | — |
 
 ### tab-bar (Header)
@@ -767,7 +768,7 @@ The page labels Notification "UNUSED". Hover and Notification are mutually exclu
 | Variant | State | Fill | Border | Label | Badge | Inspector token | Creator Hub token | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Active=False, Hover=False, Notification=False | default | none | none | Silver `#A09BA8` | — | `--palette-neutral-gray3` | `--dcl-silver`; ui2 `neutral.gray3` | label 6.71:1 on `#161518`, 6.74:1 on `#16141a`, 5.85:1 on `#242129` | `role="tab"` in a `role="tablist"`, or `<a aria-current="page">` for routes; hit target 48 × 75 |
-| Active=False, Hover=True, Notification=False | hover | White 10 | none | Silver | — | fill `--palette-whiteTransparent-subtle` | missing (`Navbar` paints `#ffffff0d`) | label over the fill 5.12:1 on `#161518`, 5.11:1 on `#16141a`, 4.31:1 on `#242129`; fill vs surface 1.31:1, the label carries the state | — |
+| Active=False, Hover=True, Notification=False | hover | White 10 | none | Silver | — | fill `--palette-whiteTransparent-subtle` | `--palette-whiteTransparent-subtle` (`Navbar` paints `#ffffff0d`) | label over the fill 5.12:1 on `#161518`, 5.11:1 on `#16141a`, 4.31:1 on `#242129`; fill vs surface 1.31:1, the label carries the state | — |
 | Active=False, Hover=False, Notification=True | default | none | none | Silver | 8 × 8 Primary dot, 100px, `right: 0`, `top: −0.04px` | dot `--primary-main` | `--primary` | dot 4.99:1 (≥ 3:1 non-text) | the dot needs text: `aria-label="Scenes, 1 notification"` or a visually hidden count |
 | Active=True, Hover=False, Notification=False | active | none | 2px Snow bottom | Snow | — | `--ui-designer-text` | ui2 `neutral.softWhite` | label and underline 17.73:1 | `aria-selected="true"` or `aria-current="page"` |
 | Active=True, Hover=True, Notification=False | active + hover | White 10 | 2px Snow bottom | Snow | — | as above | as above | label over the fill 13.53:1 | — |
@@ -785,7 +786,7 @@ Same axes as TabHorizontal. Shared: 80 × 75, column flow, `justify-content: cen
 | Variant | State | Fill | Border | Label | Badge | Inspector token | Creator Hub token | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Active=False, Hover=False, Notification=False | default | none | none | Silver `#A09BA8` | — | `--palette-neutral-gray3` | `--dcl-silver`; ui2 `neutral.gray3` | 6.71:1 on `#161518`, 6.74:1 on `#16141a`, 5.85:1 on `#242129` | `role="tab"` in a vertical `role="tablist"` (`aria-orientation="vertical"`, Up/Down arrows); hit target 80 × 75 |
-| Active=False, Hover=True, Notification=False | hover | White 10 | none | Silver | — | `--palette-whiteTransparent-subtle` | missing | 5.12:1 / 5.11:1 / 4.31:1 over the fill | — |
+| Active=False, Hover=True, Notification=False | hover | White 10 | none | Silver | — | `--palette-whiteTransparent-subtle` | `--palette-whiteTransparent-subtle` | 5.12:1 / 5.11:1 / 4.31:1 over the fill | — |
 | Active=False, Hover=False, Notification=True | default | none | none | Silver | none drawn | — | — | — | badge text as TabHorizontal |
 | Active=True, Hover=False, Notification=False | active | none | 2px Snow right | Snow | — | `--ui-designer-text` | ui2 `neutral.softWhite` | 17.73:1 | `aria-selected="true"` |
 | Active=True, Hover=True, Notification=False | active + hover | White 10 | 2px Snow right | Snow | — | as above | as above | 13.53:1 over the fill | — |
@@ -807,64 +808,64 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Modals
 | `#A09BA8` card meta, menu glyphs, menu section label | Neutrals/Silver | `--ui-designer-text-muted`, `--neutral-grey-3` | `--dcl-silver`, `--clear-divider` · ui2 `neutral.gray3` |
 | `#FFFFFF` icon glyphs | Neutrals/White | `--white` | `--white`, `--text` |
 | `#43404A` menu row hover, back-button ring | Neutrals/Pale Black | `--gray-0` | `--dark-gray` · ui2 `neutral.gray0` |
-| `#35333B` menu fill | Neutrals/Onix | `--palette-neutral-onyx`, `--ui-designer-control-bg` | PROPOSED `--menu-bg` |
+| `#35333B` menu fill | Neutrals/Onix | `--palette-neutral-onyx`, `--ui-designer-control-bg` | `--menu-bg` |
 | `#FF2D55` primary button, D7 retention value, required marker | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
-| `#C640CD` smart-item icon disc, avatar fill | Brand/Lavender | `--lavender`, `--smart-item-icon-bg-color` | PROPOSED `--lavender` |
-| `rgba(255,255,255,.05)` card rest fill, AccordionEntry hover fill | not a Figma step (unnamed `#FFFFFF` 5%) | `--palette-whiteTransparent-faint` (accordion); `--ui-designer-control-empty-bg` (UI Designer fields) | `--transparent-gray-dark` |
-| `rgba(255,255,255,.1)` card border, accordion rules, menu border and rule, secondary button fill, modal close fill | Transparencies/White 10 | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`), `--ui-designer-control-selected-bg` | missing (`PublishedProjectCard` paints `--transparent-gray-dark`, White 5) |
-| `rgba(255,255,255,.15)` card hover fill | not a Figma step (unnamed `#FFFFFF` 15%) | PROPOSED `--palette-whiteTransparent-hover` | PROPOSED `--transparent-gray-hover` (`Tutorials` hovers with `.1`) |
-| `rgba(255,255,255,.2)` location divider, Publish split divider | Transparencies/White 20 | `--palette-whiteTransparent-soft` (aliased by `--ui-designer-control-border-strong`) | missing |
-| `rgba(255,255,255,.4)` chevrons, kebab glyph, accordion group label, field border | Transparencies/White 40 | `--palette-whiteTransparent-blurry` (aliased by `--ui-designer-checkbox-border`) | missing (`--transparent-gray-light` is .23) |
-| `rgba(255,255,255,.6)` scrollbar handle border, verification expiry text, modal group label, attach label | Transparencies/White 60 | `--palette-whiteTransparent-backdrop` | missing |
-| Ruby → Lavender favourite star | Gradients/Cerise (stops not in the style list) | PROPOSED `--gradient-cerise` | PROPOSED `--gradient-cerise` |
+| `#C640CD` smart-item icon disc, avatar fill | Brand/Lavender | `--lavender`, `--smart-item-icon-bg-color` | `--lavender` |
+| `rgba(255,255,255,.05)` card rest fill, AccordionEntry hover fill | not a Figma step (unnamed `#FFFFFF` 5%) | `--palette-whiteTransparent-faint` (accordion); `--ui-designer-control-empty-bg` (UI Designer fields) | `--palette-whiteTransparent-faint`, `--transparent-gray-dark` |
+| `rgba(255,255,255,.1)` card border, accordion rules, menu border and rule, secondary button fill, modal close fill | Transparencies/White 10 | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`), `--ui-designer-control-selected-bg` | `--palette-whiteTransparent-subtle` (`PublishedProjectCard` paints `--transparent-gray-dark`, White 5) |
+| `rgba(255,255,255,.15)` card hover fill | not a Figma step (unnamed `#FFFFFF` 15%) | `--palette-whiteTransparent-hover` | `--palette-whiteTransparent-hover` (`Tutorials` hovers with `.1`) |
+| `rgba(255,255,255,.2)` location divider, Publish split divider | Transparencies/White 20 | `--palette-whiteTransparent-soft` (aliased by `--ui-designer-control-border-strong`) | `--palette-whiteTransparent-soft` |
+| `rgba(255,255,255,.4)` chevrons, kebab glyph, accordion group label, field border | Transparencies/White 40 | `--palette-whiteTransparent-blurry` (aliased by `--ui-designer-checkbox-border`) | `--palette-whiteTransparent-blurry` (`--transparent-gray-light` is .23) |
+| `rgba(255,255,255,.6)` scrollbar handle border, verification expiry text, modal group label, attach label | Transparencies/White 60 | `--palette-whiteTransparent-backdrop` | `--palette-whiteTransparent-backdrop` |
+| Ruby → Lavender favourite star | Gradients/Cerise (stops not in the style list) | `--gradient-cerise` | `--gradient-cerise` |
 | `#6141A6 → #6C84FF` credits coin (+ white drop shadow, `#5600FF` 50% inner shadow) | — (illustration, not a variable) | missing; ship as an SVG asset | missing; ship as an SVG asset |
 | `#302C37` page boards | — (Figma presentation only) | not a surface | not a surface |
-| 8px radius (menu row, title-bar buttons) | — | PROPOSED `--shape-borderRadiusRow` (`--ui-designer-radius-field` is 6px; `--contexify-activeItem-radius` holds 8px for the menus) | PROPOSED `--shape-borderRadiusRow` (`--mui-shape-borderRadius` is 6px; `SceneList` carries the literal) |
+| 8px radius (menu row, title-bar buttons) | — | `--shape-borderRadiusMedium` (`--ui-designer-radius-field` is 6px) | `--shape-borderRadiusMedium` (`SceneList` carries the literal) |
 | 12px radius (menu, published thumbnail, CTA buttons, grouped accordion, form fields) | — | `--shape-borderRadiusLarge` (aliased by `--ui-designer-radius-menu`) | missing (`UserMenu` carries the literal) |
-| 16px radius (cards, card thumbnails) | — | PROPOSED `--shape-borderRadiusCard` | PROPOSED `--shape-borderRadiusCard` (`Tutorials` carries the literal) |
-| 24px radius (modals) | — | PROPOSED `--shape-borderRadiusXLarge` | PROPOSED `--shape-borderRadiusXLarge` (ui2 `Modal` paper is 12px) |
+| 16px radius (cards, card thumbnails) | — | `--shape-borderRadiusXLarge` | `--shape-borderRadiusXLarge` (`Tutorials` carries the literal) |
+| 24px radius (modals) | — | `--shape-borderRadiusXXLarge` | `--shape-borderRadiusXXLarge` (ui2 `Modal` paper is 12px) |
 | 100px pill (kebab, modal close, radio, avatar ring, scrollbar handle) and 9999px (BackCTA, title Tag) | — | `--shape-borderRadiusPill` (100px; 9999px draws the same pill) | missing (`EditorPage` and `Title` carry `100%`) |
 | 34px pill (scene status chip) | — | missing | missing |
 | 5px radius (16px checkbox) | — | missing | missing |
 | 6px radius (attach button, location row) | — | `--shape-borderRadius` (aliased by `--ui-designer-radius-field`) | `--mui-shape-borderRadius` |
-| `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | `--menu-shadow` (`--contexify-menu-shadow` holds `2px 2px 10px rgba(0,0,0,.5)` until the Menu-Entry spoke points it there) | PROPOSED `--menu-shadow` (ui2 `MuiPaper` elevation today) |
-| `0 4px 4px rgba(0,0,0,.1)` title-bar toast shadow | — | PROPOSED `--shadow-tooltip` | PROPOSED `--shadow-tooltip` (ui2 `Tooltip` today) |
+| `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | `--menu-shadow` (`--contexify-menu-shadow` holds `2px 2px 10px rgba(0,0,0,.5)` until the Menu-Entry spoke points it there) | `--menu-shadow` (ui2 `MuiPaper` elevation paints the menus) |
+| `0 4px 4px rgba(0,0,0,.1)` title-bar toast shadow | — | `--shadow-toast` | `--shadow-toast` (ui2 `Tooltip` paints it) |
 | `#181225` modal fill | — (a raw hex on every modal, not a variable) | `--modal-content-bg-color` (→ `--tree-bg-color` `#161518`): drift → `#181225` (pending spoke) | `--modal` `#242129`: drift → `#181225` (pending spoke); the ui2 `Modal` paper paints it |
 | `#000000` title-bar fill | Neutrals/Black | `--black`, `--base-21` | `--bg-inspector` |
-| `#2D2A33` toolbar icon and split buttons, title-bar toast | Neutrals/Onix Dark 1 | PROPOSED `--palette-neutral-onyxDark1` | `--title-bar-button` |
+| `#2D2A33` toolbar icon and split buttons, title-bar toast | Neutrals/Onix Dark 1 | `--palette-neutral-onyxDark1` | `--title-bar-button` |
 | `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — ✱ deviation (1/255) | `--darker-gray`, `--card`, `--modal` `#242129` — same ✱ deviation |
 | `#244B7D` AI-toggle selected | System/Blue Dark 2 | `--palette-system-blueDark2` | `--ai-session-selected` |
 | `#243852` AI-toggle selected + hover | System/Blue Dark 3 | `--palette-system-blueDark3` | `--ai-session-selected-hover` |
 | `#FF6280` publish split-button hover | Primary/Primary Light 1 | `--palette-primary-light` | `--primary-hover` (ships in #1703) |
-| `#5E5B67` `.dcl.eth` suffix | Neutrals/Graffito | PROPOSED `--palette-neutral-gray1` | `--light-gray` |
+| `#5E5B67` `.dcl.eth` suffix | Neutrals/Graffito | `--palette-neutral-gray1` | `--light-gray` |
 | `#34CE77` online dot | System/Green | `--success-main` (ships in #1703) | `--success` |
 | `#FE9C2A` away dot | System/Orange | `--warning-main` (ships in #1703; the warning role, no presence token) | `--danger` (ships in #1703; the warning role) |
 | `#28AC00` online dot on the 28px avatar only | DCL/Grass (a legacy-library variable, shown with `?` in the panel) | missing | missing — Figma drift, see ProfilePic |
 | `#FF0000` blocked ring | DCL/Red (legacy; the error role is System/Red `#FB3B3B`) | `--error-main` (ships in #1703) | `--error` (ships in #1703) |
 | `#FF4BED` @ 30% + layer blur 500 modal glow | DCL/Rarities/Mythic (legacy) | missing; ship as an asset | missing; ship as an asset |
 | `#FFD079 → #DA36FF` AI sparkle gradient | — (raw linear gradient) | missing | missing (`components/Icons/AssistantIcon` paints its own gradient) |
-| `rgba(0,0,0,.2)` background overlay, modal title-bar fill | Transparencies/Black 20 | PROPOSED `--palette-blackTransparent-soft` (`--contexify-separator-color` holds the same value in a react-contexify role) | PROPOSED `--palette-blackTransparent-soft` |
-| `rgba(0,0,0,.4)` scrollbar handle | Transparencies/Black 40 | `--palette-blackTransparent-blurry` | PROPOSED `--scrollbar-thumb` |
+| `rgba(0,0,0,.2)` background overlay, modal title-bar fill | Transparencies/Black 20 | `--palette-blackTransparent-soft` (`--contexify-separator-color` holds the same value in a react-contexify role) | `--palette-blackTransparent-soft` |
+| `rgba(0,0,0,.4)` scrollbar handle | Transparencies/Black 40 | `--palette-blackTransparent-blurry` | `--scrollbar-thumb` (→ `--palette-blackTransparent-blurry`) |
 | `rgba(0,0,0,.6)` Secure-Sign-In close button | Transparencies/Black 60 | `--modal-overlay-bg-color` (same value, the overlay role) | missing (`--dimmer` is `#000000dd`) |
 | Inter 100 / 600 / normal | unnamed (sign-in verification number) | `--font-family` + literal size | same |
 | Inter 48 / 600 / 100% | `H0 Semi` | `--font-family` + literal size | same |
 | Inter 48 / 400 / 117% | `typography/h3` (legacy name; `.dcl.eth`) | `--font-family` + literal size | same |
-| Inter 24 / 600 / 100% | `H2 Semi` | `--font-family` + literal size | same |
-| Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
-| Inter 18 / 600 / 100% | `H5 Semi` (modal title bars) | `--font-family` + literal size | same |
-| Inter 18 / 400 / 100% | `H5 Regular` | `--font-family` + literal size | same |
-| Inter 16 / 600 / 100% | `H6 Semi` | `--font-family` + literal size | same |
-| Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + literal size | same |
-| Inter 16 / 400 / 100% | `H6 Regular` | `--font-family` + literal size | same |
+| Inter 24 / 600 / 100% | `H2 Semi` | `--font-family` + `--type-h2-semi-*` | same |
+| Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + `--type-h4-semi-*` | `--font-family` + `--type-h4-semi-*` or `Typography` |
+| Inter 18 / 600 / 100% | `H5 Semi` (modal title bars) | `--font-family` + `--type-h5-semi-*` | same |
+| Inter 18 / 400 / 100% | `H5 Regular` | `--font-family` + `--type-h5-regular-*` | same |
+| Inter 16 / 600 / 100% | `H6 Semi` | `--font-family` + `--type-h6-semi-*` | same |
+| Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + `--type-h6-semi-caps-*` | same |
+| Inter 16 / 400 / 100% | `H6 Regular` | `--font-family` + `--type-h6-regular-*` | same |
 | Inter 16 / 400 / 100% uppercase | unnamed (Help & Support group labels) | `--font-family` + literal size | same |
 | Inter 16 / 600 / 22px uppercase | unnamed (modal and section-title CTA labels) | `--font-family` + literal size | same |
-| Inter 14 / 600 / 100% | `H7 Semi` (the CTA label is the same face uppercase, unnamed) | `--font-family` + literal size | same |
-| Inter 14 / 600 / 100% uppercase | `H7 Semi Caps` (snackbar action) | `--font-family` + literal size | same |
-| Inter 14 / 400 / 100% | `H7 Regular` (also the Play Options heading, uppercase) | `--font-family` + literal size | same |
+| Inter 14 / 600 / 100% | `H7 Semi` (the CTA label is the same face uppercase, unnamed) | `--font-family` + `--type-h7-semi-*` | same |
+| Inter 14 / 600 / 100% uppercase | `H7 Semi Caps` (snackbar action) | `--font-family` + `--type-h7-semi-caps-*` | same |
+| Inter 14 / 400 / 100% | `H7 Regular` (also the Play Options heading, uppercase) | `--font-family` + `--type-h7-regular-*` | same |
 | Inter 14 / 400 / 150%, cap-height trim | unnamed (location and privacy meta) | `--font-family` + literal size | same |
-| Inter 13 / 600 / 24px, 0.46px tracking, uppercase | `button/small` (legacy; toolbar split buttons) | `--font-family` + literal size | same |
-| Inter 12 / 600 / 100% | `H8 Semi` (title-bar toasts) | `--font-family` + literal size | same |
-| Inter 12 / 400 / 100% | `H8 Regular` (menu rows; the section label is the same face uppercase, unnamed) | `--font-family` + literal size | same |
+| Inter 13 / 600 / 24px, 0.46px tracking, uppercase | `button/small` (legacy; toolbar split buttons) | `--font-family` + `--type-button-small-*` | same |
+| Inter 12 / 600 / 100% | `H8 Semi` (title-bar toasts) | `--font-family` + `--type-h8-semi-*` | same |
+| Inter 12 / 400 / 100% | `H8 Regular` (menu rows; the section label is the same face uppercase, unnamed) | `--font-family` + `--type-h8-regular-*` | same |
 | `SF Pro Text` Medium 18 | unnamed (Editor Toolbar title; the only non-Inter text in the file) | `--font-family` (Inter) | `--font-family` (Inter) |
 
 ### AccordionEntry (Accordion)
@@ -885,8 +886,8 @@ The body region keeps its DOM node while closed or off, and is `hidden` (so `ari
 
 | Variant | State | Fill | Border | Chevron | Body | Size | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Default | collapsed | none | 1px White 10 bottom | leads the row; right, White 40 | — | 596 × 50 | label 17.73:1 on `#161518`, 17.81:1 on `#16141a`, 15.45:1 on the `#242129` entity panel; chevron 3.83:1 / 3.74:1 (≥ 3:1 non-text); rule 1.32:1 / 1.36:1, decorative | header is a `<button aria-expanded="false" aria-controls>`; hit target 50 tall, full width | `--palette-whiteTransparent-subtle` (rule), `--palette-neutral-softWhite` (label), `--palette-whiteTransparent-blurry` (chevron) | missing (no consumer) |
-| Hover | collapsed + hover | White 5 (unnamed; `--palette-whiteTransparent-faint`) | 1px White 10 bottom | right, White 40 | — | 596 × 50 | fill vs surface 1.13:1 (1.16:1 on `#242129`) — the fill alone does not announce the state; label over it 15.67:1 (13.37:1 on the panel) | — | `--palette-whiteTransparent-faint` | missing |
+| Default | collapsed | none | 1px White 10 bottom | leads the row; right, White 40 | — | 596 × 50 | label 17.73:1 on `#161518`, 17.81:1 on `#16141a`, 15.45:1 on the `#242129` entity panel; chevron 3.83:1 / 3.74:1 (≥ 3:1 non-text); rule 1.32:1 / 1.36:1, decorative | header is a `<button aria-expanded="false" aria-controls>`; hit target 50 tall, full width | `--palette-whiteTransparent-subtle` (rule), `--palette-neutral-softWhite` (label), `--palette-whiteTransparent-blurry` (chevron) | `--palette-whiteTransparent-subtle`, `--palette-whiteTransparent-blurry`; the rest missing (no consumer) |
+| Hover | collapsed + hover | White 5 (unnamed; `--palette-whiteTransparent-faint`) | 1px White 10 bottom | right, White 40 | — | 596 × 50 | fill vs surface 1.13:1 (1.16:1 on `#242129`) — the fill alone does not announce the state; label over it 15.67:1 (13.37:1 on the panel) | — | `--palette-whiteTransparent-faint` | `--palette-whiteTransparent-faint` |
 | Expanded | open | none | 1px White 10 bottom, under the body (none under the header) | down, White 40 | `Description` row: Fill × Hug 37, padding 0 / 20 / 20, `H7 Regular` Gray, 17 tall | 596 × 88 (50 + 37 + rule) | body 11.55:1 / 11.61:1 (10.07:1 on the panel) | `aria-expanded="true"`; body is `role="region" aria-labelledby` the header | `--palette-neutral-gray4` (`--ui-designer-text-value`, body) | missing |
 | any | ✱ expanded + hover | White 5 on the header row only | — | — | — | — | as Hover | — | — | — |
 | any | ✱ body gap between controls (Figma draws only a text body; user, October 26, 2026) | — | — | — | the body's controls in a column, `--uid-space-4` (16) apart; the body itself is Figma's padding 0 / 20 / 20 | — | — | — | — | — |
@@ -925,8 +926,8 @@ Component [`20932:5388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?no
 
 | Part | State | Fill | Border | Radius | Typography | Size / spacing | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Label (`create`) | default | none | none | — | `H6 Semi Caps` White 40 | 638 × 19 | **3.83:1 on `#161518` and `#16141a` — fails 4.5:1** (16px / 600 is not large text); Silver would pass at 6.71:1 — the user picks | `<h3>` or the group's `aria-labelledby` target | `--palette-whiteTransparent-blurry` | missing |
-| Questions (group) | default | none | 1px White 10 all sides | 12px | — | Fill × Hug 139; entries inside are AccordionEntry at 638 wide (header text 563.75) | border 1.32:1, decorative | `role="group"`; entries keep their own button semantics | `--palette-whiteTransparent-subtle`, `--shape-borderRadiusLarge` (12px) | missing |
+| Label (`create`) | default | none | none | — | `H6 Semi Caps` White 40 | 638 × 19 | **3.83:1 on `#161518` and `#16141a` — fails 4.5:1** (16px / 600 is not large text); Silver would pass at 6.71:1 — the user picks | `<h3>` or the group's `aria-labelledby` target | `--palette-whiteTransparent-blurry` | `--palette-whiteTransparent-blurry` |
+| Questions (group) | default | none | 1px White 10 all sides | 12px | — | Fill × Hug 139; entries inside are AccordionEntry at 638 wide (header text 563.75) | border 1.32:1, decorative | `role="group"`; entries keep their own button semantics | `--palette-whiteTransparent-subtle`, `--shape-borderRadiusLarge` (12px) | `--palette-whiteTransparent-subtle`; the rest missing |
 | Entries | collapsed / open | as AccordionEntry | a 1px White 10 bottom rule between entries; the last (expanded) entry draws none, and the group's own border closes it | — | header `H7 Semi` Snow, body `H7 Regular` Gray | header 50 tall; the first entry reads "What can I create in Decentraland?" | as AccordionEntry | as AccordionEntry | as AccordionEntry | missing |
 
 ### Admin Tools accordions (inspector)
@@ -971,7 +972,7 @@ Component [`20506:31427`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?n
 
 | Name | Fill | Overlay | Size | Usage | Contrast | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Background | raster `image.png` — a near-black field with a violet glow bottom-left and a dark-blue glow left (no gradient stops: it is a bitmap, not a Figma gradient) | solid `rgba(0,0,0,0.2)` (Transparencies/Black 20), inset 0 | 1720 × 1080, no radius | the app canvas behind cards and pages | text is specified against the solid page colours above; the raster's darkest region reads as `#0a0712`-ish and its glow as `#1d1033`-ish (canvas measurement, ±8 per channel) — treat `#16141a` as the design surface and keep Snow / Silver text ≥ 4.5:1 there | PROPOSED `--palette-blackTransparent-soft` for the overlay; no background token | overlay PROPOSED `--palette-blackTransparent-soft`; `.Main` blends the raster instead of overlaying it |
+| Background | raster `image.png` — a near-black field with a violet glow bottom-left and a dark-blue glow left (no gradient stops: it is a bitmap, not a Figma gradient) | solid `rgba(0,0,0,0.2)` (Transparencies/Black 20), inset 0 | 1720 × 1080, no radius | the app canvas behind cards and pages | text is specified against the solid page colours above; the raster's darkest region reads as `#0a0712`-ish and its glow as `#1d1033`-ish (canvas measurement, ±8 per channel) — treat `#16141a` as the design surface and keep Snow / Silver text ≥ 4.5:1 there | `--palette-blackTransparent-soft` for the overlay; no background token | overlay `--palette-blackTransparent-soft`; `.Main` blends the raster instead of overlaying it |
 | ✱ Page board | `#302C37`, 64px radius, padding 100 | — | 1920 × Hug | Figma presentation frame on every Surfaces page, not a product surface | — | — | — |
 
 ### Scene-Card (Cards)
@@ -983,7 +984,7 @@ Shared: column, 416 × 383, 1px White 10 border, 16px radius, clips; `Thumbnail`
 | Variant | State | Fill | Border | Kebab | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Default | default | White 5 (unnamed) | 1px White 10 all sides | — | title over the fill 15.77:1 on `#16141a`; meta 5.97:1 (≥ 4.5:1); glyph 5.97:1; fill vs page 1.13:1 and border 1.31:1 — the card edge is weak, the thumbnail carries it | the whole card is one `<a>` / `<button>` named by the title; hit target 416 × 383 | `--palette-whiteTransparent-faint`, `--palette-whiteTransparent-subtle`, `--ui-designer-text`, `--ui-designer-text-muted` | fill and border missing; `--dcl-silver` (meta) |
-| Hover | hover | White 15 (unnamed) | none | `rounded-button-contained` 40 × 40, 100px, no fill, `Kebab` 24 box, Vector 4 × 20 White 40, at right 10 / top 10.5 inside the Text block | title 11.43:1; **meta 4.33:1 — fails 4.5:1 on hover** (Silver 14px / 400 over White 15); kebab 3.29:1 (≥ 3:1 non-text) | kebab is a separate `<button aria-label="Scene options" aria-haspopup="menu">`, 40px hit target, must also appear on focus-within, not only on hover | PROPOSED `--palette-whiteTransparent-hover` | PROPOSED `--transparent-gray-hover` |
+| Hover | hover | White 15 (unnamed) | none | `rounded-button-contained` 40 × 40, 100px, no fill, `Kebab` 24 box, Vector 4 × 20 White 40, at right 10 / top 10.5 inside the Text block | title 11.43:1; **meta 4.33:1 — fails 4.5:1 on hover** (Silver 14px / 400 over White 15); kebab 3.29:1 (≥ 3:1 non-text) | kebab is a separate `<button aria-label="Scene options" aria-haspopup="menu">`, 40px hit target, must also appear on focus-within, not only on hover | `--palette-whiteTransparent-hover` | `--palette-whiteTransparent-hover` |
 | any | ✱ focus | as Hover | — | — | ring ui2 `palette.info.light` 8.13:1 | `:focus-visible` outline 2px on the card; kebab gets its own ring | — | — |
 | any | ✱ press | White 10 | — | — | — | — | — | — |
 | any | ✱ disabled | — | — | — | not drawn; keep cards enabled or omit them | — | — | — |
@@ -997,7 +998,7 @@ Identical to Scene-Card except the meta line is a subtitle (`H7 Regular` Silver,
 | Variant | State | Fill | Border | Button | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Default | default | White 5 | 1px White 10 | — | title 15.77:1; subtitle 5.97:1 | card is one link / button | as Scene-Card | as Scene-Card |
-| Hover | hover | White 15 | none | 40 × 40 pill, `CodeBash` glyph White | subtitle 4.33:1 — fails 4.5:1 on hover, as Scene-Card; glyph 11.43:1 | `<button aria-label="Open in code">`, 40px hit target, visible on focus-within | PROPOSED `--palette-whiteTransparent-hover`; `--white` (glyph) | PROPOSED `--transparent-gray-hover`; `--white` (glyph) |
+| Hover | hover | White 15 | none | 40 × 40 pill, `CodeBash` glyph White | subtitle 4.33:1 — fails 4.5:1 on hover, as Scene-Card; glyph 11.43:1 | `<button aria-label="Open in code">`, 40px hit target, visible on focus-within | `--palette-whiteTransparent-hover`; `--white` (glyph) | `--palette-whiteTransparent-hover`; `--white` (glyph) |
 | any | ✱ focus / press / disabled | as Scene-Card | — | — | — | — | — | — |
 
 ### Learn-Video-Card (Cards)
@@ -1009,7 +1010,7 @@ Same chrome as Scene-Card; the thumbnail is the video poster (a placeholder imag
 | Variant | State | Fill | Border | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Default | default | White 5 | 1px White 10 | title 15.77:1; subtitle 5.97:1 | card is one `<a>` to the video, named by the title | as Scene-Card | as Scene-Card |
-| Hover | hover | White 15 | none | subtitle 4.33:1 — fails 4.5:1 on hover | — | PROPOSED `--palette-whiteTransparent-hover` | PROPOSED `--transparent-gray-hover` |
+| Hover | hover | White 15 | none | subtitle 4.33:1 — fails 4.5:1 on hover | — | `--palette-whiteTransparent-hover` | `--palette-whiteTransparent-hover` |
 | any | ✱ focus / press | as Scene-Card | — | — | — | — | — |
 
 ### Learn-Doc-Card (Cards)
@@ -1020,8 +1021,8 @@ Column, 416 × 210, 16px radius, the whole card clips; `Thumbnail` 100 tall: a c
 
 | Variant | State | Fill | Border | Star | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Default | default | White 5 | 1px White 10 | Cerise gradient | title 15.77:1; subtitle 5.97:1; star Ruby end 4.44:1, Lavender end 3.86:1 over the fill (≥ 3:1, and decorative) | card is one `<a>` named by the title; star `aria-hidden` | as Scene-Card; star PROPOSED `--gradient-cerise` | as Scene-Card; star PROPOSED `--gradient-cerise` |
-| Hover | hover | White 15 | none | same | subtitle 4.33:1 — fails 4.5:1 on hover | — | PROPOSED `--palette-whiteTransparent-hover` | PROPOSED `--transparent-gray-hover` |
+| Default | default | White 5 | 1px White 10 | Cerise gradient | title 15.77:1; subtitle 5.97:1; star Ruby end 4.44:1, Lavender end 3.86:1 over the fill (≥ 3:1, and decorative) | card is one `<a>` named by the title; star `aria-hidden` | as Scene-Card; star `--gradient-cerise` | as Scene-Card; star `--gradient-cerise` |
+| Hover | hover | White 15 | none | same | subtitle 4.33:1 — fails 4.5:1 on hover | — | `--palette-whiteTransparent-hover` | `--palette-whiteTransparent-hover` |
 | any | ✱ focus / press | as Scene-Card | — | — | — | — | — | — |
 
 ### Published-Scene-Card (Cards)
@@ -1033,7 +1034,7 @@ Shared: column, 852 × 214, 1px White 10 border on all sides, 16px radius, gap 2
 | Variant | State | Fill | Border | CTAs | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Default | default | White 5 | 1px White 10 all sides | — | name 15.77:1; labels and location 5.97:1; D7 value Primary 4.44:1 (20px / 600 ⇒ large text, ≥ 3:1); divider 1.87:1, decorative; thumbnail fallback Gray vs fill 10.27:1 | `<article aria-labelledby>` the name; stats as a `<dl>`; "0%" in Primary needs a text cue, not colour alone | `--palette-whiteTransparent-faint`, `--palette-whiteTransparent-subtle`, `--ui-designer-text`, `--ui-designer-text-muted`, `--ui-designer-text-value`, `--primary-main`, `--palette-whiteTransparent-soft` (rule) | `--primary` (D7 value); the rest missing |
-| Hover | hover | White 15 | 1px White 10 all sides (kept, unlike the home cards) | `CTAs` 257 × 40, absolute at right 9 / top 45, gap 10: `Button-Contained-Text` Secondary flex 1 × 40, 12px, padding 11.5 / 24, White 10 fill, "DETAILS" Inter 14 / 600 uppercase Snow; Primary the same with the Primary fill, "EDIT"; kebab pill 40 × 40, `Kebab` inset 20%, Vector 4 × 20 White 40 | labels 4.33:1 — fails 4.5:1 on hover; DETAILS 8.38:1; **EDIT Snow on Primary 3.55:1 — fails 4.5:1** (same finding as the Create button); D7 value 3.22:1 large-text pass; kebab 3.29:1 | CTAs are `<button>`s, 40px tall, visible on focus-within; kebab `aria-label` + `aria-haspopup="menu"` | PROPOSED `--palette-whiteTransparent-hover`; `--palette-whiteTransparent-subtle` (DETAILS), `--primary-main` (EDIT) | PROPOSED `--transparent-gray-hover`; `--primary` (EDIT) |
+| Hover | hover | White 15 | 1px White 10 all sides (kept, unlike the home cards) | `CTAs` 257 × 40, absolute at right 9 / top 45, gap 10: `Button-Contained-Text` Secondary flex 1 × 40, 12px, padding 11.5 / 24, White 10 fill, "DETAILS" Inter 14 / 600 uppercase Snow; Primary the same with the Primary fill, "EDIT"; kebab pill 40 × 40, `Kebab` inset 20%, Vector 4 × 20 White 40 | labels 4.33:1 — fails 4.5:1 on hover; DETAILS 8.38:1; **EDIT Snow on Primary 3.55:1 — fails 4.5:1** (same finding as the Create button); D7 value 3.22:1 large-text pass; kebab 3.29:1 | CTAs are `<button>`s, 40px tall, visible on focus-within; kebab `aria-label` + `aria-haspopup="menu"` | `--palette-whiteTransparent-hover`; `--palette-whiteTransparent-subtle` (DETAILS), `--primary-main` (EDIT) | `--palette-whiteTransparent-hover`; `--primary` (EDIT) |
 | any | ✱ focus / press | as Scene-Card | — | — | — | — | — | — |
 
 ### Menu-Entry (Menu)
@@ -1044,10 +1045,10 @@ Shared: row, Fill × 38 (240 in the set, 180 inside Menu), 8px radius, padding 0
 
 | Variant | State | Fill | Leading | Label | Trailing | Size | Contrast (on Onix) | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Default | default | none | `Info` 16 box, Vector Silver | `H8 Regular` Snow (174 × 15) | `arrow-right` 10 box, Vector 9.17 × 5.42 White 40 | 240 × 38 | label 12.13:1; glyph 4.59:1 (≥ 3:1); chevron 3.38:1 | `role="menuitem"` in a `role="menu"`; 38px hit target; submenu chevron ⇒ `aria-haspopup="menu"` | `--ui-designer-text`, `--ui-designer-text-muted`, `--palette-whiteTransparent-blurry`; radius PROPOSED `--shape-borderRadiusRow` | `--dcl-silver`; the rest missing |
+| Default | default | none | `Info` 16 box, Vector Silver | `H8 Regular` Snow (174 × 15) | `arrow-right` 10 box, Vector 9.17 × 5.42 White 40 | 240 × 38 | label 12.13:1; glyph 4.59:1 (≥ 3:1); chevron 3.38:1 | `role="menuitem"` in a `role="menu"`; 38px hit target; submenu chevron ⇒ `aria-haspopup="menu"` | `--ui-designer-text`, `--ui-designer-text-muted`, `--palette-whiteTransparent-blurry`; radius `--shape-borderRadiusMedium` | `--dcl-silver`; the rest missing |
 | Hover | hover / keyboard active | Pale Black | same | same | same | 240 × 38 | fill vs Onix 1.23:1 — weak; label over it 9.88:1, glyph 3.74:1, chevron 3.06:1 (≥ 3:1) | the keyboard-active item uses the same fill plus the focus ring below | `--gray-0` | `--dark-gray` |
 | Section | — | none | — | Inter 12 / 400 uppercase Silver (220 × 15), no gap; no leading glyph, so the label sits 10px from the left | — | 240 × 38 | 4.59:1 (≥ 4.5:1, barely; 12px / 400 is small text) | `role="presentation"` heading or `aria-label` on the group; not focusable | `--ui-designer-text-muted` | `--dcl-silver` |
-| Div | — | White 10, 1px tall | — | — | — | 240 × 1 (padding 7 / 10 ⇒ 15px of rhythm) | 1.37:1, decorative | `role="separator"` | `--palette-whiteTransparent-subtle` | missing |
+| Div | — | White 10, 1px tall | — | — | — | 240 × 1 (padding 7 / 10 ⇒ 15px of rhythm) | 1.37:1, decorative | `role="separator"` | `--palette-whiteTransparent-subtle` | `--palette-whiteTransparent-subtle` |
 | Default | ✱ keyboard active (Figma draws none) | Pale Black plus a 1px inset Snow `--focus-ring`, as the Dropdown list | as Hover | as Hover | as Hover | — | ring 9.88:1 on the Pale Black row; the fill alone is 1.23:1, so the ring carries the state | `:focus-visible` on the row the arrow keys make active; a hovered row keeps the fill alone | — | — |
 | Default | ✱ press | White 10 over Pale Black | — | — | — | — | — | — | — | — |
 | Default | ✱ disabled (Figma draws none) | none; the whole row at the library's `opacity: .5` | Silver @ .5 | Snow @ .5 | — | — | label 4.34:1, glyph 2.26:1 — disabled content is exempt from the minimums | `aria-disabled="true"`, stays in the menu's arrow-key order | — | — |
@@ -1089,10 +1090,10 @@ Code detail: inspector react-contexify (`--contexify-menu-shadow` `2px 2px 10px 
 
 | Part | State | Fill | Border | Radius | Shadow | Size / spacing | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Container | open | Onix | 1px White 10 all sides | 12px | `0 4px 8px rgba(0,0,0,.4)` | 200 × Hug (117 with one entry per slot), padding 10 / 0, gap 10 | Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow and border carry the edge | `role="menu"` with `aria-labelledby` the trigger; Escape closes, arrows move, focus returns to the trigger | `--palette-neutral-onyx` (aliased by `--ui-designer-control-bg`), `--palette-whiteTransparent-subtle`, `--shape-borderRadiusLarge`, `--menu-shadow` | PROPOSED `--menu-bg`, PROPOSED `--menu-shadow`; ui2 `Menu` paints MUI defaults |
+| Container | open | Onix | 1px White 10 all sides | 12px | `0 4px 8px rgba(0,0,0,.4)` | 200 × Hug (117 with one entry per slot), padding 10 / 0, gap 10 | Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow and border carry the edge | `role="menu"` with `aria-labelledby` the trigger; Escape closes, arrows move, focus returns to the trigger | `--palette-neutral-onyx` (aliased by `--ui-designer-control-bg`), `--palette-whiteTransparent-subtle`, `--shape-borderRadiusLarge`, `--menu-shadow` | `--menu-bg`, `--menu-shadow`; ui2 `Menu` paints MUI defaults |
 | Options / Options2 | — | none | none | — | — | Fill × Hug, padding 0 / 10 | — | `role="group"` when a Section labels it | — | — |
 | Entry (in the slots) | — | none | none | 8px | — | Fill × 38, padding 0 / 10, gap 10: `Info` 16 + label `H8 Regular` Snow; no trailing arrow | as Menu-Entry | as Menu-Entry | as Menu-Entry | as Menu-Entry |
-| Div | — | as Menu-Entry Div | — | — | — | between the slots, full bleed (the Menu's full width) | — | `role="separator"` | `--palette-whiteTransparent-subtle` | missing |
+| Div | — | as Menu-Entry Div | — | — | — | between the slots, full bleed (the Menu's full width) | — | `role="separator"` | `--palette-whiteTransparent-subtle` | `--palette-whiteTransparent-subtle` |
 | Container | ✱ width | as above | as above | as above | as above | `min-width: 200px`; the menu grows with a long label ("Delete 12 Items", component names) where Figma draws a fixed 200 | — | — | — | — |
 | Div | ✱ inset | White 10 | — | — | — | inset with the rows, 10px clear above and below (Figma: full bleed in the composed menu); user decision October 21, 2026 (#1707) | 1.36:1, decorative | `role="separator"` | — | — |
 | Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | opens 10px clear of the parent menu; scrolls past 30vh (`theme/index.css` `.contexify_submenu`) with the thin menu scrollbar (✱ below); opens at once and stays open 400ms after the pointer leaves its parent row, so a diagonal move across the gap reaches it; the keyboard opens and closes it at once | as Container; scrollbar thumb outline 5.07:1 on Onix (the Black 40 fill alone is 1.32:1) | `role="menu"`, opened from a row with `aria-haspopup="menu"` | — | — |
@@ -1202,7 +1203,7 @@ Shared: row, Hug 700 × Hug, fill `#181225` (a raw hex, no variable), 1px White 
 
 | Variant | State | Fill | Border | CTAs | Close | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Horizontal | default | `#181225` + glow | 1px White 10 | row, gap 20: `Secondary` (White 10 fill) "CANCEL" then `PrimaryBlocked` (Primary fill) "DELETE MOBILE", each Fill 240 × 46 | White 10 pill, 36 × 36 | title 17.77:1, body 11.58:1 on `#181225`; CANCEL 13.51:1 over White 10; **DELETE 3.55:1 Snow on Primary — fails 4.5:1** (16px / 600 is not large text); modal vs page `#16141a` 1.00:1 — only the 1.32:1 border and the glow separate it; close pill vs modal 1.32:1, a Gray glyph on it 8.80:1, a Snow one 13.51:1 | `role="dialog" aria-modal="true" aria-labelledby` the title, `aria-describedby` the body; focus trapped, Escape closes; close is `<button aria-label="Close">`, 36px target; Cancel first in DOM order | fill `--modal-content-bg-color` drift → `#181225` (pending spoke); `--palette-whiteTransparent-subtle` (border, Secondary, close); `--primary-main`; radius PROPOSED `--shape-borderRadiusXLarge`; glow missing (asset) | fill `--modal` drift → `#181225` (pending spoke); `--primary`; the rest missing |
+| Horizontal | default | `#181225` + glow | 1px White 10 | row, gap 20: `Secondary` (White 10 fill) "CANCEL" then `PrimaryBlocked` (Primary fill) "DELETE MOBILE", each Fill 240 × 46 | White 10 pill, 36 × 36 | title 17.77:1, body 11.58:1 on `#181225`; CANCEL 13.51:1 over White 10; **DELETE 3.55:1 Snow on Primary — fails 4.5:1** (16px / 600 is not large text); modal vs page `#16141a` 1.00:1 — only the 1.32:1 border and the glow separate it; close pill vs modal 1.32:1, a Gray glyph on it 8.80:1, a Snow one 13.51:1 | `role="dialog" aria-modal="true" aria-labelledby` the title, `aria-describedby` the body; focus trapped, Escape closes; close is `<button aria-label="Close">`, 36px target; Cancel first in DOM order | fill `--modal-content-bg-color` drift → `#181225` (pending spoke); `--palette-whiteTransparent-subtle` (border, Secondary, close); `--primary-main`; radius `--shape-borderRadiusXXLarge`; glow missing (asset) | fill `--modal` drift → `#181225` (pending spoke); `--primary`; the rest missing |
 | Vertical | default | same | same | column, gap 20: `PrimaryBlocked` "DELETE MOBILE" above `Secondary` "CANCEL", each Fill 500 × 46 | same | as Horizontal | primary action first in DOM order here — one order per platform, the user picks | as Horizontal | as Horizontal |
 | any | ✱ hover / press | — | — | per the Buttons page | ✱ `Hover Style` True is drawn nowhere on this page — propose White 10 over Black 60 | — | — | — | — |
 | any | ✱ focus | — | — | — | — | ring on `#181225`: `--ui-designer-control-accent` 8.15:1, `--border-focused` 4.35:1; Creator Hub ui2 `palette.info.light` 8.15:1 | `:focus-visible` outline 2px on every button; initial focus on Cancel | — | — |
@@ -1217,11 +1218,11 @@ Copy: general: "What can I create in Decentraland?" (collapsed), "How do I becom
 
 | Part | State | Fill | Border | Typography | Size / spacing | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TitleBar | default | Black 20 | 1px White 10 bottom | title `H5 Semi` 18 / 600 Snow; close 30 × 30 White 10 pill, its X in an 18 box | 798 × 50, padding 10 / 20 | title 18.45:1 on the Black 20 composite `#130e1e`; fill vs modal 1.04:1, decorative | `<h2 id>` referenced by the dialog | fill PROPOSED `--palette-blackTransparent-soft` (`--contexify-separator-color` holds the value); `--palette-whiteTransparent-subtle`; `--palette-neutral-softWhite` | missing |
-| Scrollview | default | none | none | entries per LabelAccordion; group label Inter 16 / 400 uppercase White 60 (not the `H6 Semi Caps` White 40 of the LabelAccordion set) | padding 0 / 80 / 50, gap 50 | group label White 60 7.08:1 on `#181225` (≥ 4.5:1) | `overflow: auto` region; keyboard-scrollable (`tabindex="0"`) when the content overflows | `--palette-whiteTransparent-backdrop` (group label) | missing |
+| TitleBar | default | Black 20 | 1px White 10 bottom | title `H5 Semi` 18 / 600 Snow; close 30 × 30 White 10 pill, its X in an 18 box | 798 × 50, padding 10 / 20 | title 18.45:1 on the Black 20 composite `#130e1e`; fill vs modal 1.04:1, decorative | `<h2 id>` referenced by the dialog | fill `--palette-blackTransparent-soft` (`--contexify-separator-color` holds the value); `--palette-whiteTransparent-subtle`; `--palette-neutral-softWhite` | `--palette-blackTransparent-soft`, `--palette-whiteTransparent-subtle`; the rest missing |
+| Scrollview | default | none | none | entries per LabelAccordion; group label Inter 16 / 400 uppercase White 60 (not the `H6 Semi Caps` White 40 of the LabelAccordion set) | padding 0 / 80 / 50, gap 50 | group label White 60 7.08:1 on `#181225` (≥ 4.5:1) | `overflow: auto` region; keyboard-scrollable (`tabindex="0"`) when the content overflows | `--palette-whiteTransparent-backdrop` (group label) | `--palette-whiteTransparent-backdrop` |
 | Don't see your question above? | default | — | — | `H7 Regular` Inter 14 / 400, line-height normal, Snow, right-aligned | a flex-1 cell of the footer row (gap 10) | 17.77:1 | plain text | `--ui-designer-text` | missing |
 | Speak with the Support Team | default | — | — | Inter 14 / 400, line-height normal, Primary, solid underline | the other flex-1 cell | **5.00:1 (≥ 4.5:1)** | `<a>` opening the support channel; the underline keeps it identifiable without colour | `--primary-main` | `--primary` |
-| Scrollbar | default | as Scrollbar (Scrollbar) at 14 wide | — | — | 14 × 860, absolute at right 10 / top 0, padding-bottom 300 | as Scrollbar | — | `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-backdrop`, `--shape-borderRadiusPill` | missing |
+| Scrollbar | default | as Scrollbar (Scrollbar) at 14 wide | — | — | 14 × 860, absolute at right 10 / top 0, padding-bottom 300 | as Scrollbar | — | `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-backdrop`, `--shape-borderRadiusPill` | `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-backdrop`; the rest missing |
 
 ### ReportBug (Modals)
 
@@ -1233,11 +1234,11 @@ Column, fill `#181225`, 1px White 10, 24px radius, gap 50; `TitleBar` as Help & 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Dropdown-Input | `Property 1` Default | Inputs page | — | Fill 638 × Hug, gap 10 | title `H6 Semi` Snow "Issue Type" + a Primary `*`; help `H7 Regular` Snow "Select your issue category"; field 46 tall, 1px White 40 border, 12px radius, padding 0 / 16, gap 10, value `H6 Regular` Snow "Scene Creation & Management", `arrow-down` 14 box | 17.77:1 | `<label for>` + `<select>` or listbox | `--palette-whiteTransparent-blurry`, `--shape-borderRadiusLarge`, `--primary-main` | `--primary`; the rest missing |
 | Description | — | column of Text-Input + Button-Contained-Text-Icon | — | Hug 638 × 222, gap 10 | label `H6 Semi` Snow "Description" + a Primary `*`; help `H7 Regular` Snow "Briefly describe what happened." | — | — | `--primary-main` | `--primary` |
-| Text-Input | `Property 1` Default | Inputs page | — | Fixed 638 × 182, gap 10; the field fills the height, padding 14 / 16 | field 1px White 40, 12px radius; placeholder Inter 16 / 400 White 40 "Issue description" | — | `<textarea aria-describedby>` | `--palette-whiteTransparent-blurry`, `--shape-borderRadiusLarge` | missing |
-| Button-Contained-Text-Icon (Attach) | `Property 1` Secondary, with overrides | Buttons page | **none** (Secondary's White 10 fill is overridden off) | Hug 257 × 30, 6px radius, padding 6 / 10, gap 10; `Attach` glyph 18 × 18, a 1.5px Transparencies/White 60 stroke | label "Paste, drop, or click to add files", `H7 Regular` Inter 14 / 400 / 100%, sentence case, Transparencies/White 60 | label 7.08:1 on `#181225` | `<button>` with a visible label; 30px tall clears the 24px floor. A dropzone affordance, not a styled Secondary button: code takes only its box for `Button size="small"` and keeps the Secondary paint and today's 13px white label (read in the browser, October 21, 2026) | `--palette-whiteTransparent-backdrop`, `--shape-borderRadius` | missing |
+| Text-Input | `Property 1` Default | Inputs page | — | Fixed 638 × 182, gap 10; the field fills the height, padding 14 / 16 | field 1px White 40, 12px radius; placeholder Inter 16 / 400 White 40 "Issue description" | — | `<textarea aria-describedby>` | `--palette-whiteTransparent-blurry`, `--shape-borderRadiusLarge` | `--palette-whiteTransparent-blurry`; the rest missing |
+| Button-Contained-Text-Icon (Attach) | `Property 1` Secondary, with overrides | Buttons page | **none** (Secondary's White 10 fill is overridden off) | Hug 257 × 30, 6px radius, padding 6 / 10, gap 10; `Attach` glyph 18 × 18, a 1.5px Transparencies/White 60 stroke | label "Paste, drop, or click to add files", `H7 Regular` Inter 14 / 400 / 100%, sentence case, Transparencies/White 60 | label 7.08:1 on `#181225` | `<button>` with a visible label; 30px tall clears the 24px floor. A dropzone affordance, not a styled Secondary button: code takes only its box for `Button size="small"` and keeps the Secondary paint and today's 13px white label (read in the browser, October 21, 2026) | `--palette-whiteTransparent-backdrop`, `--shape-borderRadius` | `--palette-whiteTransparent-backdrop`; the rest missing |
 | Checkmark | `Property 1` On | Checkbox Secondary 20 box + consent text | — | Fill 638 × 20, gap 10 | `H7 Regular` Snow, right-aligned | text 17.77:1; check Primary 5.00:1, ring White 40 3.82:1 (≥ 3:1) | `<input type="checkbox">` with the sentence as its `<label>` | `--ui-designer-text` | missing |
 | CTAs | — | row, gap 20 | — | Fill 638 × 46 | — | — | — | — | — |
-| CANCEL | `Secondary` | Button-Contained-Text | White 10 | flex 1 × 46, 12px, padding 12 / 24 | Inter 16 / 600 / 22 uppercase Snow | 13.51:1 | — | `--palette-whiteTransparent-subtle` | missing |
+| CANCEL | `Secondary` | Button-Contained-Text | White 10 | flex 1 × 46, 12px, padding 12 / 24 | Inter 16 / 600 / 22 uppercase Snow | 13.51:1 | — | `--palette-whiteTransparent-subtle` | `--palette-whiteTransparent-subtle` |
 | SUBMIT (disabled) | `PrimaryBlocked` @ 20% opacity | Button-Contained-Text | Primary at 20% | flex 1 × 46 | same | fill vs modal 1.24:1; node opacity dims the label too: Snow at 20% composites to about `#464150`, 1.50:1 on the fill, 1.85:1 on the modal (browser capture, October 21, 2026) — the dim state reads as disabled by opacity alone | `disabled` + `aria-disabled`; the 20% opacity is the only disabled cue drawn, add a tooltip or helper text saying why | `--primary-main` | `--primary` |
 
 ### Secure-Sign-In (Modals)
@@ -1251,7 +1252,7 @@ Row, Hug 1115 × Hug 650, fill `#181225`, 1px White 10, 24px radius, padding 100
 | Secure Sign-in | default | `H0 Semi` 48 / 600 | Snow | 500 × 58 | 17.77:1 | `<h1>` / dialog label | `--ui-designer-text` | ui2 `Typography` h3 |
 | A browser window should open… | default | `H5 Regular` 18 / 400 | Snow | 500 × 52 | 17.77:1 | — | — | — |
 | 29 (verification number) | default | Inter 100 / 600 / normal (unnamed) | Snow | 500 × 121 | 17.77:1 | `aria-live="polite"` region; read as digits | — | — |
-| Expiration Counter | default | `H5 Regular` 18 / 400 "Verification number will expire in 08:25" + `Info` 20 box | White 60 | Hug 359 × 22, gap 9 | 7.08:1 (≥ 4.5:1) | the countdown is `aria-live="off"` with a static `aria-label` (a ticking live region would announce every second); `Info` is a `<button aria-label>` or decorative | `--palette-whiteTransparent-backdrop` | missing |
+| Expiration Counter | default | `H5 Regular` 18 / 400 "Verification number will expire in 08:25" + `Info` 20 box | White 60 | Hug 359 × 22, gap 9 | 7.08:1 (≥ 4.5:1) | the countdown is `aria-live="off"` with a static `aria-label` (a ticking live region would announce every second); `Info` is a `<button aria-label>` or decorative | `--palette-whiteTransparent-backdrop` | `--palette-whiteTransparent-backdrop` |
 | Image | default | — | padlock raster, PNG export | 315 × 450 | — | `alt=""` | — | — |
 | Close button | default | — | Black 60 pill, its X at inset 20% | 46 × 46, right 19 / top 19 | pill vs modal 1.10:1; a Gray glyph on it 12.70:1 | `<button aria-label="Close">`, 46px target | `--modal-overlay-bg-color` (same value, the overlay role) | missing |
 | any | ✱ expired | — | ✱ Primary text "Verification number expired" + a retry link | — | Primary 5.00:1 | not drawn — the user decides the copy | — | — |
@@ -1265,7 +1266,7 @@ A 16 × 860 track (no fill) holding `Handle` `20931:3934`: the track's full widt
 | Part | State | Fill | Border | Radius | Size | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Track | default | none | none | — | 16 wide | — | native scrollbar; no ARIA | — | — (`--black` track today: code drift) |
-| Handle | default | Black 40 | 1px White 60, inner | 100px | 16 wide × content ratio | fill vs `#181225` 1.07:1, vs `#16141a` 1.07:1 — the border carries it: White 60 7.08:1 on the modal, 7.10:1 on the page, 7.56:1 against the handle fill (≥ 3:1 non-text) | — | `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-backdrop`, `--shape-borderRadiusPill` | PROPOSED `--scrollbar-thumb` (Black 40), PROPOSED `--scrollbar-thumb-border` (White 60); `--dcl-silver` thumb today: code drift |
+| Handle | default | Black 40 | 1px White 60, inner | 100px | 16 wide × content ratio | fill vs `#181225` 1.07:1, vs `#16141a` 1.07:1 — the border carries it: White 60 7.08:1 on the modal, 7.10:1 on the page, 7.56:1 against the handle fill (≥ 3:1 non-text) | — | `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-backdrop`, `--shape-borderRadiusPill` | `--scrollbar-thumb` (Black 40), `--scrollbar-thumb-border` (White 60); `--dcl-silver` thumb today: code drift |
 | Handle | ✱ hover / drag | ✱ Black 60 | ✱ White 60 | — | — | — | not drawn; `::-webkit-scrollbar-thumb:hover` | — | — |
 | any | ✱ 8px variant | — | — | — | — | — | not drawn — the editor's side rails use 8px today; the user decides whether 16px is the only width | — | — |
 | Menus | ✱ thin menu scrollbar (user, October 26, 2026) | thumb `--palette-blackTransparent-blurry`; track transparent | thumb 1px `--palette-whiteTransparent-backdrop` outline | `--shape-borderRadiusPill` | a 6px gutter holding a 4px thumb (outline included), track inset 10px top and bottom; sized for menus, where 16px took too much of a 200px panel | outline 5.07:1 on Onix, 4.29:1 on `--gray-0` (≥ 3:1); the fill alone 1.32:1 / 1.48:1 | react-contexify submenu and `Dropdown` `OptionList` only | — | — |
@@ -1282,7 +1283,7 @@ Shared: row, Fixed 1724 × Hug, title `H0 Semi` 48 / 600 Snow ("Text", one line)
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Main Section | default | — | `H0 Semi` Snow "Text" | CTAs | 1724 × Hug, gap 32 | title 17.81:1; ACTION on Terciary 17.81:1, border White 40 3.83:1 (≥ 3:1); **ACTION on Primary 3.55:1 — fails 4.5:1**; glyph White 18.28:1 | `<h1>` or `<h2>` per page depth; CTAs are `<button>`s 40 tall | `--ui-designer-text`, `--palette-whiteTransparent-blurry`, `--primary-main` | ui2 `Typography`; `--primary` |
 | Sub-Section | default | `BackTitle` 40 × 40, 100px pill, no fill, `arrow-left` glyph in a 24 box (inset left 15%, right 25%), Primary | `H0 Semi` Snow | CTAs | 1724 × Hug, gap 16 | chevron Primary 5.01:1 (≥ 3:1 non-text) | back is `<button aria-label="Back">` (or `<a>` to the parent), 40px target | `--primary-main` | `--primary` |
-| Sub-Section+ | default | BackTitle as above | `Label` row Hug 316 × 58: `H0 Semi` Snow "Text" + `.dcl.eth` `typography/h3` 48 / 400 / 117% Graffito (180 × 56) | `Copy` 34 box (Vector 27.63 White) then CTAs | 1724 × Hug, gap 16 | **`.dcl.eth` Graffito 2.76:1 on `#16141a`, 2.39:1 on `#242129` — fails even the 3:1 large-text floor**; Silver would give 5.97:1 — the user picks; Copy glyph 18.28:1 | the suffix is part of the heading text, not `aria-hidden`; Copy is `<button aria-label="Copy name">`, 34px target, announces "Copied" via a live region | `.dcl.eth` PROPOSED `--palette-neutral-gray1` | `--light-gray` |
+| Sub-Section+ | default | BackTitle as above | `Label` row Hug 316 × 58: `H0 Semi` Snow "Text" + `.dcl.eth` `typography/h3` 48 / 400 / 117% Graffito (180 × 56) | `Copy` 34 box (Vector 27.63 White) then CTAs | 1724 × Hug, gap 16 | **`.dcl.eth` Graffito 2.76:1 on `#16141a`, 2.39:1 on `#242129` — fails even the 3:1 large-text floor**; Silver would give 5.97:1 — the user picks; Copy glyph 18.28:1 | the suffix is part of the heading text, not `aria-hidden`; Copy is `<button aria-label="Copy name">`, 34px target, announces "Copied" via a live region | `.dcl.eth` `--palette-neutral-gray1` | `--light-gray` |
 | any | ✱ BackTitle hover / press | ✱ White 10 / White 20 pill | — | — | — | — | not drawn (`BackTitle` `Property 1` has only Default here); Creator Hub `Title` hovers with `--transparent-gray-dark` today | — | — |
 | any | ✱ focus | — | — | — | — | ring ui2 `palette.info.light` 8.13:1 on `#16141a` | `:focus-visible` 2px on back, Copy and each CTA | — | — |
 
@@ -1321,9 +1322,9 @@ Four components back the table — `BackCTA`, `AIToggle` (`Selected` Yes/No × `
 | `<Back>` BackCTA | no fill, 0.5px Pale Black ring, Snow chevron 6.17 × 10 | White 10 fill, same ring | — | 24 × 24, 9999px | glyph 20.47:1; hover fill 1.21:1 — the hover is near-invisible on Black, the tooltip is absent; ✱ raise to White 20 (1.66:1) or add a ring change | `<button aria-label="Back">` | `--gray-0` (ring), `--palette-whiteTransparent-subtle` (hover) | `--dark-gray`; hover missing |
 | `<AiAssistantOff>` AIToggle | no fill; `Icon` 24 box, sparkle 18.88 × 20.66 linear gradient `#FFD079 → #DA36FF` | Charcoal fill (`Hover` Yes); "AI Assistant" tooltip | Blue Dark 2 fill, Snow sparkle | 32 × 32, 8px | gradient ends 14.55:1 / 5.95:1 on Black; Charcoal hover vs Black 1.33:1 — weak, the tooltip announces the hover; Blue Dark 2 vs Black 2.38:1 (below 3:1 for a state boundary — the glyph colour change carries it); Snow on Blue Dark 2 8.61:1 | `<button aria-pressed="false" aria-label="AI Assistant">`; the state is colour-and-glyph, announce it with `aria-pressed` | `--palette-system-blueDark2`; Charcoal hover `--ui-designer-panel-bg` (✱ deviation, `#242129`) | `--ai-session-selected`; `--darker-gray` (✱ deviation) |
 | `<AiAssistantOn>` AIToggle | Blue Dark 2 fill, Snow sparkle (`Selected` Yes) | Blue Dark 3 fill (`Selected` Yes, `Hover` Yes); "Close AI Assistant" tooltip | no fill, gradient sparkle (toggles back) | 32 × 32, 8px | Snow on Blue Dark 3 11.61:1; Blue Dark 3 vs Black 1.76:1 | `aria-pressed="true"` | `--palette-system-blueDark3` | `--ai-session-selected-hover` |
-| `<Optimize>` rounded-button-contained | Onix Dark 1 fill; `Optimize` 19.2 box, Vector 14.64 × 11.71 Snow | White 10 fill replacing the Onix Dark 1 fill (`State` Hover, `Hover Style` Tooltip Bottom); "Optimize" tooltip | — | 32 × 32, 8px | Onix Dark 1 vs Black 1.49:1; glyph 13.73:1 on it; hover White 10 vs Black 1.21:1 — **the hover is darker than rest** (`#1a1a1a` vs `#2d2a33`), as Figma draws it | `<button aria-label="Optimize assets">` | PROPOSED `--palette-neutral-onyxDark1`; `--palette-whiteTransparent-subtle` (hover) | `--title-bar-button`; hover missing |
+| `<Optimize>` rounded-button-contained | Onix Dark 1 fill; `Optimize` 19.2 box, Vector 14.64 × 11.71 Snow | White 10 fill replacing the Onix Dark 1 fill (`State` Hover, `Hover Style` Tooltip Bottom); "Optimize" tooltip | — | 32 × 32, 8px | Onix Dark 1 vs Black 1.49:1; glyph 13.73:1 on it; hover White 10 vs Black 1.21:1 — **the hover is darker than rest** (`#1a1a1a` vs `#2d2a33`), as Figma draws it | `<button aria-label="Optimize assets">` | `--palette-neutral-onyxDark1`; `--palette-whiteTransparent-subtle` (hover) | `--title-bar-button`; hover missing |
 | `<Code>` rounded-button-contained | as Optimize, `Code` glyph | as Optimize (White 10 replaces the fill); "Code" tooltip | — | 32 × 32, 8px | as Optimize | `<button aria-label="Open in code editor">` | as Optimize | as Optimize |
-| `<Preview>` Button-Multiple-Options | Onix Dark 1; `Left` padding 0 / 10, gap 6: `Icon` 18 + "PLAY" uppercase Snow (`button/small` 13 / 600 / 24 / 0.46 in the Editor Toolbar set; Inter 14 / 600, line-height normal, on this board); `Right` 32 × 32, 1px White 10 left border, chevron 8.5 × 5 Snow | `HoverLeft`: the left segment takes White 10 | — | Hug 113 × 32, 8px, clips | label 13.73:1; divider 1.36:1 on Onix Dark 1, decorative | split control: `<button>Play</button>` + `<button aria-label="Play options" aria-haspopup="menu">` sharing one 8px frame; the right segment is 32 × 32 | PROPOSED `--palette-neutral-onyxDark1`; `--palette-whiteTransparent-subtle` | `--title-bar-button` |
+| `<Preview>` Button-Multiple-Options | Onix Dark 1; `Left` padding 0 / 10, gap 6: `Icon` 18 + "PLAY" uppercase Snow (`button/small` 13 / 600 / 24 / 0.46 in the Editor Toolbar set; Inter 14 / 600, line-height normal, on this board); `Right` 32 × 32, 1px White 10 left border, chevron 8.5 × 5 Snow | `HoverLeft`: the left segment takes White 10 | — | Hug 113 × 32, 8px, clips | label 13.73:1; divider 1.36:1 on Onix Dark 1, decorative | split control: `<button>Play</button>` + `<button aria-label="Play options" aria-haspopup="menu">` sharing one 8px frame; the right segment is 32 × 32 | `--palette-neutral-onyxDark1`; `--palette-whiteTransparent-subtle` | `--title-bar-button` |
 | `<PreviewOptions>` Button-Multiple-Options | as Preview | `HoverRight`: the right segment takes White 10; "Play Options" tooltip | — | same | as Preview | — | as Preview | as Preview |
 | `<Publish>` Button-Multiple-Options | Primary fill; `Left` padding 0 / 14 on this board (0 / 10 in the Editor Toolbar set): "PUBLISH" `button/small` 13 / 600 / 24 / 0.46 uppercase Snow + `Icon` 18; `Right` chevron Snow, 1px White 20 divider | `HoverLeft`: the left segment takes Primary Light 1 | — | Hug 143 × 32, 8px, clips | Primary vs Black 5.76:1; **"PUBLISH" Snow on Primary 3.55:1 — fails 4.5:1** (13px / 600); divider 1.20:1 | `<button>Publish</button>` + options button | `--primary-main`, `--palette-primary-light` (hover), `--palette-whiteTransparent-soft` (divider) | `--primary`, `--primary-hover` (ships in #1703) |
 | `<PublishOptions>` Button-Multiple-Options | as Publish | `HoverRight`: right segment Primary Light 1; "Publish Options" tooltip | — | same | **Snow chevron on Primary Light 1 2.80:1 — fails 3:1 non-text**; Primary Light 1 vs Black 7.31:1 | — | `--primary-main`, `--palette-primary-light` | `--primary`, `--primary-hover` (ships in #1703) |
@@ -1339,11 +1340,11 @@ Each menu: Onix, 1px White 10, 12px radius, padding 10 / 0, gap 10, shadow `0 4p
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Play Options | PLAY OPTIONS | `Section` | — | `H7 Regular` Inter 14 / 400 uppercase Silver | — | Fill 280 × 38, 8px, padding 0 / 10, no glyph | 4.59:1 | group heading, not focusable | `--ui-designer-text-muted` | `--dcl-silver` |
 | Play Options | Desktop Client | `Hover` (drawn as the active row) | `Radio` `On` 20 box: 1px White 40 ring + Primary dot | `H7 Regular` Snow (210 wide) | `arrow-right` 10 box (submenu) | Fill 280 × 38, Pale Black fill | label 9.88:1 on Pale Black; **Primary dot 2.78:1 and White 40 ring 3.05:1 on the Pale Black row — the dot fails 3:1 while hovered**; on Onix at rest: dot 3.41:1, ring 3.39:1 | `role="menuitemradio" aria-checked="true" aria-haspopup="menu"` | `--gray-0` (row), `--ui-designer-text`, `--primary-main`, `--palette-whiteTransparent-blurry` | `--dark-gray`, `--primary` |
-| Play Options | Web (Bevy) | `Default` | `Radio` `Off`: 20 box, 1px White 40 ring, 100px | `H7 Regular` Snow | `arrow-right` (hidden) | Fill 280 × 38 | label 12.13:1; ring 3.39:1 (≥ 3:1) | `role="menuitemradio" aria-checked="false"` | `--ui-designer-text`, `--palette-whiteTransparent-blurry` | missing |
-| Play Options | — | `Div` | — | — | — | 300 × 1, White 10, full width, no side padding | 1.37:1, decorative | `role="separator"` | `--palette-whiteTransparent-subtle` | missing |
+| Play Options | Web (Bevy) | `Default` | `Radio` `Off`: 20 box, 1px White 40 ring, 100px | `H7 Regular` Snow | `arrow-right` (hidden) | Fill 280 × 38 | label 12.13:1; ring 3.39:1 (≥ 3:1) | `role="menuitemradio" aria-checked="false"` | `--ui-designer-text`, `--palette-whiteTransparent-blurry` | `--palette-whiteTransparent-blurry`; the rest missing |
+| Play Options | — | `Div` | — | — | — | 300 × 1, White 10, full width, no side padding | 1.37:1, decorative | `role="separator"` | `--palette-whiteTransparent-subtle` | `--palette-whiteTransparent-subtle` |
 | Play Options | Show QR Code for Mobile | `Default` | `Info` 16 box (hidden) | `H8 Regular` Inter 12 / 400 Snow | `arrow-right` (hidden) | Fill 280 × 38 | 12.13:1 | `role="menuitem"` | `--ui-designer-text` | missing |
 | Submenu | Enable Landscape Terrains / Enable MCP Server / Compress Assets | `Default` | `Checkbox Secondary` `On` 16 box, 5px radius: White 40 ring + `Checkmark (Stroke)` 9.6 × 8 Primary | `H8 Regular` Inter 12 / 400 Snow | — | Fill 280 × 38, gap 10 | check Primary 3.41:1, ring 3.39:1 (≥ 3:1) | `role="menuitemcheckbox" aria-checked="true"` | `--primary-main`, `--palette-whiteTransparent-blurry` | `--primary` |
-| Submenu | Multi-Instance Preview | `Default` | `Checkbox Secondary` `Off`: 16 box, 5px radius, 1px White 40 ring | `H8 Regular` Inter 12 / 400 Snow | — | same | ring 3.39:1 | `aria-checked="false"` | `--palette-whiteTransparent-blurry` | missing |
+| Submenu | Multi-Instance Preview | `Default` | `Checkbox Secondary` `Off`: 16 box, 5px radius, 1px White 40 ring | `H8 Regular` Inter 12 / 400 Snow | — | same | ring 3.39:1 | `aria-checked="false"` | `--palette-whiteTransparent-blurry` | `--palette-whiteTransparent-blurry` |
 | any | ✱ keyboard-active checkbox row | `Hover` | — | — | — | Pale Black | as Desktop Client — the Primary check falls to 2.78:1 | arrow keys move, Space toggles without closing | — | — |
 
 ### ConnectionStatus (Profile Snapshot)
@@ -1366,7 +1367,7 @@ Circle, fill Brand/Lavender, White 40 inner ring (3px at 60, 2px below), `Avatar
 
 | Variant | State | Fill | Ring | Avatar | Status dot | Size | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 60 | default | Lavender | 3px White 40, inner | 54 × 54 at 3 / 3, 100px | 10 × 10 at left 42 / top 2 inside the ring (45 / 5 from its outer edge), Online | 60 × 60 | Lavender vs page 4.37:1, vs card 3.79:1, vs Black 5.02:1 (≥ 3:1); ring vs Lavender 1.78:1 — decorative, the raster carries the edge | `<img alt="<name>, online">` or a `<button>` named the same when it opens the menu; 60px target | `--lavender`, `--palette-whiteTransparent-blurry` | PROPOSED `--lavender`; ring missing |
+| 60 | default | Lavender | 3px White 40, inner | 54 × 54 at 3 / 3, 100px | 10 × 10 at left 42 / top 2 inside the ring (45 / 5 from its outer edge), Online | 60 × 60 | Lavender vs page 4.37:1, vs card 3.79:1, vs Black 5.02:1 (≥ 3:1); ring vs Lavender 1.78:1 — decorative, the raster carries the edge | `<img alt="<name>, online">` or a `<button>` named the same when it opens the menu; 60px target | `--lavender`, `--palette-whiteTransparent-blurry` | `--lavender`; ring missing |
 | 40 | default | Lavender | 2px White 40 | 36 × 36 at 2 / 2 | 6 × 6 at right 2 / top 1, Green (`Property 1` unset) | 40 × 40 | as 60 | 40px target | as 60 | as 60 |
 | 32 | default | Lavender | 2px White 40 | 28 × 28 at 2 / 2 | 6 × 6 at right 0 / top 0, Green | 32 × 32 | as 60 | 32px target (≥ 24) | as 60 | as 60 |
 | 28 | default | Lavender | 2px White 40 | 24 × 24 at 2 / 2 | none visible; a hidden 6 × 6 dot at 19 / 1, **`DCL/Grass` `#28AC00` with a `DCL/Shadow` ring — the only variant off System/Green; Figma drift, treat as Green** | 28 × 28 | Grass vs page 6.08:1; ring vs Grass 6.06:1 | 28px target | as 60 | as 60 |
@@ -1387,11 +1388,11 @@ Literals the Inputs pages add to the Surfaces tokens table; the Snow, Gray, Silv
 | `#FF2D55` Switch On track | DCL/Ruby (legacy collection; same value as Primary/Primary) | `--primary-main` | `--primary`, `--dcl` |
 | `#FCFCFC` Switch knob | DCL/Snow (legacy collection; same value as Neutrals/Snow) | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
 | `#161518` ToolbarButton rest rectangle | DCL/Shadow | `--tree-bg-color` (`--base-20`) | missing (`--bg-inspector` is `#000`) |
-| `#5E5B67` Switch Off track (Switch page) | Neutrals/Graffito | PROPOSED `--palette-neutral-gray1` (ui2 `neutral.gray1`) | `--light-gray` · ui2 `neutral.gray1` |
-| `#2D2A33` Toast tooltip fill (rounded-button-contained, IconContainedToggle, TextureContainedRoundedButton) | Neutrals/Onix Dark 1 | PROPOSED `--palette-neutral-onyxDark1` | `--title-bar-button` |
-| `0 4px 4px rgba(0,0,0,.1)` Toast tooltip shadow | — (no Figma variable) | PROPOSED `--shadow-toast` | missing |
+| `#5E5B67` Switch Off track (Switch page) | Neutrals/Graffito | `--palette-neutral-gray1` (ui2 `neutral.gray1`) | `--light-gray` · ui2 `neutral.gray1` |
+| `#2D2A33` Toast tooltip fill (rounded-button-contained, IconContainedToggle, TextureContainedRoundedButton) | Neutrals/Onix Dark 1 | `--palette-neutral-onyxDark1` | `--title-bar-button` |
+| `0 4px 4px rgba(0,0,0,.1)` Toast tooltip shadow | — (no Figma variable) | `--shadow-toast` | `--shadow-toast` |
 | Toast radius 8 / padding 6 / 10 (rounded-button-contained) and radius 10 / padding 2 / 10 (IconContainedToggle, TextureContainedRoundedButton); Inter 600 12 / 100% (`H8 Semi`) Snow | — | missing | missing |
-| `rgba(0,0,0,.4)` Quaternary fill | Transparencies/Black 40 | `--palette-blackTransparent-blurry` | missing |
+| `rgba(0,0,0,.4)` Quaternary fill | Transparencies/Black 40 | `--palette-blackTransparent-blurry` | `--palette-blackTransparent-blurry` |
 | 1.5px border | — | 1px border + `box-shadow: inset 0 0 0 0.5px` (Chromium floors a 1.5px border to 1px; see Text-Input) | missing |
 | 46px button height | — | `--controlHeight-large` | missing (`Button` is MUI default) |
 | 10px radius (ButtonContainedVertical 20) | — | missing | missing |
@@ -1405,17 +1406,17 @@ Literals the Inputs pages add to the Surfaces tokens table; the Snow, Gray, Silv
 | 100px radius, 20 × 20 ring and 10 × 10 dot (Radio) | — | `--shape-borderRadiusPill` | missing |
 | 32 × 32 halo at −6 / −6 | — | `box-shadow: 0 0 0 6px` literal in `CheckboxField.css`, a rounded square rather than Figma's circle | missing |
 | `#FF2D55` @ 20% halo (Checkbox), @ 10% (Radio) | unnamed fill, not a variable | `color-mix(in srgb, var(--primary-main) 20%, transparent)` (a translucent state of a token; no new token) | missing |
-| White 40 / 60 border steps | `Transparencies/White 40`, `White 60` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | missing |
+| White 40 / 60 border steps | `Transparencies/White 40`, `White 60` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | `--palette-whiteTransparent-blurry`, `--palette-whiteTransparent-backdrop` |
 | `#161518` tick on Primary (Checkbox Primary) | Neutrals/Shadow | `--tree-bg-color` (`--base-20`) | missing |
 | `#FCFCFC` named `DCL/White` (Description, help) | legacy collection; value is Snow, not `#FFFFFF` | `--ui-designer-text` | ui2 `neutral.softWhite` |
 | `#FFFFFF` Dropdown Title | unnamed solid white | `--white` | `--white` |
 | 9999px / 999px pill radius (Sort-By, Filter bar) | — | `--shape-borderRadiusPill` | missing |
 | 12px field radius, 46px height, 16px side padding (Dropdown container) | — | `--shape-borderRadiusLarge`, `--controlHeight-large`, `--uid-space-4`; `Dropdown` has no large size yet | missing |
 | 56px bar, 300px Search-Bar, 30 / 10px bar padding | — | missing | missing |
-| Inter 14 / 400, 16 / 400, 16 / 600 (line-height 100% or `normal`) | `H7 Regular`, `H6 Regular`, `H6 Semi` | `--font-family` + literal size | same |
+| Inter 14 / 400, 16 / 400, 16 / 600 (line-height 100% or `normal`) | `H7 Regular`, `H6 Regular`, `H6 Semi` | `--font-family` + `--type-h7-regular-*`, `--type-h6-regular-*`, `--type-h6-semi-*` | same |
 | 52 × 30 Switch, track 50.21 × 30, knob 25.1 × 25.1 at 3.05 / 2.45 (Off) and 22.52 / 2.45 (On), radius 58.82px | — | `--shape-borderRadiusPill` for the radius; sizes missing | missing |
 | 50% node opacity (Switch `Default`) | — (node opacity, not a variable) | missing | missing |
-| `#FFFFFF` @ 5% Close-Button fill | unnamed fill, not a variable | `--palette-whiteTransparent-faint` | missing |
+| `#FFFFFF` @ 5% Close-Button fill | unnamed fill, not a variable | `--palette-whiteTransparent-faint` | `--palette-whiteTransparent-faint` |
 | 24 × 24 Close-Button (19 × 19 inside the bar), 16 × 16 glyph, 100px radius | — | `--shape-borderRadiusPill` for the radius; sizes missing | missing |
 | 12px field radius, 14 / 16px padding, 1px and 1.5px borders (Text Field container) | — | `TextField size="large"`: `--shape-borderRadiusLarge`, padding 0 / `--uid-space-4` at the fixed `--controlHeight-large`, focus and error as a 1px border plus a 0.5px inset shadow | missing |
 | 1px Snow left or right edge of the text frame (Selected, Editing, Completed), or an 18px × 1px `#FFFFFF` line rotated −90° (Text-Input Error) | — (drawn caret) | not a surface; the native caret | not a surface; the native caret |
@@ -1442,11 +1443,11 @@ Inspector `components/Button` takes MUI's axes: `variant` contained | outlined |
 | Primary | hover | Primary Light 1 `#FF6280` | — | Snow | `--palette-primary-light` · `--primary-hover` (ships in #1703) | **Snow on Primary Light 1 2.80:1 — fails**; fill vs `#161518` 6.33:1 | — |
 | PrimaryBlocked | blocked | Primary, node opacity 20% (fill **and** label: sampled fill a = 0.21, label Snow at 20%) | — | Snow at 20% | `--primary-main` + `opacity: 0.2` · ui2 disabled | disabled, exempt; label 1.50:1 on the 20% fill, 1.85:1 on `#161518`. Code matches: `.Button:disabled { opacity: 0.2 }` dims the whole node, on every variant. | `aria-disabled="true"` |
 | Secondary | default | White 10 | — | Snow | `--palette-whiteTransparent-subtle` · `--dark-gray` (drift) | 13.53:1 on `#161518` (13.50 on `#16141a`) | — |
-| Secondary | hover | White 20 | — | Snow | `--palette-whiteTransparent-soft` · missing | 9.44:1 | — |
-| Terciary | default | none | 1.5px White 40 | Snow | `--palette-whiteTransparent-blurry` · missing | border 3.84:1 on `#161518` (3.83 on `#16141a`), passes 3:1 | — |
+| Secondary | hover | White 20 | — | Snow | `--palette-whiteTransparent-soft` · `--palette-whiteTransparent-soft` | 9.44:1 | — |
+| Terciary | default | none | 1.5px White 40 | Snow | `--palette-whiteTransparent-blurry` · `--palette-whiteTransparent-blurry` | border 3.84:1 on `#161518` (3.83 on `#16141a`), passes 3:1 | — |
 | Terciary | hover | none | 1.5px Snow | Snow | `--ui-designer-text` · missing | border 17.73:1 | — |
-| Quaternary | default | Black 40 | — | Snow | `--palette-blackTransparent-blurry` · missing | fill is near-invisible on `#161518`; the label carries it | — |
-| Quaternary | hover | White 10 | — | Snow | `--palette-whiteTransparent-subtle` · missing | 13.53:1 | — |
+| Quaternary | default | Black 40 | — | Snow | `--palette-blackTransparent-blurry` · `--palette-blackTransparent-blurry` | fill is near-invisible on `#161518`; the label carries it | — |
+| Quaternary | hover | White 10 | — | Snow | `--palette-whiteTransparent-subtle` · `--palette-whiteTransparent-subtle` | 13.53:1 | — |
 | any | ✱ press / focus | ✱ press one step darker than hover; code: Secondary W10 (= rest), Primary `--primary-dark`, info `--accent-blue-08`, outlined White 60 outline, text White 60 label | ✱ focus ring | — | — | ring `--focus-ring` Snow 17.73:1 on `#161518` / ui2 `palette.info.light`; pressed Primary label 4.19:1 | not drawn; `:focus-visible` 2px outline, offset 2px |
 | text + primary | ✱ the bare `<Button>` default (no Figma text button) | none | — | `--primary-main`, hover `--palette-primary-light`, pressed `--primary-main` | — | ✱ 4.99:1 on `#161518`, 4.51 on canvas, **4.35 on card `#242129`** (accepted) | no caller |
 | text (any colour) | ✱ disabled | none | — | the rest label at the whole-node opacity 0.2 | — | 1.87:1 on `#161518` (exempt) | `disabled`; no Figma text button, so the Figma blocked treatment is extended to it |
@@ -1464,9 +1465,9 @@ Fills and borders match Button-Contained-Text. The ReportBug Attach instance ove
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Primary | default | Primary | — | icon White + label Snow | `--primary-main`, icon `--white` · `--primary`, `--white` | label 3.55:1 — **fails 4.5:1**; icon White on Primary ≥ 3.55:1 passes non-text | visible label names the control; icon `aria-hidden` |
 | Primary | hover | Primary Light 1 | — | same | `--palette-primary-light` · `--primary-hover` (ships in #1703) | label 2.80:1 — **fails** | — |
-| Secondary | default / hover | White 10 / White 20 | — | same | `--palette-whiteTransparent-subtle` / `-soft` · missing | 13.53:1 / 9.44:1 | — |
-| Terciary | default / hover | none | 1.5px White 40 / 1.5px Snow | same | `--palette-whiteTransparent-blurry` / `--ui-designer-text` · missing | 3.84:1 / 17.73:1 border | — |
-| Quaternary | default / hover | Black 40 / White 10 | — | same | `--palette-blackTransparent-blurry` / `--palette-whiteTransparent-subtle` · missing | 13.53:1 on hover | — |
+| Secondary | default / hover | White 10 / White 20 | — | same | `--palette-whiteTransparent-subtle` / `-soft` · `--palette-whiteTransparent-subtle` | 13.53:1 / 9.44:1 | — |
+| Terciary | default / hover | none | 1.5px White 40 / 1.5px Snow | same | `--palette-whiteTransparent-blurry` / `--ui-designer-text` · `--palette-whiteTransparent-blurry`; the rest missing | 3.84:1 / 17.73:1 border | — |
+| Quaternary | default / hover | Black 40 / White 10 | — | same | `--palette-blackTransparent-blurry` / `--palette-whiteTransparent-subtle` · `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-subtle` | 13.53:1 on hover | — |
 | any | ✱ blocked / press / focus | ✱ as Button-Contained-Text | — | — | — | — | not drawn; follow Button-Contained-Text |
 
 ### PillIconText (Buttons)
@@ -1475,10 +1476,10 @@ Set [`20705:11942`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 | Variant | State | Fill | Border | Icon / label | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Default | default | none | 1.5px White 10 | Default svg, label White 60 | `--palette-whiteTransparent-subtle`, `--palette-whiteTransparent-backdrop` · missing | label 7.07:1 on `#161518` (7.10 on `#16141a`); border 1.31:1 — sub-threshold, the label carries it | `<button aria-pressed="false">` |
-| Default + Hover | hover | none | 1.5px White 40 | same | `--palette-whiteTransparent-blurry` · missing | border 3.84:1 | — |
-| Selected | selected | White 10 | none | Selected svg, label Snow | `--palette-whiteTransparent-subtle`, `--ui-designer-text` · missing | 13.53:1 | `aria-pressed="true"` |
-| Selected + Hover | selected + hover | White 20 | none | same | `--palette-whiteTransparent-soft` · missing | 9.44:1 | — |
+| Default | default | none | 1.5px White 10 | Default svg, label White 60 | `--palette-whiteTransparent-subtle`, `--palette-whiteTransparent-backdrop` · `--palette-whiteTransparent-subtle`, `--palette-whiteTransparent-backdrop` | label 7.07:1 on `#161518` (7.10 on `#16141a`); border 1.31:1 — sub-threshold, the label carries it | `<button aria-pressed="false">` |
+| Default + Hover | hover | none | 1.5px White 40 | same | `--palette-whiteTransparent-blurry` · `--palette-whiteTransparent-blurry` | border 3.84:1 | — |
+| Selected | selected | White 10 | none | Selected svg, label Snow | `--palette-whiteTransparent-subtle`, `--ui-designer-text` · `--palette-whiteTransparent-subtle`; the rest missing | 13.53:1 | `aria-pressed="true"` |
+| Selected + Hover | selected + hover | White 20 | none | same | `--palette-whiteTransparent-soft` · `--palette-whiteTransparent-soft` | 9.44:1 | — |
 | any | ✱ focus / disabled | — | ✱ focus ring | — | — | — | not drawn; 36px target clears 24px |
 
 ### rounded-button-contained (Buttons)
@@ -1490,8 +1491,8 @@ The tooltip is a Toast: Onix Dark 1 `#2D2A33` fill, padding 6 / 10, 8px radius, 
 | Variant | State | Fill | Glyph | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
 | Default / False | default | none | White | `--white` · `--white` | White vs `#161518` ≥ 17.73:1 | `<button aria-label>` |
-| Hover / Default | hover | White 10 | White | `--palette-whiteTransparent-subtle` · missing | fill vs `#161518` 1.31:1 — the hover boundary is faint, nothing else changes | — |
-| Hover / Tooltip Top, Bottom | hover | White 10 + Toast tooltip | White | Toast fill PROPOSED `--palette-neutral-onyxDark1` · `--title-bar-button`; shadow PROPOSED `--shadow-toast` · missing | tooltip Snow on Onix Dark 1 13.73:1 | tooltip `role="tooltip"`, `aria-describedby` |
+| Hover / Default | hover | White 10 | White | `--palette-whiteTransparent-subtle` · `--palette-whiteTransparent-subtle` | fill vs `#161518` 1.31:1 — the hover boundary is faint, nothing else changes | — |
+| Hover / Tooltip Top, Bottom | hover | White 10 + Toast tooltip | White | Toast fill `--palette-neutral-onyxDark1` · `--title-bar-button`; shadow `--shadow-toast` · `--shadow-toast`; the rest missing | tooltip Snow on Onix Dark 1 13.73:1 | tooltip `role="tooltip"`, `aria-describedby` |
 | Blocked / False | blocked | none, node opacity 20% | White at 20% | — | disabled, exempt | `aria-disabled="true"` |
 
 ### BackTitle (Buttons)
@@ -1501,7 +1502,7 @@ Set [`20762:22781`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Variant | State | Fill | Glyph | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
 | Default | default | none | Primary | `--primary-main` · `--primary` | 4.99:1 on `#161518`, 5.01:1 on `#16141a`, 4.35:1 on card `#242129` (≥ 3:1 non-text) | `<button aria-label="Back">` |
-| Hover | hover | White 10 | Primary | `--palette-whiteTransparent-subtle` · missing | fill vs `#161518` 1.31:1 | — |
+| Hover | hover | White 10 | Primary | `--palette-whiteTransparent-subtle` · `--palette-whiteTransparent-subtle` | fill vs `#161518` 1.31:1 | — |
 | any | ✱ focus / press | ✱ focus ring | — | — | — | not drawn |
 
 ### Button-Multiple-Options (Buttons)
@@ -1528,7 +1529,7 @@ Set [`20925:148`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 | Variant | State | Fill | Content | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
 | Off | default | none | Gray | `--palette-neutral-gray4` · ui2 `neutral.gray4` | 11.55:1 on `#161518` | `<button>` with the visible label |
-| On | hover | White 10 | Snow (hover svg) | `--palette-whiteTransparent-subtle`, `--palette-neutral-softWhite` · missing | Snow on White 10 13.53:1 | — |
+| On | hover | White 10 | Snow (hover svg) | `--palette-whiteTransparent-subtle`, `--palette-neutral-softWhite` · `--palette-whiteTransparent-subtle`; the rest missing | Snow on White 10 13.53:1 | — |
 | any | ✱ focus / press / disabled | — | — | — | — | not drawn |
 
 ### ButtonContainedVertical (20) (Buttons)
@@ -1537,9 +1538,9 @@ Set [`21076:34691`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 | Variant | State | Fill | Border | Content | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Off / No | default | none | 1px White 10 | Gray | `--palette-whiteTransparent-subtle`, `--palette-neutral-gray4` · missing | 11.55:1; border 1.31:1, the label carries it | `<button>` |
-| On / No | hover | White 10 | 1px White 60 | Snow (hover svg) | `--palette-whiteTransparent-backdrop`, `--palette-neutral-softWhite` · missing | Snow on White 10 13.53:1; border 7.07:1 | — |
-| Off / Yes | blocked | none | 1px White 10, no opacity | icon and label White 20 | `--palette-whiteTransparent-soft` · missing | 1.88:1 — disabled, exempt | `aria-disabled="true"` |
+| Off / No | default | none | 1px White 10 | Gray | `--palette-whiteTransparent-subtle`, `--palette-neutral-gray4` · `--palette-whiteTransparent-subtle`; the rest missing | 11.55:1; border 1.31:1, the label carries it | `<button>` |
+| On / No | hover | White 10 | 1px White 60 | Snow (hover svg) | `--palette-whiteTransparent-backdrop`, `--palette-neutral-softWhite` · `--palette-whiteTransparent-backdrop`; the rest missing | Snow on White 10 13.53:1; border 7.07:1 | — |
+| Off / Yes | blocked | none | 1px White 10, no opacity | icon and label White 20 | `--palette-whiteTransparent-soft` · `--palette-whiteTransparent-soft` | 1.88:1 — disabled, exempt | `aria-disabled="true"` |
 | any | ✱ focus / press | — | ✱ focus ring | — | — | — | not drawn |
 
 ### JumpInCTA (Buttons)
@@ -1603,7 +1604,7 @@ Set [`21167:30101`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 | Variant | State | Track | Knob | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
-| Off | default | White 20 | Snow, left | `--palette-whiteTransparent-soft`, `--ui-designer-text` · missing, ui2 `neutral.softWhite` | **track vs `#161518` 1.88:1 (1.87 on `#16141a`, 1.91 on card) — fails 3:1 non-text**; knob on track 9.44:1 | `<input role="switch" aria-checked="false">` |
+| Off | default | White 20 | Snow, left | `--palette-whiteTransparent-soft`, `--ui-designer-text` · `--palette-whiteTransparent-soft`; the rest missing, ui2 `neutral.softWhite` | **track vs `#161518` 1.88:1 (1.87 on `#16141a`, 1.91 on card) — fails 3:1 non-text**; knob on track 9.44:1 | `<input role="switch" aria-checked="false">` |
 | On | selected | Ruby `#FF2D55` | Snow, right | `--primary-main` · `--primary` | track vs `#161518` 4.99:1; knob on track 3.55:1 (passes 3:1 non-text) | `aria-checked="true"`; knob position and colour both change |
 | any | ✱ hover / focus / disabled | — | — | — | — | not drawn; 24px tall meets the floor |
 
@@ -1642,12 +1643,12 @@ Secondary and Tertiary draw only their two selected variants; their unselected b
 
 | Type | Variant | State | Box | Mark | Halo | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Primary | Off | default | 1px White 40, no fill | — | — | `--palette-whiteTransparent-blurry` · missing | 3.84:1 on `#161518`, 3.74 on card | `<input type="checkbox">`, ≥ 24px label row |
-| Primary | Hover | hover | 1px White 40 | — | White 10 | `--palette-whiteTransparent-subtle` · missing | 1.31:1, decorative | — |
+| Primary | Off | default | 1px White 40, no fill | — | — | `--palette-whiteTransparent-blurry` · `--palette-whiteTransparent-blurry` | 3.84:1 on `#161518`, 3.74 on card | `<input type="checkbox">`, ≥ 24px label row |
+| Primary | Hover | hover | 1px White 40 | — | White 10 | `--palette-whiteTransparent-subtle` · `--palette-whiteTransparent-subtle` | 1.31:1, decorative | — |
 | Primary | On | selected | fill Primary, border Primary | `#161518` tick | — | `--primary-main`, tick `--tree-bg-color` · `--primary` | fill 4.99:1 on `#161518` (4.35 on card); tick on Primary 4.99:1 | `checked` |
 | Primary | HoverSelected | selected + hover | fill Primary | `#161518` | `#FF2D55` @ 20% | `color-mix` of `--primary-main` · missing | halo 1.24:1, decorative | — |
 | Secondary | Off / Hover | default / hover | not drawn in the set: the shared box, as Primary Off / Hover | — | as Primary | as Primary | border 3.84:1 on `#161518` (3.83 on `#16141a`, 3.74 on card), passes 3:1 non-text; halo 1.31:1 — faint | `<input type="checkbox">`, 24px label row |
-| Secondary | On | selected | 1px White 40 | tick Primary | — | `--palette-whiteTransparent-blurry`, tick `--primary-main` · missing | tick 4.99:1 on `#161518` (4.35 on card); border 3.84:1 | `checked`; label and tick both change |
+| Secondary | On | selected | 1px White 40 | tick Primary | — | `--palette-whiteTransparent-blurry`, tick `--primary-main` · `--palette-whiteTransparent-blurry`; the rest missing | tick 4.99:1 on `#161518` (4.35 on card); border 3.84:1 | `checked`; label and tick both change |
 | Secondary | HoverSelected | selected + hover | 1px White 40 | tick Primary | `#FF2D55` @ 20% | `color-mix` of `--primary-main` · missing | halo vs `#161518` 1.24:1 | — |
 | Tertiary | Off / Hover | default / hover | not drawn in the set: the shared box, as Primary Off / Hover | — | as Primary | `--palette-whiteTransparent-blurry` (the shared box; the rails' `--ui-designer-checkbox-border` is its alias), hover `--palette-whiteTransparent-subtle` | border 3.74:1 (3.84) on the panel `#242129` (on `#161518`); halo 1.36:1, decorative (1.31) | — |
 | Tertiary | On | selected | 1px White 40, no fill | Snow tick (Checkmark stroke mask) | — | tick `--ui-designer-text` | tick 15.45:1 (17.73); border 3.74:1 | — |
@@ -1696,9 +1697,9 @@ Inspector `components/ui/Dropdown` is dense only (26px `--controlHeight-small`, 
 
 | Variant | State | Container border | Chevron | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
-| Default | default | 1px White 40 | down 14 | `--palette-whiteTransparent-blurry`, `--shape-borderRadiusLarge`, `--controlHeight-large` · missing | border 3.84:1 on `#161518` (3.83 on `#16141a`); Title 17.73:1; Snow value 17.73:1 | `role="combobox"` `aria-haspopup="listbox"` `aria-expanded="false"`, name from Title (`aria-labelledby`), `aria-describedby` the Description |
-| Hover | hover | 1px White 60 | down 14 | `--palette-whiteTransparent-backdrop` · missing | border 7.07:1 | — |
-| Selected | open | 1px Snow | up 14 | `--ui-designer-text`; menu `--ui-designer-control-bg`, `--menu-shadow`, row `--gray-0` · missing | border 17.73:1; menu fill vs `#161518` 1.46:1 — border and shadow carry the edge; hovered row Pale Black vs the Onix menu **1.23:1**, Snow label on it 9.88:1 | `aria-expanded="true"`; Menu as documented, `role="listbox"` options, `aria-selected` on the Checkmark row; Escape closes, focus returns to the field. The row fill alone is under 3:1, so ✱ a row the arrow keys make active also draws a 1px inset `--focus-ring` (9.88:1 on the row); a hovered row keeps the fill alone, as Figma |
+| Default | default | 1px White 40 | down 14 | `--palette-whiteTransparent-blurry`, `--shape-borderRadiusLarge`, `--controlHeight-large` · `--palette-whiteTransparent-blurry`; the rest missing | border 3.84:1 on `#161518` (3.83 on `#16141a`); Title 17.73:1; Snow value 17.73:1 | `role="combobox"` `aria-haspopup="listbox"` `aria-expanded="false"`, name from Title (`aria-labelledby`), `aria-describedby` the Description |
+| Hover | hover | 1px White 60 | down 14 | `--palette-whiteTransparent-backdrop` · `--palette-whiteTransparent-backdrop` | border 7.07:1 | — |
+| Selected | open | 1px Snow | up 14 | `--ui-designer-text`; menu `--ui-designer-control-bg`, `--menu-shadow`, row `--gray-0` · `--menu-shadow`; the rest missing | border 17.73:1; menu fill vs `#161518` 1.46:1 — border and shadow carry the edge; hovered row Pale Black vs the Onix menu **1.23:1**, Snow label on it 9.88:1 | `aria-expanded="true"`; Menu as documented, `role="listbox"` options, `aria-selected` on the Checkmark row; Escape closes, focus returns to the field. The row fill alone is under 3:1, so ✱ a row the arrow keys make active also draws a 1px inset `--focus-ring` (9.88:1 on the row); a hovered row keeps the fill alone, as Figma |
 | any | ✱ focus / disabled / error | ✱ focus ring | — | — | `--focus-ring` Snow (17.73:1 on `#161518`, 15.45 on `#242129`), per the design review | not drawn; 46px target. The `Text` inner frame carries a 1px left border weight with no stroke colour — treat as none |
 | Selected | ✱ section header in the list | divider inset with the rows (`--uid-space-1` each side) | — | — | accepted deviation (user, October 21, 2026): Figma draws the Div inset in the Menu-Entry set `20749:790` but full-bleed in every composed menu (`20749:386`, this Selected variant); the inspector keeps it inset | the header is not focusable; the divider is decorative |
 | Selected | ✱ list scrollbar (Figma draws none; user, October 26, 2026) | the thin menu scrollbar on `OptionList`: a 6px gutter with a 4px `--palette-blackTransparent-blurry` pill thumb (`--shape-borderRadiusPill`), a 1px `--palette-whiteTransparent-backdrop` outline, transparent track inset 10px top and bottom — the same as the react-contexify submenu (Menu ✱ thin menu scrollbar) | — | — | outline 4.29:1 on the `--gray-0` list, 5.07:1 on Onix (UI Designer lists); the fill alone 1.48:1 / 1.32:1 | native scrollbar; no ARIA |
@@ -1711,12 +1712,12 @@ The bar is Fill × Fixed 56, horizontal, 999px radius, padding 0 / 10 / 0 / 30, 
 
 | Part | State | Fill / border | Text | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
-| Bar | default | White 10 (`#2D2C31` over `#16141A`, `#2D2C2F` over `#161518`), no border | — | `--palette-whiteTransparent-subtle`, `--shape-borderRadiusPill` · missing | bar vs page 1.32:1, decorative | `role="search"` on the form, or a labelled `role="toolbar"` |
+| Bar | default | White 10 (`#2D2C31` over `#16141A`, `#2D2C2F` over `#161518`), no border | — | `--palette-whiteTransparent-subtle`, `--shape-borderRadiusPill` · `--palette-whiteTransparent-subtle`; the rest missing | bar vs page 1.32:1, decorative | `role="search"` on the form, or a labelled `role="toolbar"` |
 | ResultsNumber | default | — | Silver 16 | `--ui-designer-text-muted` · `--dcl-silver` | 5.11:1 on the bar | `aria-live="polite"` for the count |
 | Filter by | default | — | Silver 16 | `--ui-designer-text-muted` · `--dcl-silver` | 5.11:1 on the bar | labels the pill group (`role="group"`, `aria-labelledby`) |
 | Pill (Default) | default | 1.5px White 10 | per PillIconText | per PillIconText | border 1.31:1, the label carries it | `aria-pressed` |
 | Sort-By | default | none | Silver label, Snow value | per Sort-By | Snow 13.50:1 on the bar | as Sort-By |
-| Search-Bar | default | 1px White 40 | placeholder White 40 | `--palette-whiteTransparent-blurry` · missing | **placeholder 3.53:1 on the bar — fails 4.5:1** (the border passes 3:1); typed text should be Snow 13.50:1 | `<input type="search">` with an `aria-label`; ✱ the Figma placeholder doubles as the only label |
+| Search-Bar | default | 1px White 40 | placeholder White 40 | `--palette-whiteTransparent-blurry` · `--palette-whiteTransparent-blurry` | **placeholder 3.53:1 on the bar — fails 4.5:1** (the border passes 3:1); typed text should be Snow 13.50:1 | `<input type="search">` with an `aria-label`; ✱ the Figma placeholder doubles as the only label |
 | Search-Bar | ✱ hover / focus / filled / clear | ✱ White 60 / ring / — | — | — | ring ≥ 3:1 | not drawn |
 
 ### Radio (Radio)
@@ -1725,8 +1726,8 @@ Set [`20903:5661`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 
 | Variant | State | Ring | Dot | Halo | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Off | default | 1px White 40 | — | — | `--palette-whiteTransparent-blurry` · missing | 3.84:1 on `#161518` (3.83 on `#16141a`) | `<input type="radio">` in a `role="radiogroup"` |
-| Hove | hover | **1px White 60** (Checkbox hover keeps White 40) | — | White 10 | `--palette-whiteTransparent-backdrop`, `--palette-whiteTransparent-subtle` · missing | ring 7.07:1; halo 1.31:1 | — |
+| Off | default | 1px White 40 | — | — | `--palette-whiteTransparent-blurry` · `--palette-whiteTransparent-blurry` | 3.84:1 on `#161518` (3.83 on `#16141a`) | `<input type="radio">` in a `role="radiogroup"` |
+| Hove | hover | **1px White 60** (Checkbox hover keeps White 40) | — | White 10 | `--palette-whiteTransparent-backdrop`, `--palette-whiteTransparent-subtle` · `--palette-whiteTransparent-backdrop`, `--palette-whiteTransparent-subtle` | ring 7.07:1; halo 1.31:1 | — |
 | On | selected | 1px White 40 | Primary 10 | — | `--primary-main` · `--primary` | dot 4.99:1 on `#161518` (4.35 on card) | `checked`; arrow keys move within the group |
 | OnHover | selected + hover | 1px White 40 | Primary 10 | `#FF2D55` @ **10%** (Checkbox HoverSelected is 20%) | `color-mix` of `--primary-main` · missing | halo 1.09:1 | — |
 | any | ✱ focus / disabled | ✱ focus ring | — | — | — | ring ≥ 3:1 | not drawn |
@@ -1748,10 +1749,10 @@ Set [`20768:1462`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 
 | Variant | State | Border | Placeholder / value | Glyph | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Default | default | 1px White 40 | "Search" White 40 | Snow | `--palette-whiteTransparent-blurry` · missing | border 3.84:1 on `#161518` (3.83 on `#16141a`, 3.74 on card), passes 3:1; **placeholder 3.84:1 — fails 4.5:1 as text** | `<input type="search">` with an `aria-label`; the placeholder is not a label |
+| Default | default | 1px White 40 | "Search" White 40 | Snow | `--palette-whiteTransparent-blurry` · `--palette-whiteTransparent-blurry` | border 3.84:1 on `#161518` (3.83 on `#16141a`, 3.74 on card), passes 3:1; **placeholder 3.84:1 — fails 4.5:1 as text** | `<input type="search">` with an `aria-label`; the placeholder is not a label |
 | Hover | hover | 1px Snow | "Search" White 40 | Snow | `--ui-designer-text` · ui2 `neutral.softWhite` | border 17.73:1 | — |
-| Selected | focus, empty | 1px Snow + 1px Snow caret | "Search" **White 20** | Snow | `--ui-designer-text`, placeholder `--palette-whiteTransparent-soft` · missing | **placeholder 1.88:1 on `#161518` — fails 4.5:1** (dimmer than Default); border 17.73:1 | the Snow border is the focus indication, 3:1 passes; ✱ still add `:focus-visible` ring `--ui-designer-control-accent` `#63B4F6` / ui2 `palette.info.light` if the border is not kept |
-| Completed | filled | 1px Snow | "Text" Snow, 1px caret on the right | Snow | `--ui-designer-text`; Close-Button `--palette-whiteTransparent-faint` · missing | text 17.73:1; the Close-Button fill is Snow on White 5 15.61:1 | clear button `<button aria-label="Clear search">`; Escape clears |
+| Selected | focus, empty | 1px Snow + 1px Snow caret | "Search" **White 20** | Snow | `--ui-designer-text`, placeholder `--palette-whiteTransparent-soft` · `--palette-whiteTransparent-soft`; the rest missing | **placeholder 1.88:1 on `#161518` — fails 4.5:1** (dimmer than Default); border 17.73:1 | the Snow border is the focus indication, 3:1 passes; ✱ still add `:focus-visible` ring `--ui-designer-control-accent` `#63B4F6` / ui2 `palette.info.light` if the border is not kept |
+| Completed | filled | 1px Snow | "Text" Snow, 1px caret on the right | Snow | `--ui-designer-text`; Close-Button `--palette-whiteTransparent-faint` · `--palette-whiteTransparent-faint`; the rest missing | text 17.73:1; the Close-Button fill is Snow on White 5 15.61:1 | clear button `<button aria-label="Clear search">`; Escape clears |
 | any | ✱ disabled / error | — | — | — | — | — | not drawn |
 
 ### Close-Button (Search Bar)
@@ -1762,8 +1763,8 @@ In the Search-Bar Completed variant it is a 19 × 19 instance that fills the bar
 
 | Variant | State | Fill | Glyph | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
-| Hover=No | default | White 5 (`#FFFFFF` @ 5%, unnamed) | Snow | `--palette-whiteTransparent-faint` · missing | fill vs `#161518` 1.14:1 — nearly invisible; glyph 15.61:1 | `<button aria-label>`; **19px instance is below the 24px floor — keep 24px or pad the hit area** |
-| Hover=Yes | hover | White 10 | Snow | `--palette-whiteTransparent-subtle` · missing | fill 1.31:1; glyph 13.53:1 | — |
+| Hover=No | default | White 5 (`#FFFFFF` @ 5%, unnamed) | Snow | `--palette-whiteTransparent-faint` · `--palette-whiteTransparent-faint` | fill vs `#161518` 1.14:1 — nearly invisible; glyph 15.61:1 | `<button aria-label>`; **19px instance is below the 24px floor — keep 24px or pad the hit area** |
+| Hover=Yes | hover | White 10 | Snow | `--palette-whiteTransparent-subtle` · `--palette-whiteTransparent-subtle` | fill 1.31:1; glyph 13.53:1 | — |
 | any | ✱ focus / press / disabled | — | — | — | ✱ ring ≥ 3:1 | not drawn |
 
 ### Slider (Slider)
@@ -1789,7 +1790,7 @@ A different set from the Buttons page's `Switch` `21167:30101` (41 × 24, legacy
 
 | Variant | State | Track | Knob | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
-| Off | default | Graffito `#5E5B67` | Snow, left | PROPOSED `--palette-neutral-gray1`, `--ui-designer-text` · `--light-gray`, ui2 `neutral.softWhite` | **track vs `#161518` 2.74:1 (2.76 on `#16141a`, 2.39 on card) — fails 3:1 non-text**; knob on track 6.46:1 | `<input role="switch" aria-checked="false">` |
+| Off | default | Graffito `#5E5B67` | Snow, left | `--palette-neutral-gray1`, `--ui-designer-text` · `--light-gray`, ui2 `neutral.softWhite` | **track vs `#161518` 2.74:1 (2.76 on `#16141a`, 2.39 on card) — fails 3:1 non-text**; knob on track 6.46:1 | `<input role="switch" aria-checked="false">` |
 | On | selected | Primary `#FF2D55` | Snow, right | `--primary-main` · `--primary` | track 4.99:1 on `#161518` (5.01, 4.35 on card); knob on track 3.55:1, passes 3:1 | `aria-checked="true"`; position and colour both change |
 | Default | disabled look | Graffito, whole node at 50% opacity | Snow, left | as Off + `opacity: 0.5` | track vs `#161518` 1.58:1, knob on track 3.30:1 — disabled, exempt | `aria-disabled="true"`; ✱ "Default" is Figma's name for what reads as a disabled Off |
 | any | ✱ hover / focus / disabled On | — | — | — | ring ≥ 3:1 | not drawn; 30px tall clears 24px |
@@ -1809,12 +1810,12 @@ Inspector `TextField` `size="large"` serves the five form sites (`UrlInputModal`
 
 | Variant | State | Container border | Value | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
-| Default | default | 1px White 40 | "Text" White 40 (placeholder) | `--palette-whiteTransparent-blurry` · missing | border 3.84:1 on `#161518` (3.83 on `#16141a`), passes 3:1; **placeholder 3.84:1 — fails 4.5:1 as text**; Title 18.19:1; Description 17.73:1; folder glyph 6.71:1 | `<label>` wraps the Title; `aria-describedby` the Description |
-| Hover | hover | 1px White 60 | White 40 | `--palette-whiteTransparent-backdrop` · missing | border 7.07:1 | — |
+| Default | default | 1px White 40 | "Text" White 40 (placeholder) | `--palette-whiteTransparent-blurry` · `--palette-whiteTransparent-blurry` | border 3.84:1 on `#161518` (3.83 on `#16141a`), passes 3:1; **placeholder 3.84:1 — fails 4.5:1 as text**; Title 18.19:1; Description 17.73:1; folder glyph 6.71:1 | `<label>` wraps the Title; `aria-describedby` the Description |
+| Hover | hover | 1px White 60 | White 40 | `--palette-whiteTransparent-backdrop` · `--palette-whiteTransparent-backdrop` | border 7.07:1 | — |
 | Selected | focus, empty | **1.5px** Snow | "Text" White 40 + 1px Snow caret (left) | `--ui-designer-text` · ui2 `neutral.softWhite` | border 17.73:1; **placeholder 3.84:1 — fails 4.5:1** | the Snow border is the focus indication; ✱ keep a `:focus-visible` ring if it is dropped |
 | Editing | typing | 1.5px Snow | "Text" Snow + 1px Snow caret (right) | `--ui-designer-text` · ui2 `neutral.softWhite` | text 17.73:1 | `Container` is Fixed 46 while the variant is Hug — treat as the same box |
 | Input Highlighted | focus, text selected | 1.5px Snow | "Text" Snow (`H6 Regular`) on a `TxtInput` box Hug × 20 filled `System/Blue Dark 2` `#244B7D` (its 1px right border weight has no colour — treat as none) | `--palette-system-blueDark2` · `--ai-session-selected` | selected text 8.61:1 on Blue Dark 2; the highlight vs the field's surface 2.06:1 on `#161518`, 1.79 on `#242129` — and on the dense fills only 1.15:1 (`--gray-0`) and 1.41 (Onix) | the text's own `::selection`; selection is not the focus indicator, the Snow border is |
-| Filled | filled, idle | 1px White 60 | "Text" Snow | `--palette-whiteTransparent-backdrop` · missing | border 7.07:1; text 17.73:1 | the White 60 border is the only cue that a value is set |
+| Filled | filled, idle | 1px White 60 | "Text" Snow | `--palette-whiteTransparent-backdrop` · `--palette-whiteTransparent-backdrop` | border 7.07:1; text 17.73:1 | the White 60 border is the only cue that a value is set |
 | Error | error | 1.5px `System/Red` `#FB3B3B` | "Text" Snow + rotated `Line 1` caret | `--error-main` (ships in #1703) · ui2 `palette.error.main` | border 5.02:1 on `#161518` (5.04 on `#16141a`, **4.37 on card**); message 5.02:1 on `#161518` (**4.37 on card — fails 4.5:1**) | `aria-invalid="true"`, message linked by `aria-describedby`, `role="alert"` on change; colour alone is not the cue, the message text is |
 | any | ✱ disabled / read-only | — | — | — | — | not drawn; 46px target |
 
@@ -1894,17 +1895,17 @@ The page is a screen, not a control library; the screen is recorded here as an i
 
 | Part | Fill | Border | Radius | Text | Size / spacing | Token (inspector · Creator Hub) | Contrast |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| TitleBar | Black 20 `rgba(0,0,0,.2)` | bottom 1px White 10 | — | "Settings" Inter 600 18 / 100% (`H5 Semi`) Snow | 798 × 50, padding 10 / 20 | — · PROPOSED `--palette-blackTransparent-soft` (Black 20) | Snow 18.45:1 on the bar |
+| TitleBar | Black 20 `rgba(0,0,0,.2)` | bottom 1px White 10 | — | "Settings" Inter 600 18 / 100% (`H5 Semi`) Snow | 798 × 50, padding 10 / 20 | — · `--palette-blackTransparent-soft` (Black 20) | Snow 18.45:1 on the bar |
 | TitleBar close button | White 10 | — | 100 | glyph inset 20% | 30 × 30 | — · missing | — |
 | Sidebar | none | right 1px White 10 | — | — | `Options` column 180 wide, padding 10 / 0 | — · missing | — |
-| Sidebar tab (`TabVertical` instance, ×4: SCENES, EDITOR, AI, EXPERIMENTAL) | none | selected: 2px right Snow | — | Inter 600 16 / 100% uppercase centred (`H6 Semi Caps`): selected Snow, others Silver `#A09BA8` | 46 high, padding 0 / 20 (the `TabVertical` set draws 20px, 75 high: the sidebar overrides it) | — · `--dcl-silver` | Silver 6.73:1, Snow 17.77:1 on `#181225` |
+| Sidebar tab (`TabVertical` instance, ×4: SCENES, EDITOR, AI, EXPERIMENTAL) | none | selected: 2px right Snow | — | Inter 600 16 / 100% uppercase centred (`H6 Semi Caps`, `--type-h6-semi-caps-*`): selected Snow, others Silver `#A09BA8` | 46 high, padding 0 / 20 (the `TabVertical` set draws 20px, 75 high; the board governs) | — · `--dcl-silver` | Silver 6.73:1, Snow 17.77:1 on `#181225` |
 | Pane | — | — | — | section titles Inter 600 16 Snow; row labels Inter 400 14 Snow; help text Inter 400 14 Snow, or Gray `#CFCDD4` under a toggle; helper Inter 400 12 Silver | column 538 wide, padding left 30, gap 20 | — · `--dcl-silver` | Snow 17.77:1, Gray 11.58:1, Silver 6.73:1 on `#181225` |
 | Scene Folder field / Code Editor dropdown (closed) | none | 1px White 40 (open: 1px Snow) | 12 | value Inter 400 16 Snow | 46 high, padding 0 / 16, gap 10 | — · missing | as `Text-Input` / `Dropdown-Input` |
 | Code Editor menu (open) | Onix `#35333B` | 1px White 10 | 12 | rows Inter 400 16 Snow: "Visual Studio Code", "Choose from your device..." | padding 10 / 0, gap 10, shadow `0 4px 8px rgba(0,0,0,.4)`; rows 38 high, padding 0 / 10, 8px radius; divider White 10 | — · missing | as `Dropdown-Input` Selected |
 | Connect accordion rows | none | — | 8 (row), 100 (status pill) | agent names Inter 600 14 Snow ("ChatGPT (codex)", "Claude Desktop"); status "Connected" Inter 400 12 Gray; "sign Out" Inter 400 12 Silver; "SIGN IN" Inter 400 12 Primary `#FF2D55`; install sub-rows "Via Terminal" Inter 600 12 Snow, "Install" / "Sign In" Inter 400 12 Silver | padding 6 / 0, gap 10; sub-rows 26 high, 6px radius | — · `--primary`, `--dcl-silver` | Primary 5.00:1 on `#181225` |
 | Command boxes | none | 1px White 20 | 8 | Inter 400 12 Snow | 30 high, padding 7 / 11 | — · missing | — |
 | MCP block | none | config box 1px White 20 | 8 (accordion), 10 (config box) | "Expose AI assistant MCP server" Inter 600 14 Snow; description and note Inter 400 12 Silver | config box padding 17; note 538 wide | — · missing | — |
-| Glow | Mythic `#FF4BED` @ 30%, blur 500 | — | — | — | 798 × 257.5 | — · PROPOSED `--palette-rarity-mythic` | decorative |
+| Glow | Mythic `#FF4BED` @ 30%, blur 500 | — | — | — | 798 × 257.5 | — · `--palette-rarity-mythic` | decorative |
 
 | Variant | State | Pane content | Controls (existing spec) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
@@ -1915,6 +1916,8 @@ The page is a screen, not a control library; the screen is recorded here as an i
 | Experimental / Custom | **shows the AI tab, not Experimental** | AI Assistant: "Enable AI Assistant" switch (on) with a Gray description, a "Bill this to an API key instead" checkbox (Inter 600 14) with a Silver 12px helper, a "Connect" accordion with two agent rows (a connected state and a sign-in action, each with install / sign-in command boxes), an "Expose AI assistant MCP server" accordion with a config code block (placeholder credentials, not copied) and the note "Localhost only. The URL and token change each time Creator Hub restarts." | `Switch` On, `Checkbox` Primary, `Accordion`, `Button-Contained-Text` | Snow 10.90:1 and Primary 3.07:1 at the brightest point of the glow (`#5D2361`, computed) — the glow sits at the bottom, keep the controls above it | code blocks need a copy button named "Copy" and `font-family: monospace`; the command text is selectable |
 | any | ✱ focus / disabled | — | — | ring `--ui-designer-control-accent` 8.15:1 on `#181225` (as Modals) | `:focus-visible` 2px, first focus on the active tab; Escape closes |
 | any | ✱ About tab | — | — | — | not drawn; the code ships it — add a fifth `TabVertical` and a variant |
+
+The sidebar follows the board that draws the surface (Panel Components `21454:39030`), as every board governs over its sets: tabs 46 high with 16px uppercase `H6 Semi Caps` labels, not the `TabVertical` set's 75 high and 20px.
 
 Settings is named by its content: the `Experimental / Custom` frame shows the AI tab (sidebar item AI selected), so there is no Figma variant for the Experimental tab in a non-default state, and no "AI / Default".
 
@@ -1930,24 +1933,24 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | --- | --- | --- | --- | --- |
 | Neutrals/Charcoal | `#25212A` | `--ui-designer-panel-bg` (`#242129`, deviation within 1/255) | AI panel `palette.background.paper` (value not verified) | match / documented deviation |
 | Neutrals/Onix | `#35333B` | `--ui-designer-control-bg`, `--palette-neutral-onyx` | `--ai-menu-bg` `#2f2d34` (the AI chat-history menu) | inspector match; `--ai-menu-bg` drift → `#35333B` (pending spoke) |
-| Neutrals/Onix Dark 1 | `#2D2A33` | missing: PROPOSED `--palette-neutral-onyxDark1` | `--title-bar-button` `#2d2a33`; `--ai-input-bg` `#28252d` (the ChatInput container) | missing in inspector; `--ai-input-bg` drift → `#2D2A33` (pending spoke). Fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
+| Neutrals/Onix Dark 1 | `#2D2A33` | `--palette-neutral-onyxDark1` | `--title-bar-button` `#2d2a33`; `--ai-input-bg` `#28252d` (the ChatInput container) | match in inspector; `--ai-input-bg` drift → `#2D2A33` (pending spoke). Fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` | match: `InputAction` hover fill, the `ColourPanel` hex cells, the AI menu's hover row |
 | Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph` (→ `--palette-neutral-gray2`); `--ui-designer-text-muted` is Silver | `--dropdown` | match: idle glyphs, the `Position` / `Size` icons, the Logic placeholders and empty lines |
 | Neutrals/Black | `#000000` | `--black` | — | match: the `BottomPanel3D` surface behind its 1px gaps |
 | System/Blue Dark 2 | `#244B7D` | `--palette-system-blueDark2` (`--ui-designer-control-active-bg`; the `UIDesigner.css` `--selected-item` override) | `--ai-session-selected` | match |
 | System/Blue Dark 3 | `#243852` | `--palette-system-blueDark3` | `--ai-session-selected-hover` | match: the tree row, selected-hover and `On` + hover toggle fill |
-| White 5 / 10 / 20 | `rgba(255,255,255,.05 / .1 / .2)` | `--ui-designer-control-empty-bg` / `--ui-designer-control-selected-bg` · `--ui-designer-control-border` / `--ui-designer-control-border-strong` | — | match; the row hover is White 5 in Figma, the toggle and icon-button hover White 10 |
-| White 40 / 60 | `rgba(255,255,255,.4 / .6)` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | — | match: placeholders, the Scale Slider hover track, scrollbar-handle borders, bound-input borders |
-| White 8 (raw alpha, no variable) | `rgba(255,255,255,.08)` | missing: PROPOSED `--palette-whiteTransparent-hint` | — | missing: the `InputAction` and MobileHUD `TextureInput` fill (code paints `--ui-designer-control-bg`) |
-| Black 40 | `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` | — | match: scrollbar handles in the bottom panels and the MobileHUD list |
+| White 5 / 10 / 20 | `rgba(255,255,255,.05 / .1 / .2)` | `--ui-designer-control-empty-bg` / `--ui-designer-control-selected-bg` · `--ui-designer-control-border` / `--ui-designer-control-border-strong` | `--palette-whiteTransparent-faint` / `-subtle` / `-soft` | match; the row hover is White 5 in Figma, the toggle and icon-button hover White 10 |
+| White 40 / 60 | `rgba(255,255,255,.4 / .6)` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | match: placeholders, the Scale Slider hover track, scrollbar-handle borders, bound-input borders |
+| White 8 (raw alpha, no variable) | `rgba(255,255,255,.08)` | `--palette-whiteTransparent-hint` | — | match: the `InputAction` and MobileHUD `TextureInput` fill (code paints `--ui-designer-control-bg`) |
+| Black 40 | `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` | `--palette-blackTransparent-blurry` | match: scrollbar handles in the bottom panels and the MobileHUD list |
 | System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(244,130,33,.16)` | `--warning-main` ships in #1703; `--ai-warning-bg` drift → `rgba(254,156,42,.1)` (pending spoke), Figma's banner is `#FE9C2A` at 10% |
-| System/Blue · Rarities/Epic Light | `#2196F3` · `#81E1FF` | missing | ui2 `palette.info.main` | missing: pinned-edge colours in `ConstraintsIcons` |
+| System/Blue · Rarities/Epic Light | `#2196F3` · `#81E1FF` | `--palette-info-main` · `--palette-rarity-epic-light` | `--palette-rarity-epic-light` · ui2 `palette.info.main` | match: pinned-edge colours in `ConstraintsIcons` |
 | Brand/Lavender | `#C640CD` | — | `--lavender` | demo colour in `ColourPanel` and `AspectRatio/Colour`, not a UI token |
-| Menu shadow | `0 4px 8px rgba(0,0,0,.4)` | `--menu-shadow` | — | match: `EventsMenu`, `VariableMenu`, the AI chat-history `Menu` |
-| Popover shadow (no variable) | `0 4px 10px rgba(0,0,0,.25)` | missing | — | missing: `ColourPanel` only; a second popover shadow beside `--menu-shadow`, or one shadow for both (a question for design) |
+| Menu shadow | `0 4px 8px rgba(0,0,0,.4)` | `--menu-shadow` | `--menu-shadow` | match: `EventsMenu`, `VariableMenu`, the AI chat-history `Menu` |
+| Popover shadow (no variable) | `0 4px 10px rgba(0,0,0,.25)` | `--shadow-popover` | — | match: `ColourPanel` only, separate from `--menu-shadow` as Figma draws it |
 | Figma chrome | `#8A38F5` | — | — | the dashed frame around every set — never a token |
 
-PROPOSED (names are the user's call): `--palette-neutral-onyxDark1` = `#2D2A33` in the inspector; `--palette-whiteTransparent-hint` = `rgba(255,255,255,.08)` for the `TextureInput` fill; `--type-caption-size` = 10px for the NodeLogic helper copy. The row hover fill is decided: tree and list rows hover White 5 `--palette-whiteTransparent-faint` (NodeTypeHierarchy, October 27, 2026); toggles and icon buttons hover White 10 per `UI Editor Buttons`.
+Declared for the Editor pages: `--palette-neutral-onyxDark1` (`#2D2A33`), `--palette-whiteTransparent-hint` (`rgba(255,255,255,.08)`, the `TextureInput` fill) and `--type-caption-size` (10px, the NodeLogic helper copy), all in `vars.css`. The row hover fill is decided: tree and list rows hover White 5 `--palette-whiteTransparent-faint` (NodeTypeHierarchy, October 27, 2026); toggles and icon buttons hover White 10 per `UI Editor Buttons`.
 
 ### AI Assistant (page lead)
 
@@ -2192,12 +2195,12 @@ Shared by every variant:
 | GUILogic | empty lines ("No variables yet." …) | none | none | — | Inter 400 12 Cloudy Sky `#716B7C` | 95 × 15 | `--ui-designer-glyph` |
 | GUILogic | Name / Value / type cells, AddCTA | Onix | none | 6 (row 8) | placeholder Cloudy Sky; "string" Gray | as AddLogicInputs; AddCTA at 20% opacity until a name is typed | `--ui-designer-control-bg` |
 | NodeLogic1 (348 × 413) | header "PrefabName" | none | none | — | `H7 Semi` Gray; prefab glyph 18 | row h 16, gap 8, padding 0 / 16 / 0 / 10 | `--palette-neutral-gray4` |
-| NodeLogic1 | description | none | none | — | "Set the values for this component's inputs." Inter 400 12 Silver; the second sentence Inter 400 **10** Silver | gap 6, 328 wide; slot column gap 18, padding 0 / 10 | `--palette-neutral-gray3`; 10px: PROPOSED `--type-caption-size` |
+| NodeLogic1 | description | none | none | — | "Set the values for this component's inputs." Inter 400 12 Silver; the second sentence Inter 400 **10** Silver | gap 6, 328 wide; slot column gap 18, padding 0 / 10 | `--palette-neutral-gray3`; 10px: `--type-caption-size` |
 | NodeLogic1 | LogicInputs row | none | none | 8 | "InputName" Inter 400 12 Gray, flex 1 | h 26, gap 6, 328 wide; value cell 146 wide | — |
 | NodeLogic1 | value input, rest / bound | Onix | none / 1px White 60 `rgba(255,255,255,0.6)` | 6 | Inter 400 12 Gray | h 26; rest padding 6 / 24 / 6 / 8; bound padding 7 / 25 / 7 / 9 (border-box) with an `AddVariant` at right 3 / top 3 | `--ui-designer-control-bg`, `--palette-whiteTransparent-backdrop` |
 | NodeLogic1 | DeleteCTA slot | none | — | — | — | 20 × 20, glyph 16; opacity 0 on an unbound row, shown on a bound row | — |
 | NodeLogic1 | hint + "Open PrefabName" button (below the inputs) | none | 1px White 40 `rgba(255,255,255,0.4)` | 6 | hint Inter 400 10 Silver; button Inter 400 12 Snow | button 328 × 26, padding 12 / 24 | `--palette-whiteTransparent-blurry` |
-| NodeLogic2 (348 × 365) | as NodeLogic1, with a `HelpCTA` 12 (Cloudy Sky) after the header name, the "Open PrefabName" button directly under the header (`CTA` row, padding 0 / 10), and no hint or bottom `Div` | — | — | — | — | header padding 6 / 0, column gap 6 | `--palette-neutral-gray2` (HelpCTA) |
+| NodeLogic2 (348 × 365) | the alternative layout, not followed (see Decisions): as NodeLogic1, with a `HelpCTA` 12 (Cloudy Sky) after the header name, the "Open PrefabName" button directly under the header (`CTA` row, padding 0 / 10), and no hint or bottom `Div` | — | — | — | — | header padding 6 / 0, column gap 6 | `--palette-neutral-gray2` (HelpCTA) |
 | Empty (348 × 215) | panel | Charcoal `#25212A` | none | — | — | column, gap 10, centred both axes, padding 100 / 0, text centred | `--ui-designer-panel-bg` |
 | Empty | title "No node selected" | — | — | — | `H6 Semi` Inter 600 16 / 100% Gray `#CFCDD4` | full width | `--palette-neutral-gray4` |
 | Empty | body | — | — | — | Inter 400 12, one paragraph: "Select a " Silver, "node " Gray (regular weight), "to start editing its properties and logic." Silver; no icon drawn | full width | `--palette-neutral-gray3` / `--palette-neutral-gray4` |
@@ -2209,6 +2212,14 @@ Shared by every variant:
 | MobileHUD | scrollbar | handle Black 40 `rgba(0,0,0,0.4)` | handle 1px White 60 | 100 | — | 8 × 860 at right 2 / top 0, padding 4 / 0 / 500 | `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-backdrop` |
 
 Contrast on `#242129`: Gray 10.07:1, Silver 5.85:1, Snow 15.45:1, Cloudy Sky 3.09:1 (the empty lines miss 4.5:1); Gray on Onix 7.90:1; Cloudy Sky placeholder on Onix 2.43:1.
+
+The Dropdown variant's render (read October 28, 2026) draws the Position and Layout groups once each; the second pair in its layer tree is hidden layers, and the code follows the render (a Figma-side defect, see Open items).
+
+**Decisions** (the record for this panel; grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-28 | NodeLogic1 (`21143:4292`) and NodeLogic2 (`21151:7668`) place the "Open PrefabName" button differently. Which one does the Logic tab follow? | NodeLogic1: the input rows, then a divider, the hint "Open the component to add or edit its inputs, variables, and events.", and the "Open PrefabName" button at the end (user: "NodeLogic1: button at end"). NodeLogic2, the button under the header, is the alternative not followed |
 
 ### BottomPanel2D (UI Editor — Panels)
 
@@ -2257,7 +2268,7 @@ Set [`21028:16819`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 Set [`21028:16830`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16830), 2 variants (`Off` `21028:16836`, `On` `21028:16831`). Size 332 × 143; `Off` is Fixed 292 × Hug 20, `On` Fixed 292 × Hug 45. Read October 27, 2026. Code: the device-variant section of `PropertyPanel` (platform variants are a recognised construct — see CLAUDE.md) · Creator Hub none.
 
-Figma draws the Desktop / Mobile pair as `ToggleLabel` chips (20 tall, 6px radius, Blue Dark 3 when selected), not as the 16 × 16 `ViewModeToggle` set. The code's device-variant tabs follow the tab-toggle rule with the 1px Onyx border (✱ ViewModeToggle, user decision October 22, 2026).
+Figma draws the Desktop / Mobile pair as `ToggleLabel` chips (20 tall, 6px radius, Blue Dark 3 when selected), not as the 16 × 16 `ViewModeToggle` set. The `PropertyPanel` Device Variants row follows this set as drawn; `ViewModeToggle` governs only the canvas's own device pair and the HUD / safe-area toggles.
 
 | Variant | Part | Fill | Radius | Text | Glyph | Padding / gap / size | Inspector token |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -2265,6 +2276,12 @@ Figma draws the Desktop / Mobile pair as `ToggleLabel` chips (20 tall, 6px radiu
 | On | header | none | 0 | as Off | `DeleteCTA` slot 26 × 16 at right 0 | column, gap 4, padding 0 / 10; chip row h 26, gap 6 | — |
 | On | Desktop chip (selected) | Blue Dark 3 `#243852` | 6 | "Desktop" Inter 400 12, centred, Snow `#FCFCFC` | icon 16 | row, gap 2, h 20, padding 2 / 6 | `--palette-system-blueDark3` |
 | On | Mobile chip | none | 6 | "Mobile" Inter 400 12, Silver `#A09BA8` | icon 16 | as Desktop | `--palette-neutral-gray3` |
+
+**Decisions** (the record for this set; grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-28 | The `Devices` chips and the `ViewModeToggle` set draw the device pair differently. Which one does the `PropertyPanel` Device Variants row follow? | The `Devices` set as drawn: `ToggleLabel` chips, icon + "Desktop" / "Mobile", 20 tall, 6px radius, Blue Dark 3 `--palette-system-blueDark3` when selected (user: "Devices chips, as drawn"). `ViewModeToggle` keeps the canvas device pair and the HUD / safe-area toggles |
 
 ### Fill (UI Editor — PropertiesSubsections)
 
@@ -2375,7 +2392,7 @@ Slider: Fixed 170 × 20, 100px radius; Colour is the rainbow track, Transparency
 
 | Part | Fill | Border | Radius | Text | Glyph | Padding / gap / size | Shadow | Inspector token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ColourPanel | Onix `#35333B` | 1px White 10 `rgba(255,255,255,0.1)` | 12 | — | — | Fixed 193 × 296, vertical, padding 12 / 11, gap 12 | `0 4px 10px rgba(0,0,0,0.25)` | `--palette-neutral-onyx`; shadow missing (see Editor tokens) |
+| ColourPanel | Onix `#35333B` | 1px White 10 `rgba(255,255,255,0.1)` | 12 | — | — | Fixed 193 × 296, vertical, padding 12 / 11, gap 12 | `0 4px 10px rgba(0,0,0,0.25)` | `--palette-neutral-onyx`; shadow `--shadow-popover` |
 | HUE | white → black (top to bottom) under a 223.56° `rgb(242,0,255)` → transparent overlay | none | 6 | — | — | flex 1 (fills the free height) | none | canvas gradient |
 | Slider, Colour | rainbow track | none | 100 | — | handle | 170 × 20 | none | — |
 | Slider, Transparency | a checker under a gradient from the colour at 0 alpha to the colour | none | 100 | — | handle 24 × 24 at right −2 | 170 × 20 | none | — |
@@ -2580,19 +2597,19 @@ Section [`21671:45251`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 | Kind | Sets (and code) | Rest | Hover | Selected | Selected + hover | Focus | Disabled |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Icon button | DeleteCTA, HelpCTA, AddVariant (bind link); add, copy, clear, the toolbar's save / undo / redo | Silver `--ui-designer-text-muted`, no container (5.85:1) | Snow `--ui-designer-text` on White 10 `--palette-whiteTransparent-subtle`, 4px (11.40:1) | — | — | 2px `--ui-designer-control-accent`, offset 1px (7.09:1) | White 20 `--palette-whiteTransparent-soft` glyph, no fill (exempt) |
-| Tab toggle (one choice out of a set) | ToggleTab; TextAlign, Flow direction, the canvas device pair, the device-variant and interaction-state tabs, the fill-mode chips, the toolbar gizmos | Silver, no fill, 1px `--palette-neutral-onyx` border (5.85:1) | Snow on White 10, 1px Onyx border (11.40:1) | Snow on `--ui-designer-control-active-bg` Blue Dark 2, border in the fill colour (8.61:1) | Snow on `--palette-system-blueDark3`, border in the fill colour (11.61:1) | accent ring, offset 1px standalone and −2px in a joined group; 3.95:1 on Blue Dark 2, 5.33:1 on Blue Dark 3 | White 20 glyph, no fill, 1px Onyx border (exempt) |
+| Tab toggle (one choice out of a set) | ToggleTab; TextAlign, Flow direction, the canvas device pair, the interaction-state tabs, the fill-mode chips, the toolbar gizmos | Silver, no fill, 1px `--palette-neutral-onyx` border (5.85:1) | Snow on White 10, 1px Onyx border (11.40:1) | Snow on `--ui-designer-control-active-bg` Blue Dark 2, border in the fill colour (8.61:1) | Snow on `--palette-system-blueDark3`, border in the fill colour (11.61:1) | accent ring, offset 1px standalone and −2px in a joined group; 3.95:1 on Blue Dark 2, 5.33:1 on Blue Dark 3 | White 20 glyph, no fill, 1px Onyx border (exempt) |
 | Single toggle (on / off) | WrapToggle, ScaleToggle, ViewModeToggle (HUD / safe area); the toolbar Run / Scene Info | Silver, no fill, no border (5.85:1) | Snow on White 10, no border (11.40:1) | Snow on Blue Dark 2, no border (8.61:1) | Snow on Blue Dark 3, no border (11.61:1) | accent ring, offset 1px; 3.95:1 on Blue Dark 2, 5.33:1 on Blue Dark 3 | White 20 glyph, no fill, no border (exempt) |
 | Lock and eye (on / off) | LockLayerToggle, VisibilityToggle; every lock and eye: the 2D tree rows, the node-header and GUI-list eyes, the 3D trees' lock and eye, the spawn-point eye | Gray `--palette-neutral-gray4`, no fill (10.07:1) | Gray on White 10, 4px radius (7.43:1) | the same Gray glyph, no fill; the closed lock or eye-off shape is the state (10.07:1) | Gray on White 10 (7.43:1) | accent ring, offset 1px (7.09:1 on the panel, 5.23:1 on White 10); 1px Snow `--focus-ring` in the 3D trees | not drawn; none in use |
 | MobileHUD input-action eye (on / off) | InputAction's VisibilityToggle instance, 18 × 18; `MobileHudPanel.tsx` | Gray eye, no fill (8.95:1 on the Onix Dark 1 row) | Gray on White 10 | Blue Light 1 `--palette-info-light` eye-off on Blue Dark 3 `--palette-system-blueDark3` (5.33:1) | as selected (HidenHover draws it unchanged) | accent ring, offset 1px (5.33:1 on Blue Dark 3) | not drawn; none in use |
 
-Joined tab toggles (TextAlign, Flow direction, the device pair, the device-variant tabs, the gizmos) overlap by 1px for one-pixel seams, take the outer radii on the first and last cell, and raise the selected or hovered cell over its neighbours; see "Segmented group" in Tokens. A control drawn smaller than 24px is a 24 × 24 transparent button whose Figma-size container is its `::before`; for a tab toggle the container carries the border too. Lock and eye follow LockLayerToggle and VisibilityToggle as drawn: a locked node's lock, a hidden node's eye and the GUI-list eye (`aria-pressed="true"` while the GUI is top-level, drawn as the open eye) keep the Gray glyph with no fill, and only the glyph's shape changes.
+Joined tab toggles (TextAlign, Flow direction, the canvas device pair, the gizmos) overlap by 1px for one-pixel seams, take the outer radii on the first and last cell, and raise the selected or hovered cell over its neighbours; see "Segmented group" in Tokens. A control drawn smaller than 24px is a 24 × 24 transparent button whose Figma-size container is its `::before`; for a tab toggle the container carries the border too. Lock and eye follow LockLayerToggle and VisibilityToggle as drawn: a locked node's lock, a hidden node's eye and the GUI-list eye (`aria-pressed="true"` while the GUI is top-level, drawn as the open eye) keep the Gray glyph with no fill, and only the glyph's shape changes.
 
 ✱ Deviations from the Figma sets, decided by the user on October 22, 2026 (Validate does not flag these):
 
 | ✱ | Figma | Code |
 | --- | --- | --- |
 | Unselected toggle hover glyph | ToggleTab, WrapToggle, ScaleToggle, ViewModeToggle Off + Hover: **Silver** glyph | **Snow** glyph; the White 10 fill matches Figma |
-| Tab toggles drawn from borderless sets | ViewModeToggle (the canvas device pair, the `Devices` tabs) and ToolbarButton (the gizmos) draw no border | the tab-toggle rule: 1px `--palette-neutral-onyx` at rest, on hover and disabled, a fill-coloured border when selected, as ToggleTab |
+| Tab toggles drawn from borderless sets | ViewModeToggle (the canvas device pair) and ToolbarButton (the gizmos) draw no border | the tab-toggle rule: 1px `--palette-neutral-onyx` at rest, on hover and disabled, a fill-coloured border when selected, as ToggleTab |
 | Segmented seams | `ToggleTabs` slot: a Charcoal frame with a 1px Onix border around unjoined `ToggleTab` cells | cells overlap by 1px (one-pixel seams), outer radii on the first and last cell, no wrapper border |
 | Interaction-state chip | `Interactions` set: active chip Blue Dark 3 `#243852` | Blue Dark 2, Blue Dark 3 on hover |
 | UI Designer toolbar (retired in `73a26ea5f`, user decision October 23, 2026) | `ToolbarButton` / `RuntimeControls`: a filled rest container | no rest container (icon-button, tab-toggle and single-toggle rules, scoped under `.ui-designer-toolbar`; the 3D toolbar keeps the set) |
@@ -2628,7 +2645,7 @@ Set [`21028:16499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### ToggleTab (UI Editor Buttons)
 
-Set [`21028:16506`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16506) (copy `21671:45288`), 4 variants (`Selected` × `Hover`): Off/No `21028:16507`, Off/Yes `21096:37090`, On/No `21028:16509`, On/Yes `21096:37093`. Size 79 × 207; each Fixed 39 × 26. Read October 27, 2026. Code: inspector every segmented cell in `PropertyPanel` (`TextAlignField`, `FlowField`, `FillField` modes, the interaction-state and device-variant tabs) through the tab-toggle rule, keyed on `aria-checked` / `aria-selected` · Creator Hub none.
+Set [`21028:16506`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16506) (copy `21671:45288`), 4 variants (`Selected` × `Hover`): Off/No `21028:16507`, Off/Yes `21096:37090`, On/No `21028:16509`, On/Yes `21096:37093`. Size 79 × 207; each Fixed 39 × 26. Read October 27, 2026. Code: inspector every segmented cell in `PropertyPanel` (`TextAlignField`, `FlowField`, `FillField` modes, the interaction-state tabs) through the tab-toggle rule, keyed on `aria-checked` / `aria-selected` · Creator Hub none.
 
 The cell has no radius: the `ToggleTabs` slot's 6px radius clips the first and last cell. Off variants have a 1px Onix `#35333B` border; Off + hover adds White 10; On fills Blue Dark 2 (rest) / Blue Dark 3 (hover) with no border. The glyph is a `LayoutIcons` instance (18 × 18, centred at 50% + 0.5px, vector 14 × 14; Free is the code's `FlowField/icons/absolute.svg`): Silver `#A09BA8` Off, Snow `#FCFCFC` On. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Off + hover glyph Snow (the Onix Off border matches).
 
@@ -2641,9 +2658,9 @@ The cell has no radius: the `ToggleTabs` slot's 6px radius clips the first and l
 
 ### ViewModeToggle (UI Editor Buttons)
 
-Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16511) (copy `21671:45297`), 4 variants (`Selected` × `Hover`): Off/No `21028:16512`, Off/Yes `21096:37105`, On/No `21028:16514`, On/Yes `21096:37108`. Size 79 × 204; each 16 × 16. Read October 27, 2026. Code: inspector the Canvas preview toggles (HUD guides, safe area) and the Desktop / Mobile device pair (`Canvas.tsx`, `.ui-designer-canvas-zoom-btn`, `.ui-designer-device-toggle-btn`) and the `PropertyPanel` device-variant tabs · Creator Hub none.
+Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16511) (copy `21671:45297`), 4 variants (`Selected` × `Hover`): Off/No `21028:16512`, Off/Yes `21096:37105`, On/No `21028:16514`, On/Yes `21096:37108`. Size 79 × 204; each 16 × 16. Read October 27, 2026. Code: inspector the Canvas preview toggles (HUD guides, safe area) and the Desktop / Mobile device pair (`Canvas.tsx`, `.ui-designer-canvas-zoom-btn`, `.ui-designer-device-toggle-btn`) · Creator Hub none. The `PropertyPanel` device-variant chips follow the `Devices` set, not this one.
 
-16 × 16, 4px radius; an `Icon` instance 14 × 14 inset 1px (vector 10.66 × 8.98, a monitor). The Viewport draws the same cells at 22 × 22 (HUD, SafeArea) and 26 × 22 (the device pair), with no size variant. The monitor is `DesktopIcon` in `icons.tsx`, and the mobile, HUD and safe-area glyphs have no Figma counterpart yet (`useRestorePersistedMode` is a different control). Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Off + hover glyph Snow; the device pair and the device-variant tabs are tab toggles and add the 1px Onyx border, while the HUD and safe-area toggles are single toggles and, like the set, draw none.
+16 × 16, 4px radius; an `Icon` instance 14 × 14 inset 1px (vector 10.66 × 8.98, a monitor). The Viewport draws the same cells at 22 × 22 (HUD, SafeArea) and 26 × 22 (the device pair), with no size variant. The monitor is `DesktopIcon` in `icons.tsx`, and the mobile, HUD and safe-area glyphs have no Figma counterpart yet (`useRestorePersistedMode` is a different control). Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Off + hover glyph Snow; the canvas device pair is a tab toggle and adds the 1px Onyx border, while the HUD and safe-area toggles are single toggles and, like the set, draw none.
 
 | Selected | Hover | Fill | Contrast (on `#242129`) | A11y | Inspector token |
 | --- | --- | --- | --- | --- | --- |
@@ -2651,6 +2668,13 @@ Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Off | Yes | White 10 | Silver glyph 4.31:1 on the fill (non-text ≥ 3:1) | — | `--palette-whiteTransparent-subtle` |
 | On | No | Blue Dark 2 `#244B7D` | fill vs panel 1.79:1; Snow glyph 8.61:1 | `aria-pressed="true"` | `--ui-designer-control-active-bg` |
 | On | Yes | Blue Dark 3 `#243852` | fill vs panel 1.33:1; Snow 11.61:1 | **hover on a selected toggle is darker than rest** — as `ToolbarButton` | `--palette-system-blueDark3` |
+
+**Decisions** (the record for this set; grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-22 | Does the canvas device pair take a border, though the set draws none? | Yes. The pair is a tab toggle: 1px `--palette-neutral-onyx` at rest, on hover and disabled, a fill-coloured border when selected (✱ in UI Editor Buttons) |
+| 2026-10-28 | Which controls does this set govern? | The canvas's own Desktop / Mobile pair and the HUD / safe-area preview toggles only. The `PropertyPanel` device-variant chips follow the `Devices` set (see Devices) |
 
 ### AddVariant (UI Editor Buttons)
 
@@ -2724,13 +2748,13 @@ Vertical, 6px radius, no border of its own (the `InputActions` section above the
 
 | Variant | State | Fill | Contrast (on `#242129`) | A11y | Inspector token |
 | --- | --- | --- | --- | --- | --- |
-| Default | rest | Onix Dark 1 `#2D2A33` | fill vs panel 1.13:1; Gray 8.95:1; Silver 5.20:1 | row is a `role="group"` named by the action | missing: PROPOSED `--palette-neutral-onyxDark1` |
+| Default | rest | Onix Dark 1 `#2D2A33` | fill vs panel 1.13:1; Gray 8.95:1; Silver 5.20:1 | row is a `role="group"` named by the action | `--palette-neutral-onyxDark1` |
 | Hover | pointer over | Pale Black `#43404A` | fill vs panel 1.56:1; Gray 6.44:1; **Silver 3.74:1 — fails 4.5:1 for 12px text** | hover must not be the only cue ✱ | `--gray-0` |
-| Hiden | hidden action | Onix Dark 1 | as Default | eye `aria-pressed` | PROPOSED `--palette-neutral-onyxDark1` |
+| Hiden | hidden action | Onix Dark 1 | as Default | eye `aria-pressed` | `--palette-neutral-onyxDark1` |
 | any | the eye (user, October 27, 2026: as drawn) | visible: none, White 10 on the eye's hover; hidden: Blue Dark 3 `--palette-system-blueDark3`, in Hiden and HidenHover alike | visible: Gray eye 8.95:1 on Onix Dark 1, 6.44:1 on Pale Black; hidden: Blue Light 1 `--palette-info-light` eye-off 5.33:1 on Blue Dark 3; the fill vs the row 1.18:1, so the glyph swap and colour carry the state | `aria-pressed="true"` when hidden; 18px box in a 24px hit target | — |
 | HidenHover | hidden + hover | Pale Black | as Hover | — | `--gray-0` |
 | any | "Main" radio | none; 1px White 40 ring, 100px radius; selected: a Primary `#FF2D55` dot inset 25% | — | label "Main" Inter 400 12 Gray, gap 5 | `--palette-whiteTransparent-blurry`; `--primary-main` |
-| any | texture input ("None") | White 8 `rgba(255,255,255,0.08)`, 6px radius | "None" Inter 400 14 White 40: 3.17:1 on White 8 over Onix Dark 1 (below 4.5:1) | h 26, min-width 128, padding 6 / 8, gap 8, arrow 10; two 26 × 26 round buttons (100px radius, glyph inset 20%) 6 after it | missing: PROPOSED `--palette-whiteTransparent-hint` |
+| any | texture input ("None") | White 8 `rgba(255,255,255,0.08)`, 6px radius | "None" Inter 400 14 White 40: 3.17:1 on White 8 over Onix Dark 1 (below 4.5:1) | h 26, min-width 128, padding 6 / 8, gap 8, arrow 10; two 26 × 26 round buttons (100px radius, glyph inset 20%) 6 after it | `--palette-whiteTransparent-hint` |
 | any | ✱ focus / disabled / dragging | — | ring `--ui-designer-control-accent` | not drawn | — |
 
 ### Viewport (Viewport)
@@ -2741,7 +2765,7 @@ Page `20506:34918`; board `Frame 1` `21221:39035` (title "Viewport" `21221:39108
 
 | Part | Fill | Border | Radius | Text | Glyph | Padding / gap / size | Inspector token |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Viewport 2D | Onix Dark 1 `#2D2A33` | none | 0 | — | — | 1292 × 1020, vertical; the 36 Toolbar on top, then the canvas | missing: PROPOSED `--palette-neutral-onyxDark1` |
+| Viewport 2D | Onix Dark 1 `#2D2A33` | none | 0 | — | — | 1292 × 1020, vertical; the 36 Toolbar on top, then the canvas | `--palette-neutral-onyxDark1` |
 | PreviewMode&Zoom | none | none | 0 | — | — | absolute at bottom 10 / right 10, gap 4 | — |
 | DisplayMode frame | Charcoal `#25212A` | none | 5 | — | — | h 26, padding 0 / 2, gap 8 | `--ui-designer-panel-bg` (✱ deviation 1/255) |
 | HUD, SafeArea toggles | none at rest | none | 4 | — | icon inset 6.25% of 22 | 22 × 22, gap 4 (group h 24) | single-toggle rule |
@@ -2944,7 +2968,7 @@ Reviewing UI against these? Run the `web-design-guidelines` skill over the chang
 
 ## Open items
 
-Everything here is current and unresolved. Design owns the Figma-side defects; the user owns the questions and every proposed token name.
+Everything here is current and unresolved. Design owns the Figma-side defects; the user owns every proposed token name.
 
 ### Figma-side defects (for design)
 
@@ -3014,7 +3038,7 @@ Everything here is current and unresolved. Design owns the Figma-side defects; t
 | Slider (Slider) | The Handle's colour is baked into its svg; only `Primary/Primary` is referenced. |
 | SectionImages (Section) | Layer names don't match the content: `Videos` holds `folder-dynamic-gradient`, `Image6` holds `influence 1`. Caption typo "sourcelibrary". |
 | Settings (App Settings) | The `Experimental / Custom` variant shows the AI tab; no Experimental non-default variant, no AI / Default. |
-| Settings (App Settings) | The sidebar draws the `TabVertical` set at a 46-high, 16px uppercase override of the set's 75-high, 20px size: design to decide whether that is a `TabVertical` size variant. |
+| TabVertical (Tabs) + Settings (App Settings) | `TabVertical` has no size variant for the Settings sidebar's 46 / 16px tabs. |
 | Settings (App Settings) | Copy: "sign Out" casing; one action labelled two ways ("SIGN IN" in Primary, "Sign In" in Silver). |
 | Settings (App Settings) | The Scene Folder field fixture holds a real home-directory path; it should be a placeholder. |
 | Settings (App Settings) | The command box reads `npm i -g @claude`, which is not a real install command for the Claude CLI. |
@@ -3022,8 +3046,7 @@ Everything here is current and unresolved. Design owns the Figma-side defects; t
 | Fill (UI Editor) | The mode control is 130 × 20 here but the `ToggleTabs` slot is 142 × 27. |
 | RightPanel2D (UI Editor) | "Constratints" typo in the Constraints label (`21028:16548`), repeated in the Text, Button, Dropdown and Image&Container variants. |
 | RightPanel2D (UI Editor) | The Text / Button layer text `{isMouseEvents ? "Mouse Events" : isStyle ? "Style" : ""}` is an unresolved component-property expression. |
-| RightPanel2D (UI Editor) | The Dropdown variant repeats the Position and Layout groups (1702 tall); confirm whether the duplicate is intentional. |
-| RightPanel2D (UI Editor) | NodeLogic1 and NodeLogic2 draw two layouts for one screen ("Open PrefabName" below the inputs vs under the header); design must say which governs. |
+| RightPanel2D (UI Editor) | Hidden duplicate Position / Layout groups in the Dropdown variant (`21028:34624`). |
 | RightPanel2D (UI Editor) | GUILogic description carries two spaces ("GUI's data - NewGUI.tsx"). |
 | RightPanel2D (UI Editor) | The header row is 16 tall while the `NodeTypeHierarchy` PropertiesHeader variant it instances is 20. |
 | RightPanel2D (UI Editor) | NodeLogic1's bound input compensates its 1px border with +1 padding; the unbound row's DeleteCTA is opacity 0 but still takes 20px. |
@@ -3045,7 +3068,7 @@ Everything here is current and unresolved. Design owns the Figma-side defects; t
 | VariableMenu (UI Editor) | Same Description-field border, 16px typed text and "NewVariable" naming as EventsMenu. |
 | ColourPanel (UI Editor) | A lighter shadow (25%, blur 10) than the menus (40%, blur 8); hex cells are Pale Black where every other field is Onix. |
 | Interactions (UI Editor) | Chips have no hover or focus state. |
-| Devices (UI Editor) | The device pair is drawn as `ToggleLabel` chips, not the `ViewModeToggle` set; the Off variant has no label state for the pair. |
+| Devices (UI Editor) | The Off variant has no label state for the device pair. |
 | MinMaxSize (UI Editor) | The label reads "Min Size" for both Min and Max uses. |
 | BottomPanel2D (UI Editor) | The "Full Screen" tile label is 11px, every other 12px; NODES tiles are bordered and PREFABS tiles are not; the Default scrollbar track is 510 tall over a 320-tall panel. |
 | LeftPanel2D (UI Editor) | The Search field draws no fill or border (unbounded hit area) and no focus state. |
@@ -3067,62 +3090,9 @@ Everything here is current and unresolved. Design owns the Figma-side defects; t
 | RuntimeControls (Viewport Toolbar) | The `Disabled` property on `Preview=Off`'s Pause doesn't change its look (G10); the Play cell is offset −1 / −1. |
 | AudioToggle (Viewport Toolbar) | No hover or focus state. |
 
-### Figma silent or ambiguous (for the user)
-
-Figma draws these two ways, or doesn't decide them. They wait for the user; none is a decision yet.
-
-| Set (page) | Question |
-| --- | --- |
-| RightPanel2D, variants NodeLogic1 and NodeLogic2 (UI Editor) | Which variant governs: the "Open PrefabName" button under the header (NodeLogic1), or below the inputs (NodeLogic2)? |
-| RightPanel2D, variant Dropdown (UI Editor) | The variant draws the Position and Layout groups twice. Is the second pair intended, or a leftover? |
-| Settings (App Settings) | The sidebar draws `TabVertical` at 46 high with 16px uppercase labels, against the set's 75 high and 20px. Should that become a `TabVertical` size variant? |
-| Devices (UI Editor) | The Devices toggle chips and the `ViewModeToggle` set draw the same control differently. Which one does the code follow? |
-
 ### Proposed tokens
 
-Names are the user's call. A proposed token lands in the hub with its row here; a value change to an existing token ships in its own spoke with Before and After shots of every consumer.
-
-| Proposed name | Value | Figma source | World | Would replace |
-| --- | --- | --- | --- | --- |
-| `--palette-primary-dark2` | `#D80029` | Primary/Primary Dark 2 | inspector | — (ui2 `colors.base.primaryDark2`) |
-| `--palette-primary-light2` | `#FF93A8` | Primary/Primary Light 2 | inspector | — |
-| `--palette-primaryAlt-dark2` | `#D84900` | Primary Alt/Primary Alt Dark 2 | inspector | — |
-| `--palette-primaryAlt-light2` | `#FFCDBA` | Primary Alt/Primary Alt Light 2 | inspector | — |
-| `--palette-neutral-gray5` | `#ECEBED` | Neutrals/Pearl | inspector | — (ui2 `neutral.gray5`) |
-| `--palette-neutral-gray1` | `#5E5B67` | Neutrals/Graffito | inspector | — (Creator Hub `--light-gray`) |
-| `--palette-neutral-onyxDark1` | `#2D2A33` | Onix Dark 1 (swatch) | inspector | — (Creator Hub `--title-bar-button`) |
-| `--palette-success-dark2` | `#00A146` | System/Green Dark 2 | both | — |
-| `--palette-success-light2` | `#C1EECF` | System/Green Light 2 | both | — |
-| `--palette-warning-light` | `#FFB95B` | System/Orange Light 1 | inspector | — (ui2 `palette.warning.light`) |
-| `--palette-warning-dark2` | `#EC7122` | System/Orange Dark 2 | both | the `#ec7122` literal in `LayoutTab` |
-| `--palette-warning-light2` | `#FFCD88` | System/Orange Light 2 | both | — |
-| `--palette-error-dark2` | `#CC1D2C` | System/Red Dark 2 | both | — |
-| `--palette-error-light2` | `#FFCDD4` | System/Red Light 2 | both | — |
-| `--palette-info-main` | `#2196F3` | Blue (swatch) | inspector | — (ui2 `palette.info.main`) |
-| `--palette-info-dark1` | `#1A75D2` | Blue Dark 1 (swatch fill) | inspector | — (ui2 `palette.info.dark`) |
-| `--palette-info-light2` | `#BBDEFB` | Blue Light 2 (swatch) | both | — |
-| `--palette-rarity-<name>` and `--palette-rarity-<name>-light` (16) | the Rarities table | Rarities/\* | both | — (ui2 `colors.rarity` / `rarityLight`) |
-| `--gradient-flare` / `--gradient-cerise` / `--gradient-amin` | `linear-gradient(135deg, …)` of the stops in the Gradients table | Brand/Flare, Cerise, Amin | both | — (`--metaverse-gradient` is another gradient) |
-| `--palette-blackTransparent-subtle` | `rgba(0,0,0,.1)` | Transparency (Black)/Subtle | both | — |
-| `--palette-blackTransparent-soft` | `rgba(0,0,0,.2)` | Transparency (Black)/Soft | both | `--contexify-separator-color` in the overlay role |
-| `--palette-whiteTransparent-hint` | `rgba(255,255,255,.08)` | the MobileHUD input fill (no variable) | inspector | — |
-| `--palette-whiteTransparent-hover` | `rgba(255,255,255,.15)` | card hover (no variable) | both | — (Creator Hub alternative name: `--transparent-gray-hover`) |
-| `--shape-borderRadiusMedium` | `8px` | rows, swatches, a Toast tooltip | both | literals |
-| `--shape-borderRadiusXLarge` | `16px` | cards | both | literals |
-| `--shape-borderRadiusXXLarge` | `24px` | modals | both | literals |
-| `--shadow-tooltip` | `0 2px 3px rgba(0,0,0,.25)` | Tooltip `20819:309` | both | literals |
-| `--shadow-toast` | `0 4px 4px rgba(0,0,0,.1)` | the Toast tooltips | both | literals |
-| `--modal-surface` | `#181225` | the modal shell (raw fill) | both | `--modal-content-bg-color` (inspector), `--modal` (Creator Hub) |
-| `--type-<style>-size` / `-weight` / `-line-height` / `-letter-spacing` | the Proposed type tokens table | the 19 Typography styles | both | literal sizes in component CSS |
-| `--type-caption-size` | `10px` | the NodeLogic descriptions (no style) | inspector | literals |
-| `--lavender` | `#c640cd` | Brand/Lavender (avatar fill) | Creator Hub | none |
-| `--menu-bg` | `#35333b` | Neutrals/Onix (menu fill) | Creator Hub | ui2 `Menu` paper default |
-| `--menu-shadow` | `0 4px 8px rgba(0,0,0,.4)` | Menu drop shadow | Creator Hub | ui2 `MuiPaper` elevation |
-| `--scrollbar-thumb` | `rgba(0,0,0,.4)` | Scrollbar handle, Black 40 | Creator Hub | `--dcl-silver` in the global `::-webkit-scrollbar` |
-| `--scrollbar-thumb-border` | `rgba(255,255,255,.6)` | Scrollbar handle border, White 60 | Creator Hub | none |
-| `--type-button-small-*` | 13 / 600 / 24px / 0.46px uppercase | `button/small` (legacy) | both | literals |
-| Creator Hub White 5 / 10 / 20 / 40 / 60, Black 40 steps | `rgba(255,255,255,.05/.1/.2/.4/.6)`, `rgba(0,0,0,.4)` | Transparencies | Creator Hub | `theme.css` has none; names follow the inspector's `--palette-whiteTransparent-*` |
-| (name pending) popover shadow | `0 4px 10px rgba(0,0,0,0.25)` | `ColourPanel` drop shadow (no variable) | inspector | a literal, or unify with `--menu-shadow` (a design question) |
+None is pending. Names are the user's call: a proposed token lands in the hub with its row here, and a value change to an existing token ships in its own spoke with Before and After shots of every consumer.
 
 ---
 
