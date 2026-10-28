@@ -142,6 +142,7 @@ make protoc        # Regenerate TypeScript from .proto files
 ### Asset Packs
 
 - Runtime built with `@dcl/sdk-commands` (SDK7 scene).
+- **`make build-asset-packs` can run an npm install.** Its `build:js` is `sdk-commands build`, which prints "Installing dependencies..." and reifies the whole workspace tree when it decides the install is incomplete (a fresh worktree is enough). In a `git worktree` whose `node_modules` is symlinked to the main checkout, that reify follows the links and MOVES packages out of the main checkout's `node_modules`, breaking every vitest run there. Give each worktree its own `npm ci`, and never symlink `node_modules` or its entries. A symlinked tree also resolves the workspace links (`@dcl/inspector -> ../../packages/inspector`) into the main checkout's packages, so tests silently run against the wrong code.
 - TypeScript library (`dist/`) + catalog.json + binary assets (`bin/`).
 - Scripts for validating, uploading to S3, and downloading assets.
 - Public API is exported via `src/definitions.ts` (built to `dist/definitions.js`, the package `main`). Cross-package VALUE imports from `@dcl/asset-packs` in the inspector only resolve after rebuilding asset-packs (`make build-asset-packs`). This also affects the inspector's **vitest unit tests**, which import the built `@dcl/asset-packs` — a source edit in asset-packs won't be seen (in imports, typecheck, or tests) until rebuilt. `npm run build:lib` (in `packages/asset-packs`) is the minimal/fast rebuild to refresh `dist/`.
