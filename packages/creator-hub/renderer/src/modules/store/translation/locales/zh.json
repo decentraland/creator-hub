@@ -1138,11 +1138,6 @@
         "title": "未发布场景",
         "view_scenes": "查看场景"
       },
-      "worlds": {
-        "world_settings": "设置",
-        "layout": "布局",
-        "published_world": "已发布的世界"
-      },
       "land": {
         "lands_count": "{count, plural, other {# 块 LAND}}",
         "parcel_name": "地块 {coords}",

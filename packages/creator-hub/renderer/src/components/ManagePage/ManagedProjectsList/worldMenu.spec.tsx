@@ -9,7 +9,7 @@ import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import { getJumpInUrl } from '/@/modules/utils';
 import { ManagedProjectType, type ManagedProject } from '/shared/types/manage';
 
-import { getStorageUrl } from '../PublishedProjectCard/utils';
+import { getStorageUrl } from './utils';
 import { getWorldMenuOptions } from './worldMenu';
 
 const deployment = {
@@ -124,6 +124,29 @@ describe('getWorldMenuOptions', () => {
   ])('when %s opens a World with nothing published', (_who, role) => {
     it('should offer Create Event alone, with no divider left hanging', () => {
       const { options } = menu(world(role, { deployment: undefined }));
+
+      expect(rows(options)).toEqual([['Create Event', false, 'default']]);
+    });
+  });
+
+  describe('when the account can only stream to a published World', () => {
+    it('should offer the World links and Create Event, but not View Storage', () => {
+      const { options } = menu({ ...world(WorldRoleType.COLLABORATOR), access: 'stream' });
+
+      expect(rows(options)).toEqual([
+        ['Jump In', false, 'default'],
+        ['Copy URL', false, 'default'],
+        ['Create Event', false, 'default'],
+      ]);
+    });
+  });
+
+  describe('when the account can only stream to an unpublished World', () => {
+    it('should offer Create Event alone', () => {
+      const { options } = menu({
+        ...world(WorldRoleType.COLLABORATOR, { deployment: undefined }),
+        access: 'stream',
+      });
 
       expect(rows(options)).toEqual([['Create Event', false, 'default']]);
     });

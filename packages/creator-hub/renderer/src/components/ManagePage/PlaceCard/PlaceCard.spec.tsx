@@ -93,4 +93,61 @@ describe('PlaceCard', () => {
       );
     });
   });
+
+  describe('when the place is a published World', () => {
+    const renderWorld = (props: Partial<CardProps> = {}) =>
+      renderCard({
+        name: 'Plaza',
+        place: { kind: 'world', domain: 'plaza.dcl.eth' },
+        scenesCount: 2,
+        to: '/manage/world/plaza.dcl.eth/details',
+        ...props,
+      });
+
+    it('should show the globe and the full domain, then the scenes', () => {
+      renderWorld();
+
+      const card = screen.getByRole('article', { name: 'Plaza' });
+      expect(card.textContent).toContain('plaza.dcl.eth');
+      expect(card.textContent).toContain('2 Scenes');
+      expect(card.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 19 19');
+    });
+
+    it('should tag a collaborator', () => {
+      renderWorld({ role: 'collaborator' });
+
+      expect(screen.getByRole('article').textContent).toContain('plaza.dcl.ethCollaborator');
+    });
+
+    it('should link its name to the World detail page and name its menu after the domain', () => {
+      renderWorld();
+
+      expect(screen.getByRole('link', { name: 'Plaza' }).getAttribute('href')).toBe(
+        '/manage/world/plaza.dcl.eth/details',
+      );
+      expect(screen.getByRole('button', { name: 'Options for plaza.dcl.eth' })).toBeTruthy();
+    });
+
+    it('should not link when it has nowhere to go', () => {
+      renderWorld({ to: undefined });
+
+      expect(screen.queryByRole('link')).toBeNull();
+      expect(screen.getByRole('article', { name: 'Plaza' })).toBeTruthy();
+    });
+  });
+
+  describe('when nothing is published on the World', () => {
+    it('should hide the name and be named by its domain', () => {
+      renderCard({
+        name: 'plaza.dcl.eth',
+        place: { kind: 'world', domain: 'plaza.dcl.eth' },
+        status: 'unpublished',
+        scenesCount: 0,
+      });
+
+      const card = screen.getByRole('article', { name: 'plaza.dcl.eth' });
+      expect(card.querySelector('h2')?.getAttribute('aria-hidden')).toBe('true');
+      expect(screen.getByText('No Scene Published')).toBeTruthy();
+    });
+  });
 });

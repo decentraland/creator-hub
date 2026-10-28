@@ -16,19 +16,17 @@ import {
   DCLRegistrar as dclRegistrarAbi,
 } from './abis';
 import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
-import { getEnsProvider, isValidENSName } from './utils';
-import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
+import { getEnsProvider, getStreamOnlyWorldNames, isValidENSName } from './utils';
+import { USER_PERMISSIONS, type ContributableDomain, type ENS, type ENSError } from './types';
 
 const DEFAULT_CHAIN_ID: ChainId = Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 const REQUESTS_BATCH_SIZE = 25;
 const limit = pLimit(REQUESTS_BATCH_SIZE);
 
 // actions
-export const fetchContributeENSNames = async (address: string) => {
+const fetchContributableDomains = async (address: string) => {
   try {
-    const WorldAPI = new Worlds();
-    const domains = await WorldAPI.fetchContributableDomains(address);
-    return domains.filter(domain => domain.user_permissions.includes(USER_PERMISSIONS.DEPLOYMENT));
+    return await new Worlds().fetchContributableDomains(address);
   } catch (error) {
     captureException(error, {
       tags: {
@@ -39,6 +37,12 @@ export const fetchContributeENSNames = async (address: string) => {
     return [];
   }
 };
+
+const isDeployable = (domain: ContributableDomain) =>
+  domain.user_permissions.includes(USER_PERMISSIONS.DEPLOYMENT);
+
+export const fetchContributeENSNames = async (address: string) =>
+  (await fetchContributableDomains(address)).filter(isDeployable);
 
 export const fetchBannedNames = async () => {
   const dclListsUrl = config.get('DCL_LISTS_URL');
@@ -195,10 +199,11 @@ export const fetchContributableNames = createAsyncThunk(
     const bannedNames = await fetchBannedNames();
     const bannedNamesSet = new Set(bannedNames.map(x => x.toLowerCase()));
 
-    let names = await fetchContributeENSNames(address);
-    names = names.filter(({ name }) =>
-      name.split('.').every(nameSegment => !bannedNamesSet.has(nameSegment)),
-    );
+    const isAllowed = (name: string) =>
+      name.split('.').every(nameSegment => !bannedNamesSet.has(nameSegment));
+    const domains = await fetchContributableDomains(address);
+    const names = domains.filter(isDeployable).filter(({ name }) => isAllowed(name));
+    const streamOnly = getStreamOnlyWorldNames(domains).filter(isAllowed);
 
     const [ownerByNameDomain, ownerByEnsDomain]: [Record<string, string>, Record<string, string>] =
       await Promise.all([
@@ -234,7 +239,7 @@ export const fetchContributableNames = createAsyncThunk(
       });
     });
 
-    return Promise.all(promisesOfContributableENSNames);
+    return { names: await Promise.all(promisesOfContributableENSNames), streamOnly };
   },
 );
 
@@ -243,7 +248,9 @@ export const fetchENSList = createAsyncThunk(
   async (payload: { address: string }, thunkApi) => {
     const dclNames = await thunkApi.dispatch(fetchDCLNames(payload)).unwrap();
     const ensNames = await thunkApi.dispatch(fetchENS(payload)).unwrap();
-    const contributableNames = await thunkApi.dispatch(fetchContributableNames(payload)).unwrap();
+    const { names: contributableNames } = await thunkApi
+      .dispatch(fetchContributableNames(payload))
+      .unwrap();
 
     return [...dclNames, ...ensNames, ...contributableNames];
   },
@@ -253,12 +260,15 @@ export const fetchENSList = createAsyncThunk(
 export type ENSState = {
   chainId: ChainId;
   data: Record<string, ENS>;
+  /** Worlds the wallet can stream to but not publish to; kept out of `data`, which lists publishable names. */
+  streamOnlyWorlds: string[];
   error: ENSError | null;
 };
 
 export const initialState: Async<ENSState> = {
   chainId: DEFAULT_CHAIN_ID,
   data: {},
+  streamOnlyWorlds: [],
   status: 'idle',
   error: null,
 };
@@ -290,6 +300,9 @@ export const slice = createSlice({
           ),
         };
         state.status = 'succeeded';
+      })
+      .addCase(fetchContributableNames.fulfilled, (state, action) => {
+        state.streamOnlyWorlds = action.payload.streamOnly;
       })
       .addCase(fetchENSList.rejected, (state, action) => {
         state.status = 'failed';

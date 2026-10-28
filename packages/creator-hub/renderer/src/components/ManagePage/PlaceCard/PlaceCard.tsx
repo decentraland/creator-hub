@@ -11,6 +11,7 @@ import { Dropdown } from '../../Dropdown';
 import type { Option } from '../../Dropdown';
 import { MapPinIcon, ScenesIcon } from '../../Icons';
 import { Image } from '../../Image';
+import { PlaceGlyph } from '../cardMenuGlyphs.styled';
 import { RoleTag } from '../RoleTag';
 import type { RoleTagVariant } from '../RoleTag';
 import {
@@ -26,9 +27,11 @@ import {
 
 export type PlaceCardStatus = 'published' | 'unpublished';
 
+export type CardPlace = LandPlace | { kind: 'world'; domain: string };
+
 type Props = {
   name: string;
-  place: LandPlace;
+  place: CardPlace;
   role?: RoleTagVariant;
   status: PlaceCardStatus;
   thumbnail?: string;
@@ -38,29 +41,37 @@ type Props = {
   to?: string;
 };
 
-function placeText(place: LandPlace) {
+function placeText(place: CardPlace) {
+  if (place.kind === 'world') return place.domain;
   return place.kind === 'parcel'
     ? coordsToId(place.x, place.y)
     : t('manage.cards.land.lands_count', { count: place.size });
 }
 
-/** A LAND card on Manage (Figma `Place Entry`, Type = LAND). */
+/** A LAND or World card on Manage (Figma `Place Entry`). */
 export function PlaceCard(props: Props) {
   const nameId = useId();
+  const domain = props.place.kind === 'world' ? props.place.domain : undefined;
+  const isNameHidden = !!domain && props.status === 'unpublished';
 
   return (
-    <Card aria-labelledby={nameId}>
+    <Card {...(isNameHidden ? { 'aria-label': domain } : { 'aria-labelledby': nameId })}>
       <TextBlock>
         <PlaceRow>
-          <MapPinIcon />
+          {domain ? <PlaceGlyph /> : <MapPinIcon />}
           <span>{placeText(props.place)}</span>
           {props.role && <RoleTag variant={props.role} />}
         </PlaceRow>
-        <Name id={nameId}>{props.to ? <Link to={props.to}>{props.name}</Link> : props.name}</Name>
+        <Name
+          id={nameId}
+          aria-hidden={isNameHidden || undefined}
+        >
+          {props.to ? <Link to={props.to}>{props.name}</Link> : props.name}
+        </Name>
       </TextBlock>
       <Kebab>
         <Dropdown
-          label={t('menu.options_for', { name: props.name })}
+          label={t('menu.options_for', { name: domain ?? props.name })}
           options={props.menuOptions}
         />
       </Kebab>

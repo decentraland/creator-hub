@@ -1138,11 +1138,6 @@
         "title": "No hay escena publicada",
         "view_scenes": "Ver escenas"
       },
-      "worlds": {
-        "world_settings": "Configuración",
-        "layout": "Diseño",
-        "published_world": "Mundo Publicado"
-      },
       "land": {
         "lands_count": "{count, plural, one {# LAND} other {# LANDs}}",
         "parcel_name": "Parcela {coords}",

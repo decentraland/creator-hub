@@ -31,6 +31,7 @@ import {
   selectWorldProjects,
   toLandProject,
   toManagedProject,
+  toStreamOnlyProject,
 } from './utils';
 import type {
   AddressPermissionPayload,
@@ -81,6 +82,7 @@ export type ManagementState = {
   total: number;
   projects: ManagedProject[];
   emptyProjects: ManagedProject[];
+  streamOnlyProjects: ManagedProject[];
   storageStats: WorldsWalletStats | null;
   accountHoldings: AccountHoldings | null;
   worldSettings: WorldSettingsState;
@@ -97,6 +99,7 @@ export const initialState: Async<ManagementState> = {
   total: 0,
   projects: [],
   emptyProjects: [],
+  streamOnlyProjects: [],
   storageStats: null,
   accountHoldings: null,
   status: 'idle',
@@ -162,6 +165,9 @@ export const fetchManagedProjectsFiltered = createAsyncThunk(
     }
     if (publishFilter !== FilterBy.PUBLISHED && page === 0) {
       await dispatch(fetchEmptyWorlds({ address: connectedAccount })).unwrap();
+    }
+    if (page === 0) {
+      await dispatch(fetchStreamOnlyWorlds({ address: connectedAccount })).unwrap();
     }
   },
 );
@@ -232,6 +238,19 @@ export const fetchEmptyWorlds = createAsyncThunk(
 
     const emptyProjectsList = await Promise.all(projectsPromises);
     return emptyProjectsList.filter(project => project !== null);
+  },
+);
+
+/** Fetches the Worlds the account can stream to but not publish to, as unlinked collaborator cards */
+export const fetchStreamOnlyWorlds = createAsyncThunk(
+  'management/fetchStreamOnlyWorlds',
+  async (_args: { address: string }, { getState }) => {
+    const worldsAPI = new Worlds();
+    return Promise.all(
+      getState().ens.streamOnlyWorlds.map(name =>
+        limit(() => toStreamOnlyProject(worldsAPI, name)),
+      ),
+    );
   },
 );
 
@@ -557,6 +576,7 @@ const slice = createSlice({
       state.total = 0;
       state.projects = [];
       state.emptyProjects = [];
+      state.streamOnlyProjects = [];
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
@@ -608,6 +628,9 @@ const slice = createSlice({
       })
       .addCase(fetchEmptyWorlds.fulfilled, (state, action) => {
         state.emptyProjects = action.payload ?? [];
+      })
+      .addCase(fetchStreamOnlyWorlds.fulfilled, (state, action) => {
+        state.streamOnlyProjects = action.payload;
       })
       .addCase(fetchStorageStats.fulfilled, (state, action) => {
         state.storageStats = action.payload;
@@ -757,11 +780,13 @@ const getWorldProjects = createSelector(
   [
     (state: AppState) => state.management.projects,
     (state: AppState) => state.management.emptyProjects,
+    (state: AppState) => state.management.streamOnlyProjects,
     (state: AppState) => state.management.sortBy,
     (state: AppState) => state.management.searchQuery,
+    (state: AppState) => state.management.publishFilter,
   ],
-  (published, empty, sortBy, searchQuery) =>
-    selectWorldProjects(published, empty, { sortBy, searchQuery }),
+  (published, empty, streamOnly, sortBy, searchQuery, publishFilter) =>
+    selectWorldProjects(published, empty, { sortBy, searchQuery, publishFilter }, streamOnly),
 );
 
 const getLandProjects = createSelector(
@@ -795,6 +820,7 @@ export const actions = {
   fetchManagedProjectsFiltered,
   fetchWorlds,
   fetchEmptyWorlds,
+  fetchStreamOnlyWorlds,
   fetchWorldSettings,
   updateWorldSettings,
   fetchStorageStats,

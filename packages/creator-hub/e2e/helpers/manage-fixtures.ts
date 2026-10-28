@@ -34,8 +34,11 @@ const ESTATE_REGISTRY = '0x959e104e1a4db6317fa58f8295f586e1a978c297';
 
 /** Which LAND fixtures (spec-00 P1–P5) the subgraph answers with. */
 export type LandFixture = 'P1' | 'P2' | 'P3' | 'P4' | 'P5';
-/** Which World fixtures (W1 published owner, W2 empty collaborator) the Worlds sources answer with. */
-export type WorldFixture = 'W1' | 'W2';
+/**
+ * Which World fixtures (W1 published owner, W2 empty collaborator, W3 published stream-only)
+ * the Worlds sources answer with.
+ */
+export type WorldFixture = 'W1' | 'W2' | 'W3';
 
 type RelayOutcome = 'sign' | 'reject' | 'expire';
 
@@ -268,16 +271,28 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
     {
       match: '/wallet/contribute',
       body: {
-        domains: worlds.includes('W2')
-          ? [
-              {
-                name: 'fixture-two.dcl.eth',
-                user_permissions: ['deployment'],
-                owner: OTHER_OWNER,
-                size: '0',
-              },
-            ]
-          : [],
+        domains: [
+          ...(worlds.includes('W2')
+            ? [
+                {
+                  name: 'fixture-two.dcl.eth',
+                  user_permissions: ['deployment'],
+                  owner: OTHER_OWNER,
+                  size: '0',
+                },
+              ]
+            : []),
+          ...(worlds.includes('W3')
+            ? [
+                {
+                  name: 'fixture-stream.dcl.eth',
+                  user_permissions: ['streaming'],
+                  owner: OTHER_OWNER,
+                  size: '0',
+                },
+              ]
+            : []),
+        ],
       },
     },
     {
@@ -308,6 +323,20 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
       },
     },
     { match: '/world/fixture-two.dcl.eth/scenes', body: { scenes: [], total: 0 } },
+    {
+      match: '/world/fixture-stream.dcl.eth/scenes',
+      body: {
+        scenes: [
+          {
+            entityId: 'w3',
+            parcels: ['0,0'],
+            entity: { metadata: { display: { title: 'Stream Stage' }, scene: { base: '0,0' } } },
+          },
+        ],
+        total: 1,
+      },
+    },
+    { match: '/world/fixture-stream.dcl.eth/settings', body: {} },
     {
       match: 'worlds-content-server.decentraland.org/worlds?',
       ...(options.worldsFail

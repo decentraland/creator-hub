@@ -1139,11 +1139,6 @@
         "title": "No Scene Published",
         "view_scenes": "View Scenes"
       },
-      "worlds": {
-        "world_settings": "Settings",
-        "layout": "Layout",
-        "published_world": "Published World"
-      },
       "land": {
         "lands_count": "{count, plural, one {# LAND} other {# LANDs}}",
         "parcel_name": "Parcel {coords}",

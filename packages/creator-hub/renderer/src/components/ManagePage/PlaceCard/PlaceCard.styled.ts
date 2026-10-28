@@ -11,11 +11,20 @@ const Card = styled('article')(({ theme }) => ({
   width: 416,
   height: 383,
   borderRadius: 16,
-  border: `1px solid ${whiteTransparent.subtle}`,
   overflow: 'hidden',
   backgroundColor: alpha(neutral.white, 0.05),
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    zIndex: 2,
+    borderRadius: 'inherit',
+    border: `1px solid ${whiteTransparent.subtle}`,
+    pointerEvents: 'none',
+  },
   '&:hover, &:focus-within, &:has([aria-expanded="true"])': {
     backgroundColor: whiteTransparent.subtle,
+    '& .MuiIconButton-root': { backgroundColor: whiteTransparent.subtle },
   },
   '&:has(a:focus-visible)': {
     outline: `2px solid ${theme.palette.info.light}`,
@@ -30,14 +39,19 @@ const EmptyThumbnail = styled('div')(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: theme.spacing(1.625),
-  paddingTop: theme.spacing(11.75),
+  gap: theme.spacing(2.375),
+  paddingTop: theme.spacing(10.25),
   color: neutral.softWhite,
   fontSize: theme.typography.pxToRem(18),
-  lineHeight: 1,
-  '& .MuiButton-root': {
+  lineHeight: theme.typography.pxToRem(24),
+  '&&& .MuiButton-root': {
     position: 'relative',
     zIndex: 1,
+    width: 160,
+    padding: theme.spacing(1.5, 3),
+    fontSize: theme.typography.pxToRem(16),
+    letterSpacing: 0,
+    lineHeight: theme.typography.pxToRem(22),
   },
   '&::before': {
     content: '""',
@@ -61,6 +75,7 @@ const Kebab = styled('div')(({ theme }) => ({
 
 const Name = styled('h2')(({ theme }) => ({
   margin: 0,
+  '&[aria-hidden="true"]': { visibility: 'hidden' },
   paddingRight: theme.spacing(5),
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -68,7 +83,7 @@ const Name = styled('h2')(({ theme }) => ({
   color: neutral.softWhite,
   fontSize: theme.typography.pxToRem(20),
   fontWeight: 600,
-  lineHeight: 1,
+  lineHeight: theme.typography.pxToRem(24),
   '& a': {
     color: 'inherit',
     textDecoration: 'none',
@@ -84,6 +99,7 @@ const Name = styled('h2')(({ theme }) => ({
 const PlaceRow = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
+  height: 28,
   gap: theme.spacing(0.5),
   color: neutral.gray3,
   fontSize: theme.typography.pxToRem(16),
@@ -111,6 +127,7 @@ const Stats = styled('span')(({ theme }) => ({
 const TextBlock = styled('div')(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
+  justifyContent: 'center',
   flexShrink: 0,
   gap: theme.spacing(1.25),
   height: 110,

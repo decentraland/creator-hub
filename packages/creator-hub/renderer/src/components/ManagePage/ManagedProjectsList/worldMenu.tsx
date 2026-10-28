@@ -12,7 +12,7 @@ import {
   StorageGlyph,
   UnpublishGlyph,
 } from '../cardMenuGlyphs.styled';
-import { getStorageUrl } from '../PublishedProjectCard/utils';
+import { getStorageUrl } from './utils';
 
 type Actions = {
   onUnpublishWorld: () => void;
@@ -24,7 +24,7 @@ type Actions = {
  * and Unpublish.
  */
 export function getWorldMenuOptions(project: ManagedProject, actions: Actions): Option[] {
-  const { id, type, role, deployment } = project;
+  const { id, type, role, deployment, access } = project;
   const isOwner = role === WorldRoleType.OWNER;
   const url = getJumpInUrl(id);
 
@@ -50,7 +50,7 @@ export function getWorldMenuOptions(project: ManagedProject, actions: Actions): 
     : [];
 
   const afterDivider: Option[] = [];
-  if (deployment) {
+  if (deployment && access !== 'stream') {
     afterDivider.push({
       text: t('manage.cards.menu.view_storage'),
       icon: <StorageGlyph />,
