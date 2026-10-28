@@ -3,56 +3,19 @@
   display: flex;
 }
 
-.Gizmos .gizmo {
-  background-repeat: no-repeat;
-  background-position: center;
-  height: 100%;
-}
-
-.Gizmos .gizmo.free {
-  margin: 0px;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
-  background-image: url(./icons/free.svg);
-}
-
-.Gizmos .gizmo.position {
-  margin-left: 1px;
-  margin-right: 1px;
-  border-radius: 0px;
-  background-image: url(./icons/position.svg);
-}
-
-.Gizmos .gizmo.rotation {
-  margin: 0px;
-  border-radius: 0px;
-  background-image: url(./icons/rotation.svg);
-}
-
-.Gizmos .gizmo.scale {
-  margin-left: 1px;
-  margin-right: 3px;
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
-  background-image: url(./icons/scale.svg);
-}
-
-.Gizmos .open-panel {
-  cursor: pointer;
-  height: 100%;
-  margin-right: 10px;
-}
-
 .Gizmos .panel {
   display: none;
   position: absolute;
-  top: calc(100% - 5px);
-  right: 5px;
-  width: 150px;
-  background-color: #1e1e1e;
+  top: calc(100% + 5px);
+  left: calc(100% - 45px);
+  box-sizing: border-box;
+  width: 176px;
+  padding: 7px 4px;
+  border: 1px solid var(--palette-whiteTransparent-subtle);
+  border-radius: var(--shape-borderRadiusLarge);
+  background-color: var(--ui-designer-control-bg);
+  box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.4);
   z-index: 1;
-  padding: 12px;
-  border-radius: 4px;
   user-select: none;
 }
 
@@ -60,38 +23,37 @@
   display: block;
 }
 
-.Gizmos .panel .title {
-  position: relative;
-  color: var(--text);
-  font-weight: bold;
-  margin-bottom: 6px;
-  line-height: 14px;
-  display: flex;
-  justify-content: space-between;
+.Gizmos .panel .rule {
+  height: 1px;
+  margin: 4px 7px;
+  background: var(--palette-whiteTransparent-subtle);
 }
 
-.Gizmos .panel .icon {
-  cursor: pointer;
-  width: 24px;
-  height: 24px;
-  position: absolute;
-  right: -5px;
-  top: -5px;
+.Gizmos .panel .align-world {
+  padding: 0 7px;
 }
 
-.Gizmos .panel .snaps {
-  margin-bottom: 10px;
+.Gizmos .panel .align-world .InputContainer {
+  min-height: 26px;
 }
 
-.Gizmos .panel .alignment {
-  position: relative;
+.Gizmos .panel .align-world .InputContainer input[type="checkbox"] {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
 }
 
-.Gizmos .panel .alignment label {
-  color: var(--secondary-text);
+.Gizmos .panel .align-world .InputContainer input[type="checkbox"]:checked::before {
+  left: 2.2px;
+  top: 3px;
+  width: 9.6px;
+  height: 8px;
+  mask-size: 9.6px 8px;
 }
 
-.Gizmos .panel .alignment.disabled .icon {
-  cursor: not-allowed;
-  opacity: 0.5;
+.Gizmos .panel .align-world .Label {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--palette-neutral-gray4);
 }

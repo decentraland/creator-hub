@@ -1,24 +1,33 @@
 .Snap {
   display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 26px;
+  padding: 0 7px;
+  gap: 7px;
 }
 
-.Snap>.label {
-  flex: none;
-  margin-right: 8px;
-  color: var(--secondary-text);
-}
-
-.Snap>input {
+.Snap > .label {
   flex: 1 1 auto;
-  min-width: 0;
-  text-align: right;
-  background: none;
-  color: var(--text);
-  border: none;
-  outline: none;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--palette-neutral-gray4);
 }
 
-.Snap>input:disabled {
-  user-select: none;
-  color: var(--secondary-text);
+.Snap > input {
+  box-sizing: border-box;
+  width: 50px;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--palette-whiteTransparent-blurry);
+  border-radius: 6px;
+  background: var(--ui-designer-control-bg);
+  color: var(--palette-neutral-softWhite);
+  font-size: 12px;
+  text-align: left;
+}
+
+.Snap > input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }

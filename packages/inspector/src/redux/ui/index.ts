@@ -19,6 +19,7 @@ export interface UiState {
   uiDesignerSnapEnabled: boolean;
   sceneRunIntent: boolean;
   assetExplorerActive: boolean;
+  sceneRunStarted: boolean;
 }
 
 export const initialState: UiState = {
@@ -36,6 +37,7 @@ export const initialState: UiState = {
   uiDesignerSnapEnabled: true,
   sceneRunIntent: false,
   assetExplorerActive: false,
+  sceneRunStarted: false,
 };
 
 export const appState = createSlice({
@@ -93,8 +95,13 @@ export const appState = createSlice({
     setUIDesignerSnap: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
       state.uiDesignerSnapEnabled = payload.enabled;
     },
-    setSceneRunIntent: (state, { payload }: PayloadAction<{ running: boolean }>) => {
+    setSceneRunIntent: (
+      state,
+      { payload }: PayloadAction<{ running: boolean; reset?: boolean }>,
+    ) => {
       state.sceneRunIntent = payload.running;
+      if (payload.running) state.sceneRunStarted = true;
+      if (payload.reset) state.sceneRunStarted = false;
     },
     setAssetExplorerActive: (state, { payload }: PayloadAction<{ active: boolean }>) => {
       state.assetExplorerActive = payload.active;
@@ -140,6 +147,7 @@ export const getUIDesignerSnapEnabled = (state: RootState): boolean =>
   state.ui.uiDesignerSnapEnabled;
 export const getSceneRunIntent = (state: RootState): boolean => state.ui.sceneRunIntent;
 export const isAssetExplorerActive = (state: RootState): boolean => state.ui.assetExplorerActive;
+export const getSceneRunStarted = (state: RootState): boolean => state.ui.sceneRunStarted;
 
 // Reducer
 export default appState.reducer;

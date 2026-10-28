@@ -4,9 +4,10 @@ import { type BrowserWindow } from 'electron';
 import { createWindow, focusWindow, getWindow } from './modules/window';
 
 export const MAIN_WINDOW_ID = 'main';
+const MAIN_WINDOW_MIN_WIDTH = 1080;
 
 async function createMainWindow(id: string) {
-  const window = createWindow(id);
+  const window = createWindow(id, { minWidth: MAIN_WINDOW_MIN_WIDTH });
   window.setMenuBarVisibility(false);
   window.maximize();
 

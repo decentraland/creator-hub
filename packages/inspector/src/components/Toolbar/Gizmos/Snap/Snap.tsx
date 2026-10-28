@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useId } from 'react';
 
 import { useSnapState } from '../../../../hooks/editor/useSnap';
 import { GizmoType } from '../../../../lib/utils/gizmo';
@@ -11,6 +11,7 @@ type Props = {
 
 const Snap: React.FC<Props> = ({ gizmo }) => {
   const [snap, setSnap] = useSnapState(gizmo);
+  const id = useId();
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,8 +44,14 @@ const Snap: React.FC<Props> = ({ gizmo }) => {
 
   return (
     <div className="Snap">
-      <div className="label">{label}</div>
+      <label
+        className="label"
+        htmlFor={id}
+      >
+        {label}
+      </label>
       <input
+        id={id}
         type="number"
         value={snap}
         onChange={handleChange}

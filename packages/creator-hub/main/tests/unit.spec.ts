@@ -56,6 +56,13 @@ test('Should create the main window', async () => {
   }
 });
 
+test('Should keep the main window wide enough for the nav and the inspector toolbar', async () => {
+  await restoreOrCreateMainWindow();
+  expect(vi.mocked(BrowserWindow)).toHaveBeenCalledWith(
+    expect.objectContaining({ minWidth: 1080 }),
+  );
+});
+
 test('Should restore an existing window', async () => {
   const { mock } = vi.mocked(BrowserWindow);
 

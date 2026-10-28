@@ -141,3 +141,33 @@ describe('UI Designer left panel', () => {
     await expect(UIDesigner.rootNames()).resolves.toEqual([]);
   });
 });
+
+describe('UI Designer toolbar', () => {
+  beforeAll(async () => {
+    await App.waitUntilReady();
+    await UIDesigner.open();
+  });
+
+  test('draw the Snow focus ring on the 2D toolbar', async () => {
+    const ring = () =>
+      page.evaluate(() => {
+        const el = document.activeElement as HTMLElement;
+        const style = getComputedStyle(el);
+        return { className: el.className, outline: `${style.outlineStyle} ${style.outlineColor}` };
+      });
+
+    await page.locator('.ui-designer-toolbar .gizmo.free').click();
+    await page.keyboard.press('Tab');
+    await expect(ring()).resolves.toEqual({
+      className: expect.stringContaining('gizmo position'),
+      outline: 'solid rgb(252, 252, 252)',
+    });
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(ring()).resolves.toEqual({
+      className: expect.stringContaining('edit-scene'),
+      outline: 'solid rgb(252, 252, 252)',
+    });
+  });
+});
