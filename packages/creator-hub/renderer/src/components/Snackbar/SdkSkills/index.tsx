@@ -7,16 +7,18 @@ import type { Project } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
-export function NewSdkSkillsVersion({
+export function SdkSkills({
   project,
+  installed,
   onClose,
 }: {
   project: Project;
+  installed: boolean;
   onClose: () => void;
 }) {
   const { updateSdkSkills } = useWorkspace();
 
-  const handleClickUpdate = useCallback(() => {
+  const handleClickAction = useCallback(() => {
     updateSdkSkills(project);
     onClose();
   }, [project, updateSdkSkills, onClose]);
@@ -29,9 +31,11 @@ export function NewSdkSkillsVersion({
         <>
           <Button
             variant="text"
-            onClick={handleClickUpdate}
+            onClick={handleClickAction}
           >
-            {t('snackbar.new_sdk_skills_version.actions.update')}
+            {installed
+              ? t('snackbar.sdk_skills.outdated.action')
+              : t('snackbar.sdk_skills.missing.action')}
           </Button>
           <IconButton onClick={onClose}>
             <CloseIcon color="secondary" />
@@ -40,7 +44,7 @@ export function NewSdkSkillsVersion({
       }
       sx={{ alignItems: 'center' }}
     >
-      {t('snackbar.new_sdk_skills_version.title')}
+      {installed ? t('snackbar.sdk_skills.outdated.title') : t('snackbar.sdk_skills.missing.title')}
     </Alert>
   );
 }

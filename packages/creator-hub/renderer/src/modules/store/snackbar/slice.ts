@@ -14,6 +14,14 @@ import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification, sanitizePreviewError } from './utils';
 import type { Notification } from './types';
 
+function isSdkSkillsToastFor(notification: Notification, path: string) {
+  return notification.type === 'sdk-skills' && notification.project.path === path;
+}
+
+function sdkSkillsUpdateId(path: string) {
+  return `updateSdkSkills:${path}`;
+}
+
 // state
 export type SnackbarState = {
   notifications: Notification[];
@@ -222,47 +230,54 @@ export const slice = createSlice({
           }
         },
       )
+      // An AI skills toast says "for this scene", so none may outlive the scene it was for.
+      .addCase(workspaceActions.runProject.pending, state => {
+        state.notifications = state.notifications.filter($ => $.type !== 'sdk-skills');
+      })
       .addCase(
         workspaceActions.checkSdkSkillsUpdate.fulfilled,
-        (state, { meta, payload: { project, outdated } }) => {
+        (state, { meta, payload: { project, offer } }) => {
           state.notifications = state.notifications.filter(
-            $ => $.type !== 'new-sdk-skills-version',
+            $ => !isSdkSkillsToastFor($, project.path),
           );
-          if (outdated) {
+          if (offer) {
             state.notifications.push(
               createCustomNotification(
-                { type: 'new-sdk-skills-version', project },
+                { type: 'sdk-skills', project, installed: offer === 'update' },
                 { duration: 0, requestId: meta.requestId },
               ),
             );
           }
         },
       )
-      .addCase(workspaceActions.updateSdkSkills.pending, state => {
+      .addCase(workspaceActions.updateSdkSkills.pending, (state, { meta }) => {
+        const requestId = sdkSkillsUpdateId(meta.arg.path);
         state.notifications = state.notifications.filter(
-          $ => $.type !== 'new-sdk-skills-version' && $.requestId !== 'updateSdkSkills',
+          $ => !isSdkSkillsToastFor($, meta.arg.path) && $.requestId !== requestId,
         );
         state.notifications.push(
           createGenericNotification('loading', t('snackbar.generic.updating_sdk_skills'), {
             duration: 0,
-            requestId: 'updateSdkSkills',
+            requestId,
           }),
         );
       })
-      .addCase(workspaceActions.updateSdkSkills.fulfilled, state => {
-        state.notifications = state.notifications.filter($ => $.requestId !== 'updateSdkSkills');
+      .addCase(workspaceActions.updateSdkSkills.fulfilled, (state, { meta }) => {
+        const requestId = sdkSkillsUpdateId(meta.arg.path);
+        state.notifications = state.notifications.filter($ => $.requestId !== requestId);
         state.notifications.push(
           createGenericNotification('success', t('snackbar.generic.sdk_skills_updated'), {
-            requestId: 'updateSdkSkills',
+            requestId,
           }),
         );
       })
-      .addCase(workspaceActions.updateSdkSkills.rejected, state => {
-        state.notifications = state.notifications.filter($ => $.requestId !== 'updateSdkSkills');
+      .addCase(workspaceActions.updateSdkSkills.rejected, (state, { meta }) => {
+        const requestId = sdkSkillsUpdateId(meta.arg.path);
+        state.notifications = state.notifications.filter($ => $.requestId !== requestId);
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.sdk_skills_update_failed'), {
             duration: 5000,
-            requestId: 'updateSdkSkills',
+            requestId,
           }),
         );
       })

@@ -920,9 +920,9 @@
       "delete_scene": "删除场景...",
       "delete_scene_failed": "删除场景失败",
       "dependencies_updated": "場景相依性已更新",
-      "updating_sdk_skills": "正在更新 AI 技能...",
-      "sdk_skills_updated": "AI 技能已更新",
-      "sdk_skills_update_failed": "無法更新 AI 技能",
+      "updating_sdk_skills": "正在安裝最新的 AI 技能...",
+      "sdk_skills_updated": "AI 技能已是最新版本",
+      "sdk_skills_update_failed": "無法安裝 AI 技能",
       "installing_dependencies": "安装依赖项",
       "installing_dependencies_failed": "安装依赖项失败",
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
@@ -960,10 +960,14 @@
         "update": "更新"
       }
     },
-    "new_sdk_skills_version": {
-      "title": "此場景的 AI 技能有可用更新",
-      "actions": {
-        "update": "更新"
+    "sdk_skills": {
+      "outdated": {
+        "title": "此場景的 AI 技能有可用更新",
+        "action": "更新"
+      },
+      "missing": {
+        "title": "此場景尚未安裝 Decentraland AI 技能",
+        "action": "安裝"
       }
     },
     "deploy": {

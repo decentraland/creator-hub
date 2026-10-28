@@ -16,6 +16,17 @@ const projectWithOutdatedDeps = {
   },
 } as unknown as Project;
 
+const otherProject = { path: '/projects/other', title: 'Other' } as unknown as Project;
+
+// What runProject does first: from here on this is the scene the creator has open.
+function openScene(store: ReturnType<typeof createTestStore>, project: Project) {
+  store.dispatch(workspaceActions.runProject.pending('test', project));
+}
+
+function skillsToasts(store: ReturnType<typeof createTestStore>) {
+  return store.getState().snackbar.notifications.filter($ => $.type === 'sdk-skills');
+}
+
 async function setDependencyUpdateStrategy(
   store: ReturnType<typeof createTestStore>,
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY,
@@ -49,31 +60,99 @@ describe('snackbar slice', () => {
   });
 
   describe("when the scene's AI skills are behind decentraland/sdk-skills main", () => {
-    const isSkillsToast = ($: { type: string }) => $.type === 'new-sdk-skills-version';
-
     it('should show the "AI skills update" toast', async () => {
       vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: true });
       const store = createTestStore();
+      openScene(store, projectWithOutdatedDeps);
 
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
-      expect(store.getState().snackbar.notifications.some(isSkillsToast)).toBe(true);
+      expect(skillsToasts(store)).toEqual([expect.objectContaining({ installed: true })]);
     });
 
     it('should dismiss the toast and report success once the update runs', async () => {
       vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: true });
       vi.mocked(skills.updateProject).mockResolvedValue();
       const store = createTestStore();
+      openScene(store, projectWithOutdatedDeps);
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
       await store.dispatch(workspaceActions.updateSdkSkills(projectWithOutdatedDeps));
 
       const { notifications } = store.getState().snackbar;
       expect(skills.updateProject).toHaveBeenCalledWith(projectWithOutdatedDeps.path);
-      expect(notifications.some(isSkillsToast)).toBe(false);
+      expect(skillsToasts(store)).toEqual([]);
       expect(notifications).toContainEqual(
-        expect.objectContaining({ severity: 'success', message: 'AI skills were updated' }),
+        expect.objectContaining({ severity: 'success', message: 'AI skills are up to date' }),
       );
+    });
+  });
+
+  describe('when the scene has no AI skills', () => {
+    beforeEach(() => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: false, outdated: false });
+    });
+
+    it('should offer to install them', async () => {
+      const store = createTestStore();
+      openScene(store, projectWithOutdatedDeps);
+
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      expect(skillsToasts(store)).toEqual([expect.objectContaining({ installed: false })]);
+    });
+
+    it('should still ask, not install, under "Auto-update all my scenes"', async () => {
+      const store = createTestStore();
+      await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE);
+      openScene(store, projectWithOutdatedDeps);
+
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      expect(skills.updateProject).not.toHaveBeenCalled();
+      expect(skillsToasts(store)).toEqual([expect.objectContaining({ installed: false })]);
+    });
+  });
+
+  describe('when the creator opens another scene before the AI skills check finishes', () => {
+    it("should drop the first scene's result instead of showing it on the second", async () => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: true });
+      const store = createTestStore();
+      openScene(store, projectWithOutdatedDeps);
+      const check = store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+      openScene(store, otherProject);
+
+      await check;
+
+      expect(skillsToasts(store)).toEqual([]);
+    });
+
+    it("should not let the first scene's late result remove the second scene's toast", async () => {
+      vi.mocked(skills.getProjectStatus)
+        .mockResolvedValueOnce({ installed: true, outdated: true })
+        .mockResolvedValueOnce({ installed: true, outdated: true });
+      const store = createTestStore();
+      openScene(store, projectWithOutdatedDeps);
+      const first = store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+      openScene(store, otherProject);
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(otherProject));
+
+      await first;
+
+      expect(skillsToasts(store)).toEqual([
+        expect.objectContaining({ project: expect.objectContaining({ path: otherProject.path }) }),
+      ]);
+    });
+
+    it("should remove the first scene's toast as soon as the second starts opening", async () => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: true });
+      const store = createTestStore();
+      openScene(store, projectWithOutdatedDeps);
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      openScene(store, otherProject);
+
+      expect(skillsToasts(store)).toEqual([]);
     });
   });
 
@@ -81,13 +160,12 @@ describe('snackbar slice', () => {
     it('should not check the AI skills or show their toast', async () => {
       const store = createTestStore();
       await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING);
+      openScene(store, projectWithOutdatedDeps);
 
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
       expect(skills.getProjectStatus).not.toHaveBeenCalled();
-      expect(
-        store.getState().snackbar.notifications.some($ => $.type === 'new-sdk-skills-version'),
-      ).toBe(false);
+      expect(skillsToasts(store)).toEqual([]);
     });
   });
 
@@ -97,15 +175,52 @@ describe('snackbar slice', () => {
       vi.mocked(skills.updateProject).mockResolvedValue();
       const store = createTestStore();
       await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE);
+      openScene(store, projectWithOutdatedDeps);
 
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
       const { notifications } = store.getState().snackbar;
       expect(skills.updateProject).toHaveBeenCalledWith(projectWithOutdatedDeps.path);
-      expect(notifications.some($ => $.type === 'new-sdk-skills-version')).toBe(false);
+      expect(skillsToasts(store)).toEqual([]);
       expect(notifications).toContainEqual(
-        expect.objectContaining({ severity: 'success', message: 'AI skills were updated' }),
+        expect.objectContaining({ severity: 'success', message: 'AI skills are up to date' }),
       );
+    });
+
+    it('should report the failure when the automatic update fails', async () => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: true });
+      vi.mocked(skills.updateProject).mockRejectedValue(new Error('npx exited with code=1'));
+      const store = createTestStore();
+      await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE);
+      openScene(store, projectWithOutdatedDeps);
+
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      const { notifications } = store.getState().snackbar;
+      expect(notifications).toContainEqual(
+        expect.objectContaining({ severity: 'error', message: 'Could not install the AI skills' }),
+      );
+      expect(notifications.some($ => $.type === 'generic' && $.severity === 'loading')).toBe(false);
+    });
+  });
+
+  describe('when two scenes update their AI skills at once', () => {
+    it("should keep each scene's progress toast separate", async () => {
+      let finishFirst!: () => void;
+      vi.mocked(skills.updateProject)
+        .mockImplementationOnce(() => new Promise<void>(resolve => (finishFirst = resolve)))
+        .mockResolvedValueOnce();
+      const store = createTestStore();
+      const first = store.dispatch(workspaceActions.updateSdkSkills(projectWithOutdatedDeps));
+
+      await store.dispatch(workspaceActions.updateSdkSkills(otherProject));
+
+      const loading = store
+        .getState()
+        .snackbar.notifications.filter($ => $.type === 'generic' && $.severity === 'loading');
+      expect(loading).toHaveLength(1);
+      finishFirst();
+      await first;
     });
   });
 
@@ -113,12 +228,11 @@ describe('snackbar slice', () => {
     it('should not show the "AI skills update" toast', async () => {
       vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: true, outdated: false });
       const store = createTestStore();
+      openScene(store, projectWithOutdatedDeps);
 
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
-      expect(
-        store.getState().snackbar.notifications.some($ => $.type === 'new-sdk-skills-version'),
-      ).toBe(false);
+      expect(skillsToasts(store)).toEqual([]);
     });
   });
 

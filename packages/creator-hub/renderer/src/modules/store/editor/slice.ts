@@ -94,6 +94,8 @@ export type EditorState = {
   supportsMcp: boolean;
   supportsUiDesigner: boolean;
   project?: Project;
+  // The scene last asked to open. Set as soon as it starts opening, unlike `project`.
+  openingProjectPath?: string;
   inspectorPort: number;
   publishPort: number;
   loadingPublish: boolean;
@@ -142,8 +144,9 @@ export const slice = createSlice({
     builder.addCase(setPreviewProgress, (state, action) => {
       state.previewProgress = action.payload;
     });
-    builder.addCase(workspaceActions.runProject.pending, state => {
+    builder.addCase(workspaceActions.runProject.pending, (state, action) => {
       state.project = undefined;
+      state.openingProjectPath = action.meta.arg.path;
       state.supportsMultiInstance = false;
       state.supportsMcp = false;
       state.supportsUiDesigner = false;

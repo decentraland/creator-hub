@@ -10,6 +10,7 @@
 // denylist: Creator Hub is composite-first (the Inspector owns the scene graph), so the
 // general `sdk-scenes` guidance is kept; only the app-owned flows (scaffolding, deploy,
 // SDK6 migration) are dropped.
+import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -17,11 +18,7 @@ import { spawn } from 'child_process';
 import { app } from 'electron';
 import log from 'electron-log/main';
 
-import type { ProjectInfo } from '/shared/types/projects';
 import type { SkillsUpdateStatus } from '/shared/types/skills';
-import { FileSystemStorage } from '/shared/types/storage';
-
-import { getWorkspaceConfigPath } from './electron';
 
 const REPO = 'decentraland/sdk-skills';
 const BRANCH = 'main';
@@ -69,7 +66,11 @@ async function fetchWithTimeout(
     signal: AbortSignal.timeout(timeoutMs),
     headers: accept !== undefined ? { Accept: accept } : undefined,
   });
-  if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
+  if (!res.ok) {
+    // An unread body holds the connection open; unauthenticated 403s are routine here.
+    await res.body?.cancel();
+    throw new Error(`${url} → HTTP ${res.status}`);
+  }
   return res;
 }
 
@@ -82,22 +83,87 @@ async function fetchLatestSha(): Promise<string> {
   return (await res.text()).trim();
 }
 
-// SHA the cache was built from, or null when there is nothing reusable (no tree,
-// unreadable/foreign meta, or a meta written by another app version).
-function readCachedSha(metaPath: string, skillsDir: string, appVersion: string): string | null {
+// Per upstream skill folder, every `computedHash` a `skills add` of that commit can write.
+type SkillHashes = Record<string, string[]>;
+type CacheMeta = { sha?: string; appVersion?: string; hashes?: SkillHashes };
+
+function readCacheMeta(metaPath: string): CacheMeta | null {
   try {
-    const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')) as {
-      sha?: string;
-      appVersion?: string;
-    };
-    return fs.existsSync(skillsDir) &&
-      meta.appVersion === appVersion &&
-      typeof meta.sha === 'string'
-      ? meta.sha
-      : null;
+    return JSON.parse(fs.readFileSync(metaPath, 'utf8')) as CacheMeta;
   } catch {
     return null;
   }
+}
+
+// SHA the cache was built from, or null when there is nothing reusable (no tree,
+// unreadable/foreign meta, a meta written by another app version, or one from before
+// skill hashes were recorded).
+function readCachedSha(metaPath: string, skillsDir: string, appVersion: string): string | null {
+  const meta = readCacheMeta(metaPath);
+  return meta &&
+    fs.existsSync(skillsDir) &&
+    meta.appVersion === appVersion &&
+    typeof meta.sha === 'string' &&
+    meta.hashes !== undefined
+    ? meta.sha
+    : null;
+}
+
+function collectFiles(baseDir: string, dir: string, out: { rel: string; content: Buffer }[]) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== '.git' && entry.name !== 'node_modules') collectFiles(baseDir, full, out);
+    } else if (entry.isFile()) {
+      out.push({
+        rel: path.relative(baseDir, full).split(path.sep).join('/'),
+        content: fs.readFileSync(full),
+      });
+    }
+  }
+}
+
+// The `skills` CLI's computedHash (its computeSkillFolderHash, skills@1.7.4): SHA-256 over
+// each file's folder-relative path then bytes, in localeCompare order.
+function hashSkillFolder(dir: string, transform: (rel: string, content: Buffer) => Buffer) {
+  const files: { rel: string; content: Buffer }[] = [];
+  collectFiles(dir, dir, files);
+  files.sort((a, b) => a.rel.localeCompare(b.rel));
+  const hash = crypto.createHash('sha256');
+  for (const file of files) {
+    hash.update(file.rel);
+    hash.update(transform(file.rel, file.content));
+  }
+  return hash.digest('hex');
+}
+
+// Literal paths .gitattributes keeps byte-exact on checkout (`-text` / `binary`).
+function readUnconvertedPaths(repoDir: string): Set<string> {
+  let content = '';
+  try {
+    content = fs.readFileSync(path.join(repoDir, '.gitattributes'), 'utf8');
+  } catch {
+    /* none */
+  }
+  const paths = new Set<string>();
+  for (const line of content.split('\n')) {
+    const [pattern, ...attrs] = line.trim().split(/\s+/);
+    if (!pattern || pattern.startsWith('#')) continue;
+    if (attrs.includes('-text') || attrs.includes('binary')) paths.add(pattern.replace(/^\//, ''));
+  }
+  return paths;
+}
+
+// The CLI hashes a `git clone`, so under core.autocrlf=true (Git for Windows' default) it
+// hashes CRLF text files, and the lock holds that hash instead of the tarball's.
+function hashSkillVariants(repoDir: string, name: string, unconverted: Set<string>): string[] {
+  const lf = hashSkillFolder(path.join(repoDir, name), (_, content) => content);
+  const crlf = hashSkillFolder(path.join(repoDir, name), (rel, content) =>
+    unconverted.has(`${name}/${rel}`) || content.includes(0)
+      ? content
+      : Buffer.from(content.toString('latin1').replace(/\r?\n/g, '\r\n'), 'latin1'),
+  );
+  return lf === crlf ? [lf] : [lf, crlf];
 }
 
 // Ensure the cache at <cacheDir>/skills holds the latest skills, one folder per skill
@@ -151,10 +217,13 @@ export async function ensureSkillsCache(
       fs.rmSync(stageNew, { recursive: true, force: true }); // stale from a prior crash
       fs.mkdirSync(stageNew);
       let count = 0;
+      const hashes: SkillHashes = {};
+      const unconverted = readUnconvertedPaths(extracted);
       for (const entry of fs.readdirSync(extracted, { withFileTypes: true })) {
         if (!entry.isDirectory()) continue;
         const src = path.join(extracted, entry.name);
         if (!fs.existsSync(path.join(src, 'SKILL.md'))) continue;
+        hashes[entry.name] = hashSkillVariants(extracted, entry.name, unconverted);
         const dest = path.join(stageNew, entry.name);
         if (SKILL_DENYLIST.has(entry.name)) {
           if (fs.readdirSync(src).every(n => n === 'SKILL.md')) continue; // nothing but the trigger
@@ -183,7 +252,7 @@ export async function ensureSkillsCache(
       fs.rmSync(stageOld, { recursive: true, force: true });
       fs.writeFileSync(
         metaPath,
-        JSON.stringify({ sha, appVersion, updatedAt: new Date().toISOString() }),
+        JSON.stringify({ sha, appVersion, hashes, updatedAt: new Date().toISOString() }),
       );
       logger(`updated to ${REPO}@${sha.slice(0, 7)} (${count} skills)`);
     } finally {
@@ -323,21 +392,40 @@ export function linkSkillsIntoProject(
 
 // ---- Orchestration ----
 
+function getCacheDir(): string {
+  return path.join(app.getPath('userData'), 'sdk-skills');
+}
+
+// One refresh at a time: concurrent ones would build into the same staging dirs.
+let refreshing: Promise<string | null> | null = null;
+function refreshSkillsCache(): Promise<string | null> {
+  refreshing ??= ensureSkillsCache(getCacheDir(), app.getVersion()).finally(() => {
+    refreshing = null;
+  });
+  return refreshing;
+}
+
 // One shared cache refresh per app run. Warmed at startup and reused by every turn.
 let cachePromise: Promise<string | null> | null = null;
 
 export function warmSkillsCache(): Promise<string | null> {
-  cachePromise ??= ensureSkillsCache(
-    path.join(app.getPath('userData'), 'sdk-skills'),
-    app.getVersion(),
-  );
+  cachePromise ??= refreshSkillsCache();
   return cachePromise;
 }
+
+// `skills add` runs in flight, by resolved scene path.
+const projectUpdates = new Map<string, Promise<void>>();
 
 // Ensure the cache is present and linked into the project. Awaited before a turn so the
 // CLI finds the skills in its cwd; degrades to a no-op when the cache is unavailable.
 export async function ensureSkillsLinked(projectDir: string): Promise<void> {
   const dir = await warmSkillsCache();
+  // A `skills add` running in this scene would write through our links into the shared
+  // cache, so link only once it is done.
+  let update: Promise<void> | undefined;
+  while ((update = projectUpdates.get(path.resolve(projectDir)))) {
+    await update.catch(() => {});
+  }
   if (dir !== null) linkSkillsIntoProject(projectDir, dir);
 }
 
@@ -345,74 +433,81 @@ export async function ensureSkillsLinked(projectDir: string): Promise<void> {
 //
 // Separate from the cache above: a creator who ran `npx skills add decentraland/sdk-skills`
 // in their scene (for their own Claude Code, Cursor, ...) gets a project-local copy that
-// never refreshes on its own. Creator Hub remembers which upstream commit that copy came
-// from (`ProjectInfo.sdkSkills`) and offers an update once main has moved past it.
+// never refreshes on its own. The CLI records a content hash per skill in skills-lock.json;
+// that copy is outdated once any upstream skill is missing from the lock or hashes
+// differently.
 
 const SKILLS_LOCK = 'skills-lock.json';
 // `add`, not `update`: `update` only refreshes skills already in the lock, so a skill added
 // upstream since (e.g. bug reporting) would never arrive. `--yes` is npx's own install
-// prompt, which would otherwise hang a child with no TTY; `--all` skips the CLI's prompts.
-const SKILLS_ADD_ARGS = ['--yes', 'skills', 'add', REPO, '--all'];
+// prompt, which would otherwise hang a child with no TTY; `-y` skips the CLI's prompts.
+// Not `--all`: its `--agent '*'` writes a skills folder for every agent the CLI knows.
+// `claude-code` fills .claude/skills, and `codex` the shared .agents/skills that Codex,
+// Cursor, Copilot, Gemini CLI and the other "universal" agents read.
+const SKILLS_ADD_ARGS = [
+  '--yes',
+  'skills',
+  'add',
+  REPO,
+  '--skill',
+  '*',
+  '--agent',
+  'claude-code',
+  'codex',
+  '-y',
+];
 
-type SkillsLock = { skills?: Record<string, { source?: string }> };
+type SkillsLock = {
+  skills?: Record<string, { source?: string; skillPath?: string; computedHash?: string }>;
+};
 
-function getCacheSkillsDir(): string {
-  return path.join(app.getPath('userData'), 'sdk-skills', 'skills');
-}
-
-async function getProjectInfoStorage(projectDir: string) {
-  const projectInfoPath = path.join(await getWorkspaceConfigPath(projectDir), 'project.json');
-  return FileSystemStorage.getOrCreate<ProjectInfo>(projectInfoPath);
-}
-
-// mtime of the scene's skills lock when it lists decentraland/sdk-skills, else null.
-export function getSdkSkillsLockTime(projectDir: string): number | null {
-  const lockPath = path.join(projectDir, SKILLS_LOCK);
+// The scene's lock entries from decentraland/sdk-skills, or null when there are none.
+function readSdkSkillsLock(projectDir: string) {
   try {
-    const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8')) as SkillsLock;
-    const fromRepo = Object.values(lock.skills ?? {}).some(s =>
+    const lock = JSON.parse(
+      fs.readFileSync(path.join(projectDir, SKILLS_LOCK), 'utf8'),
+    ) as SkillsLock;
+    const entries = Object.values(lock.skills ?? {}).filter(s =>
       (s.source ?? '').toLowerCase().includes(REPO),
     );
-    return fromRepo ? fs.statSync(lockPath).mtimeMs : null;
+    return entries.length > 0 ? entries : null;
   } catch {
     return null;
   }
 }
 
-async function hasCommitsSince(since: number): Promise<boolean> {
-  const res = await fetchWithTimeout(
-    `https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&since=${new Date(since).toISOString()}&per_page=1`,
-    SHA_TIMEOUT_MS,
-  );
-  const commits = (await res.json()) as unknown[];
-  return commits.length > 0;
+// Hashes of upstream main's skills, refreshing the cache first so a scene updated since the
+// app started isn't compared against an older commit. Null when they can't be had now.
+async function getUpstreamSkillHashes(): Promise<SkillHashes | null> {
+  const latestSha = await fetchLatestSha();
+  await refreshSkillsCache();
+  const meta = readCacheMeta(path.join(getCacheDir(), 'meta.json'));
+  return meta?.sha === latestSha && meta.hashes ? meta.hashes : null;
 }
 
-// Whether the scene's own copy of the skills is behind upstream main. Never throws: offline
-// or a GitHub error reads as "up to date" so the check can't block opening a scene.
+// Whether the scene has its own copy of the skills and whether it is behind upstream main.
+// Never throws: offline or a GitHub error reads as "up to date" so the check can't block
+// opening a scene.
 export async function getProjectSkillsStatus(
   projectDir: string,
   logger: Logger = defaultLog,
 ): Promise<SkillsUpdateStatus> {
-  const lockTime = getSdkSkillsLockTime(projectDir);
-  if (lockTime === null) return { installed: false, outdated: false };
+  const entries = readSdkSkillsLock(projectDir);
+  if (entries === null) return { installed: false, outdated: false };
 
   try {
-    const storage = await getProjectInfoStorage(projectDir);
-    const recorded = await storage.get('sdkSkills');
-    const latestSha = await fetchLatestSha();
-
-    // A lock rewritten after our record means the creator ran `skills add` on their own, so
-    // the recorded commit no longer describes what they have.
-    if (recorded && recorded.recordedAt >= lockTime) {
-      return { installed: true, outdated: recorded.sha !== latestSha };
+    const upstream = await getUpstreamSkillHashes();
+    if (upstream === null) {
+      logger(`could not read the latest skills to check ${projectDir}`);
+      return { installed: true, outdated: false };
     }
-
-    // No usable record (installed outside Creator Hub): judge by when the lock was written.
-    // If nothing landed on main since, what they have IS the latest commit, so record it
-    // and compare by SHA from now on.
-    const outdated = await hasCommitsSince(lockTime);
-    if (!outdated) await storage.set('sdkSkills', { sha: latestSha, recordedAt: Date.now() });
+    // Keyed by folder, not lock name: the lock names a skill after its frontmatter.
+    const installed = new Map(
+      entries.map(e => [path.posix.dirname(e.skillPath ?? ''), e.computedHash]),
+    );
+    const outdated = Object.entries(upstream).some(
+      ([name, hashes]) => !hashes.includes(installed.get(name) ?? ''),
+    );
     return { installed: true, outdated };
   } catch (e) {
     logger(`could not check ${projectDir} for a skills update: ${String(e)}`);
@@ -438,29 +533,23 @@ export function unlinkSkillsFromProject(projectDir: string, cacheSkillsDir: stri
   }
 }
 
-export async function updateProjectSkills(
-  projectDir: string,
-  logger: Logger = defaultLog,
-): Promise<void> {
-  unlinkSkillsFromProject(projectDir, getCacheSkillsDir());
-
-  // Read before running so the record can't claim a commit that landed mid-install.
-  let sha: string | null = null;
-  try {
-    sha = await fetchLatestSha();
-  } catch (e) {
-    logger(`could not read the latest ${REPO} commit: ${String(e)}`);
-  }
-
+async function addSkillsToProject(projectDir: string, logger: Logger): Promise<void> {
+  unlinkSkillsFromProject(projectDir, path.join(getCacheDir(), 'skills'));
   // Loaded here, not at the top: ai.ts imports this module, and bin.ts resolves Electron app
   // paths on import, which would break every main test that reaches ai.ts.
   const { run } = await import('./bin');
-  const child = run('npm', 'npx', { args: SKILLS_ADD_ARGS, cwd: projectDir });
-  await child.wait();
-  logger(`updated the skills in ${projectDir}${sha ? ` to ${sha.slice(0, 7)}` : ''}`);
+  await run('npm', 'npx', { args: SKILLS_ADD_ARGS, cwd: projectDir }).wait();
+  logger(`installed the latest skills in ${projectDir}`);
+}
 
-  if (sha !== null) {
-    const storage = await getProjectInfoStorage(projectDir);
-    await storage.set('sdkSkills', { sha, recordedAt: Date.now() });
+// Installs or updates the scene's own copy of the skills. A second call for the same scene
+// while one runs joins it instead of running `skills add` in the same folder twice.
+export function updateProjectSkills(projectDir: string, logger: Logger = defaultLog) {
+  const key = path.resolve(projectDir);
+  let update = projectUpdates.get(key);
+  if (update === undefined) {
+    update = addSkillsToProject(projectDir, logger).finally(() => projectUpdates.delete(key));
+    projectUpdates.set(key, update);
   }
+  return update;
 }

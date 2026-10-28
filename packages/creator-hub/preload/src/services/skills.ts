@@ -7,8 +7,8 @@ export async function getProjectStatus(path: string): Promise<SkillsUpdateStatus
 }
 
 /**
- * Re-runs `npx skills add decentraland/sdk-skills --all` in the project, which refreshes
- * the installed skills and adds any published since.
+ * Runs `npx skills add decentraland/sdk-skills` in the project, which installs the skills,
+ * refreshes them, and adds any published since.
  */
 export async function updateProject(path: string): Promise<void> {
   await invoke('skills.updateProject', path);

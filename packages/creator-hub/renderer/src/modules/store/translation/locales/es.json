@@ -920,9 +920,9 @@
       "delete_scene": "Borrando escena...",
       "delete_scene_failed": "Error al borrar escena",
       "dependencies_updated": "Las dependencias de la escena fueron actualizadas",
-      "updating_sdk_skills": "Actualizando habilidades de IA...",
-      "sdk_skills_updated": "Las habilidades de IA fueron actualizadas",
-      "sdk_skills_update_failed": "No se pudieron actualizar las habilidades de IA",
+      "updating_sdk_skills": "Instalando las últimas habilidades de IA...",
+      "sdk_skills_updated": "Las habilidades de IA están al día",
+      "sdk_skills_update_failed": "No se pudieron instalar las habilidades de IA",
       "installing_dependencies": "Instalando dependencias...",
       "installing_dependencies_failed": "Error al instalar dependencias",
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
@@ -960,10 +960,14 @@
         "update": "Actualizar"
       }
     },
-    "new_sdk_skills_version": {
-      "title": "Hay una actualización de las habilidades de IA para esta escena",
-      "actions": {
-        "update": "Actualizar"
+    "sdk_skills": {
+      "outdated": {
+        "title": "Hay una actualización de las habilidades de IA para esta escena",
+        "action": "Actualizar"
+      },
+      "missing": {
+        "title": "Esta escena no tiene las habilidades de IA de Decentraland",
+        "action": "Instalar"
       }
     },
     "deploy": {

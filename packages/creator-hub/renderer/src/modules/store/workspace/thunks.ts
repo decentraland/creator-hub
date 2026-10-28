@@ -130,20 +130,27 @@ export const updateSdkSkills = createAsyncThunk(
     }
   },
 );
+// What to offer for the scene's AI skills: installing them, updating them, or nothing.
+export type SdkSkillsOffer = 'install' | 'update' | null;
 // Follows the dependency update strategy: the skills are as much a part of keeping a scene
 // current as its packages.
 export const checkSdkSkillsUpdate = createAsyncThunk(
   'workspace/checkSdkSkillsUpdate',
   async (project: Project, { dispatch, getState }) => {
+    const nothing = { project, offer: null as SdkSkillsOffer };
     const strategy = getState().workspace.settings.dependencyUpdateStrategy;
-    if (strategy === DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING) return { project, outdated: false };
+    if (strategy === DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING) return nothing;
 
-    const { outdated } = await skills.getProjectStatus(project.path);
+    const { installed, outdated } = await skills.getProjectStatus(project.path);
+    // The creator may have opened another scene meanwhile; the offer is for this one only.
+    if (getState().editor.openingProjectPath !== project.path) return nothing;
+    // Asked even under Auto-update: installing adds new folders and a lock to the scene.
+    if (!installed) return { project, offer: 'install' as SdkSkillsOffer };
     if (outdated && strategy === DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE) {
       await dispatch(updateSdkSkills(project)).unwrap();
-      return { project, outdated: false };
+      return nothing;
     }
-    return { project, outdated };
+    return { project, offer: (outdated ? 'update' : null) as SdkSkillsOffer };
   },
 );
 export const runProject = createAsyncThunk(

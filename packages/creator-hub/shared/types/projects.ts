@@ -23,8 +23,6 @@ export type ProjectInfo = {
   id: string;
   skipPublishWarning: boolean;
   uiDesignerOpen?: boolean;
-  // Upstream commit of the scene's own sdk-skills copy, and when Creator Hub recorded it.
-  sdkSkills?: { sha: string; recordedAt: number };
 };
 
 export type Project = {
