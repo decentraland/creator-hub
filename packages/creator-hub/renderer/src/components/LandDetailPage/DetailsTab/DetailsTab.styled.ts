@@ -22,10 +22,6 @@ const DomainSelect = styled(Select)(({ theme }) => ({
   '&&:hover .MuiOutlinedInput-notchedOutline': {
     borderColor: whiteTransparent.backdrop,
   },
-  '&&.Mui-disabled': { cursor: 'not-allowed' },
-  '&&.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-    borderColor: whiteTransparent.soft,
-  },
   '&&.Mui-focused .MuiOutlinedInput-notchedOutline': {
     border: `1px solid ${neutral.softWhite}`,
   },
@@ -43,12 +39,6 @@ const DomainSelect = styled(Select)(({ theme }) => ({
     right: theme.spacing(2),
     color: neutral.softWhite,
   },
-  '&&& .MuiSelect-select.Mui-disabled': {
-    color: whiteTransparent.soft,
-    WebkitTextFillColor: whiteTransparent.soft,
-    cursor: 'not-allowed',
-  },
-  '&&.Mui-disabled .MuiSelect-icon': { color: whiteTransparent.soft },
 }));
 
 const EmptyValue = styled('span')({

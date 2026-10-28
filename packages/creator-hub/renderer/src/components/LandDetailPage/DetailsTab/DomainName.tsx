@@ -131,11 +131,10 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
           }
         />
       )}
-      {(domain.kind !== 'set' || editing) && (
+      {domain.kind !== 'empty' && (domain.kind !== 'set' || editing) && (
         <DomainSelect
           value=""
           displayEmpty
-          disabled={domain.kind === 'empty'}
           IconComponent={ChevronDownIcon}
           defaultOpen={editing}
           inputProps={{ 'aria-label': t('land_detail.details.domain') }}
@@ -158,18 +157,17 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
               {t('land_detail.details.domain_remove')}
             </MenuItem>
           )}
-          {domain.kind !== 'empty' &&
-            domain.options.map(option => (
-              <MenuItem
-                key={option.subdomain}
-                value={option.subdomain}
-                disabled={!!option.usedBy}
-              >
-                {option.subdomain}
-                {option.usedBy &&
-                  ` · ${t('land_detail.details.domain_used', { target: option.usedBy })}`}
-              </MenuItem>
-            ))}
+          {domain.options.map(option => (
+            <MenuItem
+              key={option.subdomain}
+              value={option.subdomain}
+              disabled={!!option.usedBy}
+            >
+              {option.subdomain}
+              {option.usedBy &&
+                ` · ${t('land_detail.details.domain_used', { target: option.usedBy })}`}
+            </MenuItem>
+          ))}
         </DomainSelect>
       )}
       {domain.kind !== 'set' && (

@@ -118,11 +118,11 @@ describe('DetailsTab', () => {
       expect(screen.getByRole('link', { name: 'Claim a NAME' })).toBeTruthy();
     });
 
-    it('should show the Domain Name field disabled, with its placeholder, when the account owns no NAMEs', () => {
-      const domain = screen.getByRole('combobox', { name: 'Domain Name' });
-
-      expect(domain.getAttribute('aria-disabled')).toBe('true');
-      expect(domain.textContent).toBe('Choose a NAME');
+    it('should show no Domain Name field, only the link to claim a NAME, when the account owns no NAMEs', () => {
+      expect(screen.queryByRole('combobox', { name: 'Domain Name' })).toBeNull();
+      expect(screen.getByRole('link', { name: 'Claim a NAME' }).getAttribute('href')).toBe(
+        'https://decentraland.org/marketplace/names/claim',
+      );
     });
   });
 

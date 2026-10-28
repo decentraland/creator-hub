@@ -3094,7 +3094,7 @@ Frames [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-i
 
 #### Details tab
 
-Frame [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5690-7364); Domain Name states in Group 23 `5688:7356` (Owns names `5660:4286`, Doesn't have any name `5660:4289`, Name set `5660:4292`). Fields: Land Name (Text-Input, "Write here"), Description (textarea, "Write something about your LAND here"), Domain Name (help line, Dropdown-Input "Choose a NAME", "Claim a NAME" link). Thumbnail and Categories (NICE TO HAVE) are out of scope: on-chain metadata is name + description. Code: `LandDetailPage/DetailsTab`.
+Frame [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5690-7364); Domain Name states: Owns names `5660:4286` and Name set `5660:4292` in Group 23 `5688:7356`; Doesn't have any name [`5630:5036`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5630-5036) (Group 23's copy `5660:4289` adds a "→" carrying a stray link and drops the underline, so it is not a source). Fields: Land Name (Text-Input, "Write here"), Description (textarea, "Write something about your LAND here"), Domain Name (help line, Dropdown-Input "Choose a NAME" when the account owns NAMEs, "Claim a NAME" link). Thumbnail and Categories (NICE TO HAVE) are out of scope: on-chain metadata is name + description. Code: `LandDetailPage/DetailsTab`.
 
 | Part | Rule |
 | --- | --- |
@@ -3105,11 +3105,11 @@ Frame [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id
 | ✱ Placeholder | White 40: 3.82:1 in a modal, 3.83:1 on the page, accepted as the search placeholder (user decision) |
 | Domain Name | its own confirm + tx, signed by the NAME's owner. Every role can link a NAME it owns: `setContenthash` on the ENS resolver checks NAME ownership only, as the board's NOTES say ("Domain name can be edited by everyone"); the Figma comment "Tenants and Collaborators can't edit this field" does not apply (user decision). NAMEs used by a World or another LAND are greyed out ("Used by {target}") |
 | NAME dropdown | the bordered Dropdown-Input field (1px White 40, radius 12, full field width), as `5660:4286`; not the borderless View-bar select |
-| ✱ NAME dropdown, no NAMEs owned | always shown, **disabled** (user decision): 1px White 20 (`whiteTransparent.soft`) border, placeholder "Choose a NAME" and chevron White 20, no hover change, `cursor: not-allowed`, `aria-disabled`; "Claim a NAME" 10 below. The DS Dropdown-Input set has no disabled variant; White 20 is the DS's disabled-field border (inspector `TextField` disabled `--palette-whiteTransparent-soft`). Disabled controls are exempt from contrast minimums |
+| No NAMEs owned | Figma's "Doesn't have any name" `5630:5036` (user decision): the title and help line, then "Claim a NAME" 10 below the help line, and **no NAME field**. Block 1044 × 76 (title 22, 10, help 17, 10, link 17). The link opens `https://decentraland.org/marketplace/names/claim` in the system browser; Primary on the page 5.38:1 |
 | Domain "Name set" pencil | the `Edit` glyph 14 × 14 White; re-opens the NAME dropdown, which adds "Remove link" (its own tx; Snow label: red text on the Onix menu is 3.43:1) |
 | "Claim a NAME" | `H7 Semi` 14 / 600 Primary, line height 17, solid underline 1px **3px under the baseline**: `text-underline-offset: 3px; text-decoration-thickness: 1px` |
 | ✱ Read-only empty value (tenant, lessor) | "—" in `neutral.gray3` (user decision) |
-| Geometry | `Metrics` column: tab bar, then 40, then the form. Form `Frame 13`: Fill **1044** wide (beside the out-of-scope Thumbnail column, gap 50), blocks 40 apart. Each `Text-Input`: label `H5 Semi` Inter 600 **18** `#FFFFFF` (22 tall), gap 10, `Container` 1044 × **46**, radius 12, 1px White 40, padding 14 / 16. Description: block Fixed 200 → textarea **168**. Domain `Dropdown-Input` 1044 × 105: title 18 / 600, help `H7 Regular` 14 DCL/White, line height 17, the 46 field; "Claim a NAME" 10 below |
+| Geometry | `Metrics` column: tab bar, then 40, then the form. Form `Frame 13`: Fill **1044** wide (beside the out-of-scope Thumbnail column, gap 50), blocks 40 apart. Each `Text-Input`: label `H5 Semi` Inter 600 **18** `#FFFFFF` (22 tall), gap 10, `Container` 1044 × **46**, radius 12, 1px White 40, padding 14 / 16. Description: block Fixed 200 → textarea **168**. Domain `Dropdown-Input` 1044 × 105: title 18 / 600, help `H7 Regular` 14 DCL/White, line height 17, the 46 field; "Claim a NAME" 10 below. With no NAMEs the block has no field (1044 × 76) |
 
 #### Scenes tab
 
