@@ -22,6 +22,7 @@ You own `packages/creator-hub`. `docs/DESIGN.md` and the `theme.css` token block
 - A dev run reads `~/Library/Application Support/creator-hub/`, not the packaged product path.
 - A scene runs `sdk-commands` from its own `node_modules`, so local inspector changes only reach a running scene through `.ai/skills/local-package-chain/SKILL.md`.
 - Spec files aren't type-checked, so a passing typecheck says nothing about test fixtures.
+- Icons come from the Figma icon library: import them from `/@/components/Icons/figma` (Creator Hub's binding of `@dcl/inspector/icons`, `docs/DESIGN.md` → Icons), never `react-icons` or `@mui/icons-material`. A new icon starts with a Figma export at the frame. Run `make build-inspector` first, or the binding doesn't resolve.
 
 ## Completion gate
 
