@@ -110,7 +110,7 @@ export function AnalyticsDetailPage() {
     <main className="AnalyticsDetailPage">
       <Navbar active={NavbarItem.ANALYTICS} />
       <Container>
-        <Box className="Header">
+        <Box className="DetailHeader">
           <Title
             value={title}
             onBack={handleBack}

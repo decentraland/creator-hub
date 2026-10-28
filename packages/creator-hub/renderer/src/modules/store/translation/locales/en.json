@@ -297,6 +297,7 @@
     "menu": {
       "home": "Home",
       "scenes": "Scenes",
+      "templates": "Templates",
       "collections": "Collections",
       "analytics": "Analytics",
       "manage": "Manage",
