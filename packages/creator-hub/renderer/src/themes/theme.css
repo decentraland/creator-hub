@@ -26,11 +26,11 @@
   --title-bar-button: #2d2a33;
   --ai-selected: #214272;
   --ai-selected-hover: #2e4a7a;
-  --ai-menu-bg: #2f2d34;
+  --ai-menu-bg: #35333b;
   --ai-session-selected: #244b7d;
   --ai-session-selected-hover: #243852;
-  --ai-input-bg: #28252d;
-  --ai-warning-bg: rgba(244, 130, 33, 0.16);
+  --ai-input-bg: #2d2a33;
+  --ai-warning-bg: rgba(254, 156, 42, 0.1);
   --dcl-silver: #a09ba8;
 
   /* Share */
@@ -71,7 +71,7 @@
   --outline: 1px solid #00000005;
   --toast: #3d3b43;
   --toast-text: #ffffff;
-  --modal: #242129;
+  --modal: #181225;
   --dimmer: #000000dd;
   --text-area-border: #676370;
   --clear-divider: #a09ba8;

@@ -137,7 +137,7 @@
   --contexify-activeArrow-color: var(--contexify-arrow-color);
 
   /* Modal */
-  --modal-content-bg-color: var(--tree-bg-color);
+  --modal-content-bg-color: #181225;
   --modal-content-border-color: var(--tree-border-color);
   --modal-overlay-bg-color: rgba(0, 0, 0, 0.6);
 
