@@ -3199,16 +3199,16 @@ Frame [`5660:4231`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id
 | Part | Rule |
 | --- | --- |
 | Layout | row, gap 50: the form column fills (1044 at 1920), the Thumbnail column 630 |
-| Form | blocks 40 apart, the LAND Text-Input look (label `H5 Semi` 18 White, gap 10, field 46, radius 12, 1px White 40, padding 14 / 16) |
+| Form | blocks 40 apart, the LAND Text-Input look (label `H5 Semi` 18 White, gap 10, field 46, radius 12, 1px White 40, padding 14 / 16). ✱ The counters are LAND's: right-aligned `H8 Regular` 12 Silver inside the 40 gap, taking no layout height, so each block starts 40 below the field above (user decision; the board's counters sit left-aligned in their own 15 line and push each block 25 lower) |
 | World Name | label "World Name", placeholder "Write here" (user decision); ✱ at most 50 characters with the LAND live counter (user decision) |
 | Description | label "Description", placeholder "Write something about your world here", block Fixed 200 → textarea; ✱ at most 140 with the live counter (user decision) |
-| Categories | label "Categories"; the bordered Dropdown-Input at 46, multi-select, value "{emoji} {Category}, …" Snow; today's 11 categories |
+| Categories | label "Categories"; the bordered Dropdown-Input at 46, multi-select, value "{emoji} {Category}, …" Snow; today's 11 categories. The open list is the View bar's (10 below the field, as wide as it, 38 rows with the 16 Checkmark slot on selected ones); ✱ when the rows don't fit below the field it stops 16 above the window's bottom edge and scrolls (not drawn) |
 | Thumbnail | "Thumbnail" Inter 600 16 White, gap 20, "PNG or JPG \| 1920x1080 (16:9)" Inter 400 16 White 70%, gap 20, the image 630 × 354, radius 16, cover; an edit button at top / right 10: 46 × 46, Black 60, radius 12, `Edit` 20 glyph Snow |
 | ✱ No thumbnail | the 630 × 354 box, White 5 fill, radius 16, "No image set" `H6 Regular` 16 Silver centred, and the same edit button (user decision; not drawn) |
 | ✱ Placeholder | White 40, the DS Text-Input placeholder (`20815:1960`, layer `20810:1956`), as on the LAND Details tab; the World board draws White 60 (user decision) |
 | Over the limit | a World whose saved name or description is already over 50 / 140 opens in the Text-Input Error state, and SAVE stays blocked until the field fits, as LAND (user decision) |
 | Editability | always editable, with or without published scenes (user decision) |
-| Save | off-chain: no transaction states; a success or error snackbar |
+| Save | off-chain: no transaction states; on success CANCEL / SAVE hide and a success snackbar reads "Changes saved"; on failure an error snackbar (✱ not drawn; user decision) |
 
 #### World Scenes tab
 
