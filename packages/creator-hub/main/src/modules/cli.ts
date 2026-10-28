@@ -7,7 +7,6 @@ import QRCode from 'qrcode';
 
 import type { PreviewOptions } from '/shared/types/settings';
 import { PREVIEW_CLIENT } from '/shared/types/settings';
-import { PREVIEW_PROGRESS_EVENT, type PreviewProgress } from '/shared/types/ipc';
 import {
   ClientError,
   CLIENT_NOT_INSTALLED_ERROR,
@@ -16,10 +15,8 @@ import {
 import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 import { dynamicImport } from '/shared/dynamic-import';
 
-import { MAIN_WINDOW_ID } from '../mainWindow';
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
-import { getWindow } from './window';
 import { getProjectId, track } from './analytics';
 import { install } from './npm';
 import { downloadGithubRepo } from './download-github-folder';
@@ -32,26 +29,17 @@ import { getLanIp } from './network';
 // would never open the client the user just asked for).
 export type Preview = { child: Child; url: string; opts: PreviewOptions; mobile: boolean };
 
-// Explorer deeplink param for locally generated asset bundles. sdk-commands owns the
-// abgen sidecar (--asset-bundles) and injects local-ab into the deeplink it fires only
-// when the sidecar actually booted — its presence in the captured deeplink is the
-// source of truth for whether the running preview has one.
-const LOCAL_AB_PARAM = 'local-ab';
+// Explorer opt-out from locally generated asset bundles (the Unity explorer's Local Scene
+// Development default): it reads the param by presence only, and only at startup. It is
+// not an sdk-commands flag, so it rides the passthrough after a standalone `--`, which
+// sdk-commands forwards into the deeplink. An sdk-commands without that passthrough drops
+// it silently, and the explorer then loads asset bundles.
+const RAW_GLTF_PARAM = 'lsd-raw-gltf';
 
 // Grace window for the mobile-QR deeplink to appear after the preview server reports
 // ready. sdk-commands prints it only with a LAN IP; if none is found it never comes, so
 // the mobile start settles (with no url) shortly after instead of hanging indefinitely.
 const MOBILE_DEEPLINK_GRACE_MS = 5000;
-
-// A large scene's first conversion can take minutes before the deeplink appears; the
-// sidecar's progress lines are streamed to the renderer so the preview button can say
-// why it is still loading.
-function sendPreviewProgress(path: string, progress: PreviewProgress | null) {
-  const window = getWindow(MAIN_WINDOW_ID);
-  if (window && !window.isDestroyed()) {
-    window.webContents.send(PREVIEW_PROGRESS_EVENT, { path, progress });
-  }
-}
 
 const previewCache: Map<string, Preview> = new Map();
 export let deployServer: { stop: () => Promise<void> } | null = null;
@@ -103,11 +91,11 @@ export async function killAllPreviews() {
 }
 
 // `client` selects the launch path (Unity vs Bevy) in `start()`, not a CLI flag;
-// `optimizedAssets` maps to the spawn-time `--asset-bundles` sidecar flag handled in
-// `doStart()`; `debugger`/`showWarnings` are renderer-only. Everything left maps to a flag.
+// `loadRawGltfs` is an explorer param passed through after `--` in `doStart()`;
+// `debugger`/`showWarnings` are renderer-only. Everything left maps to a flag.
 type PreviewArguments = Omit<
   PreviewOptions,
-  'debugger' | 'showWarnings' | 'optimizedAssets' | 'client'
+  'debugger' | 'showWarnings' | 'loadRawGltfs' | 'client'
 >;
 
 const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
@@ -266,16 +254,7 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.mcp, newOpts.mcp);
 
-    // Locally generated asset bundles: local-ab is only valid when the captured deeplink
-    // carried it, i.e. the preview was spawned with a sidecar. Setting it on a preview
-    // spawned without one would point the explorer at optimized assets nothing is serving.
-    const hasSidecar = urlParams.has(LOCAL_AB_PARAM);
-    if (newOpts.optimizedAssets && !hasSidecar) {
-      log.warn(
-        '[CLI] Optimized assets requested but the preview was spawned without the sidecar; previewing with raw GLTFs',
-      );
-    }
-    setOrDeleteParam(LOCAL_AB_PARAM, newOpts.optimizedAssets && hasSidecar);
+    setOrDeleteParam(RAW_GLTF_PARAM, newOpts.loadRawGltfs);
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
@@ -290,28 +269,6 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
   }
 }
 
-// Feature-detect the opt-in sidecar flag in the scene's installed sdk-commands
-// (same pattern as shouldRunLegacyDeploy). The quote-delimited match avoids false
-// positives on the older opt-out flag --no-asset-bundles.
-// Cached by the dist file's mtime: the multi-MB bundle would otherwise be re-read on
-// every dropdown render and Preview press; an (re)install touches the file and busts it.
-const assetBundlesSupportCache = new Map<string, { mtimeMs: number; supported: boolean }>();
-
-export async function supportsAssetBundles(path: string): Promise<boolean> {
-  const file = join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/start/index.js');
-  try {
-    const { mtimeMs } = await fs.stat(file);
-    const cached = assetBundlesSupportCache.get(file);
-    if (cached?.mtimeMs === mtimeMs) return cached.supported;
-    const content = await fs.readFile(file, 'utf-8');
-    const supported = /["']--asset-bundles["']/.test(content);
-    assetBundlesSupportCache.set(file, { mtimeMs, supported });
-    return supported;
-  } catch {
-    return false;
-  }
-}
-
 // `mcpPort` is transient (not a user PreviewOptions setting): the Explorer-gateway
 // launches a preview with `mcp: true` and needs the Explorer's MCP server on a known
 // port so it can connect an MCP client to it. sdk-commands accepts `--mcp-port` (≥7.25.0)
@@ -320,29 +277,11 @@ export async function supportsAssetBundles(path: string): Promise<boolean> {
 type StartOptions = PreviewOptions & { retry?: boolean; mobile?: boolean; mcpPort?: number };
 
 // Serializes concurrent starts per path: a second Preview press (or a mobile-QR start)
-// while a spawn is still converting must ride that spawn, not race a second one.
+// while a spawn is still booting must ride that spawn, not race a second one.
 const inflightStarts = new Map<string, Promise<string>>();
 
-// Paths whose in-flight spawn the user cancelled (✕ while converting): start() must
-// settle quietly for them — a deliberate cancel is not a failure to reinstall-and-retry.
-const cancelledStarts = new Set<string>();
-
-/**
- * Cancels a preview that is still converting (no deeplink yet, so the client never
- * opened): kills the spawn and lets the pending start() resolve quietly. No-op once
- * the preview has opened — there is nothing left to cancel.
- */
-export async function cancelPreview(path: string): Promise<void> {
-  const preview = previewCache.get(path);
-  if (preview?.child.alive() && !preview.url) {
-    log.info('[CLI] preview cancelled while converting');
-    cancelledStarts.add(path);
-    await killPreview(path);
-  }
-}
-
 export async function start(path: string, opts: StartOptions): Promise<string> {
-  // A start is already underway (still converting/booting): ride it instead of racing a
+  // A start is already underway (still booting): ride it instead of racing a
   // second one — the sdk self-opens the client when it's ready, so there is nothing to fire.
   const pending = inflightStarts.get(path);
   if (pending) {
@@ -404,14 +343,11 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
       return path;
     }
 
-    // Desktop (Unity): the sidecar lives and dies with the preview process
-    // (--asset-bundles is a spawn-time flag), so whenever the Optimized Assets toggle
-    // disagrees with the running preview — needs a sidecar it doesn't have, or carries
-    // one it no longer should — restart the preview instead of reusing it.
-    const previewHasSidecar = new URLSearchParams(preview.url).has(LOCAL_AB_PARAM);
-    const wantsSidecar = opts.optimizedAssets && (await supportsAssetBundles(path));
-
-    if (wantsSidecar === previewHasSidecar) {
+    // Desktop (Unity): the explorer reads the raw-GLTF opt-out only at startup, so a
+    // refocus deeplink can't switch it — restart when the setting disagrees with the
+    // running preview.
+    const previewLoadsRawGltfs = new URLSearchParams(preview.url).has(RAW_GLTF_PARAM);
+    if (!!opts.loadRawGltfs === previewLoadsRawGltfs) {
       // re-focus the already-open client, with the deeplink adjusted to the current options
       await dclDeepLink(updateDeepLinkWithOpts(preview.url, opts));
       return path;
@@ -419,38 +355,14 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
   }
 
   killPreview(path);
-  // a fresh spawn starts with a clean slate: a marker left by a cancel that raced the
-  // deeplink must not swallow this spawn's real failures
-  cancelledStarts.delete(path);
-
-  let stopConversionProgress = () => {};
 
   const isBevyWeb = opts.client === PREVIEW_CLIENT.BEVY_WEB;
 
   try {
-    const extraArgs: string[] = [];
-    let withSidecar = false;
-
-    // sdk-commands owns the asset-bundle sidecar: --asset-bundles boots it and injects
-    // local-ab into the deeplink it fires. Missing binary or a sidecar that never comes
-    // up degrades to raw GLTFs inside sdk-commands itself. The sidecar only applies to
-    // the Unity deep-link path — neither the Bevy web URL nor the mobile QR deeplink
-    // carries local-ab.
-    if (!isBevyWeb && !isMobile && opts.optimizedAssets) {
-      if (await supportsAssetBundles(path)) {
-        extraArgs.push('--asset-bundles');
-        withSidecar = true;
-      } else {
-        log.warn(
-          '[CLI] Installed @dcl/sdk-commands does not support --asset-bundles; previewing with raw GLTFs',
-        );
-      }
-    }
-
     // Three launches. Unity: sdk-commands self-opens the desktop client via the
     // `decentraland://` deeplink it prints (captured below only for the cache: re-focus,
     // option flips, mobile QR); every preview option (auth screen, terrains,
-    // multi-instance, mcp, the sidecar, --hub) is a parameter of THAT launch, so only this
+    // multi-instance, mcp, raw GLTFs, --hub) is a parameter of THAT launch, so only this
     // path takes them. Bevy (`--bevy-web`): it opens the hosted web client in the browser
     // itself and prints no deeplink, so we wait for the browser URL it prints. Mobile
     // (`--mobile`): it serves the scene and prints the LAN QR deeplink, opening no client
@@ -463,11 +375,12 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
             'start',
             '--explorer-alpha',
             '--hub',
-            ...extraArgs,
             ...generatePreviewArguments(opts),
             // `--mcp` (a boolean) is emitted by generatePreviewArguments from opts.mcp;
             // pin the port too when the gateway asked for one, so it knows where to connect.
             ...(opts.mcp && opts.mcpPort !== undefined ? ['--mcp-port', String(opts.mcpPort)] : []),
+            // must stay last: everything after `--` is forwarded to the explorer deeplink
+            ...(opts.loadRawGltfs ? ['--', `--${RAW_GLTF_PARAM}`] : []),
           ];
 
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
@@ -477,7 +390,7 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
       env: await getEnv(path),
     });
 
-    // registered before the deeplink resolves so the spawn can be cancelled mid-conversion
+    // registered before the deeplink resolves so a failed spawn is still killed below
     previewCache.set(path, { child: process, url: '', opts, mobile: isMobile });
 
     if (isBevyWeb) {
@@ -504,45 +417,13 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
       return path;
     }
 
-    // immediate feedback for an optimized preview: the first real progress line is many
-    // seconds away (bundling + sidecar boot), and the ✕ only shows once progress exists
-    if (withSidecar) sendPreviewProgress(path, { seconds: 0 });
-
-    // \S* tolerates the ANSI reset between "[n/total]" and "converting": patterns are
-    // tested against the raw stream, while the handler receives sanitized text.
-    const conversionListener = process.on(
-      /asset-bundles: (converting|still converting)|\[\d+\/\d+\]\S* converting /,
-      data => {
-        // per-asset counter when the sidecar reports progress, elapsed seconds otherwise
-        const counts = data?.match(/\[(\d+)\/(\d+)\]\S* converting /);
-        if (counts) {
-          sendPreviewProgress(path, {
-            seconds: 0,
-            done: Number(counts[1]),
-            total: Number(counts[2]),
-          });
-        } else {
-          const seconds = Number(data?.match(/still converting\.\.\. \((\d+)s\)/)?.[1] ?? 0);
-          sendPreviewProgress(path, { seconds });
-        }
-      },
-    );
-    stopConversionProgress = () => {
-      try {
-        process.off(conversionListener);
-      } catch {
-        // the process may already be gone; only the renderer reset matters
-      }
-      sendPreviewProgress(path, null);
-    };
-
     const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
     const spawned = (async () => {
       // waitFor resolves/rejects via `once` matchers that cleanup() disables the instant the
-      // process exits (a natural exit, or an explicit kill from cancelPreview). On its own it
+      // process exits (a natural exit, or an explicit kill). On its own it
       // would then hang forever if the process dies before printing a deeplink, leaving
       // inflightStarts[path] stuck and every later Preview press awaiting it. Race it against
-      // process death so a cancelled/failed spawn rejects here and the finally below clears
+      // process death so a failed spawn rejects here and the finally in start() clears
       // inflightStarts. wait() stays pending while the preview server runs, so the deeplink
       // normally wins; it only settles once the process is gone.
       // Registered before any await so it can't miss a deeplink flushed early.
@@ -554,7 +435,7 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
       // QR one — which sdk-commands prints only when a LAN IP exists. Without one it never
       // comes, so add a fallback that settles a beat after the server is up (an empty url
       // getMobilePreview then surfaces as a failure) rather than hanging forever. A deeplink
-      // that does arrive still wins this race first, even minutes into a large conversion.
+      // that does arrive still wins this race first.
       const racers = [deeplink, death];
       if (isMobile) {
         racers.push(
@@ -584,11 +465,6 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     return path;
   } catch (error) {
     killPreview(path);
-    // a deliberate ✕ lands here as a process-death rejection: settle quietly, no retry
-    if (cancelledStarts.delete(path)) {
-      log.info('[CLI] preview start cancelled by the user');
-      return path;
-    }
     if (retry && !isClientNotInstalledError(error)) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
       await install(path);
@@ -598,8 +474,6 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     } else {
       throw error;
     }
-  } finally {
-    stopConversionProgress();
   }
 }
 

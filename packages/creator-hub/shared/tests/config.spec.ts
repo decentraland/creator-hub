@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { dropGuiEditorSetting, promoteAiAssistantSetting } from '../types/config';
+import {
+  dropCompressAssetsSettings,
+  dropGuiEditorSetting,
+  promoteAiAssistantSetting,
+} from '../types/config';
 import type { AppSettings } from '../types/settings';
 
 type LegacySettings = Partial<AppSettings> & { guiEditor?: boolean };
@@ -25,13 +29,13 @@ describe('dropGuiEditorSetting', () => {
         guiEditor: true,
         experimental: true,
         aiAssistant: false,
-        optimizedAssetsByPath: { '/tmp/scene': true },
+        exposeMcpServer: true,
       };
       dropGuiEditorSetting(settings);
       expect(settings).toEqual({
         experimental: true,
         aiAssistant: false,
-        optimizedAssetsByPath: { '/tmp/scene': true },
+        exposeMcpServer: true,
       });
     });
   });
@@ -48,6 +52,38 @@ describe('dropGuiEditorSetting', () => {
   describe('when the settings are undefined', () => {
     it('should not throw', () => {
       expect(() => dropGuiEditorSetting(undefined)).not.toThrow();
+    });
+  });
+});
+
+describe('dropCompressAssetsSettings', () => {
+  describe('when the settings carry the retired Compress Assets keys', () => {
+    it('should remove them and leave every other setting untouched', () => {
+      const settings = {
+        experimental: true,
+        optimizedAssetsByPath: { '/tmp/scene': true },
+        previewOptions: { debugger: true, optimizedAssets: true },
+      } as unknown as StoredSettings;
+
+      dropCompressAssetsSettings(settings);
+
+      expect(settings).toEqual({ experimental: true, previewOptions: { debugger: true } });
+    });
+  });
+
+  describe('when the settings have no preview options', () => {
+    it('should still remove the per-project map', () => {
+      const settings = { optimizedAssetsByPath: {} } as unknown as StoredSettings;
+
+      dropCompressAssetsSettings(settings);
+
+      expect(settings).toEqual({});
+    });
+  });
+
+  describe('when the settings are undefined', () => {
+    it('should not throw', () => {
+      expect(() => dropCompressAssetsSettings(undefined)).not.toThrow();
     });
   });
 });
@@ -85,7 +121,6 @@ describe('promoteAiAssistantSetting', () => {
         experimental: true,
         exposeMcpServer: true,
         useApiKeyFromEnv: true,
-        optimizedAssetsByPath: { '/tmp/scene': true },
       };
 
       promoteAiAssistantSetting(settings);
@@ -96,7 +131,6 @@ describe('promoteAiAssistantSetting', () => {
         experimental: true,
         exposeMcpServer: true,
         useApiKeyFromEnv: true,
-        optimizedAssetsByPath: { '/tmp/scene': true },
       });
     });
   });

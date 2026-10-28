@@ -35,16 +35,8 @@ export type IpcError = {
   };
 };
 
-// Asset-conversion progress pushed from main to the renderer while a preview spawn is
-// converting. Shared here because preload subscribes to the channel and cannot import
-// from main, so the event name and payload shape must have a single home.
-export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
-
-export type PreviewProgress = { seconds: number; done?: number; total?: number };
-
 // AI assistant turn events pushed from main to the renderer chat panel while a turn
-// runs. Shared here for the same reason as PREVIEW_PROGRESS_EVENT: preload subscribes
-// to the channel and cannot import from main, so the event name and payload shape
+// runs. Shared here because preload subscribes to the channel and cannot import from main, so the event name and payload shape
 // need a single home.
 export const AI_STREAM_EVENT = 'ai.stream';
 
@@ -206,8 +198,6 @@ export interface Ipc {
 
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions, mobile?: boolean) => Promise<string>;
-  'cli.cancelPreview': (path: string) => Promise<void>;
-  'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
   'cli.deploy': (opts: DeployOptions) => Promise<DeployServer>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;
