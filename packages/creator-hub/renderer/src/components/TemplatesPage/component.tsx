@@ -123,7 +123,7 @@ export function TemplatesPage() {
 
   return (
     <main className="TemplatesPage">
-      <Navbar active={NavbarItem.SCENES} />
+      <Navbar active={NavbarItem.TEMPLATES} />
       <Container>
         <TutorialsWrapper>
           <Title

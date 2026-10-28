@@ -23,6 +23,8 @@
   --light-gray: #5e5b67;
   --dark-gray: #43404a;
   --darker-gray: #242129;
+  --palette-neutral-softWhite: #fcfcfc;
+  --palette-info-light: #63b4f6;
 
   --dcl: #ff2d55;
   --dcl-dark: #9c1c34;
@@ -195,6 +197,13 @@
   --toast: #3d3b43;
   --toast-text: #ffffff;
   --modal: #242129;
+  --page-shade: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 52%) 0%,
+    rgb(0 0 0 / 51%) 25%,
+    rgb(0 0 0 / 46%) 37%,
+    rgb(0 0 0 / 20%) 100%
+  );
   --dimmer: #000000dd;
   --text-area-border: #676370;
   --clear-divider: #a09ba8;
@@ -255,6 +264,7 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  font-optical-sizing: none;
 }
 
 footer {
@@ -262,10 +272,12 @@ footer {
 }
 
 .Main {
-  background: url(../../assets/images/background.png) #242129ff;
+  background:
+    var(--page-shade),
+    url(../../assets/images/background.png) #242129ff;
   background-position: center;
   background-size: cover;
-  background-blend-mode: overlay;
+  background-blend-mode: normal, overlay;
   background-attachment: fixed;
   min-height: 100vh;
   display: flex;
