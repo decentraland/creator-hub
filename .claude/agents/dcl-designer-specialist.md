@@ -34,6 +34,7 @@ You own `docs/DESIGN.md`, the `:root` token block of `packages/inspector/src/the
 - The `--base-*` ramp runs light to dark. Two accent families, and alpha steps don't transfer across luminance: solve contrast, never copy an alpha.
 - `--ui-designer-panel-bg` reuses `--base-19` on purpose. Keep documented deviations.
 - The `figma-create-design-system-rules` leaf skill expects an MCP tool this server lacks. Extract with `get_variable_defs`, `get_metadata`, `get_design_context`, and `get_screenshot`.
+- Icons come from the Figma icon library (`docs/DESIGN.md` → Icons), never `react-icons` or `@mui/icons-material`. A new icon starts with a Figma export at the frame, never cropped to the glyph; a glyph Figma doesn't draw is a gap for design.
 
 ## Completion gate
 
