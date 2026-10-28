@@ -129,6 +129,7 @@
       },
       "retry": "Retry",
       "revert": "Undo AI changes",
+      "revert_blocked": "Couldn't undo this turn: an AI agent outside Creator Hub changed the scene after it, and undoing would remove their changes too. Use Undo in the editor instead.",
       "selection": "Selection: {names}",
       "selection_clear": "Clear",
       "asset_mention": "Asset: {name}",
@@ -158,6 +159,7 @@
         "alt_copy": "Copy configuration",
         "alt_copied": "Copied",
         "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts.",
+        "alt_access_off": "To connect one, turn on “Allow AI agents outside Creator Hub” in Settings → AI.",
         "install_guide": "If that doesn't work, follow the {provider} install guide",
         "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so install Claude Code and sign in once:",
         "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license.",
@@ -595,11 +597,11 @@
           "help": "Runs your installed Claude, Codex, Cursor, or Gemini CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."
         },
         "mcp_server": {
-          "label": "Expose AI assistant MCP server",
-          "help": "Let an AI agent running outside Creator Hub control the open scene. While this is on, Creator Hub writes the connection into every scene you open as .mcp.json (picked up by Claude Code started in the scene folder) and to mcp-server.json in its app data folder, so external agents connect without copying anything. You can still paste this into an agent's MCP configuration by hand.",
+          "label": "Allow AI agents outside Creator Hub",
+          "help": "Lets an AI agent you run outside Creator Hub (Claude Code, Codex, Claude Desktop…) read and edit the scene open in the editor. While this is on, Creator Hub saves the connection to mcp-server.json in its app data folder and to .mcp.json in the open scene, so agents connect without copying anything. An agent can also turn this on by itself, and Creator Hub tells you when it does. Turning it off disconnects every outside agent. The AI Assistant above doesn't need this.",
           "copy": "Copy configuration",
           "copied": "Copied!",
-          "note": "Localhost only. The URL and token change each time Creator Hub restarts."
+          "note": "Localhost only. The URL and token change each time Creator Hub restarts or this is turned off."
         },
         "ai_api_key": {
           "label": "Bill this to an API key instead",
@@ -950,6 +952,12 @@
       "actions": {
         "view": "View",
         "discard_all": "Discard all"
+      }
+    },
+    "external_agent_access": {
+      "title": "An AI agent outside Creator Hub turned on access to your scenes.",
+      "actions": {
+        "turn_off": "Turn off"
       }
     },
     "new_dependency_version": {

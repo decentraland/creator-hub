@@ -50,7 +50,7 @@ export const DEFAULT_CONFIG: Config = {
     experimental: false,
     renderer: DEFAULT_RENDERER,
     aiAssistant: true,
-    exposeMcpServer: true,
+    exposeMcpServer: false,
     useApiKeyFromEnv: false,
   },
   editors: [],
@@ -79,16 +79,6 @@ export function promoteAiAssistantSetting(settings: Partial<AppSettings> | undef
   if (settings && !settings.aiAssistantPromoted) {
     settings.aiAssistant = true;
     settings.aiAssistantPromoted = true;
-  }
-}
-
-/** Turns `exposeMcpServer` on once, in place, on merged settings not yet promoted: the setting
- * shipped opt-in (off), and stored values win over DEFAULT_CONFIG, so this is the only way an
- * existing install picks up the new default. A creator who turns it off afterwards stays off. */
-export function promoteExposeMcpServerSetting(settings: Partial<AppSettings> | undefined): void {
-  if (settings && !settings.exposeMcpServerPromoted) {
-    settings.exposeMcpServer = true;
-    settings.exposeMcpServerPromoted = true;
   }
 }
 

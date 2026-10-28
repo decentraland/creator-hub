@@ -302,12 +302,18 @@ const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
       return;
     }
     let cancelled = false;
-    void ai.getMcpServerInfo().then(
-      info => !cancelled && setMcpInfo(info),
-      () => !cancelled && setMcpInfo(null),
-    );
+    const fetchInfo = () =>
+      void ai.getMcpServerInfo().then(
+        info => !cancelled && setMcpInfo(info),
+        () => !cancelled && setMcpInfo(null),
+      );
+    fetchInfo();
+    // The switch flips here before main has granted access (the save is async), so the first
+    // fetch can come back empty; main says when access actually changed.
+    const { cleanup } = ai.onExternalAccessChanged(fetchInfo);
     return () => {
       cancelled = true;
+      cleanup();
     };
   }, [settings.exposeMcpServer]);
 
@@ -393,62 +399,67 @@ const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
         )}
       </Box>
 
-      {settings.aiAssistant && (
-        <>
-          <hr className="AiDivider" />
-          <Box className="AiField">
-            <Accordion
-              title={t('modal.app_settings.fields.mcp_server.label')}
-              expanded={!!settings.exposeMcpServer}
-              onToggle={() => handleExposeMcpChange(!settings.exposeMcpServer)}
-            >
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                className="AiHint"
-              >
-                {t('modal.app_settings.fields.mcp_server.help')}
-              </Typography>
-              {mcpConfigSnippet !== null && mcpConfigSnippet !== undefined ? (
-                <>
-                  <TextField
-                    value={mcpConfigSnippet}
-                    multiline
-                    fullWidth
-                    minRows={7}
-                    InputProps={{ readOnly: true }}
-                  />
-                  <Button
-                    color="secondary"
-                    variant="text"
-                    size="small"
-                    startIcon={<ContentCopyIcon fontSize="small" />}
-                    onClick={handleCopyMcpConfig}
-                    sx={{
-                      backgroundColor: 'var(--dark-gray)',
-                      '&:hover': { backgroundColor: 'var(--light-gray)' },
-                      '&&&&&&&': { color: 'var(--white)' },
-                    }}
-                  >
-                    {mcpCopied
-                      ? t('modal.app_settings.fields.mcp_server.copied')
-                      : t('modal.app_settings.fields.mcp_server.copy')}
-                  </Button>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    className="AiHint"
-                  >
-                    {t('modal.app_settings.fields.mcp_server.note')}
-                  </Typography>
-                </>
-              ) : (
-                <CircularProgress size={20} />
-              )}
-            </Accordion>
+      {/* Not nested under the assistant: outside agents are a separate grant, so the switch
+          that revokes it must stay visible whatever the assistant setting is. */}
+      <hr className="AiDivider" />
+      <Box className="AiField">
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!settings.exposeMcpServer}
+              onChange={(_event, checked) => handleExposeMcpChange(checked)}
+            />
+          }
+          label={t('modal.app_settings.fields.mcp_server.label')}
+        />
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          className="AiHint"
+        >
+          {t('modal.app_settings.fields.mcp_server.help')}
+        </Typography>
+        {settings.exposeMcpServer && (
+          <Box className="AiNestedField">
+            {mcpConfigSnippet !== null && mcpConfigSnippet !== undefined ? (
+              <>
+                <TextField
+                  value={mcpConfigSnippet}
+                  multiline
+                  fullWidth
+                  minRows={7}
+                  InputProps={{ readOnly: true }}
+                />
+                <Button
+                  color="secondary"
+                  variant="text"
+                  size="small"
+                  startIcon={<ContentCopyIcon fontSize="small" />}
+                  onClick={handleCopyMcpConfig}
+                  sx={{
+                    backgroundColor: 'var(--dark-gray)',
+                    '&:hover': { backgroundColor: 'var(--light-gray)' },
+                    '&&&&&&&': { color: 'var(--white)' },
+                  }}
+                >
+                  {mcpCopied
+                    ? t('modal.app_settings.fields.mcp_server.copied')
+                    : t('modal.app_settings.fields.mcp_server.copy')}
+                </Button>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  className="AiHint"
+                >
+                  {t('modal.app_settings.fields.mcp_server.note')}
+                </Typography>
+              </>
+            ) : (
+              <CircularProgress size={20} />
+            )}
           </Box>
-        </>
-      )}
+        )}
+      </Box>
     </Box>
   );
 };

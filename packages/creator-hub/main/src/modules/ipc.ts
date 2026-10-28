@@ -21,7 +21,7 @@ import * as consoleWindow from './console-window';
 import * as mcpDiscovery from './mcp-discovery';
 import {
   captureViewport,
-  ensureSceneMcpServer,
+  getExternalMcpInfo,
   resolveEditorScreenshot,
   resolveSceneOp,
   resolveUserPrompt,
@@ -115,10 +115,12 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   // config
   handle('config.getConfig', () => config.getConfig());
   handle('config.writeConfig', async (_event, _config) => {
+    const wasExposed = (await config.getConfig()).settings.exposeMcpServer;
     await config.writeConfig(_config);
-    // Publishing the MCP server for external agents follows the setting, so a flip takes
-    // effect at once (and withdraws the files when turned off). Best-effort, off the write path.
-    void mcpDiscovery.syncExposeMcpServer(_config.settings.exposeMcpServer);
+    // Outside access to the MCP server follows the setting, so a flip takes effect at once
+    // (and revokes it when turned off). Only on a flip: most writes are about something else.
+    if (_config.settings.exposeMcpServer !== wasExposed)
+      void mcpDiscovery.syncExposeMcpServer(_config.settings.exposeMcpServer);
   });
 
   // bin
@@ -174,14 +176,13 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.revertTurn', (_event, count) => revertTurn(count));
   // Reveal the CH MCP server's URL + token so an external agent can register it (gated in
   // the UI behind the exposeMcpServer setting). Starts the server if it isn't up yet.
-  handle('ai.getMcpServerInfo', async () => {
-    const { url, token } = await ensureSceneMcpServer();
-    return { url, token };
-  });
+  // The details an agent outside the Hub connects with; null while outside access is off.
+  handle('ai.getMcpServerInfo', () => getExternalMcpInfo());
   // The editor window reports which scene it has open, so the MCP server targets it and
-  // its connection details are written into the scene for external agents (mcp-discovery).
+  // its connection details are written into the scene for outside agents (mcp-discovery).
   handle('ai.sceneOpened', (_event, path) => mcpDiscovery.sceneOpened(path));
   handle('ai.sceneClosed', async (_event, path) => mcpDiscovery.sceneClosed(path));
+  handle('ai.takeExternalAccessGrant', async () => mcpDiscovery.takeExternalAccessGrant());
   // Detached AI window (#1504): lifecycle + the mirror/command relay between the two
   // renderer windows (see ai-window.ts).
   handle('ai.openWindow', (_event, locale) => aiWindow.openAiWindow(locale));

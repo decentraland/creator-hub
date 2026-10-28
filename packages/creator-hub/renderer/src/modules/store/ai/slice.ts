@@ -316,7 +316,14 @@ export const revertTurn = createAsyncThunk<void, { id: string; count: number }>(
     const msg = getState().ai.messages.find(m => m.id === id);
     if (msg === undefined || msg.reverted) return;
     dispatch(actions.markReverted(id));
-    await ai.revertTurn(count);
+    try {
+      await ai.revertTurn(count);
+    } catch (e) {
+      // Main refused: an outside agent edited the scene since the turn started, so the turn's
+      // undo steps are no longer on top. Nothing was undone (the snackbar says why).
+      dispatch(actions.unmarkReverted(id));
+      throw e;
+    }
   },
 );
 
@@ -492,6 +499,10 @@ const slice = createSlice({
     markReverted: (state, { payload }: PayloadAction<string>) => {
       const msg = state.messages.find(m => m.id === payload);
       if (msg !== undefined) msg.reverted = true;
+    },
+    unmarkReverted: (state, { payload }: PayloadAction<string>) => {
+      const msg = state.messages.find(m => m.id === payload);
+      if (msg !== undefined) msg.reverted = false;
     },
     // An `ask_user` question arrived (over AI_ASK_REQUEST) — append it as the next part of the
     // in-flight turn so it renders inline, in order; anything the turn streams after the answer

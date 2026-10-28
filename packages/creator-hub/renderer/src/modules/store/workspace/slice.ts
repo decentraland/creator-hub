@@ -36,7 +36,7 @@ const initialState: Async<Workspace> = {
     experimental: false,
     renderer: DEFAULT_RENDERER,
     aiAssistant: true,
-    exposeMcpServer: true,
+    exposeMcpServer: false,
     useApiKeyFromEnv: false,
   },
   status: 'idle',
@@ -62,6 +62,11 @@ export const slice = createSlice({
       if (idx !== -1) {
         state.projects[idx] = project;
       }
+    },
+    // Main already saved the flip (an outside agent asked for access); mirror it so the next
+    // settings write doesn't put the old value back.
+    setExposeMcpServer: (state, { payload }: PayloadAction<boolean>) => {
+      state.settings.exposeMcpServer = payload;
     },
   },
   extraReducers: builder => {

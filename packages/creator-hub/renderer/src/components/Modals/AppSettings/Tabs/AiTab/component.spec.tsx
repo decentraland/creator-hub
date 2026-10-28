@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { ai, misc } from '#preload';
@@ -141,6 +141,93 @@ describe('AI settings agent card', () => {
         name: 'modal.app_settings.fields.ai_connect.cancel',
       });
       expect(cancel.querySelector('[role="progressbar"]')).toBeTruthy();
+    });
+  });
+});
+
+describe('AI settings access for outside agents', () => {
+  function renderSettings(
+    settings: Partial<AppSettings>,
+    { updateSettings = vi.fn(), mcpInfo = null as { url: string; token: string } | null } = {},
+  ) {
+    vi.spyOn(ai, 'detectProviders').mockResolvedValue([]);
+    vi.spyOn(ai, 'getMcpServerInfo').mockResolvedValue(mcpInfo);
+    vi.spyOn(ai, 'onExternalAccessChanged').mockReturnValue({ cleanup: vi.fn() });
+    render(
+      <ThemeProvider theme={dark}>
+        <AiTab
+          settings={settings as AppSettings}
+          updateSettings={updateSettings}
+        />
+      </ThemeProvider>,
+    );
+    return updateSettings;
+  }
+  const accessSwitch = () =>
+    screen
+      .getByText('modal.app_settings.fields.mcp_server.label')
+      .closest('label')!
+      .querySelector('input')!;
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  describe('when the AI assistant is off', () => {
+    it('should still show the switch, so access can be turned off', () => {
+      renderSettings({ aiAssistant: false, exposeMcpServer: true });
+
+      expect(accessSwitch().checked).toBe(true);
+    });
+  });
+
+  describe('when the switch is turned on', () => {
+    it('should save the setting and leave the assistant setting alone', () => {
+      const updateSettings = renderSettings({ aiAssistant: false, exposeMcpServer: false });
+
+      fireEvent.click(accessSwitch());
+
+      expect(updateSettings).toHaveBeenCalledWith({ aiAssistant: false, exposeMcpServer: true });
+    });
+  });
+
+  describe('when access is on', () => {
+    it('should show the connection for outside agents', async () => {
+      renderSettings(
+        { aiAssistant: true, exposeMcpServer: true },
+        { mcpInfo: { url: 'http://x/mcp', token: 'tok' } },
+      );
+
+      expect(await screen.findByDisplayValue(/Bearer tok/)).toBeTruthy();
+    });
+  });
+
+  describe('when access is granted after the switch flipped', () => {
+    it('should fetch the connection again once main says access changed', async () => {
+      vi.spyOn(ai, 'detectProviders').mockResolvedValue([]);
+      const getInfo = vi
+        .spyOn(ai, 'getMcpServerInfo')
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue({ url: 'http://x/mcp', token: 'tok' });
+      let changed = () => {};
+      vi.spyOn(ai, 'onExternalAccessChanged').mockImplementation(cb => {
+        changed = cb;
+        return { cleanup: vi.fn() };
+      });
+      render(
+        <ThemeProvider theme={dark}>
+          <AiTab
+            settings={{ aiAssistant: true, exposeMcpServer: true } as AppSettings}
+            updateSettings={vi.fn()}
+          />
+        </ThemeProvider>,
+      );
+      await waitFor(() => expect(getInfo).toHaveBeenCalledTimes(1));
+
+      changed();
+
+      expect(await screen.findByDisplayValue(/Bearer tok/)).toBeTruthy();
     });
   });
 });

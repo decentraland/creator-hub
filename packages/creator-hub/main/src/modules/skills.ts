@@ -17,6 +17,8 @@ import { spawn } from 'child_process';
 import { app } from 'electron';
 import log from 'electron-log/main';
 
+import { ensureGitignored } from './project-config-files';
+
 const REPO = 'decentraland/sdk-skills';
 const BRANCH = 'main';
 const SHA_TIMEOUT_MS = 15_000;
@@ -226,24 +228,6 @@ function isOwnedLink(linkPath: string, cacheSkillsDir: string): boolean {
   const norm = path.normalize(target.replace(/^\\\\\?\\/, '')).replace(/[\\/]+$/, '');
   const cache = path.normalize(cacheSkillsDir).replace(/[\\/]+$/, '');
   return norm === cache || norm.startsWith(cache + path.sep);
-}
-
-// Make sure <dir>/.gitignore covers `entry` — appending to an existing file so the
-// machine-local absolute symlink can never be committed.
-function ensureGitignored(dir: string, entry: string): void {
-  const gi = path.join(dir, '.gitignore');
-  let content = '';
-  try {
-    content = fs.readFileSync(gi, 'utf8');
-  } catch {
-    /* new file */
-  }
-  const covered = content
-    .split('\n')
-    .some(l => [entry, `/${entry}`, `${entry}/`].includes(l.trim()));
-  if (covered) return;
-  const head = content === '' || content.endsWith('\n') ? content : `${content}\n`;
-  fs.writeFileSync(gi, `${head}${entry}\n`);
 }
 
 // Link the cached skills into one agent dir of the project (.claude or .agents).

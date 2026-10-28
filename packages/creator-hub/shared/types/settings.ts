@@ -58,16 +58,13 @@ export type AppSettings = {
   renderer: RENDERER;
   aiAssistant: boolean;
   aiAssistantPromoted?: boolean;
-  // Expose the Creator Hub MCP server to AI agents running OUTSIDE the app (Claude Code in
-  // a terminal or VS Code, Codex, Claude Desktop…): its URL + token are shown in settings
-  // and, while on, written into each opened scene as `.mcp.json` and to the app data folder
-  // as `mcp-server.json` (see main/src/modules/mcp-discovery.ts), so an external agent
-  // connects without anyone copying anything. The in-app assistant uses the server
-  // regardless. On by default.
+  // Opt-in: let AI agents running OUTSIDE the app (Claude Code in a terminal or VS Code,
+  // Codex, Claude Desktop…) use the Creator Hub MCP server. While on, its URL + token are shown
+  // in settings and written to the app data folder as `mcp-server.json` and into the open
+  // scene as `.mcp.json` (see main/src/modules/mcp-discovery.ts). An agent can turn it on by
+  // itself, and the creator is told when it does. Independent of `aiAssistant`: the in-app
+  // assistant has its own access either way. Off by default.
   exposeMcpServer: boolean;
-  // Marker for the one-time flip of `exposeMcpServer` to on for existing installs — see
-  // `promoteExposeMcpServerSetting`.
-  exposeMcpServerPromoted?: boolean;
   // Opt-in: let the AI assistant bill against the API key in your environment
   // (ANTHROPIC_API_KEY / OPENAI_API_KEY) instead of your signed-in CLI subscription. Off by
   // default — the assistant strips those keys to force subscription billing. Base-URL

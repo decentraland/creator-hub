@@ -4,6 +4,7 @@ import {
   AI_ASK_EXPIRED,
   AI_ASK_REQUEST,
   AI_CLI_LOGIN_EVENTS,
+  AI_EXTERNAL_ACCESS_CHANGED,
   AI_MIRROR_STATE,
   AI_REMOTE_COMMAND,
   AI_SCENE_OP_REQUEST,
@@ -85,7 +86,7 @@ export async function revertTurn(count: number): Promise<void> {
   return invoke('ai.revertTurn', count);
 }
 
-export async function getMcpServerInfo(): Promise<{ url: string; token: string }> {
+export async function getMcpServerInfo(): Promise<{ url: string; token: string } | null> {
   return invoke('ai.getMcpServerInfo');
 }
 
@@ -96,6 +97,19 @@ export async function sceneOpened(path: string): Promise<void> {
 
 export async function sceneClosed(path: string): Promise<void> {
   return invoke('ai.sceneClosed', path);
+}
+
+// Access to the MCP server for outside agents was granted or revoked (see
+// AI_EXTERNAL_ACCESS_CHANGED). `takeExternalAccessGrant` says, exactly once, whether an agent
+// asked for it itself.
+export function onExternalAccessChanged(cb: () => void): { cleanup: () => void } {
+  const handler = () => cb();
+  ipcRenderer.on(AI_EXTERNAL_ACCESS_CHANGED, handler);
+  return { cleanup: () => ipcRenderer.off(AI_EXTERNAL_ACCESS_CHANGED, handler) };
+}
+
+export async function takeExternalAccessGrant(): Promise<boolean> {
+  return invoke('ai.takeExternalAccessGrant');
 }
 
 // AI sign-in without a CLI (#1531). Installs the official CLI on demand (if needed) and

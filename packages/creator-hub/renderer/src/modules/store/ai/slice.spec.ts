@@ -9,6 +9,7 @@ import {
   persistConversation,
   recheckAfterTurn,
   reducer,
+  revertTurn,
   selectionContext,
   send,
 } from './slice';
@@ -17,6 +18,7 @@ const preloadAi = vi.hoisted(() => ({
   isBusy: vi.fn(),
   send: vi.fn(),
   detectProviders: vi.fn(),
+  revertTurn: vi.fn(),
 }));
 
 vi.mock('#preload', async importOriginal => ({
@@ -388,5 +390,36 @@ describe('when a turn ends', () => {
     const store = await storeWith(claude());
     await store.dispatch(recheckAfterTurn(true));
     expect(preloadAi.detectProviders).not.toHaveBeenCalled();
+  });
+});
+
+describe('when main refuses to revert a turn', () => {
+  let dispatched: { type: string; payload?: unknown }[];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.revertTurn.mockRejectedValue(new Error('an outside agent changed the scene'));
+    dispatched = [];
+    const ai = {
+      ...reducer(undefined, { type: 'init' }),
+      messages: [{ id: 'a-1', role: 'assistant' as const, parts: [], done: true }],
+    };
+    const dispatch = vi.fn((action: { type: string; payload?: unknown }) => {
+      dispatched.push(action);
+      return action;
+    });
+    await revertTurn({ id: 'a-1', count: 2 })(
+      dispatch as never,
+      (() => ({ ai })) as never,
+      undefined,
+    );
+  });
+
+  it('should mark the turn as not reverted again, so the button stays honest', () => {
+    expect(dispatched).toContainEqual(actions.unmarkReverted('a-1'));
+  });
+
+  it('should report the turn as failed so the snackbar can say why', () => {
+    expect(dispatched).toContainEqual(expect.objectContaining({ type: revertTurn.rejected.type }));
   });
 });

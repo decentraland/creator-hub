@@ -6,7 +6,8 @@
 // Phase 1 exposes read-only tools only: project metadata and the scene graph, read
 // straight from disk (see scene-composite.ts). The server is started once, lazily, and
 // its config is handed to the `claude` CLI via `--mcp-config`. Agents running OUTSIDE the
-// Hub find it through the files mcp-discovery.ts writes when the server comes up.
+// Hub connect with a separate token that exists only while the creator allows it (see
+// setExternalMcpAccess); mcp-discovery.ts publishes it for them.
 import http from 'http';
 import os from 'os';
 import fs from 'fs';
@@ -46,8 +47,13 @@ export interface SceneMcpInfo {
   token: string;
 }
 
-// The project the tools operate on. Set by the AI module when a turn starts; a single
-// editor window means a single open project at a time.
+// Who opened an MCP session: the in-app assistant (its token rides in the turn's own config)
+// or an agent running outside the Hub (the external token). Kept per session so revoking
+// outside access never touches the assistant, and so "revert turn" counts only its own edits.
+export type McpCaller = 'assistant' | 'external';
+
+// The project the tools operate on. Set when the editor opens a scene (and again when a turn
+// starts), cleared when it closes; a single editor window means one open project at a time.
 let currentProjectDir: string | null = null;
 export function setSceneMcpProject(projectDir: string | null): void {
   // A running Explorer preview belongs to one scene; if the open project changed, tear the
@@ -73,7 +79,9 @@ const pendingScreenshots = new Map<
 
 function requestEditorScreenshot(width: number, height: number): Promise<string | null> {
   const win = getWindow(MAIN_WINDOW_ID);
-  if (win === undefined || win.isDestroyed()) return Promise.resolve(null);
+  if (win === undefined || win.isDestroyed() || currentProjectDir === null) {
+    return Promise.resolve(null);
+  }
   const id = randomUUID();
   return new Promise<string | null>(resolve => {
     const timer = setTimeout(() => {
@@ -168,10 +176,14 @@ const MUTATION_UNDO_COST: Record<string, number> = {
 };
 
 // Count of undo entries the current AI turn has applied to the scene graph. Reset when a
-// turn starts (ai.ts), read into the `done` event, and used to size a revert.
+// turn starts (ai.ts), read into the `done` event, and used to size a revert. Edits made by
+// an outside agent since the turn started are counted apart: they share the one undo stack,
+// so once there are any, undoing the turn's N steps would undo theirs instead.
 let turnMutations = 0;
+let externalMutationsSinceTurn = 0;
 export function resetTurnMutations(): void {
   turnMutations = 0;
+  externalMutationsSinceTurn = 0;
 }
 export function getTurnMutations(): number {
   return turnMutations;
@@ -182,12 +194,21 @@ export function getTurnMutations(): number {
 // beat before resolving — otherwise an AI that mutates then immediately reads sees stale data.
 const AUTOSAVE_SETTLE_MS = 300;
 
-function requestSceneOp(op: string, params: Record<string, unknown>): Promise<SceneOpOutcome> {
+function requestSceneOp(
+  op: string,
+  params: Record<string, unknown>,
+  caller: McpCaller = 'assistant',
+): Promise<SceneOpOutcome> {
+  // Fail fast instead of sending the op to an editor that has left the scene (it would wait
+  // out SCENE_OP_TIMEOUT_MS, or worse, land on whatever the editor shows next).
+  if (currentProjectDir === null)
+    return Promise.resolve({ ok: false, payload: 'No scene is open.' });
   const run = sceneOpChain
     .then(() => requestSceneOpRaw(op, params))
     .then(async res => {
       if (res.ok && MUTATION_UNDO_COST[op] !== undefined) {
-        turnMutations += MUTATION_UNDO_COST[op];
+        if (caller === 'assistant') turnMutations += MUTATION_UNDO_COST[op];
+        else externalMutationsSinceTurn += MUTATION_UNDO_COST[op];
         // let the disk autosave catch up so a subsequent scene_state read is fresh
         await new Promise(r => setTimeout(r, AUTOSAVE_SETTLE_MS));
       }
@@ -197,8 +218,12 @@ function requestSceneOp(op: string, params: Record<string, unknown>): Promise<Sc
   return run;
 }
 
+export const REVERT_BLOCKED_MESSAGE =
+  'An AI agent outside Creator Hub changed the scene after this turn started, so reverting it would undo their changes too. Use Undo in the editor instead.';
+
 // Revert an AI turn's scene-graph changes by undoing `count` steps (serialized like any op).
 export async function revertTurn(count: number): Promise<void> {
+  if (externalMutationsSinceTurn > 0) throw new Error(REVERT_BLOCKED_MESSAGE);
   for (let i = 0; i < count; i++) {
     const res = await requestSceneOp('undo', {});
     if (!res.ok) break; // nothing left to undo, or the editor went away
@@ -285,11 +310,12 @@ function errMsg(e: unknown): string {
 // so every such tool is a one-liner instead of the repeated request/check/ok/fail boilerplate.
 function registerSceneOpTool(
   server: McpServer,
+  caller: McpCaller,
   name: string,
   config: { title: string; description: string; inputSchema: ZodRawShape },
 ): void {
   server.registerTool(name, config, async (args: Record<string, unknown>) => {
-    const res = await requestSceneOp(name, args);
+    const res = await requestSceneOp(name, args, caller);
     return res.ok ? ok(res.payload) : fail(String(res.payload));
   });
 }
@@ -305,7 +331,7 @@ function formatExplorerResult(res: { content?: unknown[]; isError?: boolean }) {
   return { content: content as CallToolResult['content'], isError: res.isError };
 }
 
-function registerTools(server: McpServer): void {
+function registerTools(server: McpServer, caller: McpCaller): void {
   server.registerTool(
     'ask_user',
     {
@@ -381,28 +407,28 @@ function registerTools(server: McpServer): void {
     },
   );
 
-  registerSceneOpTool(server, 'get_scene_metrics', {
+  registerSceneOpTool(server, caller, 'get_scene_metrics', {
     title: 'Scene metrics',
     description:
       "The editor's live scene budget: triangles, entities, bodies, materials and textures currently in the scene, each against its per-scene limit, plus the count of entities out of the scene's bounds. Use this to check the scene fits Decentraland's limits before/after adding content. Measured by the editor viewport (needs no preview); for a running scene's frame rate and per-model breakdown, launch_preview and use explorer_call get_performance_stats / get_scene_content_stats.",
     inputSchema: {},
   });
 
-  registerSceneOpTool(server, 'get_selection', {
+  registerSceneOpTool(server, caller, 'get_selection', {
     title: 'Get current selection',
     description:
       'The entities the user currently has selected in the editor (id + name). Use this to resolve what the user means by "this", "the selected entity", or "the one I have open" before acting. Returns an empty list if nothing is selected.',
     inputSchema: {},
   });
 
-  registerSceneOpTool(server, 'get_scene_settings', {
+  registerSceneOpTool(server, caller, 'get_scene_settings', {
     title: 'Get scene settings',
     description:
       "The scene's settings (from scene.json / the editor's Scene metadata): name, description, categories, tags, age rating, spawn points, skybox, terrain, layout (parcels), and voice-chat/portable-experience flags. Read this before set_scene_settings to see the exact current shape and values.",
     inputSchema: {},
   });
 
-  registerSceneOpTool(server, 'set_scene_settings', {
+  registerSceneOpTool(server, caller, 'set_scene_settings', {
     title: 'Set scene settings',
     description:
       'Change the scene settings (scene.json / Scene metadata). Include only the fields you want to change — each is replaced wholesale (call get_scene_settings first to see the current shape, especially for spawnPoints and layout). Applies live in the editor, autosaves, and is undoable. Note: `thumbnail` is a resource the editor manages (leave it); changing `layout.parcels` reshapes the parcels the scene occupies.',
@@ -525,7 +551,7 @@ function registerTools(server: McpServer): void {
   );
 
   // ---- Scene-graph mutations (Phase 2) ----
-  registerSceneOpTool(server, 'create_entity', {
+  registerSceneOpTool(server, caller, 'create_entity', {
     title: 'Create entity',
     description:
       'Add a new entity to the scene graph, optionally named and/or parented to another entity by id. Returns the new entity id. The change appears live in the editor, autosaves, and is undoable. Use scene_state first to see existing entities and pick a parent.',
@@ -538,14 +564,14 @@ function registerTools(server: McpServer): void {
     },
   });
 
-  registerSceneOpTool(server, 'remove_entity', {
+  registerSceneOpTool(server, caller, 'remove_entity', {
     title: 'Remove entity',
     description:
       'Delete an entity (and all its children) from the scene graph, by id. Live in the editor, autosaves, undoable. Use scene_state to find the id first.',
     inputSchema: { entity: z.number().describe('The entity id to remove') },
   });
 
-  registerSceneOpTool(server, 'set_parent', {
+  registerSceneOpTool(server, caller, 'set_parent', {
     title: 'Set parent',
     description:
       'Reparent an entity under another (its world position is preserved). Use parent id 0 for the scene root. Live + undoable.',
@@ -555,7 +581,7 @@ function registerTools(server: McpServer): void {
     },
   });
 
-  registerSceneOpTool(server, 'set_component', {
+  registerSceneOpTool(server, caller, 'set_component', {
     title: 'Set component',
     description:
       'Create or update a component on an entity. `component` is a name like "Transform", "core::GltfContainer", "MeshRenderer", or "VisibilityComponent". `value` is the component value; for an UPDATE the keys you pass are merged. IMPORTANT: the value must match the component schema — call entity_detail on an entity that already has the component to see the exact shape (e.g. Transform is {position:{x,y,z},rotation:{x,y,z,w},scale:{x,y,z}}). Live + undoable.',
@@ -568,7 +594,7 @@ function registerTools(server: McpServer): void {
     },
   });
 
-  registerSceneOpTool(server, 'remove_component', {
+  registerSceneOpTool(server, caller, 'remove_component', {
     title: 'Remove component',
     description:
       'Remove a component from an entity, by component name (e.g. "MeshRenderer"). Live + undoable.',
@@ -578,7 +604,7 @@ function registerTools(server: McpServer): void {
     },
   });
 
-  registerSceneOpTool(server, 'search_catalog', {
+  registerSceneOpTool(server, caller, 'search_catalog', {
     title: 'Search Smart Items catalog',
     description:
       'Search the Smart Items catalog (doors, buttons, platforms, NPCs, etc.) — pre-built items that carry their own behaviour. Returns matches with id, name, category, tags. Use before place_smart_item to get an assetId. Omit the query to list everything.',
@@ -588,7 +614,7 @@ function registerTools(server: McpServer): void {
     },
   });
 
-  registerSceneOpTool(server, 'place_smart_item', {
+  registerSceneOpTool(server, caller, 'place_smart_item', {
     title: 'Place Smart Item',
     description:
       'Place a Smart Item from the catalog into the open scene. `assetId` comes from search_catalog. Optional `position` is world metres (defaults to 8,0,8). The item brings its own behaviour (e.g. a door that opens when clicked) — this is how you add interactive objects. Applies live, autosaves, undoable.',
@@ -605,7 +631,7 @@ function registerTools(server: McpServer): void {
     },
   });
 
-  registerSceneOpTool(server, 'attach_script', {
+  registerSceneOpTool(server, caller, 'attach_script', {
     title: 'Attach script',
     description:
       'Attach a script to an entity by adding an asset-packs::Script component pointing at a source file. WRITE THE SCRIPT FILE FIRST with your own file tools (put it under assets/Scripts/, e.g. assets/Scripts/Door.tsx), then call this with that path. Applies live, autosaves, undoable.',
@@ -774,8 +800,16 @@ interface Session {
   server: McpServer;
   transport: StreamableHTTPServerTransport;
   explorerHandles: Map<string, RegisteredTool>;
+  caller: McpCaller;
 }
 const sessions = new Map<string, Session>();
+
+// A session answers only to the token that opened it, so the external token can't ride on
+// an assistant session (or outlive its own revocation through one).
+function sessionFor(sessionId: string | undefined, caller: McpCaller): Session | undefined {
+  const session = sessionId !== undefined ? sessions.get(sessionId) : undefined;
+  return session?.caller === caller ? session : undefined;
+}
 
 // Reconcile one session's explorer_* tools against the gateway's current tool set. Registering
 // or removing a tool on a connected McpServer makes it emit tools/list_changed automatically.
@@ -802,28 +836,51 @@ let starting: Promise<SceneMcpInfo> | null = null;
 let httpServer: http.Server | null = null;
 let info: SceneMcpInfo | null = null;
 let unsubscribeGatewayTools: (() => void) | null = null;
-// One token per app run: it rotates on every launch, so anything written to disk for
-// external agents (mcp-discovery.ts) is only ever valid for the process that wrote it.
-const AUTH_TOKEN = randomBytes(24).toString('hex');
+// The in-app assistant's token: one per app run, handed to the CLI through its own turn config.
+const ASSISTANT_TOKEN = randomBytes(24).toString('hex');
+// The token agents outside the Hub use. It exists only while the creator allows outside access
+// and is replaced each time access is granted again, so turning access off revokes every copy
+// that was handed out (on disk, pasted into an agent's config) without touching the assistant.
+let externalToken: string | null = null;
 
-// Who to tell when the server comes up. The server starts lazily from several places (an
-// AI turn, the Settings tab, a scene opening), so side effects that must follow EVERY start
-// — publishing the connection details for external agents — subscribe here instead of
-// wrapping each caller. A subscriber registered after the start is called right away.
-const startListeners = new Set<(info: SceneMcpInfo) => void>();
-export function onSceneMcpStarted(listener: (info: SceneMcpInfo) => void): () => void {
-  startListeners.add(listener);
-  if (info !== null) listener(info);
-  return () => {
-    startListeners.delete(listener);
-  };
+function callerFor(authorization: string): McpCaller | null {
+  if (authorization === `Bearer ${ASSISTANT_TOKEN}`) return 'assistant';
+  if (externalToken !== null && authorization === `Bearer ${externalToken}`) return 'external';
+  return null;
+}
+
+// Grant or revoke access for agents running outside the Hub. Revoking drops the token and
+// closes their live sessions at once; the assistant's sessions are left alone.
+export function setExternalMcpAccess(enabled: boolean): void {
+  if (enabled) {
+    externalToken ??= randomBytes(24).toString('hex');
+    return;
+  }
+  externalToken = null;
+  for (const [sid, session] of sessions) {
+    if (session.caller !== 'external') continue;
+    sessions.delete(sid);
+    void session.transport.close();
+    void session.server.close();
+  }
+}
+
+// Connection details for agents outside the Hub, starting the server if needed; null while
+// outside access is off.
+export async function getExternalMcpInfo(): Promise<SceneMcpInfo | null> {
+  if (externalToken === null) return null;
+  const { url } = await ensureSceneMcpServer();
+  return externalToken === null ? null : { url, token: externalToken };
 }
 
 // Build a fresh MCP server for a new session: the static tools plus whatever explorer_* tools
 // the running preview currently exposes.
-function buildSessionServer(): { server: McpServer; explorerHandles: Map<string, RegisteredTool> } {
+function buildSessionServer(caller: McpCaller): {
+  server: McpServer;
+  explorerHandles: Map<string, RegisteredTool>;
+} {
   const server = new McpServer({ name: 'creator-hub', version: '1.0.0' });
-  registerTools(server);
+  registerTools(server, caller);
   const explorerHandles = new Map<string, RegisteredTool>();
   for (const tool of explorerTools()) {
     explorerHandles.set(tool.name, registerOneExplorerTool(server, tool));
@@ -872,10 +929,10 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
 
     httpServer = http.createServer((req, res) => {
       void (async () => {
-        // Only /mcp, and only with our bearer token — this port is localhost but a token
-        // keeps other local processes from driving the editor.
-        const auth = req.headers.authorization ?? '';
-        if (auth !== `Bearer ${AUTH_TOKEN}`) {
+        // Only /mcp, and only with one of our bearer tokens — this port is localhost but a
+        // token keeps other local processes from driving the editor.
+        const caller = callerFor(req.headers.authorization ?? '');
+        if (caller === null) {
           res.writeHead(401).end('Unauthorized');
           return;
         }
@@ -894,13 +951,13 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
           if (req.method === 'POST') {
             const raw = await readBody(req);
             const parsed = raw === '' ? undefined : JSON.parse(raw);
-            const existing = sessionId ? sessions.get(sessionId) : undefined;
+            const existing = sessionFor(sessionId, caller);
             if (existing !== undefined) {
               await existing.transport.handleRequest(req, res, parsed);
               return;
             }
             if (sessionId === undefined && isInitializeRequest(parsed)) {
-              const { server, explorerHandles } = buildSessionServer();
+              const { server, explorerHandles } = buildSessionServer(caller);
               const transport = new StreamableHTTPServerTransport({
                 sessionIdGenerator: () => randomUUID(),
                 onsessioninitialized: sid => {
@@ -913,7 +970,7 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
                     void stale?.transport.close();
                     void stale?.server.close();
                   }
-                  const session = { server, transport, explorerHandles };
+                  const session = { server, transport, explorerHandles, caller };
                   sessions.set(sid, session);
                   // Reconcile against the latest tool set in case a preview started during init.
                   syncSessionExplorerTools(session);
@@ -939,7 +996,7 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
           // GET opens the server→client SSE stream (used for tools/list_changed); DELETE ends
           // a session. Both must carry a known session id.
           if (req.method === 'GET' || req.method === 'DELETE') {
-            const existing = sessionId ? sessions.get(sessionId) : undefined;
+            const existing = sessionFor(sessionId, caller);
             if (existing === undefined) {
               res.writeHead(400, { 'Content-Type': 'application/json' }).end(
                 JSON.stringify({
@@ -971,9 +1028,8 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
     });
     const addr = httpServer!.address();
     const port = typeof addr === 'object' && addr !== null ? addr.port : 0;
-    info = { url: `http://127.0.0.1:${port}/mcp`, token: AUTH_TOKEN };
+    info = { url: `http://127.0.0.1:${port}/mcp`, token: ASSISTANT_TOKEN };
     log.info(`[MCP] Creator Hub MCP server listening on ${info.url}`);
-    for (const listener of startListeners) listener(info);
     return info;
   })();
 

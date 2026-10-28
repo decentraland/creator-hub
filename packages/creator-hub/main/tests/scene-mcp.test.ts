@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
@@ -45,7 +45,8 @@ vi.mock('../src/modules/explorer-gateway', () => ({
 
 import {
   ensureSceneMcpServer,
-  onSceneMcpStarted,
+  getExternalMcpInfo,
+  setExternalMcpAccess,
   setSceneMcpProject,
   stopSceneMcpServer,
   type SceneMcpInfo,
@@ -213,16 +214,54 @@ describe('scene-mcp server', () => {
   });
 });
 
-describe('onSceneMcpStarted', () => {
-  describe('when the server is already running', () => {
-    it('should call the listener right away with the live url and token', () => {
-      const listener = vi.fn();
+describe('access for agents outside the Hub', () => {
+  afterEach(() => {
+    setExternalMcpAccess(false);
+  });
 
-      const unsubscribe = onSceneMcpStarted(listener);
-      unsubscribe();
+  describe('while it is off', () => {
+    it('should have no connection details to hand out', async () => {
+      expect(await getExternalMcpInfo()).toBeNull();
+    });
+  });
 
-      expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith(info);
+  describe('when it is granted', () => {
+    it('should hand out a token of its own that connects to the same server', async () => {
+      setExternalMcpAccess(true);
+
+      const external = await getExternalMcpInfo();
+
+      expect(external?.url).toBe(info.url);
+      expect(external?.token).not.toBe(info.token);
+      const client = await open(external!.token);
+      expect((await client.listTools()).tools.length).toBeGreaterThan(0);
+      await client.close();
+    });
+  });
+
+  describe('when it is revoked', () => {
+    it('should cut off outside sessions and reject their token, keeping the assistant connected', async () => {
+      setExternalMcpAccess(true);
+      const { token } = (await getExternalMcpInfo())!;
+      const outside = await open(token);
+      const assistant = await open(info.token);
+
+      setExternalMcpAccess(false);
+
+      await expect(outside.listTools()).rejects.toBeTruthy();
+      await expect(open(token)).rejects.toBeTruthy();
+      expect((await assistant.listTools()).tools.length).toBeGreaterThan(0);
+      await assistant.close();
+    });
+
+    it('should mint a new token when access is granted again', async () => {
+      setExternalMcpAccess(true);
+      const first = (await getExternalMcpInfo())!.token;
+      setExternalMcpAccess(false);
+
+      setExternalMcpAccess(true);
+
+      expect((await getExternalMcpInfo())!.token).not.toBe(first);
     });
   });
 });
