@@ -1266,7 +1266,7 @@
         "parcels": "地块",
         "location": "位置",
         "last_updated": "最后更新",
-        "deployed_by": "部署者"
+        "published_by": "发布者"
       },
       "select_all": "选择所有场景",
       "select": "选择 {scene}",

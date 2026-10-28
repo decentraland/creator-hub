@@ -8,7 +8,7 @@ import { t } from '/@/modules/store/translation/utils';
 import FallbackThumbnail from '/assets/images/scene-thumbnail-fallback.png';
 
 import { SelectCheckbox } from '../SelectCheckbox';
-import { CalendarIcon, MapPinIcon } from '../../Icons';
+import { MapPinIcon } from '../../Icons';
 import { Image } from '../../Image';
 import { Loader } from '../../Loader';
 import { DeployerCell } from './DeployerCell';
@@ -78,7 +78,6 @@ export function SceneRow(props: Props) {
       </td>
       <td>
         <Meta>
-          <CalendarIcon />
           <Tooltip title={date.long}>
             <UpdatedAt
               dateTime={date.iso}

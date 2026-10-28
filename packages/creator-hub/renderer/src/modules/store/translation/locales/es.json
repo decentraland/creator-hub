@@ -1266,7 +1266,7 @@
         "parcels": "Parcelas",
         "location": "Ubicación",
         "last_updated": "Última actualización",
-        "deployed_by": "Publicado por"
+        "published_by": "Publicado por"
       },
       "select_all": "Seleccionar todas las escenas",
       "select": "Seleccionar {scene}",

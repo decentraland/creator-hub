@@ -206,7 +206,7 @@ export function ScenesTab({ land, project, mode }: Props) {
               <th>{t('land_detail.scenes.columns.parcels')}</th>
               <th>{t('land_detail.scenes.columns.location')}</th>
               {header('updated', 'land_detail.scenes.columns.last_updated')}
-              <th>{t('land_detail.scenes.columns.deployed_by')}</th>
+              <th>{t('land_detail.scenes.columns.published_by')}</th>
               <th className="Actions" />
             </tr>
           </thead>

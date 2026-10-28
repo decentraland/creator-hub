@@ -1267,7 +1267,7 @@
         "parcels": "Parcels",
         "location": "Location",
         "last_updated": "Last Updated",
-        "deployed_by": "Deployed by"
+        "published_by": "Published by"
       },
       "select_all": "Select all scenes",
       "select": "Select {scene}",
