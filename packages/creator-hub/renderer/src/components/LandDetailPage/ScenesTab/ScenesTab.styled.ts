@@ -72,6 +72,8 @@ const SceneName = styled('span')(({ theme }) => ({
     objectFit: 'cover',
   },
   '& > span': {
+    flex: 1,
+    width: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -130,6 +132,7 @@ const Table = styled('table')(({ theme }) => ({
     fontSize: theme.typography.pxToRem(14),
     fontWeight: 400,
     textAlign: 'left',
+    whiteSpace: 'nowrap',
   },
   '& td': { height: 70 },
   '& th .SortArrow': {
@@ -149,6 +152,10 @@ const Table = styled('table')(({ theme }) => ({
   },
   '& tbody tr:hover .Actions, & tbody tr:focus-within .Actions, & tbody tr .Actions.Running': {
     opacity: 1,
+  },
+  [theme.breakpoints.down(1920)]: {
+    tableLayout: 'auto',
+    '& th:not(.Select):not(.Name):not(.Actions)': { width: 226 },
   },
 }));
 

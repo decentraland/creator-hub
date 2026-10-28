@@ -138,6 +138,14 @@ describe('ScenesTab', () => {
       expect(screen.getByText('1 selected')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Unpublish selected' })).toBeTruthy();
     });
+
+    it('should keep every column header on one line', () => {
+      const headers = screen.getAllByRole('columnheader');
+
+      expect(headers.map(header => getComputedStyle(header).whiteSpace)).toEqual(
+        headers.map(() => 'nowrap'),
+      );
+    });
   });
 
   describe('when the list is sorted', () => {
