@@ -51,6 +51,8 @@ export type ManageFixtureOptions = {
   landsFail?: boolean;
   /** Answers the Worlds list with a 500. */
   worldsFail?: boolean;
+  /** Answers W1's settings without a thumbnail. */
+  worldNoThumbnail?: boolean;
   /** Holds the LAND subgraph answer back this long. */
   landsDelayMs?: number;
   /** PNG served for every content hash, keyed by hash; `default` for the rest. */
@@ -331,6 +333,15 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
           { entityId: 'w1', parcels: ['0,0'], entity: { metadata: { scene: { base: '0,0' } } } },
         ],
         total: 1,
+      },
+    },
+    {
+      match: '/world/fixtureone.dcl.eth/settings',
+      body: {
+        title: 'Fixture One',
+        description: 'A fixture World for screenshots.',
+        categories: ['social', 'music'],
+        ...(options.worldNoThumbnail ? {} : { thumbnail_hash: 'thumb-grey' }),
       },
     },
     { match: '/world/fixture-two.dcl.eth/scenes', body: { scenes: [], total: 0 } },

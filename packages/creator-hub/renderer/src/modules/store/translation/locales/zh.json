@@ -1325,7 +1325,14 @@
       "collaborators": "协作者"
     },
     "owner_you": "{name}（你）",
-    "not_found": "此世界已不在你的列表中。"
+    "not_found": "此世界已不在你的列表中。",
+    "details": {
+      "name": "世界名称",
+      "description_placeholder": "在此写一些关于你的世界的内容",
+      "thumbnail_hint": "PNG 或 JPG | 1920x1080 (16:9)",
+      "change_thumbnail": "更换缩略图",
+      "saved": "更改已保存"
+    }
   },
   "detail_shell": {
     "unsaved": "您有未保存的更改。离开前保存？"

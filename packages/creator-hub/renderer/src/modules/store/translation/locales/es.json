@@ -1325,7 +1325,14 @@
       "collaborators": "Colaboradores"
     },
     "owner_you": "{name} (Tú)",
-    "not_found": "Este Mundo ya no está en tu lista."
+    "not_found": "Este Mundo ya no está en tu lista.",
+    "details": {
+      "name": "Nombre del Mundo",
+      "description_placeholder": "Escribe algo sobre tu Mundo aquí",
+      "thumbnail_hint": "PNG o JPG | 1920x1080 (16:9)",
+      "change_thumbnail": "Cambiar miniatura",
+      "saved": "Cambios guardados"
+    }
   },
   "detail_shell": {
     "unsaved": "Tienes cambios sin guardar. ¿Guardar antes de salir?"

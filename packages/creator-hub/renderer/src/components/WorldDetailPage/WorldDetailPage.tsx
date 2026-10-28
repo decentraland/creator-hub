@@ -16,6 +16,7 @@ import { Loader } from '../Loader';
 import { UnpublishWorldModal } from '../ManagePage/ManagedProjectsList/UnpublishWorldModal';
 import { getWorldMenuOptions } from '../ManagePage/ManagedProjectsList/worldMenu';
 import { getRoleTag } from '../ManagePage/RoleTag';
+import { DetailsTab } from './DetailsTab';
 import { getWorldPermissions, type WorldTab } from './worldPermissions';
 
 export function WorldDetailPage() {
@@ -92,7 +93,7 @@ export function WorldDetailPage() {
         tabs={permissions.tabs.map(value => ({ value, label: t(`world_detail.tabs.${value}`) }))}
         activeTab={activeTab}
       >
-        {null}
+        {activeTab === 'details' && <DetailsTab worldName={project.id} />}
       </DetailShell>
     );
   })();

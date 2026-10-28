@@ -1326,7 +1326,14 @@
       "collaborators": "Collaborators"
     },
     "owner_you": "{name} (You)",
-    "not_found": "This World is no longer in your list."
+    "not_found": "This World is no longer in your list.",
+    "details": {
+      "name": "World Name",
+      "description_placeholder": "Write something about your world here",
+      "thumbnail_hint": "PNG or JPG | 1920x1080 (16:9)",
+      "change_thumbnail": "Change thumbnail",
+      "saved": "Changes saved"
+    }
   },
   "detail_shell": {
     "unsaved": "You have unsaved changes. Save before leaving?"

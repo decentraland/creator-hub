@@ -130,7 +130,7 @@ describe('WorldDetailPage', () => {
   afterEach(cleanup);
 
   describe('when the owner opens a World', () => {
-    it('should title it by its World Name, with the four tabs in order and an empty panel', () => {
+    it('should title it by its World Name, with the four tabs in order and Details open', async () => {
       renderPage('/manage/world/plaza.dcl.eth/details');
 
       expect(
@@ -138,7 +138,9 @@ describe('WorldDetailPage', () => {
       ).toBeTruthy();
       expect(tabs()).toEqual(['Details', 'Scenes', 'Settings', 'Collaborators']);
       expect(selectedTab()).toBe('Details');
-      expect(screen.getByRole('tabpanel').textContent).toBe('');
+      expect(
+        await within(screen.getByRole('tabpanel')).findByRole('textbox', { name: 'World Name' }),
+      ).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Options for Fixture Plaza' })).toBeTruthy();
     });
 
