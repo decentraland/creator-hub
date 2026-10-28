@@ -137,7 +137,7 @@ All inspector tokens are CSS custom properties on `:root` in **`packages/inspect
 
 Reconciled on October 27, 2026 from the Colors page ([node `20752:6024`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20752-6024), frame "Colors Dark" [`20755:6429`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20755-6429), 12 columns). Variable names come from the frame's variable definitions; fills and alphas come from the swatches, since INFO and three Neutrals swatches are raw fills with no variable. One table per Figma column group, in Figma's order.
 
-Status: **match** (same value), **ships in #1703** (the open spoke `feat/design-tokens-figma-values` sets Figma's value; the table shows that value), **drift → X (pending spoke)** (a token holds another value; a spoke stacked on #1703 changes it), **missing** (no token in that world), **✱ deviation** (documented and kept on purpose), **PROPOSED** (a new token; the name is the user's call). A `—` means the world has no token for it and needs none yet. ui2 paths name `decentraland-ui2`'s dark theme (`theme/colorSchemes.js`, `theme/colors.js`); ui2 reads none of these through a `--mui-*` variable except `--mui-palette-action-disabled` and `--mui-palette-secondary-contrast`, so a ui2 drift is fixed upstream.
+Status: **match** (same value), **ships in #1703** (the open spoke `feat/design-tokens-figma-values` sets Figma's value; the table shows that value), **ships in #1731** (the open spoke `feat/design-token-sync`, stacked on #1703, sets it; the table shows that value), **drift → X (pending spoke)** (a token holds another value; a later spoke changes it), **missing** (no token in that world), **✱ deviation** (documented and kept on purpose), **PROPOSED** (a new token; the name is the user's call). A `—` means the world has no token for it and needs none yet. ui2 paths name `decentraland-ui2`'s dark theme (`theme/colorSchemes.js`, `theme/colors.js`); ui2 reads none of these through a `--mui-*` variable except `--mui-palette-action-disabled` and `--mui-palette-secondary-contrast`, so a ui2 drift is fixed upstream.
 
 Swatch chrome on the page (not tokens): radius 8px, a 312 × 82 fill, the name in Inter Bold 16 / 1.75 / 0.15px, the value in `Body/Body - 14`, a 4px gap, and the column heading in `Other/Overline`. Light swatches carry a 1px Black 10 border; Pale Black a 1px White 20.
 
@@ -172,7 +172,7 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Neutrals/Pale Black | `#43404A` | Control fill, the icon boards | `--gray-0` `#43404a` | `--dark-gray` `#43404a` · ui2 `neutral.gray0` | match |
 | Onix (swatch) | `#35333B` | Figma Neutrals/Onyx: field and control chrome, UI Designer menus (`--ui-designer-control-bg`), and the 1px border of an unselected UI Designer tab toggle, at rest, on hover and disabled (1.27:1 against the panel: an edge, not the state cue) | `--palette-neutral-onyx` `#35333b`, `--ui-designer-control-bg` `#35333b` | — | match in inspector; missing in Creator Hub |
 | Onix Dark 1 (swatch) | `#2D2A33` | Title-bar button, the 2D viewport fill, `InputAction` rest, the AI `ChatInput` container | `--palette-neutral-onyxDark1` `#2d2a33` | `--title-bar-button` `#2d2a33` | match |
-| Charcoal (swatch) | `#25212A` | Panel frame | `--ui-designer-panel-bg` → `--base-19` `#242129` | `--card`, `--modal`, `--secondary`, `--darker-gray` `#242129` · ui2 `neutral.softBlack2` `#242129` | **✱ deviation**: both worlds follow ui2's `#242129`, 1/255 from Figma; keep |
+| Charcoal (swatch) | `#25212A` | Panel frame | `--ui-designer-panel-bg` → `--base-19` `#242129` | `--card`, `--secondary`, `--darker-gray` `#242129` · ui2 `neutral.softBlack2` `#242129` | **✱ deviation**: both worlds follow ui2's `#242129`, 1/255 from Figma; keep (`--modal` is not one: its value is Figma's `#181225`) |
 | Neutrals/Shadow | `#161518` | Tree and page surface | `--base-20` `#161518`, `--tree-bg-color` | `--black` `#161518`, `--bg` and `--background` `#161518` · ui2 `neutral.softBlack1` | match in inspector; `--bg` ships in #1703, `--background` ships in #1703 |
 | Neutrals/Black | `#000000` | — | `--black` `#000000`, `--base-21` | `--bg-inspector` `#000` · ui2 `neutral.black` | match |
 | — | `#676370` | Secondary text and lines in Creator Hub | `--neutral-grey-4` `#676370` | `--secondary-text`, `--text-area-border`, `--popup` `#676370`, and the `#676370xx` alpha family (`--divider`, `--secondary-on-modal`, `--card-on-modal`) | **not in Figma**; nearest is Graffito `#5E5B67` |
@@ -193,7 +193,7 @@ Figma names four steps per base colour, Backdrop 60% · Blurry 40% · Soft 20% �
 | Transparency (White)/Backdrop · White 60 | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border; `outlined` pressed outline and `text` pressed label (ui2 theme-path name) | `--palette-whiteTransparent-backdrop` `rgba(255,255,255,.6)` | `--palette-whiteTransparent-backdrop` `rgba(255,255,255,.6)` · ui2 `whiteTransparent.backdrop` | match |
 | Transparency (Black)/Subtle · Black 10 | `rgba(0,0,0,.1)` | The light-swatch border on the Colors page | `--palette-blackTransparent-subtle` `rgba(0,0,0,.1)` | `--palette-blackTransparent-subtle` `rgba(0,0,0,.1)` · ui2 `blackTransparent.subtle` | match (no consumer) |
 | Transparency (Black)/Soft · Black 20 | `rgba(0,0,0,.2)` | The Background overlay, the modal and Settings title bars, react-contexify separators | `--palette-blackTransparent-soft` `rgba(0,0,0,.2)` (the overlay role), `--contexify-separator-color` `rgba(0,0,0,.2)` (the react-contexify role) | `--palette-blackTransparent-soft` `rgba(0,0,0,.2)` · ui2 `blackTransparent.soft` | match |
-| Transparency (Black)/Blurry · Black 40 | `rgba(0,0,0,.4)` | Figma Black Blurry · Black 40: the thin menu scrollbar's thumb fill, on the react-contexify submenu and the `Dropdown` `OptionList` (user, October 26, 2026). 1.32:1 on Onix and 1.48:1 on `--gray-0` on its own; the White 60 thumb outline carries it | `--palette-blackTransparent-blurry` `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` `rgba(0,0,0,.4)` · ui2 `blackTransparent.blurry` | match |
+| Transparency (Black)/Blurry · Black 40 | `rgba(0,0,0,.4)` | Figma Black Blurry · Black 40: the Scrollbar handle fill in menus, and the thin scrollbar's thumb fill on the `Dropdown` `OptionList` and small components (user, October 28, 2026). 1.32:1 on Onix and 1.48:1 on `--gray-0` on its own; the White 60 thumb outline carries it | `--palette-blackTransparent-blurry` `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` `rgba(0,0,0,.4)` · ui2 `blackTransparent.blurry` | match |
 | Transparency (Black)/Backdrop · Black 60 | `rgba(0,0,0,.6)` | Modal overlay | `--modal-overlay-bg-color` `rgba(0,0,0,.6)` | ui2 `blackTransparent.backdrop` | match |
 | Transparency (White)/Transparent | empty variable | — | `--transparent` `transparent` | — | Figma defect: the variable has no value |
 | — | `rgba(255,255,255,.05)` | Figma's unnamed `#FFFFFF` 5% (no Figma variable; ui2's `whiteTransparent` stops at `subtle`): the AccordionEntry hover fill, and its `:focus-visible` fill under the Snow ring (user, October 26, 2026). 1.16:1 against the `#242129` panel on its own, so it never carries a state alone: hover doesn't need to, and focus adds the ring | `--palette-whiteTransparent-faint` `rgba(255,255,255,.05)` | `--palette-whiteTransparent-faint` `rgba(255,255,255,.05)`, `--transparent-gray-dark` `rgba(255,255,255,.05)` | not a Figma step; user decision |
@@ -340,7 +340,7 @@ Inspector tokens that name a role rather than a Figma variable: surfaces, foregr
 | --- | --- | --- | --- |
 | `--main-bg-color` | `--vscode-editor-background` → `--background` | — | App/editor background |
 | `--tree-bg-color` | `--base-20` `#161518` | Neutrals/Shadow | Panels, trees, **dropdown/popover surfaces** |
-| `--modal-content-bg-color` | `--tree-bg-color` | Modal shell `#181225` (a raw fill, no variable): drift → `#181225` (pending spoke) | Modals |
+| `--modal-content-bg-color` | `--tree-bg-color` | Modal shell `#181225` (a raw fill, no variable): ships in #1731 | Modals |
 | `--ui-designer-panel-bg` | `--base-19` `#242129` | Charcoal `#25212a` (**✱ deviation**, within 1/255) | UI Designer panel frame |
 | `--ui-designer-control-bg` | `#35333b` | Neutrals/Onix | Inputs/selects/textarea chrome, and UI Designer menus |
 | `--disabled-bg-color` | `#323036` | — | Disabled control fill |
@@ -400,9 +400,9 @@ There is no single `--text` token — pick the foreground that matches the surfa
 
 Every icon control in the UI Designer panels and canvas takes one of three rules (user decision, October 22, 2026; it overrides the `UI Editor Buttons` sets where they differ, see the ✱ deviations in those sets under [Editor](#editor)). The lock and eye take none of them: they follow their own sets as drawn (user decision, October 27, 2026), in every tree. The 2D toolbar takes the `ToolbarButton` set and the Viewport Toolbar's 2D variant instead (user decision October 23, 2026; shipped in `73a26ea5f`), so the toolbar controls the rules below name are styled by those sets.
 
-- **Icon button** (any icon control that is not a toggle: trash, help, bind link, add, copy, the toolbar's save / undo / redo): Silver `--ui-designer-text-muted` glyph and no container at rest; on hover a Snow `--ui-designer-text` glyph on a White 10 `--palette-whiteTransparent-subtle` container, 4px radius.
-- **Tab toggle** (one choice out of a set: TextAlign, Flow direction, the canvas device pair, the interaction-state tabs, the fill-mode chips, the 2D toolbar gizmos; the `PropertyPanel` device-variant chips follow the `Devices` set instead): unselected is a Silver glyph, no fill and a 1px `--palette-neutral-onyx` border; unselected + hover is Snow on White 10 with the same Onyx border; selected is a Snow glyph on `--ui-designer-control-active-bg` (Blue Dark 2); selected + hover is Snow on `--palette-system-blueDark3`; disabled is a White 20 glyph with the Onyx border. A selected tab toggle shows no Onyx: its 1px border takes the fill colour, so the box never changes size.
-- **Single toggle** (on / off: wrap, the aspect lock, the canvas HUD / safe-area toggles, the toolbar Run / Scene Info): the tab-toggle colours with no border in any state. Silver at rest, Snow on White 10 on hover, Snow on Blue Dark 2 when selected, Snow on Blue Dark 3 when selected + hover, White 20 when disabled.
+- **Icon button** (any icon control that is not a toggle: trash, help, bind link, add, copy, the toolbar's save / undo / redo): Silver `--ui-designer-text-muted` glyph and no container at rest; on hover a Snow `--ui-designer-text` glyph on a White 10 `--palette-whiteTransparent-subtle` container, 4px radius (DeleteCTA's drawn hover). Help and the bind link are the exception: they follow HelpCTA and AddVariant, which draw no container (Help rests Cloudy Sky `--palette-neutral-gray2` and hovers Snow `--palette-neutral-softWhite`; the bind link rests Silver and hovers Snow).
+- **Tab toggle** (one choice out of a set: TextAlign, Flow direction, the canvas device pair, the interaction-state tabs, the fill-mode chips, the 2D toolbar gizmos; the `PropertyPanel` device-variant chips follow the `Devices` set instead): unselected is a Silver glyph, no fill and a 1px `--palette-neutral-onyx` border; unselected + hover is a Silver glyph on White 10 with the same Onyx border; selected is a Snow glyph on `--ui-designer-control-active-bg` (Blue Dark 2); selected + hover is Snow on `--palette-system-blueDark3`; disabled is a White 20 glyph with the Onyx border. A selected tab toggle shows no Onyx: its 1px border takes the fill colour, so the box never changes size.
+- **Single toggle** (on / off: wrap, the aspect lock, the canvas HUD / safe-area toggles, the toolbar Run / Scene Info): the tab-toggle colours with no border in any state. Silver at rest, Silver on White 10 on hover, Snow on Blue Dark 2 when selected, Snow on Blue Dark 3 when selected + hover, White 20 when disabled.
 - **Lock and eye** (every lock and eye: the 2D tree rows, the node-header and GUI-list eyes, the 3D trees' lock and eye and the spawn-point eye; the MobileHUD input-action eye follows InputAction, below): LockLayerToggle and VisibilityToggle as drawn. A Gray `--palette-neutral-gray4` glyph in every state; no fill at rest; a White 10 `--palette-whiteTransparent-subtle` fill with a 4px radius on hover; locked or hidden is the same Gray glyph with no fill, and the glyph's shape (closed lock, eye-off) is the only indicator, announced by `aria-pressed="true"`. Pressed + hover is White 10, as any hover. Focus is unchanged: the accent ring in the UI Designer, the 1px Snow `--focus-ring` in the 3D trees.
 - **MobileHUD input-action eye:** the InputAction set as drawn, an 18 × 18 VisibilityToggle instance. Visible is a Gray eye with no fill, White 10 on hover; hidden is a System/Blue Light 1 `--palette-info-light` eye-off on a System/Blue Dark 3 `--palette-system-blueDark3` fill (5.33:1), the same on hover.
 - **State hook:** the ARIA attribute (`aria-pressed`, `aria-checked` or `aria-selected`), never a class. The kind, not the attribute, decides the border.
@@ -414,7 +414,8 @@ Every icon control in the UI Designer panels and canvas takes one of three rules
 | Pairing (on `#242129`) | Contrast |
 | --- | --- |
 | Silver glyph at rest | **5.85:1** |
-| Snow glyph on the White 10 hover container | **11.40:1** |
+| Snow glyph on the White 10 hover container (DeleteCTA) | **11.40:1** |
+| Silver glyph on the White 10 hover container (Off + hover) | **4.31:1** |
 | Gray lock / eye glyph at rest / on the White 10 hover fill | **10.07:1** / **7.43:1** |
 | Onyx tab-toggle border vs. panel | 1.27:1 (an edge; the glyph and fill carry the state) |
 | Snow glyph on Blue Dark 2 / Blue Dark 3 | **8.61:1** / **11.61:1** |
@@ -541,7 +542,7 @@ Every corner radius Figma draws, with its token:
 | 16px | Cards | `--shape-borderRadiusXLarge` `16px` · Creator Hub `--shape-borderRadiusXLarge` `16px` | match |
 | 24px | Modals | `--shape-borderRadiusXXLarge` `24px` · Creator Hub `--shape-borderRadiusXXLarge` `24px` | match |
 | 64px | The icon boards and the Typography sheet (page chrome) | — | not a component value |
-| 100px | Figma's 100px pill: the thin menu scrollbar's thumb, on the react-contexify submenu and the `Dropdown` `OptionList` (user, October 26, 2026); the other pills listed under Figma values take it as they are re-themed | `--shape-borderRadiusPill` `100px` | match (ui2 theme-path name) |
+| 100px | Figma's 100px pill: the Scrollbar handle, and the thin scrollbar's thumb on the `Dropdown` `OptionList` and small components (user, October 28, 2026); the other pills listed under Figma values take it as they are re-themed | `--shape-borderRadiusPill` `100px` | match (ui2 theme-path name) |
 
 Corners in the UI Designer come from two tokens, `--ui-designer-radius-field` (6px — inputs, dropdowns, segmented cells, the anchor preview) and `--ui-designer-radius-menu` (12px — option lists and popovers), which alias `--shape-borderRadius` and `--shape-borderRadiusLarge`. The shared `TextField`, `Dropdown` and `TextArea` take 6px by default, so the panel needs no radius override for them; the shared `CheckboxField` and the small `Button` still hardcode their own (5px and 4px).
 
@@ -830,10 +831,10 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Modals
 | 6px radius (attach button, location row) | — | `--shape-borderRadius` (aliased by `--ui-designer-radius-field`) | `--mui-shape-borderRadius` |
 | `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | `--menu-shadow` (`--contexify-menu-shadow` holds `2px 2px 10px rgba(0,0,0,.5)` until the Menu-Entry spoke points it there) | `--menu-shadow` (ui2 `MuiPaper` elevation paints the menus) |
 | `0 4px 4px rgba(0,0,0,.1)` title-bar toast shadow | — | `--shadow-toast` | `--shadow-toast` (ui2 `Tooltip` paints it) |
-| `#181225` modal fill | — (a raw hex on every modal, not a variable) | `--modal-content-bg-color` (→ `--tree-bg-color` `#161518`): drift → `#181225` (pending spoke) | `--modal` `#242129`: drift → `#181225` (pending spoke); the ui2 `Modal` paper paints it |
+| `#181225` modal fill | — (a raw hex on every modal, not a variable) | `--modal-content-bg-color` `#181225` (ships in #1731) | `--modal` `#181225` (ships in #1731); ui2's `Modal` paper does not read `--modal` |
 | `#000000` title-bar fill | Neutrals/Black | `--black`, `--base-21` | `--bg-inspector` |
 | `#2D2A33` toolbar icon and split buttons, title-bar toast | Neutrals/Onix Dark 1 | `--palette-neutral-onyxDark1` | `--title-bar-button` |
-| `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — ✱ deviation (1/255) | `--darker-gray`, `--card`, `--modal` `#242129` — same ✱ deviation |
+| `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — ✱ deviation (1/255) | `--darker-gray`, `--card` `#242129` — same ✱ deviation |
 | `#244B7D` AI-toggle selected | System/Blue Dark 2 | `--palette-system-blueDark2` | `--ai-session-selected` |
 | `#243852` AI-toggle selected + hover | System/Blue Dark 3 | `--palette-system-blueDark3` | `--ai-session-selected-hover` |
 | `#FF6280` publish split-button hover | Primary/Primary Light 1 | `--palette-primary-light` | `--primary-hover` (ships in #1703) |
@@ -1052,7 +1053,7 @@ Shared: row, Fill × 38 (240 in the set, 180 inside Menu), 8px radius, padding 0
 | Default | ✱ keyboard active (Figma draws none) | Pale Black plus a 1px inset Snow `--focus-ring`, as the Dropdown list | as Hover | as Hover | as Hover | — | ring 9.88:1 on the Pale Black row; the fill alone is 1.23:1, so the ring carries the state | `:focus-visible` on the row the arrow keys make active; a hovered row keeps the fill alone | — | — |
 | Default | ✱ press | White 10 over Pale Black | — | — | — | — | — | — | — | — |
 | Default | ✱ disabled (Figma draws none) | none; the whole row at the library's `opacity: .5` | Silver @ .5 | Snow @ .5 | — | — | label 4.34:1, glyph 2.26:1 — disabled content is exempt from the minimums | `aria-disabled="true"`, stays in the menu's arrow-key order | — | — |
-| Default | ✱ leading glyph | none | 16px, Silver `--ui-designer-text-muted` on rest and hover, 10px gap; each menu keeps its current glyph family (no swap to Figma's icons), and a menu with no glyphs (catalog asset, custom item) gets none | `H8 Regular` Snow, 12px in every menu | — | 200 min × 38 | as Default | glyph `aria-hidden` | — | — |
+| Default | leading glyph | none | 16px, the Menu-Entry set's icon from Figma's Icons set (16 family), Silver `--ui-designer-text-muted` on rest and hover, 10px gap; a menu whose rows carry no glyph today (catalog asset, custom item) gets none | `H8 Regular` Snow, 12px in every menu | — | 200 × 38 | as Default | glyph `aria-hidden` | — | — |
 | Default | ✱ submenu parent (Figma draws none) | Pale Black while its submenu is open | as Default | as Default | chevron White 40 in every state | 38 | chevron 3.39:1 on Onix, 3.05:1 on Pale Black | `aria-haspopup="menu"`; the name is the row's own label ("Add Component"), never its submenu's items | — | — |
 
 **Inspector context menus** (layer 3b, unit 1): the eight react-contexify menus take this look, and their board is ours, in [Context menus (inspector)](#context-menus-inspector).
@@ -1067,6 +1068,7 @@ Shared: row, Fill × 38 (240 in the set, 180 inside Menu), 8px radius, padding 0
 | 2026-10-26 | Row height? | 38px, as Figma (react-contexify draws 32 today). |
 | 2026-10-26 | Label size? | 12px (`H8 Regular`) in every menu. The catalog, custom item and tile menus inherit 14px today. |
 | 2026-10-26 | Row glyphs? | 16px Silver `--ui-designer-text-muted`, 10px gap, Silver on hover too. No glyph swaps, and no glyphs added to menus that have none (✱ leading glyph). |
+| 2026-10-28 | Context menus: keep each menu's glyph family, or swap to Figma's icons? | "The user ticked all four items to follow Figma" (re-confirmed under "always follow Figma"): the context menus swap to the Menu-Entry set's icons. 16px, Silver `--ui-designer-text-muted` on rest and hover, 10px gap; menus with no glyphs today keep none. |
 | 2026-10-26 | Disabled rows? | The library's `opacity: .5` (label 4.34:1). This replaces the White 40 label proposal (✱ disabled). |
 | 2026-10-26 | Keyboard focus? | A 1px inset Snow `--focus-ring` on the arrow-key-active row, over Pale Black, as the Dropdown list. This replaces the 2px accent outline at −2px proposal (✱ keyboard active). |
 | 2026-10-26 | Label casing? | Title Case, following Figma's menus ("Enable Autosave"): Add Child, Add Component, New Folder, Add to Filesystem, Copy Name, Copy File Name / Copy File Names, Duplicate N Items, Delete N Items. Rename, Duplicate, Delete, Create Custom Item and Copy Path / Copy Paths stay as they are. |
@@ -1094,11 +1096,11 @@ Code detail: inspector react-contexify (`--contexify-menu-shadow` `2px 2px 10px 
 | Options / Options2 | — | none | none | — | — | Fill × Hug, padding 0 / 10 | — | `role="group"` when a Section labels it | — | — |
 | Entry (in the slots) | — | none | none | 8px | — | Fill × 38, padding 0 / 10, gap 10: `Info` 16 + label `H8 Regular` Snow; no trailing arrow | as Menu-Entry | as Menu-Entry | as Menu-Entry | as Menu-Entry |
 | Div | — | as Menu-Entry Div | — | — | — | between the slots, full bleed (the Menu's full width) | — | `role="separator"` | `--palette-whiteTransparent-subtle` | `--palette-whiteTransparent-subtle` |
-| Container | ✱ width | as above | as above | as above | as above | `min-width: 200px`; the menu grows with a long label ("Delete 12 Items", component names) where Figma draws a fixed 200 | — | — | — | — |
-| Div | ✱ inset | White 10 | — | — | — | inset with the rows, 10px clear above and below (Figma: full bleed in the composed menu); user decision October 21, 2026 (#1707) | 1.36:1, decorative | `role="separator"` | — | — |
-| Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | opens 10px clear of the parent menu; scrolls past 30vh (`theme/index.css` `.contexify_submenu`) with the thin menu scrollbar (✱ below); opens at once and stays open 400ms after the pointer leaves its parent row, so a diagonal move across the gap reaches it; the keyboard opens and closes it at once | as Container; scrollbar thumb outline 5.07:1 on Onix (the Black 40 fill alone is 1.32:1) | `role="menu"`, opened from a row with `aria-haspopup="menu"` | — | — |
+| Container | width | as above | as above | as above | as above | fixed 200px, as Figma draws it; a menu whose content needs more sets its own width explicitly, per menu (a long label such as "Delete 12 Items" or a component name), and none grows automatically | — | — | — | — |
+| Div | full bleed | White 10 | — | — | — | edge to edge across the menu's full width, 10px clear above and below, as every composed menu draws it | 1.36:1, decorative | `role="separator"` | — | — |
+| Submenu | ✱ open (Figma draws none) | inherits every Container value (Onix, 1px White 10, 12px, `--menu-shadow`) | as Container | as Container | as Container | opens 10px clear of the parent menu; scrolls past 30vh (`theme/index.css` `.contexify_submenu`) with Figma's 16px Scrollbar (row below); opens at once and stays open 400ms after the pointer leaves its parent row, so a diagonal move across the gap reaches it; the keyboard opens and closes it at once | as Container; scrollbar thumb outline 5.07:1 on Onix (the Black 40 fill alone is 1.32:1) | `role="menu"`, opened from a row with `aria-haspopup="menu"` | — | — |
 | Container | ✱ enter motion (Figma draws none) | — | — | — | — | the library's 0.3s fade with a 10px slide, turned off under `prefers-reduced-motion: reduce`; the submenu's 400ms close delay stays under reduced motion (hover intent, not motion) | — | — | — | — |
-| Submenu | ✱ thin menu scrollbar (deviates from Figma's 16px Scrollbar `20931:3935`, sized for menus; Figma draws none inside a menu) | thumb `--palette-blackTransparent-blurry` (Black 40) with a 1px `--palette-whiteTransparent-backdrop` (White 60) outline; track transparent | — | `--shape-borderRadiusPill` | — | a 6px gutter holding a 4px pill thumb (outline included), the track inset 10px top and bottom; the same scrollbar on the `Dropdown` `OptionList` (user, October 26, 2026) | outline 5.07:1 on Onix | native scrollbar; no ARIA | — | — |
+| Submenu | scrollbar | Figma's 16px Scrollbar `20931:3935`: thumb `--palette-blackTransparent-blurry` (Black 40) with a 1px `--palette-whiteTransparent-backdrop` (White 60) inner border; track transparent | — | `--shape-borderRadiusPill` | — | a 16px gutter, the handle the full gutter width × the content ratio (see Scrollbar) | outline 5.07:1 on Onix (the Black 40 fill alone is 1.32:1) | native scrollbar; no ARIA | — | — |
 
 **Decisions** (the record for this component; grep here before asking again):
 
@@ -1106,6 +1108,9 @@ Code detail: inspector react-contexify (`--contexify-menu-shadow` `2px 2px 10px 
 | --- | --- | --- |
 | 2026-10-26 | Name the Menu shadow token, and which rules consume it? | `--menu-shadow` = `0 4px 8px rgba(0,0,0,.4)`, a new token in the hub. `--contexify-menu-shadow`, `OptionList.css` and `MoreOptionsMenu.css` consume it; the snap card (`Gizmos.css`) switches after #1714 merges (G30). |
 | 2026-10-26 | Menu width? | `min-width: 200px`, Figma's width, growing with long labels (✱ width). |
+| 2026-10-28 | Menu width: Figma draws a fixed 200. Follow it? | "For those menues bigger we can manually overrides the width": a fixed 200px is the default, and a menu whose content needs more sets its own width explicitly, per menu. No menu grows automatically. |
+| 2026-10-28 | The menu divider: inset with the rows, or full bleed as Figma draws every composed menu? | Full bleed, edge to edge across the menu, 10px clear above and below. |
+| 2026-10-28 | The menu scrollbar: the thin 6px gutter, or Figma's 16px Scrollbar? | Menus take Figma's 16px Scrollbar `20931:3935`. The user's rule for dropdown option lists and other small components, where Figma draws no scrollbar: "I think we can use the thin 6px gutter with 4px thumb for dropdowns and small componentes", so they keep the thin scrollbar (Scrollbar ✱ thin small-component scrollbar). |
 | 2026-10-26 | Submenus? | They inherit the container values; the chevron is White 40 in every state; the open parent row takes the Pale Black hover fill; the 30vh scroll cap stays (✱ open, and Menu-Entry ✱ submenu parent). |
 | 2026-10-26 | A diagonal pointer path from "Add Component" to its 5th item closed the submenu (a row-height hover bridge doesn't cover it). Keep the 10px gap? | Yes, with a close delay: the submenu stays open about 250ms after the pointer leaves its parent row (a CSS `transition-delay` on closing only); opening stays instant. |
 | 2026-10-26 | Sign-off of the Before / After / Board set (layer 3b unit 1) | Signed off, with the three changes below. |
@@ -1135,28 +1140,28 @@ Our board for the inspector's right-click menus (decision October 26, 2026; no F
 | Menu radius | `--contexify-menu-radius: var(--shape-borderRadiusLarge)` | `12px` | 12px |
 | Menu shadow | `--contexify-menu-shadow: var(--menu-shadow)` | `0 4px 8px rgba(0,0,0,.4)` | drop shadow 0 / 4 / 8 Black 40 |
 | Menu inset | `--contexify-menu-padding` (`--contexify-menu-negatePadding` follows it) | `10px` | padding 10 / 0, slots 0 / 10 |
-| Menu width | `--contexify-menu-minWidth` | `200px`, grows with a long label | Fixed 200 (✱) |
+| Menu width | `--contexify-menu-minWidth` and `width` on `.contexify` | `200px`, fixed; a menu whose content needs more sets its own `width` explicitly, per menu | Fixed 200 |
 | Row | `--contexify-itemContent-padding`; the global `.contexify_itemContent` rule adds `min-height: 38px` and `gap: 10px` | `0 10px` | Fill × 38, padding 0 / 10, gap 10 |
 | Row radius | `--contexify-activeItem-radius` | `8px` | 8px |
 | Label | `--contexify-item-color`, `--contexify-activeItem-color`: `var(--ui-designer-text)`; `--font-family` 400 12px | `#fcfcfc` | `H8 Regular` Snow |
-| Glyph | `color: var(--ui-designer-text-muted)`, 16 × 16, rest and hover | `#a09ba8` | `Info` 16, Silver |
+| Glyph | the Menu-Entry set's icon, `color: var(--ui-designer-text-muted)`, 16 × 16, rest and hover | `#a09ba8` | `Info` 16 slot, Silver |
 | Hover | `--contexify-activeItem-bgColor: var(--gray-0)` | `#43404a` | Pale Black |
 | Keyboard active | hover fill plus `box-shadow: inset 0 0 0 1px var(--focus-ring)` | `#fcfcfc` | not drawn (✱) |
 | Disabled | the library's `opacity: .5` | — | not drawn (✱) |
-| Divider | `--contexify-separator-color: var(--palette-whiteTransparent-subtle)`, `--contexify-separator-margin: 10px 0`, 1px | `rgba(255,255,255,.1)` | Div White 10 (✱ inset with the rows) |
+| Divider | `--contexify-separator-color: var(--palette-whiteTransparent-subtle)`, `--contexify-separator-margin: 10px -10px` (the negative inline margin cancels `--contexify-menu-padding`, so the rule runs edge to edge), 1px | `rgba(255,255,255,.1)` | Div White 10, full bleed |
 | Submenu chevron | `--contexify-arrow-color`, `--contexify-activeArrow-color`, `--contexify-rightSlot-color`, `--contexify-activeRightSlot-color`: `var(--palette-whiteTransparent-blurry)` | `rgba(255,255,255,.4)` | `arrow-right` 10, White 40 |
-| Submenu | a nested `.contexify` with every value above. It opens 10px clear of the parent menu, its first row level with the parent row (as the TitleBar menu), and scrolls past `max-height: 30vh` with the thin menu scrollbar (6px gutter, 4px Black 40 pill thumb, 1px White 60 outline, track inset 10px; ✱ deviation from "Scrollbar (Scrollbar)"). It opens at once and closes 400ms after the pointer leaves the parent row (`transition-delay` on closing only, no fade); the keyboard opens and closes it at once | — | not drawn (✱) |
+| Submenu | a nested `.contexify` with every value above. It opens 10px clear of the parent menu, its first row level with the parent row (as the TitleBar menu), and scrolls past `max-height: 30vh` with Figma's 16px Scrollbar (Black 40 pill thumb, 1px White 60 inner border, transparent track; see "Scrollbar (Scrollbar)"). It opens at once and closes 400ms after the pointer leaves the parent row (`transition-delay` on closing only, no fade); the keyboard opens and closes it at once | — | not drawn (✱) |
 | Enter motion | the library's fade with a 10px slide (0.3s), off under `prefers-reduced-motion: reduce` | — | not drawn (✱) |
 
 A menu is `22 + 38 × rows + 21 × dividers` tall: the padding plus border, then each row, then each divider with its 10px above and below.
 
-**The eight menus.** Rows are listed top to bottom, with ─ for a divider. Glyphs keep their current family. The hover shot uses the first enabled row, and the keyboard-active shot the second.
+**The eight menus.** Rows are listed top to bottom, with ─ for a divider. Glyphs are the Menu-Entry set's icons (decision October 28, 2026). The hover shot uses the first enabled row, and the keyboard-active shot the second.
 
 | Menu (code) | Trigger | Rows | Glyphs | States drawn | Size |
 | --- | --- | --- | --- | --- | --- |
 | Hierarchy entity (`Hierarchy/ContextMenu` + `Tree/ContextMenu`) | an entity row | Rename · Add Child · Duplicate · Delete ─ Create Custom Item · Add Component ▸ | yes, except Add Component | default, hover, keyboard active, submenu open (component names; scrolls past 30vh) | 200 × 271 |
 | Hierarchy root | Scene | Add Child ─ Create Custom Item | yes | default, hover, keyboard active | 200 × 119 |
-| Player spawn point (`Hierarchy/PlayerTree`) | a spawn point | Rename · Duplicate · Delete | yes (`Md*` / `Ai*`, 16px) | default, hover, keyboard active, disabled Delete (one spawn point) | 200 × 136 |
+| Player spawn point (`Hierarchy/PlayerTree`) | a spawn point | Rename · Duplicate · Delete | yes (Menu-Entry set icons, 16px) | default, hover, keyboard active, disabled Delete (one spawn point) | 200 × 136 |
 | Catalog asset (`AssetsCatalog/Asset/ContextMenu`) | an asset | Add to Filesystem; a built-in emote shows Copy Name instead | none | default, hover, keyboard active | 200 × 60 |
 | Custom item (`CustomAssets/ContextMenu`) | a custom item | Add to Filesystem ─ Rename · Delete | none | default, hover, keyboard active | 200 × 157 |
 | Local Assets tree row (`ProjectView` + `Tree/ContextMenu`) | a folder row | Rename · New Folder · Duplicate · Delete ─ Copy Path · Copy File Name | yes | default, hover, keyboard active | 200 × 271 |
@@ -1203,7 +1208,7 @@ Shared: row, Hug 700 × Hug, fill `#181225` (a raw hex, no variable), 1px White 
 
 | Variant | State | Fill | Border | CTAs | Close | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Horizontal | default | `#181225` + glow | 1px White 10 | row, gap 20: `Secondary` (White 10 fill) "CANCEL" then `PrimaryBlocked` (Primary fill) "DELETE MOBILE", each Fill 240 × 46 | White 10 pill, 36 × 36 | title 17.77:1, body 11.58:1 on `#181225`; CANCEL 13.51:1 over White 10; **DELETE 3.55:1 Snow on Primary — fails 4.5:1** (16px / 600 is not large text); modal vs page `#16141a` 1.00:1 — only the 1.32:1 border and the glow separate it; close pill vs modal 1.32:1, a Gray glyph on it 8.80:1, a Snow one 13.51:1 | `role="dialog" aria-modal="true" aria-labelledby` the title, `aria-describedby` the body; focus trapped, Escape closes; close is `<button aria-label="Close">`, 36px target; Cancel first in DOM order | fill `--modal-content-bg-color` drift → `#181225` (pending spoke); `--palette-whiteTransparent-subtle` (border, Secondary, close); `--primary-main`; radius `--shape-borderRadiusXXLarge`; glow missing (asset) | fill `--modal` drift → `#181225` (pending spoke); `--primary`; the rest missing |
+| Horizontal | default | `#181225` + glow | 1px White 10 | row, gap 20: `Secondary` (White 10 fill) "CANCEL" then `PrimaryBlocked` (Primary fill) "DELETE MOBILE", each Fill 240 × 46 | White 10 pill, 36 × 36 | title 17.77:1, body 11.58:1 on `#181225`; CANCEL 13.51:1 over White 10; **DELETE 3.55:1 Snow on Primary — fails 4.5:1** (16px / 600 is not large text); modal vs page `#16141a` 1.00:1 — only the 1.32:1 border and the glow separate it; close pill vs modal 1.32:1, a Gray glyph on it 8.80:1, a Snow one 13.51:1 | `role="dialog" aria-modal="true" aria-labelledby` the title, `aria-describedby` the body; focus trapped, Escape closes; close is `<button aria-label="Close">`, 36px target; Cancel first in DOM order | fill `--modal-content-bg-color` `#181225` (ships in #1731); `--palette-whiteTransparent-subtle` (border, Secondary, close); `--primary-main`; radius `--shape-borderRadiusXXLarge`; glow missing (asset) | fill `--modal` `#181225` (ships in #1731; ui2's `Modal` paper does not read it); `--primary`; the rest missing |
 | Vertical | default | same | same | column, gap 20: `PrimaryBlocked` "DELETE MOBILE" above `Secondary` "CANCEL", each Fill 500 × 46 | same | as Horizontal | primary action first in DOM order here: each variant follows its own drawn order (Horizontal Cancel first, Vertical Delete first) | as Horizontal | as Horizontal |
 | any | ✱ hover / press | — | — | per the Buttons page | ✱ not drawn on this page (`Hover Style` True appears nowhere); the nearest drawn rule is one step up the White ramp on hover: the Close-Button set `20768:59567` (Search Bar page) draws White 5 → White 10, and the Buttons page's Secondary draws the same step from a White 10 rest, White 10 → White 20. Hover White 20 `--palette-whiteTransparent-soft`; press returns to the White 10 rest, as Secondary's press | — | — | — | — |
 | any | ✱ focus | — | — | — | — | ring on `#181225`: `--ui-designer-control-accent` 8.15:1, `--border-focused` 4.35:1; Creator Hub ui2 `palette.info.light` 8.15:1 | `:focus-visible` outline 2px on every button; initial focus on Cancel | — | — |
@@ -1259,17 +1264,18 @@ Row, Hug 1115 × Hug 650, fill `#181225`, 1px White 10, 24px radius, padding 100
 
 ### Scrollbar (Scrollbar)
 
-Component [`20931:3935`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20931-3935), 1 variant and no component set. Size 16 × 860. Read October 27, 2026. Code: inspector `UIDesigner.css` right-rail scrollbar; the react-contexify submenu and `ui/Dropdown` `OptionList` (the thin menu scrollbar ✱) · Creator Hub `theme.css` global `::-webkit-scrollbar`.
+Component [`20931:3935`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20931-3935), 1 variant and no component set. Size 16 × 860. Read October 27, 2026. Code: inspector `UIDesigner.css` right-rail scrollbar; the react-contexify submenu (the 16px Scrollbar) and `ui/Dropdown` `OptionList` (the thin small-component scrollbar ✱) · Creator Hub `theme.css` global `::-webkit-scrollbar`.
 
-A 16 × 860 track (no fill) holding `Handle` `20931:3934`: the track's full width × the content ratio, 100px pill, Black 40 fill, 1px White 60 inner border. The Help & Support modal places it at 14 × 860 with a 560-tall handle and 300 bottom padding (the thumb proportion is placeholder, not spec). Code detail: Creator Hub global `::-webkit-scrollbar` (8px wide, track `--black`, thumb `--dcl-silver`, 4px radius) — drift on width, track, thumb colour and radius; inspector `UIDesigner.css` `.ui-designer-right-rail-tabpanel::-webkit-scrollbar` (8px, transparent track, thumb White 12 / hover White 22, 4px radius) — drift; the react-contexify submenu (`.contexify_submenu`) and `ui/Dropdown` `OptionList` take the thin menu scrollbar (layer 3b unit 1; ✱ menus row below).
+A 16 × 860 track (no fill) holding `Handle` `20931:3934`: the track's full width × the content ratio, 100px pill, Black 40 fill, 1px White 60 inner border. The Help & Support modal places it at 14 × 860 with a 560-tall handle and 300 bottom padding (the thumb proportion is placeholder, not spec). Code detail: Creator Hub global `::-webkit-scrollbar` (8px wide, track `--black`, thumb `--dcl-silver`, 4px radius) — drift on width, track, thumb colour and radius; inspector `UIDesigner.css` `.ui-designer-right-rail-tabpanel::-webkit-scrollbar` (8px, transparent track, thumb White 12 / hover White 22, 4px radius) — drift; the react-contexify submenu (`.contexify_submenu`) takes this 16px Scrollbar as drawn (user, October 28, 2026), and `ui/Dropdown` `OptionList` takes the thin small-component scrollbar (✱ row below).
 
 | Part | State | Fill | Border | Radius | Size | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Track | default | none | none | — | 16 wide | — | native scrollbar; no ARIA | — | — (`--black` track today: code drift) |
 | Handle | default | Black 40 | 1px White 60, inner | 100px | 16 wide × content ratio | fill vs `#181225` 1.07:1, vs `#16141a` 1.07:1 — the border carries it: White 60 7.08:1 on the modal, 7.10:1 on the page, 7.56:1 against the handle fill (≥ 3:1 non-text) | — | `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-backdrop`, `--shape-borderRadiusPill` | `--scrollbar-thumb` (Black 40), `--scrollbar-thumb-border` (White 60); `--dcl-silver` thumb today: code drift |
 | Handle | ✱ hover / drag | ✱ Black 60 | ✱ White 60 | — | — | — | not drawn; `::-webkit-scrollbar-thumb:hover` | — | — |
-| any | ✱ 8px variant | — | — | — | — | — | not drawn — Figma draws 16px only, so the code's scrollbars follow 16px; the thin menu scrollbar (Menu ✱, user decision October 26, 2026) is the one exception | — | — |
-| Menus | ✱ thin menu scrollbar (user, October 26, 2026) | thumb `--palette-blackTransparent-blurry`; track transparent | thumb 1px `--palette-whiteTransparent-backdrop` outline | `--shape-borderRadiusPill` | a 6px gutter holding a 4px thumb (outline included), track inset 10px top and bottom; sized for menus, where 16px took too much of a 200px panel | outline 5.07:1 on Onix, 4.29:1 on `--gray-0` (≥ 3:1); the fill alone 1.32:1 / 1.48:1 | react-contexify submenu and `Dropdown` `OptionList` only | — | — |
+| any | ✱ 8px variant | — | — | — | — | — | not drawn — Figma draws 16px only, so the code's scrollbars follow 16px, menus included; the thin small-component scrollbar (✱ row below, user rule October 28, 2026) is the one exception | — | — |
+| Dropdown option lists and other small components | ✱ thin scrollbar (Figma draws none for them; user rule, October 28, 2026) | thumb `--palette-blackTransparent-blurry`; track transparent | thumb 1px `--palette-whiteTransparent-backdrop` outline | `--shape-borderRadiusPill` | a 6px gutter holding a 4px thumb (outline included), track inset 10px top and bottom | outline 5.07:1 on Onix, 4.29:1 on `--gray-0` (≥ 3:1); the fill alone 1.32:1 / 1.48:1 | `Dropdown` `OptionList` and small components only; menus take the 16px Scrollbar | — | — |
+| Menus | 16px Scrollbar (user, October 28, 2026) | as Handle | as Handle | as Handle | the 16px gutter | as Handle | the react-contexify submenu and every other menu | as Handle | as Handle |
 
 ### TitleBar (Sections Titles)
 
@@ -1600,7 +1606,7 @@ Code: inspector `Toolbar/ToolbarButton`, one look for both bars (user decisions 
 
 ### Switch (Buttons)
 
-Set [`21167:30101`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21167-30101), 2 variants (`Switch` On `21167:30105`, Off `21167:30108`), built on the legacy `DCL/Snow` and `DCL/Ruby` collection. Size 135 × 64 (set); switch 41 × 24; track 40 × 24, 58.82px radius, left 0.41; knob 19.54 × 19.54 at 2.52 / 2.23 (Off) and 18.57 / 2.23 (On), `DCL/Snow`. Read October 27, 2026. Code: inspector none · Creator Hub ui2 `Switch` (`OptimizeModal`, MUI default sizing): drift on size and track colour.
+Set [`21167:30101`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21167-30101), 2 variants (`Switch` On `21167:30105`, Off `21167:30108`), built on the legacy `DCL/Snow` and `DCL/Ruby` collection. Size 135 × 64 (set); switch 41 × 24; track 40 × 24, 58.82px radius, left 0.41; knob 19.54 × 19.54 at 2.52 / 2.23 (Off) and 18.57 / 2.23 (On), `DCL/Snow`. Read October 27, 2026. Not followed: the Switch page's set governs (user, October 28, 2026; see Switch (Switch)). Code: inspector none · Creator Hub ui2 `Switch` (`OptimizeModal`, MUI default sizing).
 
 | Variant | State | Track | Knob | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1701,8 +1707,8 @@ Inspector `components/ui/Dropdown` is dense only (26px `--controlHeight-small`, 
 | Hover | hover | 1px White 60 | down 14 | `--palette-whiteTransparent-backdrop` · `--palette-whiteTransparent-backdrop` | border 7.07:1 | — |
 | Selected | open | 1px Snow | up 14 | `--ui-designer-text`; menu `--ui-designer-control-bg`, `--menu-shadow`, row `--gray-0` · `--menu-shadow`; the rest missing | border 17.73:1; menu fill vs `#161518` 1.46:1 — border and shadow carry the edge; hovered row Pale Black vs the Onix menu **1.23:1**, Snow label on it 9.88:1 | `aria-expanded="true"`; Menu as documented, `role="listbox"` options, `aria-selected` on the Checkmark row; Escape closes, focus returns to the field. The row fill alone is under 3:1, so ✱ a row the arrow keys make active also draws a 1px inset `--focus-ring` (9.88:1 on the row); a hovered row keeps the fill alone, as Figma |
 | any | ✱ focus / disabled / error | ✱ focus ring | — | — | `--focus-ring` Snow (17.73:1 on `#161518`, 15.45 on `#242129`), per the design review | not drawn; 46px target. The `Text` inner frame carries a 1px left border weight with no stroke colour — treat as none |
-| Selected | ✱ section header in the list | divider inset with the rows (`--uid-space-1` each side) | — | — | accepted deviation (user, October 21, 2026): Figma draws the Div inset in the Menu-Entry set `20749:790` but full-bleed in every composed menu (`20749:386`, this Selected variant); the inspector keeps it inset | the header is not focusable; the divider is decorative |
-| Selected | ✱ list scrollbar (Figma draws none; user, October 26, 2026) | the thin menu scrollbar on `OptionList`: a 6px gutter with a 4px `--palette-blackTransparent-blurry` pill thumb (`--shape-borderRadiusPill`), a 1px `--palette-whiteTransparent-backdrop` outline, transparent track inset 10px top and bottom — the same as the react-contexify submenu (Menu ✱ thin menu scrollbar) | — | — | outline 4.29:1 on the `--gray-0` list, 5.07:1 on Onix (UI Designer lists); the fill alone 1.48:1 / 1.32:1 | native scrollbar; no ARIA |
+| Selected | section header in the list | divider full bleed, edge to edge across the list, as Menu `20749:386` draws it (user, October 28, 2026) | — | — | the Menu-Entry set `20749:790` draws the Div inset, and every composed menu draws it full bleed; the code follows the composed menu | the header is not focusable; the divider is decorative |
+| Selected | ✱ list scrollbar (Figma draws none; the user's rule for dropdowns and small components, October 28, 2026) | the thin scrollbar on `OptionList`: a 6px gutter with a 4px `--palette-blackTransparent-blurry` pill thumb (`--shape-borderRadiusPill`), a 1px `--palette-whiteTransparent-backdrop` outline, transparent track inset 10px top and bottom — menus take the 16px Scrollbar instead (Menu, Scrollbar) | — | — | outline 4.29:1 on the `--gray-0` list, 5.07:1 on Onix (UI Designer lists); the fill alone 1.48:1 / 1.32:1 | native scrollbar; no ARIA |
 
 ### Filter (Filter / Sort / Search bar)
 
@@ -1786,7 +1792,7 @@ Inspector `ui/RangeField` draws an 8px square-ended track, a `--primary-main` fi
 
 Set [`20907:6053`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20907-6053), 3 variants (`Property 1` Default `20907:6050`, On `20907:6051`, Off `20907:6052`). Size 216 × 70 (set); switch Fixed 52 × 30. Read October 27, 2026. Code: inspector none · Creator Hub ui2 `Switch` (`OptimizeModal`, MUI default sizing): drift on size and colours.
 
-A different set from the Buttons page's `Switch` `21167:30101` (41 × 24, legacy `DCL/Snow` · `DCL/Ruby`): this one is built on `Neutrals/Graffito`, `Neutrals/Snow` and `Primary/Primary`. Track 50.21 × 30 at left 0.47, 58.82px radius; knob 25.1 × 25.1, 58.82px radius, 2.45 from the top, left 3.05 (Off, Default) or 22.52 (On). The page's dashed `#8A38F5` frame is Figma chrome. The two Figma sets disagree on size (41 × 24 vs 52 × 30) and colours: the user picks one.
+This set governs (user, October 28, 2026: "Switch page set"). The Buttons page's `Switch` `21167:30101` (41 × 24, legacy `DCL/Snow` · `DCL/Ruby`) is a Figma-side defect (Open items): this one is built on `Neutrals/Graffito`, `Neutrals/Snow` and `Primary/Primary`. Track 50.21 × 30 at left 0.47, 58.82px radius; knob 25.1 × 25.1, 58.82px radius, 2.45 from the top, left 3.05 (Off, Default) or 22.52 (On). The page's dashed `#8A38F5` frame is Figma chrome. Code renders every switch at 52 × 30 on these colours.
 
 | Variant | State | Track | Knob | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1794,6 +1800,12 @@ A different set from the Buttons page's `Switch` `21167:30101` (41 × 24, legacy
 | On | selected | Primary `#FF2D55` | Snow, right | `--primary-main` · `--primary` | track 4.99:1 on `#161518` (5.01, 4.35 on card); knob on track 3.55:1, passes 3:1 | `aria-checked="true"`; position and colour both change |
 | Default | disabled look | Graffito, whole node at 50% opacity | Snow, left | as Off + `opacity: 0.5` | track vs `#161518` 1.58:1, knob on track 3.30:1 — disabled, exempt | `aria-disabled="true"`; ✱ "Default" is Figma's name for what reads as a disabled Off |
 | any | ✱ hover / focus / disabled On | — | — | — | ring ≥ 3:1 | not drawn; 30px tall clears 24px |
+
+**Decisions** (the record for this set; grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-28 | Two Figma Switch sets disagree (Buttons page 41 × 24 on the legacy `DCL/*` variables, Switch page 52 × 30 on `Neutrals/Graffito`, Snow and Primary). Which governs? | "Switch page set": 52 × 30, on Neutrals/Graffito, Snow and Primary. The Buttons page's `Switch` `21167:30101` is a Figma-side defect, not a spec. |
 
 ### Text-Input (Text Field)
 
@@ -1932,8 +1944,8 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | Figma swatch | Value | Inspector (UI Designer) | Creator Hub | Status |
 | --- | --- | --- | --- | --- |
 | Neutrals/Charcoal | `#25212A` | `--ui-designer-panel-bg` (`#242129`, deviation within 1/255) | AI panel `palette.background.paper` (value not verified) | match / documented deviation |
-| Neutrals/Onix | `#35333B` | `--ui-designer-control-bg`, `--palette-neutral-onyx` | `--ai-menu-bg` `#2f2d34` (the AI chat-history menu) | inspector match; `--ai-menu-bg` drift → `#35333B` (pending spoke) |
-| Neutrals/Onix Dark 1 | `#2D2A33` | `--palette-neutral-onyxDark1` | `--title-bar-button` `#2d2a33`; `--ai-input-bg` `#28252d` (the ChatInput container) | match in inspector; `--ai-input-bg` drift → `#2D2A33` (pending spoke). Fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
+| Neutrals/Onix | `#35333B` | `--ui-designer-control-bg`, `--palette-neutral-onyx` | `--ai-menu-bg` `#35333b` (the AI chat-history menu) | inspector match; `--ai-menu-bg` ships in #1731 |
+| Neutrals/Onix Dark 1 | `#2D2A33` | `--palette-neutral-onyxDark1` | `--title-bar-button` `#2d2a33`; `--ai-input-bg` `#2d2a33` (the ChatInput container) | match in inspector; `--ai-input-bg` ships in #1731. Fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` | match: `InputAction` hover fill, the `ColourPanel` hex cells, the AI menu's hover row |
 | Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph` (→ `--palette-neutral-gray2`); `--ui-designer-text-muted` is Silver | `--dropdown` | match: idle glyphs, the `Position` / `Size` icons, the Logic placeholders and empty lines |
 | Neutrals/Black | `#000000` | `--black` | — | match: the `BottomPanel3D` surface behind its 1px gaps |
@@ -1943,7 +1955,7 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | White 40 / 60 | `rgba(255,255,255,.4 / .6)` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | match: placeholders, the Scale Slider hover track, scrollbar-handle borders, bound-input borders |
 | White 8 (raw alpha, no variable) | `rgba(255,255,255,.08)` | `--palette-whiteTransparent-hint` | — | match: the `InputAction` and MobileHUD `TextureInput` fill (code paints `--ui-designer-control-bg`) |
 | Black 40 | `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` | `--palette-blackTransparent-blurry` | match: scrollbar handles in the bottom panels and the MobileHUD list |
-| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(244,130,33,.16)` | `--warning-main` ships in #1703; `--ai-warning-bg` drift → `rgba(254,156,42,.1)` (pending spoke), Figma's banner is `#FE9C2A` at 10% |
+| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(254,156,42,.1)` | `--warning-main` ships in #1703; `--ai-warning-bg` ships in #1731, Figma's banner is `#FE9C2A` at 10% |
 | System/Blue · Rarities/Epic Light | `#2196F3` · `#81E1FF` | `--palette-info-main` · `--palette-rarity-epic-light` | `--palette-rarity-epic-light` · ui2 `palette.info.main` | match: pinned-edge colours in `ConstraintsIcons` |
 | Brand/Lavender | `#C640CD` | — | `--lavender` | demo colour in `ColourPanel` and `AspectRatio/Colour`, not a UI token |
 | Menu shadow | `0 4px 8px rgba(0,0,0,.4)` | `--menu-shadow` | `--menu-shadow` | match: `EventsMenu`, `VariableMenu`, the AI chat-history `Menu` |
@@ -1972,7 +1984,7 @@ The usage card and the outdated-CLI banner are absolutely anchored (usage card a
 | Intro message | none | none | 0 | Inter 400 12 (`H8`), White `#FFFFFF`, 310 wide | — | 310 × 60 | — | 15.79:1 |
 | Usage card | Onix `#35333B` | none | 12 | title "About AI usage" Inter 600 14 (`H7 Semi`) White; body Inter 400 12 White | — | 322 wide, padding 20, gap 16 | — | body 12.44:1 on Onix |
 | "Got It" button | White 10 `rgba(255,255,255,0.1)` | none | 8 | "Got It" Inter 600 12 (`H8 Semi`) Snow | — | Hug × 32, padding 10 / 20 | `Button-Contained-Text` Secondary | — |
-| Outdated-CLI banner | System/Orange at 10% `rgba(254,156,42,0.1)` | none | 12 | Inter 400 12, System/Orange `#FE9C2A` | `ErrorOutline` 24 | 322 × Hug 65, padding 10 / 20, gap 16 | `--ai-warning-bg` drift → `rgba(254,156,42,.1)` (pending spoke) | text 6.27:1 on its tint; tint vs panel 1.20:1 |
+| Outdated-CLI banner | System/Orange at 10% `rgba(254,156,42,0.1)` | none | 12 | Inter 400 12, System/Orange `#FE9C2A` | `ErrorOutline` 24 | 322 × Hug 65, padding 10 / 20, gap 16 | `--ai-warning-bg` `rgba(254,156,42,.1)` (ships in #1731) | text 6.27:1 on its tint; tint vs panel 1.20:1 |
 | ChatInput | see ChatInput | — | — | — | — | h 70 | — | — |
 
 Messages are `#FFFFFF` (not Snow) at 15.79:1; the usage card body is 12.44:1 on Onix; the banner text is 6.27:1 on its tint, and the tint is 1.20:1 against the panel — the icon and the words carry the warning. The hex typed into the page copy ("Claude CLI v…") is placeholder, not spec.
@@ -1983,7 +1995,7 @@ Component [`21206:31885`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?n
 
 | Part | Fill | Border | Radius | Text | Glyph | Padding / gap / size | Shadow | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Container | Onix `#35333B` | 1px White 10 `rgba(255,255,255,0.1)` | 12 | — | — | 248 wide, padding 10 / 0, gap 10, slots padding 0 / 10 | `0 4px 8px rgba(0,0,0,0.4)` | `--ai-menu-bg` drift → `#35333B` (pending spoke) |
+| Container | Onix `#35333B` | 1px White 10 `rgba(255,255,255,0.1)` | 12 | — | — | 248 wide, padding 10 / 0, gap 10, slots padding 0 / 10 | `0 4px 8px rgba(0,0,0,0.4)` | `--ai-menu-bg` `#35333b` (ships in #1731) |
 | Div | White 10 | none | 0 | — | — | h 1, full width | none | — |
 | Menu-Entry | none | none | 8 | Inter 400 12 (`H8 Regular`), Snow `#FCFCFC` | `NewChat` 16 (flipped vertically); `Delete` 14 × 14 | h 38, padding 0 / 10, gap 10 | none | — |
 | Section label "CHAT HISTORY" | none | none | 8 | Inter 400 12, Silver `#A09BA8`, typed in capitals | none | h 27, padding 0 / 10 | none | — |
@@ -2016,7 +2028,7 @@ Set [`21206:31455`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Variant | State | Fill | Border | Radius | Text | Glyph | Padding / gap / size | Creator Hub token | Contrast (on `#25212A`) | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Root (both) | — | none | 1px White 10 `rgba(255,255,255,0.1)` top | 0 | — | — | 310 × 70 | — | — | — |
-| Default | empty | Onix Dark 1 `#2D2A33` | 1px Snow `#FCFCFC` | 10 | "Ask Assistant" Inter 400 12 (`H8 Regular`), Silver `#A09BA8` | send `Button-Contained-Icon` 26 × 26, 100px radius, padding 12, Primary `#FF2D55` | container Fixed 310 × Hug 40, padding 6 / 10, gap 187 | `--ai-input-bg` drift → `#2D2A33` (pending spoke); `--title-bar-button` `#2d2a33`; send ui2 `palette.primary.main` | border 15.39:1; placeholder 5.20:1 on the container; send glyph Snow on Primary 3.55:1 (non-text ≥ 3:1) | `<textarea aria-label="Ask Assistant">`; send `<button aria-label="Send">`, disabled while empty ✱ |
+| Default | empty | Onix Dark 1 `#2D2A33` | 1px Snow `#FCFCFC` | 10 | "Ask Assistant" Inter 400 12 (`H8 Regular`), Silver `#A09BA8` | send `Button-Contained-Icon` 26 × 26, 100px radius, padding 12, Primary `#FF2D55` | container Fixed 310 × Hug 40, padding 6 / 10, gap 187 | `--ai-input-bg` `#2d2a33` (ships in #1731); `--title-bar-button` `#2d2a33`; send ui2 `palette.primary.main` | border 15.39:1; placeholder 5.20:1 on the container; send glyph Snow on Primary 3.55:1 (non-text ≥ 3:1) | `<textarea aria-label="Ask Assistant">`; send `<button aria-label="Send">`, disabled while empty ✱ |
 | Input | typed | same | same | 10 | typed text Inter 400 12 Snow | same | same, padding right 8 | as Default | text 13.73:1; Primary vs container 3.86:1 | `Enter` sends, `Shift+Enter` newline ✱ |
 | any | `Selection` row present | none | none | 12 | "Selection: Player" Inter 400 10, White 60 `rgba(255,255,255,0.6)` | `highlight_alt` 14 × 14; `Close-Button` 12 × 12, White 5, 100px radius | 310 × 30, padding 9, gap 6 | — | chip text 6.54:1; Onix vs panel 1.27:1 | the chip is removable by `Close-Button` named "Remove selection" ✱ |
 | any | ✱ focus / disabled / sending | — | — | — | — | — | — | — | ring `--ui-designer-control-accent` 8.15:1 on Charcoal (the Snow border is a rest state) | not drawn; the page shows no streaming or error state either |
@@ -2596,34 +2608,39 @@ Section [`21671:45251`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?nod
 
 | Kind | Sets (and code) | Rest | Hover | Selected | Selected + hover | Focus | Disabled |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Icon button | DeleteCTA, HelpCTA, AddVariant (bind link); add, copy, clear, the toolbar's save / undo / redo | Silver `--ui-designer-text-muted`, no container (5.85:1) | Snow `--ui-designer-text` on White 10 `--palette-whiteTransparent-subtle`, 4px (11.40:1) | — | — | 2px `--ui-designer-control-accent`, offset 1px (7.09:1) | White 20 `--palette-whiteTransparent-soft` glyph, no fill (exempt) |
-| Tab toggle (one choice out of a set) | ToggleTab; TextAlign, Flow direction, the canvas device pair, the interaction-state tabs, the fill-mode chips, the toolbar gizmos | Silver, no fill, 1px `--palette-neutral-onyx` border (5.85:1) | Snow on White 10, 1px Onyx border (11.40:1) | Snow on `--ui-designer-control-active-bg` Blue Dark 2, border in the fill colour (8.61:1) | Snow on `--palette-system-blueDark3`, border in the fill colour (11.61:1) | accent ring, offset 1px standalone and −2px in a joined group; 3.95:1 on Blue Dark 2, 5.33:1 on Blue Dark 3 | White 20 glyph, no fill, 1px Onyx border (exempt) |
-| Single toggle (on / off) | WrapToggle, ScaleToggle, ViewModeToggle (HUD / safe area); the toolbar Run / Scene Info | Silver, no fill, no border (5.85:1) | Snow on White 10, no border (11.40:1) | Snow on Blue Dark 2, no border (8.61:1) | Snow on Blue Dark 3, no border (11.61:1) | accent ring, offset 1px; 3.95:1 on Blue Dark 2, 5.33:1 on Blue Dark 3 | White 20 glyph, no fill, no border (exempt) |
+| Icon button | DeleteCTA; add, copy, clear, the toolbar's save / undo / redo. HelpCTA (Cloudy Sky ring at rest, Snow ring on hover) and AddVariant (the bind link) draw no container | Silver `--ui-designer-text-muted`, no container (5.85:1) | Snow `--ui-designer-text` on White 10 `--palette-whiteTransparent-subtle`, 4px (11.40:1); HelpCTA and AddVariant: Snow glyph, no container | — | — | 2px `--ui-designer-control-accent`, offset 1px (7.09:1) | White 20 `--palette-whiteTransparent-soft` glyph, no fill (exempt) |
+| Tab toggle (one choice out of a set) | ToggleTab; TextAlign, Flow direction, the canvas device pair, the interaction-state tabs, the fill-mode chips, the toolbar gizmos | Silver, no fill, 1px `--palette-neutral-onyx` border (5.85:1) | Silver on White 10, 1px Onyx border (4.31:1) | Snow on `--ui-designer-control-active-bg` Blue Dark 2, border in the fill colour (8.61:1) | Snow on `--palette-system-blueDark3`, border in the fill colour (11.61:1) | accent ring, offset 1px standalone and −2px in a joined group; 3.95:1 on Blue Dark 2, 5.33:1 on Blue Dark 3 | White 20 glyph, no fill, 1px Onyx border (exempt) |
+| Single toggle (on / off) | WrapToggle, ScaleToggle, ViewModeToggle (HUD / safe area); the toolbar Run / Scene Info | Silver, no fill, no border (5.85:1) | Silver on White 10, no border (4.31:1) | Snow on Blue Dark 2, no border (8.61:1) | Snow on Blue Dark 3, no border (11.61:1) | accent ring, offset 1px; 3.95:1 on Blue Dark 2, 5.33:1 on Blue Dark 3 | White 20 glyph, no fill, no border (exempt) |
 | Lock and eye (on / off) | LockLayerToggle, VisibilityToggle; every lock and eye: the 2D tree rows, the node-header and GUI-list eyes, the 3D trees' lock and eye, the spawn-point eye | Gray `--palette-neutral-gray4`, no fill (10.07:1) | Gray on White 10, 4px radius (7.43:1) | the same Gray glyph, no fill; the closed lock or eye-off shape is the state (10.07:1) | Gray on White 10 (7.43:1) | accent ring, offset 1px (7.09:1 on the panel, 5.23:1 on White 10); 1px Snow `--focus-ring` in the 3D trees | not drawn; none in use |
 | MobileHUD input-action eye (on / off) | InputAction's VisibilityToggle instance, 18 × 18; `MobileHudPanel.tsx` | Gray eye, no fill (8.95:1 on the Onix Dark 1 row) | Gray on White 10 | Blue Light 1 `--palette-info-light` eye-off on Blue Dark 3 `--palette-system-blueDark3` (5.33:1) | as selected (HidenHover draws it unchanged) | accent ring, offset 1px (5.33:1 on Blue Dark 3) | not drawn; none in use |
 
 Joined tab toggles (TextAlign, Flow direction, the canvas device pair, the gizmos) overlap by 1px for one-pixel seams, take the outer radii on the first and last cell, and raise the selected or hovered cell over its neighbours; see "Segmented group" in Tokens. A control drawn smaller than 24px is a 24 × 24 transparent button whose Figma-size container is its `::before`; for a tab toggle the container carries the border too. Lock and eye follow LockLayerToggle and VisibilityToggle as drawn: a locked node's lock, a hidden node's eye and the GUI-list eye (`aria-pressed="true"` while the GUI is top-level, drawn as the open eye) keep the Gray glyph with no fill, and only the glyph's shape changes.
 
-✱ Deviations from the Figma sets, decided by the user on October 22, 2026 (Validate does not flag these):
+The Off + hover glyph (Silver, on the White 10 fill) and Help (the Cloudy Sky ring at rest, the Snow ring on hover, no container) follow the sets as drawn; AddVariant draws no container either. ✱ Deviations from the Figma sets, decided by the user on October 22, 2026 (Validate does not flag these):
 
 | ✱ | Figma | Code |
 | --- | --- | --- |
-| Unselected toggle hover glyph | ToggleTab, WrapToggle, ScaleToggle, ViewModeToggle Off + Hover: **Silver** glyph | **Snow** glyph; the White 10 fill matches Figma |
 | Tab toggles drawn from borderless sets | ViewModeToggle (the canvas device pair) and ToolbarButton (the gizmos) draw no border | the tab-toggle rule: 1px `--palette-neutral-onyx` at rest, on hover and disabled, a fill-coloured border when selected, as ToggleTab |
 | Segmented seams | `ToggleTabs` slot: a Charcoal frame with a 1px Onix border around unjoined `ToggleTab` cells | cells overlap by 1px (one-pixel seams), outer radii on the first and last cell, no wrapper border |
 | Interaction-state chip | `Interactions` set: active chip Blue Dark 3 `#243852` | Blue Dark 2, Blue Dark 3 on hover |
 | UI Designer toolbar (retired in `73a26ea5f`, user decision October 23, 2026) | `ToolbarButton` / `RuntimeControls`: a filled rest container | no rest container (icon-button, tab-toggle and single-toggle rules, scoped under `.ui-designer-toolbar`; the 3D toolbar keeps the set) |
-| Help and bind link hover | HelpCTA and AddVariant draw no container; HelpCTA rests Cloudy Sky | White 10 container on hover; Help rests Silver |
 | DeleteCTA hover glyph | `Neutrals/White` `#FFFFFF` | Snow `#FCFCFC` (3/255) |
 | Canvas node-bar Delete hover | — (DeleteCTA) | the red danger hover is dropped |
 | Focus, disabled, pressed | not drawn | accent ring in every state; WrapToggle Blocked for every disabled control (a tab toggle keeps its Onyx border); no pressed state |
 | Hit target | 12–18px boxes | 24 × 24 button, Figma-size `::before` container |
 
+**Decisions** (the record for these sets; grep here before asking again):
+
+| Date | Question | Answer |
+| --- | --- | --- |
+| 2026-10-22 | Where code and the UI Editor Buttons sets differ on the Off + hover glyph and on Help, which wins? | "Follow Figma": the Off + hover glyph stays Silver, as drawn (no Snow on hover), and Help follows the HelpCTA set (the Cloudy Sky ring at rest, the Snow ring on hover, no White 10 container). The other rows of the ✱ table (the Onyx border on the canvas device pair, seams, hit target) are not deviations from a drawn value and stand. |
+| 2026-10-28 | Re-confirmed under "always follow Figma": do the Off + hover glyph and Help still follow the sets? | Yes: Silver Off + hover glyph on the White 10 fill in AspectLock / ScaleToggle, WrapToggle, ToggleTab and ViewModeToggle; Help as HelpCTA draws it; the bind link (AddVariant) draws no container. |
+
 ### ScaleToggle (UI Editor Buttons)
 
 Set [`21028:16486`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16486) (copy `21671:45252`), 4 variants (`Selected` × `Hover`): Off/No `21028:16487`, Off/Yes `21096:37036`, On/No `21028:16492`, On/Yes `21096:37041`. Size 66 × 174; each 26 × 26. Read October 27, 2026 (on the copy). Code: inspector the aspect lock in `LengthVecField` and `ResizeField` (`.ui-designer-vec-lock`, `aria-pressed`) · Creator Hub none.
 
-26 × 26, 6px radius; fills none / White 10 / `#244B7D` / `#243852`; a 16 × 16 outline glyph at 5 / 5 (with a 12 × 12 inner square), Silver `#A09BA8` Off and Snow `#FCFCFC` On, plus a hidden `link` layer. The Off glyph (square and corner brackets) is the code's `PropertyPanel/icons/aspect-unlinked.svg`; the On glyph adds a dashed diagonal (0.5px ticks) and replaces `aspect-linked.svg`. The aspect lock is a single toggle: no border, as the set. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Off + hover glyph Snow.
+26 × 26, 6px radius; fills none / White 10 / `#244B7D` / `#243852`; a 16 × 16 outline glyph at 5 / 5 (with a 12 × 12 inner square), Silver `#A09BA8` Off and Snow `#FCFCFC` On, plus a hidden `link` layer. The Off glyph (square and corner brackets) is the code's `PropertyPanel/icons/aspect-unlinked.svg`; the On glyph adds a dashed diagonal (0.5px ticks) and replaces `aspect-linked.svg`. The aspect lock is a single toggle: no border, as the set. Code follows this set (user decision October 22, 2026, "Follow Figma", re-confirmed October 28, 2026; see UI Editor Buttons): the Off + hover glyph stays Silver, as drawn, on the White 10 fill.
 
 | Selected | Hover | Fill | Contrast / A11y | Inspector token |
 | --- | --- | --- | --- | --- |
@@ -2634,7 +2651,7 @@ Set [`21028:16486`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 Set [`21028:16499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16499) (copy `21671:45277`), 5 variants (`Selected` × `Hover` × `Blocked`): Off/No/No `21028:16500`, Off/Yes/No `21096:37082`, On/No/No `21028:16502`, On/Yes/No `21096:37086`, Off/No/Yes `21028:16504`. Size 48 × 198; each 26 × 26. Read October 27, 2026. Code: inspector the wrap toggle in `FlowField` (`aria-pressed`); Blocked is the disabled look of every UI Designer icon control · Creator Hub none.
 
-26 × 26, 6px radius; fills as `ScaleToggle` (none, White 10, Blue Dark 2, Blue Dark 3); Blocked = no fill, glyph White 20. The glyph (12.71 × 11.72) is Silver Off and Snow On, and is the code's `FlowField/icons/wrap.svg`. Each variant is one flattened SVG. Wrap is a single toggle: no border, as the set. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Off + hover glyph Snow.
+26 × 26, 6px radius; fills as `ScaleToggle` (none, White 10, Blue Dark 2, Blue Dark 3); Blocked = no fill, glyph White 20. The glyph (12.71 × 11.72) is Silver Off and Snow On, and is the code's `FlowField/icons/wrap.svg`. Each variant is one flattened SVG. Wrap is a single toggle: no border, as the set. Code follows this set (user decision October 22, 2026, "Follow Figma", re-confirmed October 28, 2026; see UI Editor Buttons): the Off + hover glyph stays Silver, as drawn, on the White 10 fill.
 
 | Variant | Fill | A11y | Inspector token |
 | --- | --- | --- | --- |
@@ -2647,7 +2664,7 @@ Set [`21028:16499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 Set [`21028:16506`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16506) (copy `21671:45288`), 4 variants (`Selected` × `Hover`): Off/No `21028:16507`, Off/Yes `21096:37090`, On/No `21028:16509`, On/Yes `21096:37093`. Size 79 × 207; each Fixed 39 × 26. Read October 27, 2026. Code: inspector every segmented cell in `PropertyPanel` (`TextAlignField`, `FlowField`, `FillField` modes, the interaction-state tabs) through the tab-toggle rule, keyed on `aria-checked` / `aria-selected` · Creator Hub none.
 
-The cell has no radius: the `ToggleTabs` slot's 6px radius clips the first and last cell. Off variants have a 1px Onix `#35333B` border; Off + hover adds White 10; On fills Blue Dark 2 (rest) / Blue Dark 3 (hover) with no border. The glyph is a `LayoutIcons` instance (18 × 18, centred at 50% + 0.5px, vector 14 × 14; Free is the code's `FlowField/icons/absolute.svg`): Silver `#A09BA8` Off, Snow `#FCFCFC` On. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Off + hover glyph Snow (the Onix Off border matches).
+The cell has no radius: the `ToggleTabs` slot's 6px radius clips the first and last cell. Off variants have a 1px Onix `#35333B` border; Off + hover adds White 10; On fills Blue Dark 2 (rest) / Blue Dark 3 (hover) with no border. The glyph is a `LayoutIcons` instance (18 × 18, centred at 50% + 0.5px, vector 14 × 14; Free is the code's `FlowField/icons/absolute.svg`): Silver `#A09BA8` Off, Snow `#FCFCFC` On. Code follows this set (user decision October 22, 2026, "Follow Figma", re-confirmed October 28, 2026; see UI Editor Buttons): the Off + hover glyph stays Silver, as drawn, on the White 10 fill; the Onix Off border is drawn by the Off variants.
 
 | Selected | Hover | Fill | Border | Radius | Contrast | A11y | Inspector token |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -2660,7 +2677,7 @@ The cell has no radius: the `ToggleTabs` slot's 6px radius clips the first and l
 
 Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16511) (copy `21671:45297`), 4 variants (`Selected` × `Hover`): Off/No `21028:16512`, Off/Yes `21096:37105`, On/No `21028:16514`, On/Yes `21096:37108`. Size 79 × 204; each 16 × 16. Read October 27, 2026. Code: inspector the Canvas preview toggles (HUD guides, safe area) and the Desktop / Mobile device pair (`Canvas.tsx`, `.ui-designer-canvas-zoom-btn`, `.ui-designer-device-toggle-btn`) · Creator Hub none. The `PropertyPanel` device-variant chips follow the `Devices` set, not this one.
 
-16 × 16, 4px radius; an `Icon` instance 14 × 14 inset 1px (vector 10.66 × 8.98, a monitor). The Viewport draws the same cells at 22 × 22 (HUD, SafeArea) and 26 × 22 (the device pair), with no size variant. The monitor is `DesktopIcon` in `icons.tsx`, and the mobile, HUD and safe-area glyphs have no Figma counterpart yet (`useRestorePersistedMode` is a different control). Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Off + hover glyph Snow; the canvas device pair is a tab toggle and adds the 1px Onyx border, while the HUD and safe-area toggles are single toggles and, like the set, draw none.
+16 × 16, 4px radius; an `Icon` instance 14 × 14 inset 1px (vector 10.66 × 8.98, a monitor). The Viewport draws the same cells at 22 × 22 (HUD, SafeArea) and 26 × 22 (the device pair), with no size variant. The monitor is `DesktopIcon` in `icons.tsx`, and the mobile, HUD and safe-area glyphs have no Figma counterpart yet (`useRestorePersistedMode` is a different control). Code follows this set (user decision October 22, 2026, "Follow Figma", re-confirmed October 28, 2026; see UI Editor Buttons): the Off + hover glyph stays Silver, as drawn, on the White 10 fill. The canvas device pair is a tab toggle and adds the 1px Onyx border (✱ in UI Editor Buttons), while the HUD and safe-area toggles are single toggles and, like the set, draw none.
 
 | Selected | Hover | Fill | Contrast (on `#242129`) | A11y | Inspector token |
 | --- | --- | --- | --- | --- | --- |
@@ -2680,7 +2697,7 @@ Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 Set [`21028:16516`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16516) (copy `21671:45306`), 2 variants (`Hover` No `21028:16519` / Yes `21028:16517`). Size 58 × 98; each 18 × 18. Read October 27, 2026. Code: inspector the bind affordance (`BindAffordance.tsx`, `.ui-designer-bindable-link`, the `bind.svg` mask) and `BindIcon.tsx`, whose paths are this glyph exactly; `DiamondPlus.tsx` is a stroked redraw for the menu rows · Creator Hub none.
 
-18 × 18 `VariableSmall` diamond-plus glyph (10.32 × 10.32, inset 3.84px); no fill in either; hover changes only the glyph colour. The variant names are inverted in Figma (the layer named `Hover=Yes` is the Silver rest look); code follows the design review: Silver at rest, Snow on hover. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): hover adds a White 10 container.
+18 × 18 `VariableSmall` diamond-plus glyph (10.32 × 10.32, inset 3.84px); no fill in either; hover changes only the glyph colour. The variant names are inverted in Figma (the layer named `Hover=Yes` is the Silver rest look); code follows the design review: Silver at rest, Snow on hover. Code follows this set (user decision October 22, 2026, "Follow Figma", re-confirmed October 28, 2026; see UI Editor Buttons): Silver glyph at rest, Snow glyph on hover, and no container in either look.
 
 | Look | Fill | Contrast | A11y | Inspector token |
 | --- | --- | --- | --- | --- |
@@ -2716,7 +2733,7 @@ Set [`21068:32238`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 Set [`21107:37499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37499) (copy `21671:45333`), 2 variants (`Hover` Yes `21107:37500` / No `21107:37498`). Size 52 × 84; each 12 × 12. Read October 27, 2026. Code: inspector the shared `ui/InfoTooltip` trigger beside UI Designer labels and in the MobileHUD header; its `VscQuestion` glyph is kept (the component is shared with the 3D panels) and the colours are scoped under the UI Designer rails · Creator Hub none.
 
-12 × 12 circle, 100px radius, 1px border: No = Cloudy Sky `#716B7C`, Yes = Snow `#FCFCFC`; the "?" glyph (3.34 × 5.94) takes the same colour as the border. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Silver at rest, Snow on a White 10 container on hover.
+12 × 12 circle, 100px radius, 1px border: No = Cloudy Sky `#716B7C`, Yes = Snow `#FCFCFC`; the "?" glyph (3.34 × 5.94) takes the same colour as the border. Code follows this set (user decision October 22, 2026, "Follow Figma", re-confirmed October 28, 2026; see UI Editor Buttons): the Cloudy Sky ring and glyph at rest, the Snow ring and glyph on hover, and no White 10 container in either state.
 
 | Variant | Border | Contrast (on `#242129`) | A11y | Inspector token |
 | --- | --- | --- | --- | --- |
@@ -2823,7 +2840,7 @@ Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar"
 - **Groups:** each joined group's cells carry their own 1px Onix border and overlap by 1px, so seams are single pixels and groups come out 51 / 103px wide (✱; the code has no frame wrappers).
 - **3D, left to right:** undo / redo, gizmos, the **Snap split button**, the **camera button**, Interact, **Mute**. Tab order follows the same order (DOM order, no `tabindex`).
   - **Snap split:** 46 wide; the "Snap increments" chevron always shows, 20 × 26 (✱ below the 24px floor, accepted).
-  - **Snap menu:** hangs from the Snap toggle's left edge; bordered Position / Rotation / Scale fields, a White 10 rule inset with the rows (the documented menu-divider deviation), an "Align to World" checkbox (`CheckboxField color="tertiary"`, 16px box, 12px Gray label like the rows above). There is no separate Align toggle.
+  - **Snap menu:** hangs from the Snap toggle's left edge; bordered Position / Rotation / Scale fields, a full-bleed White 10 rule, an "Align to World" checkbox (`CheckboxField color="tertiary"`, 16px box, 12px Gray label like the rows above). There is no separate Align toggle.
   - **Mute:** framed, a Shadow cell and a Gray glyph in both states; the glyph swap and `aria-pressed` carry the state.
   - **Camera button:** Shadow fill + 1px Onix border, icon stroke `--palette-neutral-gray3`, accessible name "Camera mode". Its menu has the "Invert Camera Rotation" checkbox.
 - **2D:** undo / redo and gizmos; **no snap control** (as `21028:42987` draws it; snapping still works).
@@ -2909,12 +2926,12 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 
 | Role | Tokens | Status |
 | --- | --- | --- |
-| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` | `--bg` ships in #1703, `--background` ships in #1703; `#242129` is the Charcoal **✱ deviation** |
+| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--secondary` `#242129`, `--modal` `#181225`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` | `--bg` ships in #1703, `--background` ships in #1703; `#242129` is the Charcoal **✱ deviation** |
 | Text | `--text` `#ffffff`, `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` | match |
 | Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) | `--primary-hover` ships in #1703 |
 | Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` | `--danger` ships in #1703, `--error` ships in #1703 |
 | Lines | `--divider` `#67637033`, `--text-area-border` `#676370`, `--clear-divider` `#a09ba8` | match |
-| AI assistant | `--ai-selected` `#214272`, `--ai-selected-hover` `#2e4a7a`, `--ai-session-selected` `#244b7d`, `--ai-session-selected-hover` `#243852`, `--ai-menu-bg` `#2f2d34`, `--ai-input-bg` `#28252d`, `--ai-warning-bg` `rgba(244,130,33,.16)` | `--ai-menu-bg` drift → `#35333B` (pending spoke); `--ai-input-bg` drift → `#2D2A33` (pending spoke); `--ai-warning-bg` drift → `rgba(254,156,42,.1)` (pending spoke) |
+| AI assistant | `--ai-selected` `#214272`, `--ai-selected-hover` `#2e4a7a`, `--ai-session-selected` `#244b7d`, `--ai-session-selected-hover` `#243852`, `--ai-menu-bg` `#35333b`, `--ai-input-bg` `#2d2a33`, `--ai-warning-bg` `rgba(254,156,42,.1)` | `--ai-menu-bg` ships in #1731, `--ai-input-bg` ships in #1731, `--ai-warning-bg` ships in #1731 |
 | ui2 overrides | `--mui-shape-borderRadius` `6px`, `--mui-palette-action-disabled`, `--mui-palette-secondary-contrast` | match |
 
 The brand pink matches the inspector's `--primary-main`, but it's defined separately on each side of the iframe. Change both, or neither.
@@ -3024,7 +3041,7 @@ Everything here is current and unresolved. Design owns the Figma-side defects; t
 | Play Options menus (TitleBar) | The heading is typed "play Options" and cased by the text style. |
 | ConnectionStatus (Profile Snapshot) | A hidden or stray `Rarities/Legendary` `#A14BF3` fill is referenced inside the set. |
 | ProfilePic (Profile Snapshot) | The 28 variant's (hidden) dot is `DCL/Grass` `#28AC00`, off System/Green; the blocked ring is `DCL/Red` (legacy) at 1.05:1 against the Lavender fill. |
-| Switch (Buttons) + Switch (Switch) | Two Switch sets disagree: Buttons page 41 × 24 on the legacy `DCL/Ruby` / `DCL/Snow` collection; Switch page 52 × 30 on Graffito / Primary. |
+| Switch (Buttons) + Switch (Switch) | A second, legacy Switch set on the Buttons page disagrees with the Switch page: `21167:30101` is 41 × 24 on the legacy `DCL/Ruby` / `DCL/Snow` collection, while the Switch page, which governs (user, October 28, 2026), is 52 × 30 on Graffito / Primary. |
 | Switch (Buttons) | Built on the legacy `DCL/Ruby` and `DCL/Snow` variables, not `Primary/Primary` / `Neutrals/Snow` (same values). |
 | rounded-button-contained, IconContainedToggle, TextureContainedRoundedButton (Buttons) | The Toast tooltips disagree: rounded-button-contained pads 6 / 10 with an 8px radius; IconContainedToggle and TextureContainedRoundedButton pad 2 / 10 with a 10px radius. |
 | PillIconText, ButtonContainedVertical (24 Caps) and (20), ToggleLabel (Buttons) | Label line-height is `normal` where the other sets use 100%. |
