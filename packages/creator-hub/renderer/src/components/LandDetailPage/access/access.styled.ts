@@ -6,7 +6,7 @@ const { neutral, whiteTransparent } = dclColors;
 
 const listGrid = {
   display: 'grid',
-  gridTemplateColumns: '524px 200px minmax(0, 1fr) 40px',
+  gridTemplateColumns: '524px 200px minmax(0, 1fr) 30px',
   columnGap: 10,
   alignItems: 'center',
 } as const;
@@ -107,15 +107,13 @@ const Row = styled('li')(({ theme }) => ({
   },
   '& > .Trash': {
     gridColumn: 4,
-    alignItems: 'flex-start',
-    width: 40,
-    height: 40,
-    margin: '-4px 0',
-    padding: '9.5px 0 0',
+    width: 30,
+    height: 30,
+    padding: theme.spacing(0.75),
     borderRadius: 100,
     opacity: 0,
-    color: whiteTransparent.blurry,
-    '& svg': { width: 20, height: 'auto' },
+    color: neutral.gray3,
+    '& svg': { width: 18, height: 18 },
     '&:hover': { backgroundColor: whiteTransparent.subtle },
   },
   '&:hover, &:focus-within': { backgroundColor: whiteTransparent.subtle },

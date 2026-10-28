@@ -4,9 +4,9 @@ export function DeleteIcon({ className }: CommonProps) {
   return (
     <svg
       className={className}
-      width="15"
-      height="17"
-      viewBox="0 0 15 17"
+      width="18"
+      height="18"
+      viewBox="-1.5 -1.125 18 18"
       fill="none"
       aria-hidden
       xmlns="http://www.w3.org/2000/svg"
