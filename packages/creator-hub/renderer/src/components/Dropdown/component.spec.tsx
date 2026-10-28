@@ -74,6 +74,49 @@ describe('Dropdown', () => {
     });
   });
 
+  describe('when only some options carry a glyph', () => {
+    beforeEach(() => {
+      render(
+        <ThemeProvider theme={dark}>
+          <Dropdown
+            label="Options for Plaza"
+            options={[
+              { text: 'Copy URL', handler: () => {}, icon: <svg /> },
+              { text: 'Permissions', handler: () => {} },
+            ]}
+          />
+        </ThemeProvider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Options for Plaza' }));
+    });
+
+    it('should give the glyph-less option an empty slot, so every label starts at the same x', () => {
+      const permissions = screen.getByRole('menuitem', { name: 'Permissions' });
+
+      expect(permissions.querySelector('.MenuGlyph')?.childElementCount).toBe(0);
+    });
+  });
+
+  describe('when no option carries a glyph', () => {
+    beforeEach(() => {
+      render(
+        <ThemeProvider theme={dark}>
+          <Dropdown
+            label="Options for Plaza"
+            options={[{ text: 'Unpublish', handler: () => {} }]}
+          />
+        </ThemeProvider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Options for Plaza' }));
+    });
+
+    it('should render no glyph slot at all', () => {
+      expect(
+        screen.getByRole('menuitem', { name: 'Unpublish' }).querySelector('.MenuGlyph'),
+      ).toBeNull();
+    });
+  });
+
   describe('when an option has the danger tone', () => {
     const computedColor = (color: string) => {
       const probe = document.createElement('div');

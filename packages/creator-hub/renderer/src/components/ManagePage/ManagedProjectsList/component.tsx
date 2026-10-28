@@ -7,7 +7,6 @@ import { WorldPermissionName, WorldRoleType } from '/@/lib/worlds';
 import {
   fetchWorldSettings,
   fetchWorldScenes,
-  fetchWorldPermissions,
   unpublishEntireWorld,
   selectors as managementSelectors,
   fetchParcelsPermission,
@@ -18,7 +17,6 @@ import { Button } from '../../Button';
 import { Loader } from '../../Loader';
 import { Modal } from '../../Modals';
 import { WorldSettingsModal } from '../../Modals/WorldSettingsModal';
-import { WorldPermissionsModal } from '../../Modals/WorldPermissionsModal';
 import { PublishedProjectCard } from '../PublishedProjectCard';
 import './styles.css';
 
@@ -26,10 +24,6 @@ type SettingsModalState = {
   activeTab: WorldSettingsTab;
   isOpen: boolean;
   isOwner?: boolean;
-};
-
-type PermissionsModalState = {
-  isOpen: boolean;
 };
 
 type UnpublishConfirmationState = {
@@ -53,9 +47,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
     activeTab: WorldSettingsTab.DETAILS,
     isOwner: false,
   });
-  const [permissionsModal, setPermissionsModal] = useState<PermissionsModalState>({
-    isOpen: false,
-  });
   const [unpublishConfirmation, setUnpublishConfirmation] = useState<UnpublishConfirmationState>({
     isOpen: false,
     worldName: null,
@@ -65,15 +56,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
   const worldPermissions = useSelector(managementSelectors.getPermissionsState);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const handleOpenPermissionsModal = useCallback((worldName: string) => {
-    dispatch(fetchWorldPermissions({ worldName }));
-    setPermissionsModal({ isOpen: true });
-  }, []);
-
-  const handleClosePermissionsModal = useCallback(() => {
-    setPermissionsModal({ isOpen: false });
-  }, []);
 
   const handleOpenSettingsModal = useCallback(
     (worldName: string, activeTab: WorldSettingsTab, isOwner: boolean) => {
@@ -133,7 +115,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
           onOpenSettings={activeTab =>
             handleOpenSettingsModal(project.id, activeTab, project.role === WorldRoleType.OWNER)
           }
-          onOpenPermissions={() => handleOpenPermissionsModal(project.id)}
           onUnpublishWorld={() => handleShowUnpublishWorldConfirmation(project.id)}
           onViewScenes={handleViewScenes}
         />
@@ -161,17 +142,6 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
         activeTab={settingsModal.activeTab}
         onTabClick={handleSettingsModalTabClick}
         onClose={handleCloseSettingsModal}
-      />
-      <WorldPermissionsModal
-        open={permissionsModal.isOpen}
-        worldName={worldPermissions.worldName}
-        worldOwnerAddress={worldPermissions.owner}
-        worldScenes={worldSettings.scenes}
-        worldPermissions={worldPermissions.permissions ?? undefined}
-        worldPermissionsSummary={worldPermissions.summary}
-        isLoading={worldPermissions.status === 'loading' || worldPermissions.status === 'idle'}
-        isLoadingNewUser={worldPermissions.loadingNewUser}
-        onClose={handleClosePermissionsModal}
       />
       <Modal
         open={unpublishConfirmation.isOpen}
