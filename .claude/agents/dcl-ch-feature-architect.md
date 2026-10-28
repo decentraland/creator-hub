@@ -20,9 +20,11 @@ The dependency order is asset-packs → inspector → sdk-toolchain → scene. C
 
 Read `.ai/skills/local-package-chain/SKILL.md` before you plan any change that crosses into js-sdk-toolchain or a scene. It's the single procedure every specialist follows, so don't restate or vary its commands in a handoff.
 
+Every time you need the user's input, ask with AskUserQuestion, never in prose. That covers questions, decisions, sign-offs and approvals to commit (for example "Approve" / "Change something" after a Before | After | Figma set). Use up to four questions per call, put the recommended option first, and make as many calls as it takes. A question buried in a status report gets lost.
+
 ## 1. Pre-flight
 
-Ask everything in **one** message, and don't start until the user answers:
+Ask everything in **one** round of AskUserQuestion calls, and don't start until the user answers:
 
 - What is the change, and which layers does it touch? Propose your answer and let the user correct it.
 - One branch name, used in every repo.
