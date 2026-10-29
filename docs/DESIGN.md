@@ -3154,7 +3154,7 @@ Frames [`5690:7364`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-i
 | --- | --- |
 | Title | "Manage - {name}"; unnamed: "Parcel x,y" / "Estate {id}" |
 | Back | the shared `Title` back control in the DS `BackTitle` look: 40 pill, Primary chevron `ArrowBackIosNewRounded`. It also paints Analytics detail |
-| Header ⋮ | `rounded-button-contained` 40, White 10 fill, the `Kebab` glyph **Snow** `#FCFCFC` (`neutral.softWhite`, 13.53:1 on its pill; Figma `5690:7364` and `5955:19966`): the Dropdown `filled` look. The card ⋮ stays White 40 (`ghost`). Its menu opens 9 below, right-aligned (see "⋮ menu rows (both cards)"); the LAND detail menu holds Transfer |
+| Header ⋮ | `rounded-button-contained` 40, the `Kebab` glyph **Snow** `#FCFCFC` (`neutral.softWhite`; Figma `5690:7364` and `5955:19966`). ✱ **No fill at rest**, White 10 only on hover, keyboard focus and while its menu is open, as the card ⋮ (user decision; both frames draw White 10 at rest): Snow is 17.73:1 on the page, 13.53:1 on the White 10 pill. The card ⋮ stays White 40 (`ghost`). Its menu opens 9 below, right-aligned (see "⋮ menu rows (both cards)"); the LAND detail menu holds Transfer |
 | Route | `/manage/land/:id/:tab`: the tab lives in the route |
 | States | `Loader` while loading; EmptyState "This LAND is no longer in your list." + "Back to Manage" when the LAND is not found or access was lost |
 | Tabs | `tab` padding 10 / 4 / 10 / 4, label `H6 Semi Caps` 16 (19 tall), letter-spacing 0, 2px Snow underline when active; `tab-bar` 1724 × 39, gap 40, 1px White 20 bottom rule; ✱ no hover fill and MUI's click ripple kept, against `TabHorizontal` [`5738:3262`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id=5738-3262)'s White 10 hover (user decision; LAND and World detail pages) |
@@ -3173,7 +3173,7 @@ Frames [`5660:4231`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-i
 | --- | --- |
 | Title | "Manage - {World Name}", falling back to the domain |
 | Route | `/manage/world/:name/:tab` (user decision); tabs DETAILS · SCENES · SETTINGS · COLLABORATORS in that order (user decision) |
-| Header actions | on Details and Settings, CANCEL (Secondary) and SAVE (Primary), 40 tall, gap 20, shown once a field changes (Figma note, and the user decision for both detail pages); Settings' Access section saves on its own and never shows them (user decision); then the ⋮ (as the LAND "Header ⋮": White 10 fill, Snow glyph), which is the World card menu, as `5955:19966`'s note asks ("Show in the menu the same than in the World card.") |
+| Header actions | on Details and Settings, CANCEL (Secondary) and SAVE (Primary), 40 tall, gap 20, shown once a field changes (Figma note, and the user decision for both detail pages); Settings' Access section saves on its own and never shows them (user decision); then the ⋮ (as the LAND "Header ⋮": Snow glyph, ✱ no fill at rest, White 10 on hover, focus and open; user decision), which is the World card menu, as `5955:19966`'s note asks ("Show in the menu the same than in the World card.") |
 | Owner row | label "Owner" Inter 400 14 Silver, gap 10, `ProfilePic` 28 (2px White 20 ring), gap 6, name `H6 Semi` 16 Snow, " (You)" when it is the signed-in account |
 | ✱ Manage Storage | not drawn; on the World Scenes tab (user decision) |
 
