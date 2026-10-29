@@ -18,6 +18,7 @@ const Bubble = styled('div')(({ theme }) => ({
   fontWeight: 400,
   lineHeight: 1.3,
   textAlign: 'left',
+  whiteSpace: 'normal',
 }));
 
 const GLYPH_PX = { small: 13.2, medium: 16.8 };

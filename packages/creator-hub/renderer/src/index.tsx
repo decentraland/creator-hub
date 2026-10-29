@@ -28,6 +28,7 @@ import { AnalyticsPage } from '/@/components/AnalyticsPage';
 import { AnalyticsDetailPage } from '/@/components/AnalyticsDetailPage';
 import { ManagePage } from '/@/components/ManagePage';
 import { LandDetailPage } from '/@/components/LandDetailPage';
+import { WorldDetailPage } from '/@/components/WorldDetailPage';
 import { LearnPage } from '/@/components/LearnPage';
 import { SignInPage } from '/@/components/SignInPage';
 import { TemplatesPage } from '/@/components/TemplatesPage';
@@ -146,6 +147,10 @@ if (isAiChatWindow || isConsoleWindow) {
                     <Route
                       path="/manage/land/:id/:tab?"
                       element={<LandDetailPage />}
+                    />
+                    <Route
+                      path="/manage/world/:name/:tab?"
+                      element={<WorldDetailPage />}
                     />
                     <Route
                       path="/learn"

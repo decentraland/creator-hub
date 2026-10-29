@@ -75,19 +75,32 @@ export async function fetchWorldSceneCoords(
   worldsApi: Worlds,
   worldName: string,
 ): Promise<SceneCoords[] | null> {
+  return toSceneCoords(await fetchWorldSceneList(worldsApi, worldName));
+}
+
+async function fetchWorldSceneList(
+  worldsApi: Worlds,
+  worldName: string,
+): Promise<WorldScene[] | null> {
   try {
-    const scenes = await readAllPages(async offset => {
+    return await readAllPages(async offset => {
       const response = await worldsApi.fetchWorldScenes(worldName, {
         limit: PAGE_LIMIT,
         offset,
       });
       return response && { items: response.scenes, total: response.total };
     });
-
-    return scenes?.map(sceneBase).filter(coords => coords !== null) ?? null;
   } catch {
     return null;
   }
+}
+
+function toSceneCoords(scenes: WorldScene[] | null): SceneCoords[] | null {
+  return scenes?.map(sceneBase).filter(coords => coords !== null) ?? null;
+}
+
+function firstSceneTitle(scenes: WorldScene[] | null): string | undefined {
+  return scenes?.map(scene => scene.entity?.metadata?.display?.title).find(Boolean);
 }
 
 /**
@@ -102,6 +115,7 @@ export async function toManagedProject(
   address: string,
 ): Promise<ManagedProject> {
   const hasEverBeenDeployed = Boolean(world.owner);
+  const sceneList = world.deployedScenes ? await fetchWorldSceneList(worldsApi, world.name) : [];
 
   return {
     id: world.name,
@@ -111,18 +125,69 @@ export async function toManagedProject(
       world.owner?.toLowerCase() === address.toLowerCase()
         ? WorldRoleType.OWNER
         : WorldRoleType.COLLABORATOR,
+    owner: world.owner || undefined,
+    title: world.title || undefined,
     deployment: hasEverBeenDeployed
       ? {
-          title: world.title || world.name,
+          title: firstSceneTitle(sceneList) || world.name,
           description: world.description || '',
           thumbnail: world.thumbnailHash ? worldsApi.getContentSrcUrl(world.thumbnailHash) : '',
           lastPublishedAt: world.lastDeployedAt ? new Date(world.lastDeployedAt).getTime() : 0,
           scenesCount: world.deployedScenes || 0,
         }
       : undefined,
-    scenes: world.deployedScenes
-      ? ((await fetchWorldSceneCoords(worldsApi, world.name)) ?? undefined)
-      : [],
+    scenes: toSceneCoords(sceneList) ?? undefined,
+  };
+}
+
+/**
+ * A World the wallet can stream to but not publish to, as a Manage card: two requests, each allowed to fail.
+ * A World whose scenes cannot be read is listed as unpublished rather than dropped.
+ */
+export async function toStreamOnlyProject(
+  worldsApi: Worlds,
+  worldName: string,
+): Promise<ManagedProject> {
+  const [scenes, settings] = await Promise.all([
+    worldsApi.fetchWorldScenes(worldName, { limit: 1 }).catch(() => null),
+    worldsApi.fetchWorldSettings(worldName).catch(() => null),
+  ]);
+
+  return {
+    id: worldName,
+    displayName: worldName,
+    type: ManagedProjectType.WORLD,
+    role: WorldRoleType.COLLABORATOR,
+    access: 'stream',
+    title: settings?.title || undefined,
+    deployment: scenes?.total
+      ? {
+          title: firstSceneTitle(scenes.scenes) || worldName,
+          description: settings?.description || '',
+          thumbnail: settings?.thumbnailHash
+            ? worldsApi.getContentSrcUrl(settings.thumbnailHash)
+            : '',
+          lastPublishedAt: 0,
+          scenesCount: scenes.total,
+        }
+      : undefined,
+  };
+}
+
+/** A World resolved by its NAME, for a detail page whose World the loaded Manage lists miss. */
+export async function resolveWorldProject(
+  worldsApi: Worlds,
+  ens: { subdomain: string; nftOwnerAddress: string },
+  address: string,
+): Promise<ManagedProject> {
+  const { access: _access, ...project } = await toStreamOnlyProject(worldsApi, ens.subdomain);
+  return {
+    ...project,
+    role:
+      ens.nftOwnerAddress.toLowerCase() === address.toLowerCase()
+        ? WorldRoleType.OWNER
+        : WorldRoleType.COLLABORATOR,
+    owner: ens.nftOwnerAddress,
   };
 }
 
@@ -176,7 +241,7 @@ export const getThumbnailUrlFromDeployment = (
     | undefined,
   getContentSrcUrl: (hash: string) => string,
 ) => {
-  if (!deployment?.metadata?.display.navmapThumbnail) return '';
+  if (!deployment?.metadata?.display?.navmapThumbnail) return '';
   const thumbnailFileName = deployment.metadata.display.navmapThumbnail;
   const thumbnailContent = deployment.content.find(item => item.file === thumbnailFileName);
   if (thumbnailContent) return getContentSrcUrl(thumbnailContent.hash);
@@ -256,16 +321,31 @@ export function toLandProject(
 export function selectWorldProjects(
   published: ManagedProject[],
   empty: ManagedProject[],
-  filters: { sortBy: SortBy; searchQuery: string },
+  filters: { sortBy: SortBy; searchQuery: string; publishFilter?: FilterBy },
+  streamOnly: ManagedProject[] = [],
 ): ManagedProject[] {
   const query = filters.searchQuery.trim().toLowerCase();
   const byName = (a: ManagedProject, b: ManagedProject) =>
     a.displayName.localeCompare(b.displayName);
-  const matches = empty.filter(project => project.displayName.toLowerCase().includes(query));
+  const matchesQuery = (project: ManagedProject) =>
+    project.displayName.toLowerCase().includes(query);
+  const listed = new Set([...published, ...empty].map(project => project.id));
+  const streams = streamOnly.filter(
+    project =>
+      !listed.has(project.id) &&
+      matchesQuery(project) &&
+      (filters.publishFilter !== FilterBy.PUBLISHED || !!project.deployment) &&
+      (filters.publishFilter !== FilterBy.UNPUBLISHED || !project.deployment),
+  );
+  const unpublished = [
+    ...empty.filter(matchesQuery),
+    ...streams.filter(project => !project.deployment),
+  ];
+  const publishedStreams = streams.filter(project => !!project.deployment);
 
   return filters.sortBy === SortBy.NAME
-    ? [...published, ...matches].sort(byName)
-    : [...published, ...matches.sort(byName)];
+    ? [...published, ...publishedStreams, ...unpublished].sort(byName)
+    : [...published, ...publishedStreams, ...unpublished.sort(byName)];
 }
 
 /** A scene deployed on a LAND, as the Scenes tab lists it. */

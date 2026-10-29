@@ -241,7 +241,7 @@ describe('ScenesTab', () => {
 
       await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Download' })));
 
-      expect(sceneExport.exportScene).toHaveBeenCalledWith('a', 'Scene A');
+      expect(sceneExport.exportScene).toHaveBeenCalledWith('a', 'Scene A', 'land');
       expect(pushGeneric).toHaveBeenCalledWith(
         'warning',
         "Scene downloaded. Some code couldn't be recovered; see RECOVERY.md.",

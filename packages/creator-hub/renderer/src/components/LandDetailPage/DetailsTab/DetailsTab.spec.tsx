@@ -1,4 +1,5 @@
 import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +16,7 @@ import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import { pollUntil } from '/shared/utils';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
+import { DetailShell } from '../../DetailShell';
 import { DetailsTab } from '.';
 
 vi.mock('/@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
@@ -55,22 +57,27 @@ const land: Land = {
   updateOperator: null,
 };
 
-let slot: HTMLDivElement;
-
 function renderTab(mode: 'edit' | 'read', subject: Land = land, store = createTestStore()) {
   vi.mocked(useAuth).mockReturnValue({ wallet: '0xme' } as unknown as ReturnType<typeof useAuth>);
-  slot = document.createElement('div');
-  document.body.appendChild(slot);
   render(
     <Provider store={store as never}>
-      <ThemeProvider theme={dark}>
-        <DetailsTab
-          land={subject}
-          project={toLandProject(subject, [], hash => hash)}
-          mode={mode}
-          actionsSlot={slot}
-        />
-      </ThemeProvider>
+      <MemoryRouter>
+        <ThemeProvider theme={dark}>
+          <DetailShell
+            title="Manage - Land Name"
+            basePath="/manage/land/96%2C15"
+            menu={null}
+            tabs={[{ value: 'details', label: 'Details' }]}
+            activeTab="details"
+          >
+            <DetailsTab
+              land={subject}
+              project={toLandProject(subject, [], hash => hash)}
+              mode={mode}
+            />
+          </DetailShell>
+        </ThemeProvider>
+      </MemoryRouter>
     </Provider>,
   );
 }
@@ -82,27 +89,25 @@ describe('DetailsTab', () => {
     setCurrentLocale('en', flatten(en));
   });
 
-  afterEach(() => {
-    cleanup();
-    slot.remove();
-  });
+  afterEach(cleanup);
 
   describe('when an editor opens it', () => {
     beforeEach(() => renderTab('edit'));
 
-    it('should fill the fields and block Save until something changes', () => {
+    it('should fill the fields and show neither CANCEL nor SAVE until something changes', () => {
       expect(nameField()).toHaveProperty('value', 'Land Name');
-      expect(screen.getByRole('button', { name: 'Save' })).toHaveProperty('disabled', true);
-      expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
       expect(screen.getByText('9/50')).toBeTruthy();
     });
 
-    it('should enable Save once edited, and Discard should restore the values', () => {
+    it('should show CANCEL and an enabled SAVE once edited, and CANCEL should restore the values', () => {
       fireEvent.change(nameField(), { target: { value: 'Plaza' } });
 
       expect(screen.getByRole('button', { name: 'Save' })).toHaveProperty('disabled', false);
-      fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
       expect(nameField()).toHaveProperty('value', 'Land Name');
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
     });
 
     it('should keep what was typed past the limit, flag it and block Save', () => {

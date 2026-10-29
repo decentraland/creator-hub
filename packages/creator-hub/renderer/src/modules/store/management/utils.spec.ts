@@ -6,6 +6,7 @@ import { FilterBy, ManagedProjectType, SortBy } from '../../../../../shared/type
 import type { Land, LandDeployment } from '../../../lib/land';
 import { LandType, RoleType } from '../../../lib/land';
 import type { WorldData, WorldScene, Worlds } from '../../../lib/worlds';
+import { WorldRoleType } from '../../../lib/worlds';
 import { en } from '../translation/locales';
 import { setCurrentLocale } from '../translation/utils';
 import {
@@ -13,10 +14,14 @@ import {
   fetchWorldSceneCoords,
   getLandName,
   getManagers,
+  getThumbnailUrlFromDeployment,
   groupLandDeployments,
+  resolveWorldProject,
   selectLandProjects,
   selectWorldProjects,
   toLandProject,
+  toManagedProject,
+  toStreamOnlyProject,
 } from './utils';
 
 const TEST_ADDRESS = '0xowner';
@@ -132,6 +137,61 @@ describe('fetchWorldSceneCoords', () => {
 
     it('should fall back to the numerically lowest parcel, not the lowest string', async () => {
       expect(await fetchWorldSceneCoords(worldsApi, 'nobase.dcl.eth')).toEqual([{ x: 9, y: 0 }]);
+    });
+  });
+});
+
+describe('toManagedProject', () => {
+  const titledScene = (title?: string) =>
+    ({
+      parcels: ['0,0'],
+      entity: { metadata: { scene: { base: '0,0' }, display: title ? { title } : {} } },
+    }) as unknown as WorldScene;
+
+  describe('when the World has a World Name and its scene has a title', () => {
+    it('should carry the World Name as its title and the scene title on the deployment', async () => {
+      const worldsApi = createWorldsApi();
+      worldsApi.fetchWorldScenes.mockResolvedValue({ scenes: [titledScene('Scene X')], total: 1 });
+
+      const project = await toManagedProject(
+        worldsApi,
+        { ...world('plaza.dcl.eth'), title: 'Plaza' },
+        TEST_ADDRESS,
+      );
+
+      expect(project.title).toBe('Plaza');
+      expect(project.deployment?.title).toBe('Scene X');
+    });
+  });
+
+  describe('when someone else owns the World', () => {
+    it('should carry its owner', async () => {
+      const worldsApi = createWorldsApi();
+      worldsApi.fetchWorldScenes.mockResolvedValue({ scenes: [titledScene()], total: 1 });
+
+      const project = await toManagedProject(
+        worldsApi,
+        { ...world('plaza.dcl.eth'), owner: '0xother' },
+        TEST_ADDRESS,
+      );
+
+      expect(project.owner).toBe('0xother');
+    });
+  });
+
+  describe('when neither the World nor its scene is titled', () => {
+    it('should leave the title unset and fall back to the domain on the deployment', async () => {
+      const worldsApi = createWorldsApi();
+      worldsApi.fetchWorldScenes.mockResolvedValue({ scenes: [titledScene()], total: 1 });
+
+      const project = await toManagedProject(
+        worldsApi,
+        { ...world('plaza.dcl.eth'), title: null },
+        TEST_ADDRESS,
+      );
+
+      expect(project.title).toBeUndefined();
+      expect(project.deployment?.title).toBe('plaza.dcl.eth');
     });
   });
 });
@@ -363,6 +423,114 @@ describe('toLandProject', () => {
   });
 });
 
+describe('toStreamOnlyProject', () => {
+  const settingsApi = (overrides: { scenes?: unknown; settings?: unknown } = {}) => {
+    const worldsApi = createWorldsApi() as ReturnType<typeof createWorldsApi> & {
+      fetchWorldSettings: ReturnType<typeof vi.fn>;
+    };
+    worldsApi.fetchWorldSettings = vi.fn();
+    if ('scenes' in overrides)
+      worldsApi.fetchWorldScenes.mockImplementation(async () => overrides.scenes);
+    if ('settings' in overrides)
+      worldsApi.fetchWorldSettings.mockImplementation(async () => overrides.settings);
+    return worldsApi;
+  };
+  const titledScene = {
+    parcels: ['0,0'],
+    entity: { metadata: { scene: { base: '0,0' }, display: { title: 'Scene X' } } },
+  };
+
+  describe('when the World is published and has a World Name', () => {
+    it('should be a published, stream-only collaborator World named from its Details', async () => {
+      const worldsApi = settingsApi({
+        scenes: { scenes: [titledScene], total: 2 },
+        settings: { title: 'Plaza', thumbnailHash: 'QmThumb' },
+      });
+
+      const project = await toStreamOnlyProject(worldsApi, 'plaza.dcl.eth');
+
+      expect(worldsApi.fetchWorldScenes).toHaveBeenCalledWith('plaza.dcl.eth', { limit: 1 });
+      expect(worldsApi.fetchWorldSettings).toHaveBeenCalledWith('plaza.dcl.eth');
+      expect(project).toMatchObject({
+        id: 'plaza.dcl.eth',
+        displayName: 'plaza.dcl.eth',
+        type: ManagedProjectType.WORLD,
+        role: 'collaborator',
+        access: 'stream',
+        title: 'Plaza',
+        deployment: { title: 'Scene X', scenesCount: 2, thumbnail: 'https://content.com/QmThumb' },
+      });
+    });
+  });
+
+  describe('when the settings cannot be read', () => {
+    it('should still list the World, falling back to its scene title', async () => {
+      const worldsApi = settingsApi({ scenes: { scenes: [titledScene], total: 1 } });
+      worldsApi.fetchWorldSettings.mockRejectedValue(new Error('boom'));
+
+      const project = await toStreamOnlyProject(worldsApi, 'plaza.dcl.eth');
+
+      expect(project.title).toBeUndefined();
+      expect(project.deployment?.title).toBe('Scene X');
+    });
+  });
+
+  describe('when its scenes cannot be read', () => {
+    it('should list the World as unpublished rather than drop it', async () => {
+      const worldsApi = settingsApi({ settings: { title: 'Plaza' } });
+      worldsApi.fetchWorldScenes.mockRejectedValue(new Error('boom'));
+
+      const project = await toStreamOnlyProject(worldsApi, 'plaza.dcl.eth');
+
+      expect(project.deployment).toBeUndefined();
+      expect(project.access).toBe('stream');
+    });
+  });
+});
+
+describe('resolveWorldProject', () => {
+  const worldsApi = () => {
+    const api = createWorldsApi() as ReturnType<typeof createWorldsApi> & {
+      fetchWorldSettings: ReturnType<typeof vi.fn>;
+    };
+    api.fetchWorldSettings = vi.fn(async () => ({ title: 'Plaza' }));
+    api.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 1 });
+    return api;
+  };
+
+  describe('when the account holds the NAME', () => {
+    it('should resolve it as an owned, deployable World named from its Details', async () => {
+      const project = await resolveWorldProject(
+        worldsApi() as never,
+        { subdomain: 'plaza.dcl.eth', nftOwnerAddress: TEST_ADDRESS.toUpperCase() },
+        TEST_ADDRESS,
+      );
+
+      expect(project).toMatchObject({
+        id: 'plaza.dcl.eth',
+        role: WorldRoleType.OWNER,
+        owner: TEST_ADDRESS.toUpperCase(),
+        title: 'Plaza',
+      });
+      expect(project.access).toBeUndefined();
+      expect(project.deployment?.scenesCount).toBe(1);
+    });
+  });
+
+  describe('when someone else holds the NAME', () => {
+    it('should resolve it as a collaborator World', async () => {
+      const project = await resolveWorldProject(
+        worldsApi() as never,
+        { subdomain: 'plaza.dcl.eth', nftOwnerAddress: '0xother' },
+        TEST_ADDRESS,
+      );
+
+      expect(project.role).toBe(WorldRoleType.COLLABORATOR);
+      expect(project.owner).toBe('0xother');
+    });
+  });
+});
+
 describe('selectWorldProjects', () => {
   const project = (id: string): ManagedProject => ({
     id,
@@ -383,6 +551,50 @@ describe('selectWorldProjects', () => {
         'beta.dcl.eth',
         'omega.dcl.eth',
       ]);
+    });
+  });
+
+  describe('when stream-only Worlds are listed too', () => {
+    const streamOnly = [
+      { ...project('alpha.dcl.eth'), access: 'stream' as const },
+      {
+        ...project('stream-live.dcl.eth'),
+        access: 'stream' as const,
+        deployment: {
+          title: 'Live',
+          description: '',
+          thumbnail: '',
+          lastPublishedAt: 0,
+          scenesCount: 1,
+        },
+      },
+      { ...project('stream-empty.dcl.eth'), access: 'stream' as const },
+    ];
+    const merged = (filters: Parameters<typeof selectWorldProjects>[2]) =>
+      selectWorldProjects(published, empty, filters, streamOnly).map(world => world.id);
+
+    it('should merge them without a second card for a World already listed', () => {
+      expect(merged({ sortBy: SortBy.LATEST, searchQuery: '' })).toEqual([
+        'zeta.dcl.eth',
+        'alpha.dcl.eth',
+        'stream-live.dcl.eth',
+        'beta.dcl.eth',
+        'omega.dcl.eth',
+        'stream-empty.dcl.eth',
+      ]);
+    });
+
+    it('should honour the publish filter and the search', () => {
+      expect(
+        merged({ sortBy: SortBy.LATEST, searchQuery: 'stream', publishFilter: FilterBy.PUBLISHED }),
+      ).toEqual(['zeta.dcl.eth', 'alpha.dcl.eth', 'stream-live.dcl.eth']);
+      expect(
+        merged({
+          sortBy: SortBy.LATEST,
+          searchQuery: 'stream',
+          publishFilter: FilterBy.UNPUBLISHED,
+        }),
+      ).toEqual(['zeta.dcl.eth', 'alpha.dcl.eth', 'stream-empty.dcl.eth']);
     });
   });
 
@@ -544,6 +756,16 @@ describe('getManagers', () => {
       expect(getManagers([{ address: '0xc', type: LandType.ESTATE }])).toEqual([
         { address: '0xc', state: 'estate-only' },
       ]);
+    });
+  });
+});
+
+describe('getThumbnailUrlFromDeployment', () => {
+  describe('when the scene has no display metadata', () => {
+    it('should give no thumbnail rather than throw', () => {
+      expect(
+        getThumbnailUrlFromDeployment({ metadata: {} as never, content: [] }, hash => hash),
+      ).toBe('');
     });
   });
 });
