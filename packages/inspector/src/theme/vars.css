@@ -24,6 +24,77 @@
   --header-hover-bg-color: #38222d;
   --disabled-bg-color: #323036;
 
+  --controlHeight-small: 26px;
+  --controlHeight-medium: 40px;
+  --controlHeight-large: 46px;
+  --shape-borderRadius: 6px;
+  --shape-borderRadiusMedium: 8px;
+  --shape-borderRadiusLarge: 12px;
+  --shape-borderRadiusXLarge: 16px;
+  --shape-borderRadiusXXLarge: 24px;
+  --shape-borderRadiusPill: 100px;
+  --borderWidth-strong: 1.5px;
+  --palette-whiteTransparent-faint: rgba(255, 255, 255, 0.05);
+  --palette-whiteTransparent-hint: rgba(255, 255, 255, 0.08);
+  --palette-whiteTransparent-subtle: rgba(255, 255, 255, 0.1);
+  --palette-whiteTransparent-hover: rgba(255, 255, 255, 0.15);
+  --palette-whiteTransparent-soft: rgba(255, 255, 255, 0.2);
+  --palette-whiteTransparent-blurry: rgba(255, 255, 255, 0.4);
+  --palette-whiteTransparent-backdrop: rgba(255, 255, 255, 0.6);
+  --palette-blackTransparent-subtle: rgba(0, 0, 0, 0.1);
+  --palette-blackTransparent-soft: rgba(0, 0, 0, 0.2);
+  --palette-blackTransparent-blurry: rgba(0, 0, 0, 0.4);
+  --palette-primary-light: #ff6280;
+  --palette-primary-dark2: #d80029;
+  --palette-primary-light2: #ff93a8;
+  --palette-primaryAlt-dark2: #d84900;
+  --palette-primaryAlt-light2: #ffcdba;
+  --palette-success-dark2: #00a146;
+  --palette-success-light2: #c1eecf;
+  --palette-warning-light: #ffb95b;
+  --palette-warning-dark2: #ec7122;
+  --palette-warning-light2: #ffcd88;
+  --palette-error-dark2: #cc1d2c;
+  --palette-error-light2: #ffcdd4;
+  --palette-neutral-gray1: #5e5b67;
+  --palette-neutral-gray2: #716b7c;
+  --palette-neutral-gray3: #a09ba8;
+  --palette-neutral-gray4: #cfcdd4;
+  --palette-neutral-gray5: #ecebed;
+  --palette-neutral-softWhite: #fcfcfc;
+  --palette-neutral-onyx: #35333b;
+  --palette-neutral-onyxDark1: #2d2a33;
+  --palette-system-blueDark2: #244b7d;
+  --palette-system-blueDark3: #243852;
+  --palette-info-main: #2196f3;
+  --palette-info-dark1: #1a75d2;
+  --palette-info-light: #63b4f6;
+  --palette-info-light2: #bbdefb;
+  --palette-rarity-common: #73d3d3;
+  --palette-rarity-common-light: #acf8f8;
+  --palette-rarity-uncommon: #ff8362;
+  --palette-rarity-uncommon-light: #ffe0b2;
+  --palette-rarity-rare: #34ce76;
+  --palette-rarity-rare-light: #73ffaf;
+  --palette-rarity-epic: #438fff;
+  --palette-rarity-epic-light: #81e1ff;
+  --palette-rarity-legendary: #a14bf3;
+  --palette-rarity-legendary-light: #e8b9ff;
+  --palette-rarity-mythic: #ff4bed;
+  --palette-rarity-mythic-light: #f6c1ff;
+  --palette-rarity-exotic: #caff73;
+  --palette-rarity-exotic-light: #e4ffb8;
+  --palette-rarity-unique: #fea217;
+  --palette-rarity-unique-light: #fff280;
+  --gradient-flare: linear-gradient(135deg, #ff2d55, #ffbc5b);
+  --gradient-cerise: linear-gradient(135deg, #ff2d55, #c640cd);
+  --gradient-amin: linear-gradient(135deg, #c640cd, #691fa9);
+  --focus-ring: var(--ui-designer-text);
+  --menu-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-tooltip: 0 2px 3px rgba(0, 0, 0, 0.25);
+  --shadow-toast: 0 4px 4px rgba(0, 0, 0, 0.1);
+  --shadow-popover: 0 4px 10px rgba(0, 0, 0, 0.25);
+
   /* DCL Colors */
   --primary-main: #ff2d55;
   --primary-dark: #f70038;
@@ -144,10 +215,6 @@
      verifiable. The steps repeat the rgb triple because CSS cannot derive rgba()
      from a hex token.
 
-     Deliberately NOT --primary-main: pink/red is reserved for CTAs and main
-     buttons (.Button.danger, the callback confirm), so a panel control painted
-     with it competes with the one thing on screen that should read as the action.
-
      Do NOT reuse the cyan alphas above — they are solved for a different
      luminance (cyan 0.502 vs this blue 0.419). Named for their real alpha:
      base 8.13:1 · -62 3.87:1 · -21 1.47:1 · -15 1.30:1, with Snow on the -21
@@ -158,45 +225,26 @@
   --ui-designer-control-accent-21: rgba(99, 180, 246, 0.21);
   --ui-designer-control-accent-15: rgba(99, 180, 246, 0.15);
 
-  /* Selected / active controls, per the Figma 08/26 states matrix. A selected
-     segmented cell (Flow, Text alignment, Fill mode) and an active standalone
-     toggle (Flow wrap, the aspect lock) share ONE treatment: a solid accent-blue
-     fill with a dark Charcoal glyph. A checkbox is separate — see
-     --ui-designer-checkbox-border.
-
-     Charcoal on the accent fill measures ~5.9:1 (clears both the ≥3:1 non-text and
-     ≥4.5:1 text minimums), and the accent reads as a strong hue+luminance jump
-     against the resting glyph — so a white glyph is deliberately NOT used here (it
-     lands ~2.2:1 on this blue). Hover stays a faint white tint; selection is the
-     accent fill. --ui-designer-control-selected-bg is retained as the subtle
-     hover/selected fill for menu ROWS only, not toggles. */
-  --ui-designer-control-hover-bg: rgba(255, 255, 255, 0.06);
   --ui-designer-control-empty-bg: rgba(255, 255, 255, 0.05); /* placeholder / unbound field fill */
   --ui-designer-control-selected-bg: rgba(255, 255, 255, 0.1); /* White 10 · menu rows */
-  --ui-designer-control-active-bg: var(--ui-designer-control-accent); /* toggle fill */
-  --ui-designer-control-active-fg: #35333b; /* Charcoal · glyph on accent fill */
+  --ui-designer-control-hover-bg: rgba(255, 255, 255, 0.06);
+  --ui-designer-control-active-bg: var(--ui-designer-control-accent);
+  --ui-designer-control-active-fg: #35333b;
   /* Panel surfaces, foreground and glyphs — the Figma's own Neutrals ramp
      (PropertiesFull 1492:1939). The panel frame reuses --base-19 rather than
      declaring the design's #25212a: the two differ by 1/255, and the group cards
      (Container.css) already paint --base-19, so borrowing it keeps frame and card
      identical instead of near-miss different. */
   --ui-designer-panel-bg: var(--base-19);
-  --ui-designer-control-bg: #35333b; /* Neutrals/Charcoal */
-  --ui-designer-text: #fcfcfc; /* Neutrals/Snow — labels, group titles */
-  --ui-designer-text-value: #cfcdd4; /* Neutrals/Gray — value inside a field */
-  --ui-designer-text-muted: #a09ba8; /* Neutrals/Silver — hints, secondary */
-  --ui-designer-control-border: rgba(255, 255, 255, 0.1); /* Transparencies/White 10 */
+  --ui-designer-control-bg: #35333b;
+  --ui-designer-text: var(--palette-neutral-softWhite);
+  --ui-designer-text-value: var(--palette-neutral-gray4);
+  --ui-designer-text-muted: var(--palette-neutral-gray3);
+  --ui-designer-control-border: var(--palette-whiteTransparent-subtle);
   /* One step up, for a border that has to out-weigh another White 10 stroke
      inside the same control (the Anchor preview's box vs its crosshair). */
-  --ui-designer-control-border-strong: rgba(255, 255, 255, 0.2); /* Transparencies/White 20 */
-  /* A checkbox stays transparent in both states and carries its state on the tick
-     alone (Neutrals/Gray, 10.07:1 on the panel), so the border is all that draws
-     the empty box — which is why it sits four steps above the control border
-     rather than reusing it. Compositing White 40 over the panel gives ~#7c7a80 at
-     3.73:1, clearing the 3:1 non-text minimum. Dropping the old --gray-0 fill was
-     therefore a contrast GAIN, not a loss: that fill was doing the work a 1.39:1
-     White 10 border could not. */
-  --ui-designer-checkbox-border: rgba(255, 255, 255, 0.4); /* Transparencies/White 40 */
+  --ui-designer-control-border-strong: var(--palette-whiteTransparent-soft);
+  --ui-designer-checkbox-border: var(--palette-whiteTransparent-blurry);
   --ui-designer-hairline: rgba(255, 255, 255, 0.07);
 
   /* Glyph stroke. The design paints every panel glyph Neutrals/Cloudy Sky, which
@@ -204,12 +252,12 @@
      fill (2.43:1) — and the box-model edge ticks are in-input prefixes whose whole
      job is to say WHICH edge. Those lift to Silver (4.6:1 on the fill); everything
      sitting on the frame keeps the design's value. */
-  --ui-designer-glyph: #716b7c; /* Neutrals/Cloudy Sky */
+  --ui-designer-glyph: var(--palette-neutral-gray2);
   --ui-designer-glyph-on-control: var(--ui-designer-text-muted);
 
   /* Field and menu corners, per the Figma's Input (rx 6) and Menu (rx 12). */
-  --ui-designer-radius-field: 6px;
-  --ui-designer-radius-menu: 12px;
+  --ui-designer-radius-field: var(--shape-borderRadius);
+  --ui-designer-radius-menu: var(--shape-borderRadiusLarge);
   /* 4px spacing scale */
   --uid-space-1: 4px;
   --uid-space-2: 8px;
@@ -227,4 +275,86 @@
     "Inter", system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-monospace:
     "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+
+  --type-display-semi-size: 48px;
+  --type-display-semi-weight: 600;
+  --type-display-semi-line-height: normal;
+  --type-display-semi-letter-spacing: 0;
+  --type-display-regular-size: 48px;
+  --type-display-regular-weight: 400;
+  --type-display-regular-line-height: normal;
+  --type-display-regular-letter-spacing: 0;
+  --type-h1-semi-size: 30px;
+  --type-h1-semi-weight: 600;
+  --type-h1-semi-line-height: 100%;
+  --type-h1-semi-letter-spacing: 0;
+  --type-h2-semi-size: 24px;
+  --type-h2-semi-weight: 600;
+  --type-h2-semi-line-height: 100%;
+  --type-h2-semi-letter-spacing: 0;
+  --type-h3-semi-size: 22px;
+  --type-h3-semi-weight: 600;
+  --type-h3-semi-line-height: 100%;
+  --type-h3-semi-letter-spacing: 0;
+  --type-h4-semi-size: 20px;
+  --type-h4-semi-weight: 600;
+  --type-h4-semi-line-height: 100%;
+  --type-h4-semi-letter-spacing: 0;
+  --type-h5-semi-size: 18px;
+  --type-h5-semi-weight: 600;
+  --type-h5-semi-line-height: 100%;
+  --type-h5-semi-letter-spacing: 0;
+  --type-h5-regular-size: 18px;
+  --type-h5-regular-weight: 400;
+  --type-h5-regular-line-height: 100%;
+  --type-h5-regular-letter-spacing: 0;
+  --type-h6-semi-caps-size: 16px;
+  --type-h6-semi-caps-weight: 600;
+  --type-h6-semi-caps-line-height: 100%;
+  --type-h6-semi-caps-letter-spacing: 0;
+  --type-h6-semi-size: 16px;
+  --type-h6-semi-weight: 600;
+  --type-h6-semi-line-height: 100%;
+  --type-h6-semi-letter-spacing: 0;
+  --type-h6-regular-size: 16px;
+  --type-h6-regular-weight: 400;
+  --type-h6-regular-line-height: 100%;
+  --type-h6-regular-letter-spacing: 0;
+  --type-h7-bold-caps-size: 14px;
+  --type-h7-bold-caps-weight: 700;
+  --type-h7-bold-caps-line-height: 100%;
+  --type-h7-bold-caps-letter-spacing: 0;
+  --type-h7-semi-caps-size: 14px;
+  --type-h7-semi-caps-weight: 600;
+  --type-h7-semi-caps-line-height: 100%;
+  --type-h7-semi-caps-letter-spacing: 0;
+  --type-h7-semi-size: 14px;
+  --type-h7-semi-weight: 600;
+  --type-h7-semi-line-height: 100%;
+  --type-h7-semi-letter-spacing: 0;
+  --type-h7-regular-size: 14px;
+  --type-h7-regular-weight: 400;
+  --type-h7-regular-line-height: 100%;
+  --type-h7-regular-letter-spacing: 0;
+  --type-h8-semi-size: 12px;
+  --type-h8-semi-weight: 600;
+  --type-h8-semi-line-height: 100%;
+  --type-h8-semi-letter-spacing: 0;
+  --type-h8-regular-size: 12px;
+  --type-h8-regular-weight: 400;
+  --type-h8-regular-line-height: 100%;
+  --type-h8-regular-letter-spacing: 0;
+  --type-body14-size: 14px;
+  --type-body14-weight: 400;
+  --type-body14-line-height: 1.43;
+  --type-body14-letter-spacing: 0.17px;
+  --type-overline-size: 12px;
+  --type-overline-weight: 400;
+  --type-overline-line-height: 2.66;
+  --type-overline-letter-spacing: 1px;
+  --type-button-small-size: 13px;
+  --type-button-small-weight: 600;
+  --type-button-small-line-height: 24px;
+  --type-button-small-letter-spacing: 0.46px;
+  --type-caption-size: 10px;
 }
