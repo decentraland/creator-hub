@@ -1,3 +1,4 @@
+import type { ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -31,6 +32,19 @@ vi.mock('/@/lib/worlds', async importOriginal => {
 vi.mock('/@/lib/auth', async importOriginal => ({
   ...(await importOriginal<object>()),
   AuthServerProvider: { getAccount: () => '0xme' },
+}));
+vi.mock('../../Button', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  Button: ({
+    variant: _variant,
+    color: _color,
+    ...props
+  }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string; color?: string }) => (
+    <button
+      type="button"
+      {...props}
+    />
+  ),
 }));
 
 const saved: WorldSettings = {
