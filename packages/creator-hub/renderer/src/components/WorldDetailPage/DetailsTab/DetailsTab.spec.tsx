@@ -75,6 +75,8 @@ const notices = (store: ReturnType<typeof createTestStore>) =>
 const nameField = () => screen.getByRole('textbox', { name: 'World Name' });
 const descriptionField = () => screen.getByRole('textbox', { name: 'Description' });
 const categories = () => screen.getByRole('combobox', { name: 'Categories' });
+const byText = (elements: HTMLElement[], text: string) =>
+  elements.find(element => element.textContent === text)!;
 const edit = (field: HTMLElement, value: string) => fireEvent.change(field, { target: { value } });
 
 describe('World DetailsTab', () => {
@@ -203,14 +205,14 @@ describe('World DetailsTab', () => {
   describe('when categories are picked', () => {
     it('should add the picked one, and save the new set', async () => {
       await renderTab();
-      fireEvent.mouseDown(categories());
-      fireEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: '🎨 Art' }));
-      fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
+      const field = categories();
+      fireEvent.mouseDown(field);
+      fireEvent.click(byText(within(screen.getByRole('listbox')).getAllByRole('option'), '🎨 Art'));
 
-      expect(categories().textContent).toBe('👥 Social, 🎶 Music, 🎨 Art');
+      expect(field.textContent).toBe('👥 Social, 🎶 Music, 🎨 Art');
 
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+        fireEvent.click(byText(screen.getAllByRole('button', { hidden: true }), 'Save'));
       });
 
       expect(putWorldSettings).toHaveBeenCalledWith('0xme', 'plaza.dcl.eth', {
