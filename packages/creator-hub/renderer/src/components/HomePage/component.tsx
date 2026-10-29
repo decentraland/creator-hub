@@ -14,14 +14,13 @@ import { CircularProgress as Loader, Typography } from 'decentraland-ui2';
 import { misc } from '#preload';
 
 import { type Project } from '/shared/types/projects';
-import type { Template } from '/shared/types/workspace';
-import { STUDIOS_ADMIN_URL } from '/shared/urls';
 import NewScenePng from '/assets/images/new-scene.png';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { t } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/settings';
+import { TEMPLATES } from '/@/modules/templates';
 import type { AppState } from '../../modules/store';
 import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
 import { CreateProject } from '../Modals/CreateProject';
@@ -66,6 +65,7 @@ const HomeCard: React.FC<HomeCardProps> = React.memo(
         <video
           className="HomeCardThumbnail"
           src={videoUrl}
+          poster={imageUrl}
           muted
           loop
         />
@@ -135,7 +135,7 @@ const MyScenesRow: React.FC = React.memo(() => {
 
 const TemplatesRow: React.FC = React.memo(() => {
   const navigate = useNavigate();
-  const { templates, createProject, getAvailableProject } = useWorkspace();
+  const { createProject, getAvailableProject } = useWorkspace();
   const [newProject, setNewProject] = useState<NewProjectPayload | undefined>();
 
   const handleSeeAll = useCallback(() => navigate('/templates'), [navigate]);
@@ -163,13 +163,6 @@ const TemplatesRow: React.FC = React.memo(() => {
     [createProject, newProject],
   );
 
-  const getThumbnail = useCallback(({ image_1: imageUrl, video_1: videoUrl }: Template) => {
-    const assetId = videoUrl || imageUrl;
-    if (!assetId) return {};
-    const url = `${STUDIOS_ADMIN_URL}/assets/${assetId}`;
-    return videoUrl ? { videoUrl: url } : { imageUrl: url };
-  }, []);
-
   return (
     <>
       <Row
@@ -185,13 +178,14 @@ const TemplatesRow: React.FC = React.memo(() => {
             onClick={handleClickTemplate()}
           />
           {/* -1 leaves room for the "Empty Scene" card so the row stays a single row. */}
-          {templates.slice(0, ROW_SIZE - 1).map(template => (
+          {TEMPLATES.slice(0, ROW_SIZE - 1).map(template => (
             <HomeCard
               key={template.id}
               title={template.title}
               description={template.description}
-              {...getThumbnail(template)}
-              onClick={handleClickTemplate(template.github_link)}
+              imageUrl={template.imageUrl}
+              videoUrl={template.videoUrl}
+              onClick={handleClickTemplate(template.repo)}
             />
           ))}
         </div>

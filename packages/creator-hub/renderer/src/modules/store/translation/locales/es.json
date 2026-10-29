@@ -1035,7 +1035,6 @@
     "title": "Elija una plantilla",
     "results": "{count} {count, plural, one {plantilla} other {plantillas}}",
     "actions": {
-      "preview": "Previsualizar Plantilla",
       "code": "Ver Código"
     },
     "new_scene": {
