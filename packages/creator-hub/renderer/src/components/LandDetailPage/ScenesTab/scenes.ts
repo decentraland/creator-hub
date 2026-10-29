@@ -20,16 +20,6 @@ export function selectScenes(
     );
 }
 
-/** A file-safe name for a scene's download. */
-export function slugify(title: string): string {
-  return (
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'scene'
-  );
-}
-
 /** A scene's deploy time as an ISO string, a medium date for the cell and a long date and time for its tooltip. */
 export function formatSceneDate(timestamp: number) {
   const { locale } = getCurrentLocale();

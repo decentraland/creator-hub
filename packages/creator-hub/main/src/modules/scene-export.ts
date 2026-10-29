@@ -12,22 +12,13 @@ import DCLIGNORE from './scene-export-template/template.dclignore?raw';
 import PACKAGE_JSON from './scene-export-template/template.package.json?raw';
 import TSCONFIG_JSON from './scene-export-template/template.tsconfig.json?raw';
 
-import type {
-  SceneExportOptions,
-  SceneExportProgress,
-  SceneExportResult,
-} from '/shared/types/scene-export';
+import type { SceneExportProgress, SceneExportResult } from '/shared/types/scene-export';
+
+import { getPeerUrl } from './catalyst';
+import { showSaveDialog } from './electron';
 
 const CONTENT_HASH = /^[a-zA-Z0-9]+$/;
 const UNSAFE_PATH_CHARS = /[\\:\0]/;
-const NPM_FILES = new Set([
-  '.npmrc',
-  '.yarnrc',
-  '.yarnrc.yml',
-  'package-lock.json',
-  'yarn.lock',
-  'node_modules',
-]);
 const STORED_EXTENSIONS = new Set([
   '.glb',
   '.png',
@@ -47,8 +38,22 @@ const DOWNLOAD_CONCURRENCY = 8;
 
 const RECOVERED_DIR = 'recovered-src';
 const EMPTY_ENTRY_POINT = 'export function main() {}\n';
-const PROJECT_FILES = new Set(['package.json', 'tsconfig.json', '.dclignore', 'RECOVERY.md']);
-const PROVIDED_PACKAGES = new Set(['@dcl/sdk', '@dcl/js-runtime']);
+const RESERVED_FILES = new Set([
+  'package.json',
+  'package-lock.json',
+  'yarn.lock',
+  'tsconfig.json',
+  'recovery.md',
+]);
+const RESERVED_DIRS = new Set([BUILD_DIR, RECOVERED_DIR]);
+const PROVIDED_PACKAGES = new Set([
+  '@dcl/sdk',
+  '@dcl/ecs',
+  '@dcl/ecs-math',
+  '@dcl/js-runtime',
+  '@dcl/react-ecs',
+  '@dcl/sdk-commands',
+]);
 const ALLOWED_SCOPES = ['@dcl/', '@dcl-sdk/'];
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
 const IMPORT_SPECIFIERS = [
@@ -67,6 +72,8 @@ type Entity = {
 
 type Source = { hash: string } | { content: string };
 
+type SceneExportOptions = { entityId: string; peerUrl: string; outputPath: string };
+
 type Recovery = {
   status: SceneExportResult['recovered'];
   sources: [string, string][];
@@ -78,13 +85,26 @@ type Recovery = {
 
 const running = new Map<string, AbortController>();
 
+function canonicalPath(file: string): string {
+  return file
+    .split('/')
+    .map(segment =>
+      segment
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/[. ]+$/, ''),
+    )
+    .join('/');
+}
+
 function toExportPath(file: unknown): string | null {
   if (typeof file !== 'string' || UNSAFE_PATH_CHARS.test(file)) return null;
-  const segments = file.split('/');
-  if (segments.some(segment => segment === '' || segment === '.' || segment === '..')) return null;
-  const reserved =
-    PROJECT_FILES.has(file) || NPM_FILES.has(segments[0]) || segments.includes('node_modules');
-  return reserved ? null : file;
+  const key = canonicalPath(file);
+  const segments = key.split('/');
+  const unsafe = segments.some(
+    segment => segment === '' || segment.startsWith('.') || segment === 'node_modules',
+  );
+  return unsafe || RESERVED_FILES.has(key) || RESERVED_DIRS.has(segments[0]) ? null : file;
 }
 
 function slugify(value: unknown): string {
@@ -251,7 +271,10 @@ function projectFiles(recovery: Recovery): [string, string][] {
 
 async function request(url: string, signal: AbortSignal): Promise<Response> {
   const response = await net.fetch(url, { signal });
-  if (!response.ok) throw new Error(`GET ${url} failed with status ${response.status}`);
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new Error(`GET ${url} failed with status ${response.status}`);
+  }
   return response;
 }
 
@@ -278,7 +301,8 @@ export async function exportScene(
 
   try {
     const entity: Entity = await (await request(`${contentUrl}${entityId}`, signal)).json();
-    const files = new Map<string, Source>();
+    const files = new Map<string, { name: string; source: Source }>();
+    const put = (name: string, source: Source) => files.set(canonicalPath(name), { name, source });
     const hashes = new Set<string>();
     const skipped: string[] = [];
     for (const item of Array.isArray(entity.content) ? entity.content : []) {
@@ -288,7 +312,7 @@ export async function exportScene(
         skipped.push(String(item?.file));
         continue;
       }
-      files.set(file.startsWith('bin/') ? `${BUILD_DIR}/${file}` : file, { hash });
+      put(canonicalPath(file).startsWith('bin/') ? `${BUILD_DIR}/${file}` : file, { hash });
       hashes.add(hash);
     }
 
@@ -309,16 +333,16 @@ export async function exportScene(
     await Promise.all(downloads);
     if (signal.aborted) throw signal.reason;
 
-    const sourceMap = files.get(SOURCE_MAP);
+    const sourceMap = files.get(SOURCE_MAP)?.source;
     const recovery = recoverSources(
       sourceMap && 'hash' in sourceMap
         ? await fs.readFile(path.join(tmp, sourceMap.hash), 'utf8')
         : undefined,
     );
     const prefix = recovery.status === 'partial' ? `${RECOVERED_DIR}/` : '';
-    for (const [file, content] of recovery.sources) files.set(`${prefix}${file}`, { content });
-    for (const [file, content] of projectFiles(recovery)) files.set(file, { content });
-    if (!files.has('src/index.ts')) files.set('src/index.ts', { content: EMPTY_ENTRY_POINT });
+    for (const [file, content] of recovery.sources) put(`${prefix}${file}`, { content });
+    for (const [file, content] of projectFiles(recovery)) put(file, { content });
+    if (!files.has('src/index.ts')) put('src/index.ts', { content: EMPTY_ENTRY_POINT });
 
     const pointers = Array.isArray(entity.pointers) ? entity.pointers : [];
     const root =
@@ -327,7 +351,7 @@ export async function exportScene(
     archive.on('progress', ({ entries }) =>
       onProgress({ entityId, phase: 'zip', done: entries.processed, total: entries.total }),
     );
-    for (const [file, source] of files) {
+    for (const { name: file, source } of files.values()) {
       const name = `${root}/${file}`;
       if ('hash' in source) {
         const entry: ZipEntryData = {
@@ -361,6 +385,24 @@ export async function exportScene(
     running.delete(entityId);
     await fs.rm(tmp, { recursive: true, force: true });
   }
+}
+
+/**
+ * Asks the user where to save the export of `entityId`, suggesting a file named after `title`,
+ * then exports it from the catalyst of the app's environment. Resolves null when the dialog is
+ * cancelled.
+ */
+export async function saveScene(
+  entityId: string,
+  title: unknown,
+  onProgress?: (progress: SceneExportProgress) => void,
+): Promise<SceneExportResult | null> {
+  const outputPath = await showSaveDialog({
+    defaultPath: `${slugify(title) || 'scene'}.zip`,
+    filters: [{ name: 'Zip', extensions: ['zip'] }],
+  });
+  if (!outputPath) return null;
+  return exportScene({ entityId, peerUrl: getPeerUrl(), outputPath }, onProgress);
 }
 
 /** Aborts the running export of `entityId`, if any; its `exportScene` call rejects. */

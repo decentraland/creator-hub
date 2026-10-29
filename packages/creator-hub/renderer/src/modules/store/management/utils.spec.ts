@@ -538,4 +538,12 @@ describe('getManagers', () => {
       ]);
     });
   });
+
+  describe('when an account manages only the Estate registry', () => {
+    it('should flag it as applying to Estates only', () => {
+      expect(getManagers([{ address: '0xc', type: LandType.ESTATE }])).toEqual([
+        { address: '0xc', state: 'estate-only' },
+      ]);
+    });
+  });
 });

@@ -1,15 +1,11 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
-import {
-  SCENE_EXPORT_PROGRESS_EVENT,
-  type SceneExportOptions,
-  type SceneExportProgress,
-} from '/shared/types/scene-export';
+import { SCENE_EXPORT_PROGRESS_EVENT, type SceneExportProgress } from '/shared/types/scene-export';
 
 import { invoke } from '../services/ipc';
 
-export async function exportScene(options: SceneExportOptions) {
-  return invoke('sceneExport.export', options);
+export async function exportScene(entityId: string, title: string) {
+  return invoke('sceneExport.export', entityId, title);
 }
 
 export async function cancel(entityId: string) {

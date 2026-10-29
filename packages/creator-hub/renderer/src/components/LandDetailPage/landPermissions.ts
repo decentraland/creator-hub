@@ -2,7 +2,7 @@ import { RoleType } from '/@/lib/land';
 
 export type LandTab = 'details' | 'scenes' | 'collaborators' | 'managers';
 
-export type LandPermissions = {
+type LandPermissions = {
   tabs: LandTab[];
   transfer: boolean;
   editDetails: boolean;

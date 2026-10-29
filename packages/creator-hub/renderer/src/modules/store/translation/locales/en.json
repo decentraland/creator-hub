@@ -1203,6 +1203,7 @@
     "expired": "The request expired before it was signed.",
     "failed": "The transaction failed.",
     "try_again": "Try again",
+    "continue": "Continue",
     "step": "Step {n} of {total}",
     "done": {
       "transfer": "LAND transferred.",
@@ -1338,7 +1339,8 @@
       "remove_body": "They will no longer manage your LAND.",
       "step_land": "LAND",
       "step_estates": "Estates",
-      "land_only": "Applies to LAND only. Estates not updated."
+      "land_only": "Can manage your LANDs only. Add them again to include your Estates.",
+      "estate_only": "Can manage your Estates only. Add them again to include your LANDs."
     }
   },
   "analytics": {

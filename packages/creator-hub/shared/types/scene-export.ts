@@ -1,11 +1,5 @@
 export const SCENE_EXPORT_PROGRESS_EVENT = 'sceneExport.progress';
 
-export type SceneExportOptions = {
-  entityId: string;
-  peerUrl: string;
-  outputPath: string;
-};
-
 export type SceneExportProgress = {
   entityId: string;
   phase: 'download' | 'zip';

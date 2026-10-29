@@ -5,7 +5,8 @@ import { useSelector } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
 import { buildSetUpdateManager } from '/@/lib/landTransactions';
 import type { AppState } from '/@/modules/store';
-import { getManagers } from '/@/modules/store/management/utils';
+import { getManagers, type ManagerState } from '/@/modules/store/management/utils';
+import type { TranslationPath } from '/@/modules/store/translation/types';
 import { t } from '/@/modules/store/translation/utils';
 
 import { EmptyState } from '../../ManagePage/EmptyState';
@@ -17,6 +18,12 @@ import { AddBlock, Description, ListBlock, ListHeader, Root, Rows } from '../acc
 import { useDisplayName } from '../access/useDisplayName';
 
 const bold = (chunks: string) => <b>{chunks}</b>;
+
+const PARTIAL_NOTE: Record<ManagerState, TranslationPath | null> = {
+  full: null,
+  'land-only': 'land_detail.managers.land_only',
+  'estate-only': 'land_detail.managers.estate_only',
+};
 
 const managerState = (state: AppState, address: string) =>
   getManagers(state.land.authorizations).find(
@@ -63,23 +70,26 @@ export function ManagersTab() {
         <ListBlock>
           <ListHeader>{t('land_detail.managers.count', { count: managers.length })}</ListHeader>
           <Rows>
-            {managers.map(manager => (
-              <AccessRow
-                key={manager.address}
-                address={manager.address}
-                onRemove={() => remove(manager.address)}
-                note={
-                  manager.state === 'land-only' && (
-                    <InfoTip
-                      label={t('land_detail.managers.land_only')}
-                      variant="warning"
-                    >
-                      {t('land_detail.managers.land_only')}
-                    </InfoTip>
-                  )
-                }
-              />
-            ))}
+            {managers.map(manager => {
+              const note = PARTIAL_NOTE[manager.state];
+              return (
+                <AccessRow
+                  key={manager.address}
+                  address={manager.address}
+                  onRemove={() => remove(manager.address)}
+                  note={
+                    note && (
+                      <InfoTip
+                        label={t(note)}
+                        variant="warning"
+                      >
+                        {t(note)}
+                      </InfoTip>
+                    )
+                  }
+                />
+              );
+            })}
           </Rows>
         </ListBlock>
       ) : (

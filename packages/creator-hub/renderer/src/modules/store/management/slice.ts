@@ -62,7 +62,7 @@ export type WorldPermissionsState = {
   error: string | null;
 };
 
-export type LandProjectsState = {
+type LandProjectsState = {
   projects: ManagedProject[];
   deployments: Record<string, LandDeployment[]>;
   deployers: Record<string, string>;

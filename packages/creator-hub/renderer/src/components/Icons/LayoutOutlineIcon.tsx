@@ -1,30 +1,19 @@
-import { useId } from 'react';
-
 import type { CommonProps } from './types';
 
 export function LayoutOutlineIcon({ className }: CommonProps) {
-  const maskId = useId();
   return (
     <svg
       className={className}
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
       fill="none"
       aria-hidden
       xmlns="http://www.w3.org/2000/svg"
     >
-      <mask
-        id={maskId}
-        fill="white"
-      >
-        <path d="M13.5 0V5.83002H7.66921L7.66236 0H13.5ZM5.8293 5.83002H0V0H5.82242L5.8293 5.83002ZM13.5 7.66998V13.5H7.67759L7.67073 7.66998H13.5ZM5.83767 13.5H0V7.66998H5.83078L5.83767 13.5Z" />
-      </mask>
       <path
-        d="M13.5 0V5.83002H7.66921L7.66236 0H13.5ZM5.8293 5.83002H0V0H5.82242L5.8293 5.83002ZM13.5 7.66998V13.5H7.67759L7.67073 7.66998H13.5ZM5.83767 13.5H0V7.66998H5.83078L5.83767 13.5Z"
-        strokeWidth="2"
+        d="M20.5 13.7266V20.5H13.7354L13.7285 13.7266H20.5ZM10.2754 13.7266L10.2822 20.5H3.5V13.7266H10.2754ZM20.5 3.5V10.2734H13.7246L13.7178 3.5H20.5ZM10.2646 3.5L10.2715 10.2734H3.5V3.5H10.2646Z"
         stroke="currentColor"
-        mask={`url(#${maskId})`}
       />
     </svg>
   );

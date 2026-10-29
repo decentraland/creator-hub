@@ -25,9 +25,9 @@ export function validateDetails(
   };
 }
 
-export type NameOption = { subdomain: string; usedBy?: string };
+type NameOption = { subdomain: string; usedBy?: string };
 
-export type DomainState =
+type DomainState =
   | { kind: 'empty' }
   | { kind: 'none'; options: NameOption[] }
   | { kind: 'set'; name: string; options: NameOption[] };

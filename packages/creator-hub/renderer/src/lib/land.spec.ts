@@ -403,18 +403,27 @@ describe('Lands.fetchDeployers', () => {
   });
 
   describe('when one chunk fails', () => {
-    it('should keep the deployers from the chunks that answered', async () => {
+    let cancel: ReturnType<typeof vi.fn>;
+    let deployers: Record<string, string>;
+
+    beforeEach(async () => {
+      cancel = vi.fn(async () => {});
       fetchMock.mockImplementation((url: string) =>
         url.includes('entityId=bafkreientity50&')
-          ? Promise.resolve({ ok: false, status: 503 })
+          ? Promise.resolve({ ok: false, status: 503, body: { cancel } })
           : Promise.resolve(answer(url)),
       );
+      deployers = await new Lands().fetchDeployers(ids(120));
+    });
 
-      const deployers = await new Lands().fetchDeployers(ids(120));
-
+    it('should keep the deployers from the chunks that answered', () => {
       expect(Object.keys(deployers)).toHaveLength(70);
       expect(deployers.bafkreientity0).toBe(deployer(0));
       expect(deployers.bafkreientity50).toBeUndefined();
+    });
+
+    it("should cancel the failed chunk's body", () => {
+      expect(cancel).toHaveBeenCalled();
     });
   });
 

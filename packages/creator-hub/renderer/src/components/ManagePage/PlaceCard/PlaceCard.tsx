@@ -24,7 +24,7 @@ import {
   Thumbnail,
 } from './PlaceCard.styled';
 
-export type PlaceCardStatus = 'published' | 'unpublished';
+type PlaceCardStatus = 'published' | 'unpublished';
 
 type Props = {
   name: string;

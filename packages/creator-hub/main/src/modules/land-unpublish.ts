@@ -2,15 +2,10 @@ import { net } from 'electron';
 import { createContentClient, DeploymentBuilder } from 'dcl-catalyst-client';
 import { AuthChain, EntityType, isInsideWorldLimits } from '@dcl/schemas';
 
-import { Env } from '/shared/types/env';
 import type { EmptySceneDeploy, EmptySceneDraft } from '/shared/types/land-unpublish';
 
-import { getEnvOverride } from './electron';
+import { getPeerUrl } from './catalyst';
 
-const PEER_URLS: Record<Env, string> = {
-  [Env.DEV]: 'https://peer.decentraland.zone',
-  [Env.PROD]: 'https://peer.decentraland.org',
-};
 const EMPTY_SCENE_MAIN = 'bin/index.js';
 const EMPTY_SCENE_CODE = 'exports.onStart=async function(){};exports.onUpdate=async function(){};';
 const DEPLOY_TIMEOUT_MS = 30_000;
@@ -31,8 +26,6 @@ const toFetchInit = (init: RequestInit = {}): RequestInit =>
         headers: { ...(init.headers as Record<string, string>), ...init.body.getHeaders() },
       }
     : init;
-
-const getPeerUrl = () => PEER_URLS[getEnvOverride() ?? (import.meta.env.DEV ? Env.DEV : Env.PROD)];
 
 function assertParcel(parcel: unknown): asserts parcel is string {
   const match = typeof parcel === 'string' && PARCEL.exec(parcel);

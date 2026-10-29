@@ -87,7 +87,7 @@ const Trigger = styled(IconButton, {
   height: 40,
   borderRadius: 100,
   color: whiteTransparent.blurry,
-  '& svg': { fontSize: theme.typography.pxToRem(20) },
+  '& svg': { fontSize: theme.typography.pxToRem(24) },
   '&:hover, &:focus-visible, &[aria-expanded="true"]': {
     backgroundColor: whiteTransparent.subtle,
   },

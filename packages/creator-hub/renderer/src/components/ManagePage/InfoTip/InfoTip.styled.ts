@@ -20,9 +20,11 @@ const Bubble = styled('div')(({ theme }) => ({
   textAlign: 'left',
 }));
 
+const GLYPH_PX = { small: 13.2, medium: 16.8 };
+
 const InfoButton = styled('button', {
-  shouldForwardProp: prop => prop !== 'look',
-})<{ look: 'info' | 'warning' }>(({ theme, look }) => ({
+  shouldForwardProp: prop => prop !== 'look' && prop !== 'size',
+})<{ look: 'info' | 'warning'; size: keyof typeof GLYPH_PX }>(({ theme, look, size }) => ({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -34,7 +36,7 @@ const InfoButton = styled('button', {
   backgroundColor: 'transparent',
   color: look === 'warning' ? theme.palette.warning.main : neutral.softWhite,
   cursor: 'pointer',
-  '& svg': { fontSize: theme.typography.pxToRem(18) },
+  '& svg': { fontSize: theme.typography.pxToRem(GLYPH_PX[size]) },
   '&:hover, &[aria-expanded="true"]': {
     backgroundColor: whiteTransparent.subtle,
   },

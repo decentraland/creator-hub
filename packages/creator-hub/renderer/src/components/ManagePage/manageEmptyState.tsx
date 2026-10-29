@@ -10,7 +10,7 @@ const WORLDS_READ_MORE_URL =
   'https://decentraland.org/blog/about-decentraland/decentraland-worlds-your-own-virtual-space';
 const LAND_READ_MORE_URL = 'https://docs.decentraland.org/marketplace/land-manager';
 
-export type ManageEmptyKind = 'error' | 'no-results' | 'no-matches' | 'none';
+type ManageEmptyKind = 'error' | 'no-results' | 'no-matches' | 'none';
 
 type ListState = {
   failed: boolean;

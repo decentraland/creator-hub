@@ -197,8 +197,8 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('optimizer.tools', () => optimizer.tools());
   handle('optimizer.installTools', (_event, path) => optimizer.installTools(path));
 
-  handle('sceneExport.export', (event, options) =>
-    sceneExport.exportScene(options, progress => {
+  handle('sceneExport.export', (event, entityId, title) =>
+    sceneExport.saveScene(entityId, title, progress => {
       if (!event.sender.isDestroyed()) event.sender.send(SCENE_EXPORT_PROGRESS_EVENT, progress);
     }),
   );

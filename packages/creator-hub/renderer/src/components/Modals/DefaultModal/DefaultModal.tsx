@@ -3,7 +3,7 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import { t } from '/@/modules/store/translation/utils';
 
-import { Button } from '../../Button';
+import { DialogButton } from '../../DialogButton';
 import { Loader } from '../../Loader';
 import {
   Actions,
@@ -18,7 +18,7 @@ import {
 
 type Action = { label: string; onClick: () => void };
 
-export type PrimaryAction = Action & { state: 'idle' | 'blocked' | 'busy' };
+type PrimaryAction = Action & { state: 'idle' | 'blocked' | 'busy' };
 
 type Props = {
   open: boolean;
@@ -75,27 +75,25 @@ export function DefaultModal({
           {(secondary || primary) && (
             <Actions>
               {secondary && (
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  size="large"
+                <DialogButton
+                  type="button"
+                  tone="secondary"
                   autoFocus={initialFocus === 'secondary'}
                   disabled={busy}
                   onClick={secondary.onClick}
                 >
                   {secondary.label}
-                </Button>
+                </DialogButton>
               )}
               {primary && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="large"
+                <DialogButton
+                  type="button"
+                  tone="primary"
                   disabled={primary.state !== 'idle'}
                   onClick={primary.onClick}
                 >
                   {busy ? <Loader size={24} /> : primary.label}
-                </Button>
+                </DialogButton>
               )}
             </Actions>
           )}

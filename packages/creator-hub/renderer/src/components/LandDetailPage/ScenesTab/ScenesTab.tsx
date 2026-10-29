@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { misc, sceneExport } from '#preload';
+import { sceneExport } from '#preload';
 import { useDispatch, useSelector } from '#store';
-import { config } from '/@/config';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { Lands, type Land } from '/@/lib/land';
 import { fetchLandDeployers } from '/@/modules/store/management/slice';
@@ -21,7 +20,7 @@ import { SearchField, SelectField, SORT_OPTIONS } from '../../ManagePage/ViewBar
 import { DefaultModal } from '../../Modals/DefaultModal';
 import { UnpublishSceneModal, type UnpublishTarget } from '../../Modals/UnpublishSceneModal';
 import { SceneRow, type DownloadState, type RowMode } from './SceneRow';
-import { selectScenes, slugify } from './scenes';
+import { selectScenes } from './scenes';
 import { Bulk, Meta, Root, ScenesBar, Stats, Table } from './ScenesTab.styled';
 
 const RESULT_MESSAGE: Record<
@@ -93,23 +92,16 @@ export function ScenesTab({ land, project, mode }: Props) {
 
   const download = async (scene: LandScene) => {
     setWarning(null);
-    const outputPath = await misc.showSaveDialog({
-      defaultPath: `${slugify(scene.title)}.zip`,
-      filters: [{ name: 'Zip', extensions: ['zip'] }],
-    });
-    if (!outputPath) return;
     setDownload(scene.id, { kind: 'running', done: 0, total: 0 });
     const progress = sceneExport.subscribeProgress(scene.id, ({ done, total }) =>
       setDownload(scene.id, { kind: 'running', done, total }),
     );
     try {
-      const result = await sceneExport.exportScene({
-        entityId: scene.id,
-        peerUrl: config.get('PEER_URL'),
-        outputPath,
-      });
-      const message = RESULT_MESSAGE[result.recovered];
-      pushGeneric(message.severity, t(message.key));
+      const result = await sceneExport.exportScene(scene.id, scene.title);
+      if (result) {
+        const message = RESULT_MESSAGE[result.recovered];
+        pushGeneric(message.severity, t(message.key));
+      }
     } catch {
       if (!cancelled.current.has(scene.id)) {
         pushGeneric('error', t('land_detail.download.error', { scene: scene.title }));
@@ -171,7 +163,7 @@ export function ScenesTab({ land, project, mode }: Props) {
             </Meta>
             {project.place?.kind === 'estate' && (
               <Meta>
-                <LayoutOutlineIcon className="LandsGlyph" />
+                <LayoutOutlineIcon />
                 {t('manage.cards.land.lands_count', { count: project.place.size })}
               </Meta>
             )}

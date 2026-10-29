@@ -37,7 +37,7 @@ export class SignInError extends Error {
   }
 }
 
-export type RelayErrorReason = 'rejected' | 'expired' | 'no_identity';
+type RelayErrorReason = 'rejected' | 'expired' | 'no_identity';
 
 export class RelayError extends Error {
   constructor(
@@ -310,6 +310,7 @@ export class AuthServerProvider {
 
   /**
    * Emits an event to create a request with a given payload and waits for the response.
+   * @todo The relay request carries no chain id; send it and make the auth dapp enforce it.
    */
   private static createRequest = async (
     socket: Socket,
