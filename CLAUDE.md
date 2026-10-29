@@ -100,6 +100,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - **shared/** — Shared types and utilities used across main/preload/renderer.
 - Build tool: Vite for all three layers.
 - **Every inspector-iframe RPC channel must share `initRpc`'s transport.** `AuthenticatedMessageTransport` (`renderer/src/modules/rpc/transport.ts`) is what checks sender and origin on inbound messages — `@dcl/mini-rpc`'s own `MessageTransport` uses its `origin` argument only as the `postMessage` target, not as a filter. `initRpc` builds ONE instance and hands it to every channel (`StorageRPC`, `SceneRpc*`, `CodeParserRPC`), so a new channel inherits the check for free. Constructing a fresh transport for a new channel silently opens an unauthenticated path beside the hardened ones.
+- **Creator Hub's icons come from the inspector's build.** The Figma icon library is generated in the inspector, and `@dcl/inspector/icons` (a stub folder, `packages/inspector/icons/package.json`, pointing at `dist/icons.mjs` and `dist/icons.d.ts`) exports only its `createIconSet` builder. Creator Hub binds it with MUI's `SvgIcon` in `renderer/src/components/Icons/figma/`, and its screens import from there (`/@/components/Icons/figma`). Creator Hub's typecheck, tests and dev server therefore need a built inspector (`make build-inspector`), the way the inspector needs a built asset-packs. It is a stub folder, not an `exports` map, because sdk-commands deep-imports paths inside `@dcl/inspector` that a map would block. The rules for adding an icon are in [`docs/DESIGN.md`](docs/DESIGN.md) → Icons.
 
 ### Inspector
 
@@ -141,6 +142,7 @@ make protoc        # Regenerate TypeScript from .proto files
 ### Asset Packs
 
 - Runtime built with `@dcl/sdk-commands` (SDK7 scene).
+- **`make build-asset-packs` can run an npm install.** Its `build:js` is `sdk-commands build`, which prints "Installing dependencies..." and reifies the whole workspace tree when it decides the install is incomplete (a fresh worktree is enough). In a `git worktree` whose `node_modules` is symlinked to the main checkout, that reify follows the links and MOVES packages out of the main checkout's `node_modules`, breaking every vitest run there. Give each worktree its own `npm ci`, and never symlink `node_modules` or its entries. A symlinked tree also resolves the workspace links (`@dcl/inspector -> ../../packages/inspector`) into the main checkout's packages, so tests silently run against the wrong code.
 - TypeScript library (`dist/`) + catalog.json + binary assets (`bin/`).
 - Scripts for validating, uploading to S3, and downloading assets.
 - Public API is exported via `src/definitions.ts` (built to `dist/definitions.js`, the package `main`). Cross-package VALUE imports from `@dcl/asset-packs` in the inspector only resolve after rebuilding asset-packs (`make build-asset-packs`). This also affects the inspector's **vitest unit tests**, which import the built `@dcl/asset-packs` — a source edit in asset-packs won't be seen (in imports, typecheck, or tests) until rebuilt. `npm run build:lib` (in `packages/asset-packs`) is the minimal/fast rebuild to refresh `dist/`.

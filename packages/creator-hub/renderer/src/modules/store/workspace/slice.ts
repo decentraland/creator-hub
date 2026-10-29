@@ -18,7 +18,6 @@ const initialState: Async<Workspace> = {
   sortBy: SortBy.NEWEST,
   projects: [],
   missing: [],
-  templates: [],
   settings: {
     scenesPath: '',
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
