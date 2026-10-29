@@ -647,125 +647,6 @@
       "proposal": "这些存储规则经过治理 DAO 提案的投票并获得通过。",
       "learn_more": "了解更多"
     },
-    "world_permissions": {
-      "tabs": {
-        "access": {
-          "label": "访问"
-        },
-        "collaborators": {
-          "label": "协作者"
-        }
-      },
-      "title": "权限 - {worldName}",
-      "invalid_address": "无效地址",
-      "done": "完成",
-      "access": {
-        "title": "管理谁可以访问您的世界",
-        "description": "通过在<span>\"私有\"</span>和<span>\"公开\"</span>之间切换\n来管理谁可以访问您的世界。",
-        "subtitle": "在<span>私有模式</span>下，您可以授予最多 100 个地址（Decentraland 用户）访问权限。请注意，如果您恢复到<span>公开模式</span>，您的已批准地址列表将被清除。",
-        "type": {
-          "public": "公开",
-          "invitation_only": "仅限邀请",
-          "password_protected": "密码保护",
-          "public_description": "任何人都可以访问这个世界",
-          "invitation_only_description": "只有已批准的地址才能访问这个世界",
-          "password_protected_description": "只有知道访问密码的用户才能加入"
-        },
-        "warning": {
-          "title": "警告",
-          "description": "如果您恢复到公开模式，您的已批准地址列表将被清除。"
-        },
-        "empty_list": "您还没有批准任何地址",
-        "public": "公开",
-        "private": "私有",
-        "approved_addresses": "已批准地址: {number}",
-        "approved_addresses_tooltip": "同一时间最多只能有100名用户加入",
-        "add_address": "添加地址",
-        "new_invite": "新邀请",
-        "clear_list": "清除列表",
-        "clear_list_title": "清除列表？",
-        "clear_list_warning": "如果您继续，您的已批准地址列表将被清除。",
-        "change_access_type_title": "更改访问类型？",
-        "change_access_type_warning": "如果您切换访问类型，您的已批准地址列表将被清除。",
-        "go_back": "返回",
-        "continue": "继续",
-        "confirm": "确认",
-        "cancel": "取消",
-        "wrong_address_format": "地址格式错误",
-        "community_search_placeholder": "搜索社区...",
-        "community_searching": "搜索中...",
-        "community_no_results": "未找到社区",
-        "community_members": "{count} {count, plural, one {成员} other {成员}}",
-        "community_privacy_public": "公开社区",
-        "community_privacy_private": "私密社区",
-        "invite_tabs": {
-          "wallet_address": "钱包地址",
-          "community": "社区",
-          "import_csv": "导入CSV"
-        },
-        "csv_drop_text": "将CSV文件拖放到此处或",
-        "csv_browse": "浏览您的设备文件",
-        "csv_addresses_count": "{count} 个地址",
-        "csv_communities_count": "{count} 个社区",
-        "csv_invalid_count": "{count} 个无效地址",
-        "csv_replace": "替换",
-        "actions": {
-          "remove": "移除"
-        }
-      },
-      "password": {
-        "change_password": "更改密码",
-        "create_new_password": "创建新密码",
-        "empty_state": "此世界的密码尚未设置。",
-        "has_password": "此世界受密码保护。",
-        "dialog": {
-          "create_title": "创建新密码",
-          "change_title": "更改密码",
-          "type_password": "输入您的密码",
-          "repeat_password": "重复您的密码",
-          "info": "请务必记下您的密码，以免丢失！"
-        },
-        "error": {
-          "empty": "密码不能为空",
-          "too_short": "密码必须至少 {min} 个字符",
-          "mismatch": "密码不匹配",
-          "requirements_header": "密码必须包含：",
-          "min_length": "最少长度：{min} 个字符",
-          "min_numbers": "至少 {min} 个数字"
-        }
-      },
-      "collaborators": {
-        "description": "<span>添加最多 100 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
-        "empty_list": "您还没有添加任何协作者",
-        "add_collaborator": "添加协作者",
-        "add": "添加",
-        "column_name_label": "协作者：{number}",
-        "all_parcels": "所有地块",
-        "clear_list_title": "清空列表？",
-        "clear_list_warning": "如果继续，您的协作者列表将被清除。",
-        "deployment": {
-          "world_wide": "所有地块",
-          "parcels": "自定义坐标",
-          "none": "无"
-        },
-        "parcels_count": "{count} 个地块",
-        "actions": {
-          "remove": "移除",
-          "clear_list": "清空列表"
-        },
-        "dialog": {
-          "title": "添加协作者",
-          "label": "输入钱包地址或 ENS"
-        }
-      },
-      "parcels": {
-        "title": "自定义坐标",
-        "actions": {
-          "discard": "丢弃",
-          "confirm": "确认"
-        }
-      }
-    },
     "create_project": {
       "title": "創建場景",
       "fields": {
@@ -1030,7 +911,6 @@
     },
     "cards": {
       "roles": {
-        "owner": "所有者",
         "collaborator": "协作者",
         "tenant": "租户"
       },
@@ -1295,9 +1175,18 @@
         "select_all": "全选已邀请",
         "select": "选择 {name}",
         "remove": "移除 {name}",
-        "remove_selected": "移除所选",
         "remove_body": "他们将无法再加入这个世界。",
-        "remove_many_title": "移除 {count} 个邀请？"
+        "remove_many_title": "移除 {count} 个邀请？",
+        "label": "访问",
+        "public": "公开",
+        "public_description": "任何人都可以访问这个世界",
+        "change_type_title": "更改访问类型？",
+        "change_type_warning": "如果您切换访问类型，您的已批准地址列表将被清除。",
+        "continue": "继续",
+        "tab_csv": "导入CSV",
+        "csv_drop_text": "将CSV文件拖放到此处或",
+        "csv_invalid_count": "{count} 个无效地址",
+        "csv_replace": "替换"
       },
       "password": {
         "requirements": "你的密码必须包含",
@@ -1305,11 +1194,30 @@
         "min_numbers": "至少 2 个数字",
         "mismatch": "密码不匹配",
         "show": "显示密码",
-        "hide": "隐藏密码"
+        "hide": "隐藏密码",
+        "change_password": "更改密码",
+        "create_title": "创建新密码",
+        "change_title": "更改密码",
+        "type_password": "输入您的密码",
+        "repeat_password": "重复您的密码",
+        "info": "请务必记下您的密码，以免丢失！"
       },
       "general": "常规",
       "single_player": "单人游戏",
       "single_player_streaming_note": "单人模式下不支持直播。"
+    },
+    "collaborators": {
+      "description": "添加最多 100 个协作者，并管理他们在你的世界中部署或流媒体的权限。",
+      "count": "协作者：{count}/100",
+      "stream": "流媒体",
+      "stream_label": "{name} 的流媒体权限",
+      "remove_one_title": "确定要将“{name}”从协作者中移除吗？",
+      "remove_several_title": "确定要移除所有这些协作者吗？",
+      "remove_all_title": "确定要移除所有协作者吗？",
+      "full": "你已达到 100 个协作者的上限。",
+      "none": "无",
+      "stream_open": "此世界的流媒体对所有人开放。",
+      "remove_body": "他们将无法再在这个世界中部署或流媒体。"
     }
   },
   "detail_shell": {

@@ -5,6 +5,7 @@ import type { AtlasScene } from '/@/components/WorldAtlas';
 
 import { DefaultModal, type ModalStep } from '../Modals/DefaultModal';
 import { AvatarWithInfo } from '../AvatarWithInfo';
+import type { Allowed } from './cursor';
 import { ParcelPickerMap } from './ParcelPickerMap';
 import { AtlasBlock, Count, Description } from './ParcelPicker.styled';
 
@@ -14,7 +15,7 @@ type Props = {
   walletAddress: string;
   scenes: AtlasScene[];
   initialParcels: Set<string>;
-  allowed: Set<string>;
+  allowed: Allowed;
   onCancel: () => void;
   onConfirm: (parcels: string[]) => void;
   next?: ModalStep;

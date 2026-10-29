@@ -6,7 +6,6 @@ import { LandType } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
 
 import { SelectCheckbox } from '../SelectCheckbox';
-import { Button } from '../../Button';
 import { menuSurfaceStyles } from '../../Dropdown/component.styled';
 import { ChevronDownIcon } from '../../Icons';
 import { EmptyState } from '../../ManagePage/EmptyState';
@@ -19,6 +18,7 @@ import {
   type AccessRequest,
 } from '../access/AccessChangeModal';
 import { AccessRow } from '../access/AccessRow';
+import { BulkTrash } from '../access/BulkTrash';
 import { AddRecipient } from '../access/AddRecipient';
 import {
   AddBlock,
@@ -173,6 +173,9 @@ export function CollaboratorsTab({ land, landName }: Props) {
             <span className="Lead">
               <SelectCheckbox
                 checked={selectedRows.length === collaborators.length}
+                indeterminate={
+                  selectedRows.length > 0 && selectedRows.length < collaborators.length
+                }
                 onChange={() =>
                   setSelected(
                     selectedRows.length === collaborators.length
@@ -190,14 +193,7 @@ export function CollaboratorsTab({ land, landName }: Props) {
                   >
                     {t('land_detail.collaborators.selected', { count: selectedRows.length })}
                   </span>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    size="small"
-                    onClick={() => remove(selectedRows)}
-                  >
-                    {t('land_detail.collaborators.remove_selected')}
-                  </Button>
+                  <BulkTrash onClick={() => remove(selectedRows)} />
                 </>
               ) : (
                 <span>{t('land_detail.collaborators.count', { count: collaborators.length })}</span>

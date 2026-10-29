@@ -154,12 +154,15 @@ describe('Dropdown', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Options for Plaza' }));
     });
 
-    it('should paint only its glyph in the error colour, leaving its label and the other glyphs alone', () => {
+    it('should paint its glyph and label in the error colour, leaving the other items alone', () => {
       const error = computedColor(errorMain);
 
       expect(getComputedStyle(screen.getByTestId('danger-glyph')).color).toBe(error);
+      expect(getComputedStyle(screen.getByRole('menuitem', { name: 'Unpublish' })).color).toBe(
+        error,
+      );
       expect(getComputedStyle(screen.getByTestId('plain-glyph')).color).not.toBe(error);
-      expect(getComputedStyle(screen.getByRole('menuitem', { name: 'Unpublish' })).color).not.toBe(
+      expect(getComputedStyle(screen.getByRole('menuitem', { name: 'Copy URL' })).color).not.toBe(
         error,
       );
     });

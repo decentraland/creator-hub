@@ -16,6 +16,7 @@ import { Loader } from '../Loader';
 import { UnpublishWorldModal } from '../ManagePage/ManagedProjectsList/UnpublishWorldModal';
 import { getWorldMenuOptions } from '../ManagePage/ManagedProjectsList/worldMenu';
 import { getRoleTag } from '../ManagePage/RoleTag';
+import { CollaboratorsTab } from './CollaboratorsTab';
 import { DetailsTab } from './DetailsTab';
 import { ScenesTab } from './ScenesTab';
 import { SettingsTab } from './SettingsTab';
@@ -97,6 +98,7 @@ export function WorldDetailPage() {
       >
         {activeTab === 'details' && <DetailsTab worldName={project.id} />}
         {activeTab === 'settings' && <SettingsTab worldName={project.id} />}
+        {activeTab === 'collaborators' && <CollaboratorsTab worldName={project.id} />}
         {activeTab === 'scenes' && (
           <ScenesTab
             worldName={project.id}

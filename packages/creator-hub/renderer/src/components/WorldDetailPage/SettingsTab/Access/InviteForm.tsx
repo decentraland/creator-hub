@@ -226,7 +226,7 @@ function CsvPanel({ onAdd }: { onAdd: Props['onAddCsv'] }) {
                 aria-describedby={invalidId}
                 onClick={browse}
               >
-                {t('modal.world_permissions.access.csv_replace')}
+                {t('world_detail.settings.access.csv_replace')}
               </CsvButton>
             ) : (
               <AddButton
@@ -260,7 +260,7 @@ function CsvPanel({ onAdd }: { onAdd: Props['onAddCsv'] }) {
             read(event.dataTransfer.files[0]);
           }}
         >
-          {t('modal.world_permissions.access.csv_drop_text')}
+          {t('world_detail.settings.access.csv_drop_text')}
           <BrowseButton
             type="button"
             tabIndex={-1}
@@ -275,7 +275,7 @@ function CsvPanel({ onAdd }: { onAdd: Props['onAddCsv'] }) {
           id={invalidId}
           aria-live="polite"
         >
-          {t('modal.world_permissions.access.csv_invalid_count', { count: invalid })}
+          {t('world_detail.settings.access.csv_invalid_count', { count: invalid })}
         </Invalid>
       )}
     </CsvBlock>
@@ -304,7 +304,7 @@ export function InviteForm({ onAddWallet, onAddCommunity, onAddCsv }: Props) {
         />
         <Tab
           value="csv"
-          label={t('modal.world_permissions.access.invite_tabs.import_csv')}
+          label={t('world_detail.settings.access.tab_csv')}
           aria-controls={panelId}
         />
       </InviteTabs>

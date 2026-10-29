@@ -101,20 +101,20 @@ export function PasswordModal({ open, mode, onCancel, onConfirm }: Props) {
       open={open}
       title={t(
         mode === 'create'
-          ? 'modal.world_permissions.password.dialog.create_title'
-          : 'modal.world_permissions.password.dialog.change_title',
+          ? 'world_detail.settings.password.create_title'
+          : 'world_detail.settings.password.change_title',
       )}
       onClose={onCancel}
     >
       <PasswordField
-        label={t('modal.world_permissions.password.dialog.type_password')}
+        label={t('world_detail.settings.password.type_password')}
         value={password}
         error={rulesError}
         autoFocus
         onChange={setPassword}
       />
       <PasswordField
-        label={t('modal.world_permissions.password.dialog.repeat_password')}
+        label={t('world_detail.settings.password.repeat_password')}
         value={repeat}
         error={
           mismatch && (
@@ -129,7 +129,7 @@ export function PasswordModal({ open, mode, onCancel, onConfirm }: Props) {
       <Footer>
         <Info>
           <InfoIcon />
-          {t('modal.world_permissions.password.dialog.info')}
+          {t('world_detail.settings.password.info')}
         </Info>
         <Actions>
           <DialogButton

@@ -55,6 +55,10 @@ export type ManageFixtureOptions = {
   worldNoThumbnail?: boolean;
   /** Gives W1 and W4 two titled scenes (Plaza on 0,0 and 1,0, Stage on 2,0), or W1 none. */
   worldScenes?: 'two' | 'none';
+  /** W1's collaborators: Ana deploys everywhere and streams, Ben deploys on two parcels, Cal only streams; or 100 deployers. */
+  worldTeam?: 'mixed' | 'full';
+  /** Opens W1's streaming to everyone (unrestricted) instead of an allow-list. */
+  worldStreamOpen?: boolean;
   /** W1's access: public by default, invitation only (with or without invites) or password protected. */
   access?: 'invite' | 'invite-empty' | 'password';
   /** The signed-in account's deployment rights on W4: parcel 2,0, every parcel, or only the empty 9,9. */
@@ -239,6 +243,31 @@ function fixtureAccess(access: ManageFixtureOptions['access']) {
   return { type: 'unrestricted' };
 }
 
+function fixtureTeam(team: ManageFixtureOptions['worldTeam']) {
+  const { ana, ben, cal } = FIXTURE_ACCOUNTS;
+  if (team === 'full') {
+    const wallets = Array.from(
+      { length: 100 },
+      (_, index) => `0x${(index + 1).toString(16).padStart(40, '0')}`,
+    );
+    return { deployment: wallets, streaming: [], summary: {} };
+  }
+  if (team === 'mixed')
+    return {
+      deployment: [ana],
+      streaming: [ana, cal],
+      summary: {
+        [ana]: [
+          { permission: 'deployment', worldWide: true },
+          { permission: 'streaming', worldWide: true },
+        ],
+        [ben]: [{ permission: 'deployment', worldWide: false, parcelCount: 2 }],
+        [cal]: [{ permission: 'streaming', worldWide: true }],
+      },
+    };
+  return { deployment: [], streaming: [], summary: {} };
+}
+
 function twoWorldScenes(worldName: string) {
   const scene = (
     entityId: string,
@@ -392,15 +421,21 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
               },
     },
     {
+      match: '/world/fixtureone.dcl.eth/permissions/deployment/address/',
+      body: { parcels: ['0,0', '1,0'], total: 2 },
+    },
+    {
       match: '/world/fixtureone.dcl.eth/permissions',
       body: {
         owner: MOCK_ADDRESS,
         permissions: {
-          deployment: { type: 'allow-list', wallets: [] },
+          deployment: { type: 'allow-list', wallets: fixtureTeam(options.worldTeam).deployment },
           access: fixtureAccess(options.access),
-          streaming: { type: 'allow-list', wallets: [] },
+          streaming: options.worldStreamOpen
+            ? { type: 'unrestricted' }
+            : { type: 'allow-list', wallets: fixtureTeam(options.worldTeam).streaming },
         },
-        summary: {},
+        summary: fixtureTeam(options.worldTeam).summary,
       },
     },
     {

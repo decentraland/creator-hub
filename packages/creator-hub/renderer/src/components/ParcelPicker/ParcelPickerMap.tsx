@@ -7,20 +7,22 @@ import { getWorldDimensions, MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/w
 import { WorldAtlas, WorldAtlasColors, type AtlasScene } from '/@/components/WorldAtlas';
 
 import {
+  type Allowed,
+  type Coord,
+  type Direction,
+  isAllowed as allows,
   isDirection,
   nearestParcel,
   nextParcel,
   toCoord,
   toId,
-  type Coord,
-  type Direction,
 } from './cursor';
 import { MapFrame, VisuallyHidden } from './ParcelPicker.styled';
 
 type Props = {
   label: string;
   scenes: AtlasScene[];
-  allowed?: Set<string>;
+  allowed?: Allowed;
   selected: Set<string>;
   onChange: (selected: Set<string>) => void;
   height: number;
@@ -66,7 +68,7 @@ export function ParcelPickerMap({
   const isAllowed = useCallback(
     (x: number, y: number) =>
       allowed
-        ? allowed.has(coordsToId(x, y))
+        ? allows(allowed, { x, y })
         : x >= MIN_COORDINATE && x <= MAX_COORDINATE && y >= MIN_COORDINATE && y <= MAX_COORDINATE,
     [allowed],
   );
@@ -137,7 +139,7 @@ export function ParcelPickerMap({
 
   const startingCursor = (): Coord | null => {
     if (!allowed) return null;
-    const firstSelected = [...selected].find(id => allowed.has(id));
+    const firstSelected = [...selected].find(id => allows(allowed, toCoord(id)));
     if (firstSelected) return toCoord(firstSelected);
     const dimensions = getWorldDimensions(scenes);
     return nearestParcel(

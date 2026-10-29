@@ -33,7 +33,7 @@ const menuSurfaceStyles = ({ theme }: { theme: Theme }) => ({
       height: 16,
       overflow: 'visible',
     },
-    '&.Danger .MenuGlyph svg': { color: theme.palette.error.main },
+    '&.Danger, &.Danger .MenuGlyph svg': { color: theme.palette.error.main },
     '&.Mui-focusVisible': {
       backgroundColor: 'transparent',
     },
@@ -77,7 +77,9 @@ const MenuSeparator = styled('li')(({ theme }) => ({
   listStyle: 'none',
 }));
 
-const StyledMenu = styled(Menu)(menuSurfaceStyles, dropdownRowStyles);
+const StyledMenu = styled(Menu)(menuSurfaceStyles, dropdownRowStyles, ({ theme }) => ({
+  '& .MuiPaper-root': { marginTop: theme.spacing(1.125) },
+}));
 
 const Trigger = styled(IconButton, {
   shouldForwardProp: prop => prop !== 'look',
@@ -86,7 +88,7 @@ const Trigger = styled(IconButton, {
   backgroundColor: look === 'filled' ? whiteTransparent.subtle : 'transparent',
   height: 40,
   borderRadius: 100,
-  color: whiteTransparent.blurry,
+  color: look === 'filled' ? neutral.softWhite : whiteTransparent.blurry,
   '& svg': { fontSize: theme.typography.pxToRem(20) },
   '&:hover, &:focus-visible, &[aria-expanded="true"]': {
     backgroundColor: whiteTransparent.subtle,

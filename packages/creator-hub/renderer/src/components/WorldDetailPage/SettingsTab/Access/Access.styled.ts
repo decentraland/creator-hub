@@ -161,27 +161,14 @@ const Invalid = styled('p')(({ theme }) => ({
   fontSize: theme.typography.pxToRem(16),
 }));
 
-const List = styled('div')(({ theme }) => ({
+const List = styled('div')({
   display: 'flex',
   flexDirection: 'column',
   width: 700,
   maxWidth: '100%',
   '& > div, & li': { gridTemplateColumns: 'minmax(0, 1fr) 30px' },
   '& li > .Trash': { gridColumn: 2 },
-  '& .BulkTrash': {
-    width: 30,
-    height: 30,
-    padding: theme.spacing(0.75),
-    borderRadius: 100,
-    color: neutral.gray3,
-    '& svg': { width: 18, height: 18 },
-    '&:hover': { backgroundColor: whiteTransparent.subtle },
-    '&:focus-visible': {
-      outline: `2px solid ${theme.palette.info.light}`,
-      outlineOffset: 2,
-    },
-  },
-}));
+});
 
 const Results = styled('ul')(({ theme }) => ({
   position: 'absolute',

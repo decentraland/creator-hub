@@ -30,8 +30,8 @@ const TYPES: Record<
   { label: TranslationPath; description: TranslationPath }
 > = {
   [WorldPermissionType.Unrestricted]: {
-    label: 'modal.world_permissions.access.type.public',
-    description: 'modal.world_permissions.access.type.public_description',
+    label: 'world_detail.settings.access.public',
+    description: 'world_detail.settings.access.public_description',
   },
   [WorldPermissionType.AllowList]: {
     label: 'world_detail.settings.access.invitation_only',
@@ -107,11 +107,11 @@ export function AccessSection({ worldName }: { worldName: string }) {
   return (
     <Section>
       <Block>
-        <FieldTitle as="span">{t('modal.world_permissions.tabs.access.label')}</FieldTitle>
+        <FieldTitle as="span">{t('world_detail.settings.access.label')}</FieldTitle>
         <AccessSelect
           value={shown}
           IconComponent={ChevronDownIcon}
-          inputProps={{ 'aria-label': t('modal.world_permissions.tabs.access.label') }}
+          inputProps={{ 'aria-label': t('world_detail.settings.access.label') }}
           renderValue={value => typeText(value as AccessType)}
           onChange={event => pick(event.target.value as AccessType)}
           MenuProps={{
@@ -155,18 +155,18 @@ export function AccessSection({ worldName }: { worldName: string }) {
             color="primary"
             onClick={() => setPassword('change')}
           >
-            {t('modal.world_permissions.password.change_password')}
+            {t('world_detail.settings.password.change_password')}
           </Button>
         </span>
       )}
       <DefaultModal
         open={!!pending && erasesSomething && !password}
-        title={t('modal.world_permissions.access.change_access_type_title')}
-        body={t('modal.world_permissions.access.change_access_type_warning')}
+        title={t('world_detail.settings.access.change_type_title')}
+        body={t('world_detail.settings.access.change_type_warning')}
         onClose={() => setPending(null)}
         secondary={{ label: t('modal.cancel'), onClick: () => setPending(null) }}
         primary={{
-          label: t('modal.world_permissions.access.continue'),
+          label: t('world_detail.settings.access.continue'),
           state: 'idle',
           onClick: () => pending && apply(pending),
         }}

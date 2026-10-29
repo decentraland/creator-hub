@@ -8,6 +8,7 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { DeleteIcon } from '../../../Icons';
 import { ListHeader, Row, Rows } from '../../../LandDetailPage/access/access.styled';
+import { BulkTrash } from '../../../LandDetailPage/access/BulkTrash';
 import { useDisplayName } from '../../../LandDetailPage/access/useDisplayName';
 import { SelectCheckbox } from '../../../LandDetailPage/SelectCheckbox';
 import { DefaultModal } from '../../../Modals/DefaultModal';
@@ -97,15 +98,7 @@ export function InvitedList({ wallets, communities, onRemove }: Props) {
             />
           )}
           {t('world_detail.settings.access.invited')}
-          {chosen.length > 0 && (
-            <IconButton
-              className="BulkTrash"
-              aria-label={t('world_detail.settings.access.remove_selected')}
-              onClick={() => setRemoving(chosen)}
-            >
-              <DeleteIcon />
-            </IconButton>
-          )}
+          {chosen.length > 0 && <BulkTrash onClick={() => setRemoving(chosen)} />}
         </span>
       </ListHeader>
       {invites.length ? (

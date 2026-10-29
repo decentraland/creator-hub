@@ -229,6 +229,35 @@ describe('CollaboratorsTab', () => {
     });
   });
 
+  describe('when collaborators are selected', () => {
+    it('should offer the header trash only then, named Remove selected, opening the confirm', () => {
+      renderTab({
+        ...base,
+        id: '501',
+        type: LandType.ESTATE,
+        parcels: [
+          { x: 0, y: 0, id: '0,0', updateOperator: BEN },
+          { x: 1, y: 0, id: '1,0', updateOperator: BEN },
+        ],
+        updateOperator: ANA,
+      });
+      expect(screen.queryByRole('button', { name: 'Remove selected' })).toBeNull();
+
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Select 0x0000…00a1' }));
+      expect(
+        screen
+          .getByRole('checkbox', { name: 'Select all collaborators' })
+          .getAttribute('data-indeterminate'),
+      ).toBe('true');
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Select all collaborators' }));
+      const trash = screen.getByRole('button', { name: 'Remove selected' });
+
+      expect(trash.textContent).toBe('');
+      fireEvent.click(trash);
+      expect(screen.getByRole('dialog', { name: 'Remove 2 collaborators?' })).toBeTruthy();
+    });
+  });
+
   describe('when a single parcel has a collaborator', () => {
     it('should show no permissions column and no parcel select', () => {
       renderTab(parcel(ANA));

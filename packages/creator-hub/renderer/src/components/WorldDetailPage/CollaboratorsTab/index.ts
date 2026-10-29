@@ -1,0 +1,1 @@
+export { CollaboratorsTab } from './CollaboratorsTab';
