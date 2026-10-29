@@ -451,6 +451,38 @@ describe('exportScene', () => {
     });
   });
 
+  describe('when the scene lives on a Worlds content server', () => {
+    const WORLDS = 'https://worlds.example.org';
+
+    beforeEach(() => {
+      mocks.fetch.mockImplementation(async (url: string) => {
+        if (url === `${WORLDS}/contents/${ENTITY_ID}`) {
+          return new Response(
+            JSON.stringify({
+              id: ENTITY_ID,
+              type: 'scene',
+              pointers: ['0,0'],
+              metadata: { display: { title: 'World Scene' } },
+              content: [{ file: 'scene.json', hash: 'hscene' }],
+            }),
+          );
+        }
+        if (url === `${WORLDS}/contents/hscene`) return new Response(sceneJson);
+        return new Response('not found', { status: 404 });
+      });
+    });
+
+    it("should read the entity and its files from that server's contents", async () => {
+      await exportScene({ entityId: ENTITY_ID, contentUrl: WORLDS, outputPath });
+
+      const entries = await readZip(outputPath);
+      expect(text(entries, 'world-scene/scene.json')).toBe(sceneJson);
+      expect(mocks.fetch.mock.calls.map(([url]) => url)).toContain(
+        `${WORLDS}/contents/${ENTITY_ID}`,
+      );
+    });
+  });
+
   describe('when the entity id is not a content hash', () => {
     it('should reject without fetching', async () => {
       await expect(exportScene({ entityId: '../x', peerUrl: PEER, outputPath })).rejects.toThrow();

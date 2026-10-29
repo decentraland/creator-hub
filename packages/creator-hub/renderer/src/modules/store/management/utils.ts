@@ -241,7 +241,7 @@ export const getThumbnailUrlFromDeployment = (
     | undefined,
   getContentSrcUrl: (hash: string) => string,
 ) => {
-  if (!deployment?.metadata?.display.navmapThumbnail) return '';
+  if (!deployment?.metadata?.display?.navmapThumbnail) return '';
   const thumbnailFileName = deployment.metadata.display.navmapThumbnail;
   const thumbnailContent = deployment.content.find(item => item.file === thumbnailFileName);
   if (thumbnailContent) return getContentSrcUrl(thumbnailContent.hash);

@@ -1332,6 +1332,15 @@
       "thumbnail_hint": "PNG o JPG | 1920x1080 (16:9)",
       "change_thumbnail": "Cambiar miniatura",
       "saved": "Cambios guardados"
+    },
+    "scenes": {
+      "parcels_shape": "{w}×{h} Parcelas",
+      "used": "{size} usados",
+      "manage_storage": "Gestionar almacenamiento",
+      "last_scene": "Esta es la última escena de {world}. Al despublicarla, el Mundo queda fuera de línea y se eliminan su título, descripción, miniatura y configuración.",
+      "empty": "No hay escenas publicadas en este Mundo.",
+      "empty_filtered": "Aún no hay escenas en tus parcelas.",
+      "multi_scene_info": "Acerca del Mundo multiescena"
     }
   },
   "detail_shell": {

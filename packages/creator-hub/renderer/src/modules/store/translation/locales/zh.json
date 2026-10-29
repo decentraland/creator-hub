@@ -1332,6 +1332,15 @@
       "thumbnail_hint": "PNG 或 JPG | 1920x1080 (16:9)",
       "change_thumbnail": "更换缩略图",
       "saved": "更改已保存"
+    },
+    "scenes": {
+      "parcels_shape": "{w}×{h} 地块",
+      "used": "已使用 {size}",
+      "manage_storage": "管理存储空间",
+      "last_scene": "这是 {world} 中的最后一个场景。取消发布后，该世界将下线，其标题、描述、缩略图和设置都会被删除。",
+      "empty": "此世界中尚未发布场景。",
+      "empty_filtered": "你的地块上还没有场景。",
+      "multi_scene_info": "关于多场景世界"
     }
   },
   "detail_shell": {

@@ -4,17 +4,13 @@ import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
-import { unpublishLandScene } from '/@/modules/store/management/slice';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { UnpublishSceneModal, type LandScene, type UnpublishTarget } from '.';
 
-vi.mock('/@/modules/store/management/slice', async importOriginal => ({
-  ...(await importOriginal<object>()),
-  unpublishLandScene: vi.fn(),
-}));
+const unpublishScene = vi.fn();
 
 const scene = (id: string, title: string): LandScene => ({
   id,
@@ -27,15 +23,12 @@ const scene = (id: string, title: string): LandScene => ({
 
 const outcomes = (...results: boolean[]) =>
   results.forEach(ok =>
-    vi.mocked(unpublishLandScene).mockImplementationOnce(
-      () =>
-        (() => ({
-          unwrap: () => (ok ? Promise.resolve() : Promise.reject(new Error('500'))),
-        })) as never,
+    unpublishScene.mockImplementationOnce(() =>
+      ok ? Promise.resolve() : Promise.reject(new Error('500')),
     ),
   );
 
-function renderModal(target: UnpublishTarget) {
+function renderModal(target: UnpublishTarget, notice?: string) {
   const handlers = { onClose: vi.fn(), onUnpublished: vi.fn() };
   render(
     <Provider store={createTestStore() as never}>
@@ -43,7 +36,9 @@ function renderModal(target: UnpublishTarget) {
         <UnpublishSceneModal
           open
           target={target}
-          landName="Land Name"
+          placeName="Land Name"
+          unpublishScene={unpublishScene}
+          notice={notice}
           {...handlers}
         />
       </ThemeProvider>
@@ -57,7 +52,10 @@ describe('UnpublishSceneModal', () => {
     setCurrentLocale('en', flatten(en));
   });
 
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    unpublishScene.mockReset();
+  });
 
   describe('when one scene unpublishes', () => {
     it('should ask in Figma words, then close and report it', async () => {
@@ -69,8 +67,17 @@ describe('UnpublishSceneModal', () => {
       );
       await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Unpublish' })));
 
+      expect(unpublishScene).toHaveBeenCalledWith(scene('a', 'Scene A'));
       expect(onUnpublished).toHaveBeenCalledWith(['a']);
       expect(onClose).toHaveBeenCalled();
+    });
+
+    it('should add a notice after the question when given one', () => {
+      renderModal({ kind: 'one', scene: scene('a', 'Scene A') }, 'This is the last scene.');
+
+      expect(screen.getByRole('dialog').textContent).toContain(
+        'Are you sure you want to unpublish Scene A from Land Name?This is the last scene.',
+      );
     });
   });
 

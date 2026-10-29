@@ -1333,6 +1333,15 @@
       "thumbnail_hint": "PNG or JPG | 1920x1080 (16:9)",
       "change_thumbnail": "Change thumbnail",
       "saved": "Changes saved"
+    },
+    "scenes": {
+      "parcels_shape": "{w}×{h} Parcels",
+      "used": "{size} used",
+      "manage_storage": "Manage Storage",
+      "last_scene": "This is the last scene in {world}. Unpublishing it takes the World offline and deletes its title, description, thumbnail and settings.",
+      "empty": "No scenes published in this World.",
+      "empty_filtered": "No scenes on your parcels yet.",
+      "multi_scene_info": "About Multi-Scene World"
     }
   },
   "detail_shell": {

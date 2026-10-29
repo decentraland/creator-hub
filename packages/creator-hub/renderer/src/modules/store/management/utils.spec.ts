@@ -14,6 +14,7 @@ import {
   fetchWorldSceneCoords,
   getLandName,
   getManagers,
+  getThumbnailUrlFromDeployment,
   groupLandDeployments,
   resolveWorldProject,
   selectLandProjects,
@@ -747,6 +748,16 @@ describe('getManagers', () => {
       expect(getManagers([{ address: '0xb', type: LandType.PARCEL }])).toEqual([
         { address: '0xb', state: 'land-only' },
       ]);
+    });
+  });
+});
+
+describe('getThumbnailUrlFromDeployment', () => {
+  describe('when the scene has no display metadata', () => {
+    it('should give no thumbnail rather than throw', () => {
+      expect(
+        getThumbnailUrlFromDeployment({ metadata: {} as never, content: [] }, hash => hash),
+      ).toBe('');
     });
   });
 });

@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
-import { useDispatch } from '#store';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import type { LandScene } from '/@/modules/store/management/utils';
-import { unpublishLandScene } from '/@/modules/store/management/slice';
 import { t } from '/@/modules/store/translation/utils';
 
 import { DefaultModal } from '../DefaultModal';
-import { ErrorText, Progress } from './UnpublishSceneModal.styled';
+import { ErrorText, Notice, Progress } from './UnpublishSceneModal.styled';
 
 export type UnpublishTarget =
   | { kind: 'one'; scene: LandScene }
@@ -16,16 +14,25 @@ export type UnpublishTarget =
 type Props = {
   open: boolean;
   target: UnpublishTarget;
-  landName: string;
+  placeName: string;
+  unpublishScene: (scene: LandScene) => Promise<unknown>;
+  notice?: ReactNode;
   onClose: () => void;
   onUnpublished: (sceneIds: string[]) => void;
 };
 
 const bold = (chunks: string) => <b>{chunks}</b>;
 
-/** Confirms and runs the unpublish of one or several scenes of a LAND, one after another. */
-export function UnpublishSceneModal({ open, target, landName, onClose, onUnpublished }: Props) {
-  const dispatch = useDispatch();
+/** Confirms and runs the unpublish of one or several scenes of a LAND or World, one after another. */
+export function UnpublishSceneModal({
+  open,
+  target,
+  placeName,
+  unpublishScene,
+  notice,
+  onClose,
+  onUnpublished,
+}: Props) {
   const { pushGeneric } = useSnackbar();
   const [pending, setPending] = useState(target.kind === 'one' ? [target.scene] : target.scenes);
   const [progress, setProgress] = useState<number | null>(null);
@@ -40,9 +47,7 @@ export function UnpublishSceneModal({ open, target, landName, onClose, onUnpubli
     for (const [index, scene] of pending.entries()) {
       setProgress(index + 1);
       try {
-        await dispatch(
-          unpublishLandScene({ scene: { base: scene.base, parcels: scene.parcels } }),
-        ).unwrap();
+        await unpublishScene(scene);
         done.push(scene.id);
       } catch {
         firstFailure ??= scene;
@@ -65,8 +70,8 @@ export function UnpublishSceneModal({ open, target, landName, onClose, onUnpubli
 
   const body =
     target.kind === 'one'
-      ? t('unpublish_scene.body', { scene: target.scene.title, land: landName, b: bold })
-      : t('unpublish_scene.body_many', { count, land: landName });
+      ? t('unpublish_scene.body', { scene: target.scene.title, land: placeName, b: bold })
+      : t('unpublish_scene.body_many', { count, land: placeName });
 
   return (
     <DefaultModal
@@ -85,6 +90,7 @@ export function UnpublishSceneModal({ open, target, landName, onClose, onUnpubli
         onClick: () => void unpublish(),
       }}
     >
+      {notice && <Notice>{notice}</Notice>}
       {progress !== null && count > 1 && (
         <Progress role="status">
           {t('unpublish_scene.progress', { done: progress, count })}

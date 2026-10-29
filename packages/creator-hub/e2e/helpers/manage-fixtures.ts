@@ -53,6 +53,10 @@ export type ManageFixtureOptions = {
   worldsFail?: boolean;
   /** Answers W1's settings without a thumbnail. */
   worldNoThumbnail?: boolean;
+  /** Gives W1 and W4 two titled scenes (Plaza on 0,0 and 1,0, Stage on 2,0), or W1 none. */
+  worldScenes?: 'two' | 'none';
+  /** The signed-in account's deployment rights on W4: parcel 2,0, every parcel, or only the empty 9,9. */
+  teamAccess?: 'parcels' | 'all' | 'none';
   /** Holds the LAND subgraph answer back this long. */
   landsDelayMs?: number;
   /** PNG served for every content hash, keyed by hash; `default` for the rest. */
@@ -214,6 +218,28 @@ function activeEntities(lands: LandFixture[], pointers: string[]) {
   return all.filter(entity => entity.pointers.some(pointer => pointers.includes(pointer)));
 }
 
+function twoWorldScenes(worldName: string) {
+  const scene = (
+    entityId: string,
+    title: string,
+    parcels: string[],
+    createdAt: string,
+    size: string,
+  ) => ({
+    worldName,
+    entityId,
+    parcels,
+    size,
+    createdAt,
+    deployer: MOCK_ADDRESS,
+    entity: { content: [], metadata: { display: { title }, scene: { base: parcels[0], parcels } } },
+  });
+  return [
+    scene('bafkplaza', 'Plaza', ['0,0', '1,0'], '2026-10-27T12:00:00Z', String(12 * MB)),
+    scene('bafkstage', 'Stage', ['2,0'], '2026-10-20T12:00:00Z', String(Math.round(3.5 * MB))),
+  ];
+}
+
 type StubAnswer = { match: string; body?: unknown; status?: number; delayMs?: number };
 
 function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
@@ -328,11 +354,45 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
     { match: '/redirection', body: { ok: true, data: { contentHash: NAME_CONTENT.slice(2) } } },
     {
       match: '/world/fixtureone.dcl.eth/scenes',
+      body:
+        options.worldScenes === 'two'
+          ? { scenes: twoWorldScenes('fixtureone.dcl.eth'), total: 2 }
+          : options.worldScenes === 'none'
+            ? { scenes: [], total: 0 }
+            : {
+                scenes: [
+                  {
+                    entityId: 'w1',
+                    parcels: ['0,0'],
+                    entity: { content: [], metadata: { scene: { base: '0,0' } } },
+                  },
+                ],
+                total: 1,
+              },
+    },
+    {
+      match: '/world/fixture-team.dcl.eth/permissions/deployment/address/',
       body: {
-        scenes: [
-          { entityId: 'w1', parcels: ['0,0'], entity: { metadata: { scene: { base: '0,0' } } } },
-        ],
+        parcels: options.teamAccess === 'none' ? ['9,9'] : ['2,0'],
         total: 1,
+      },
+    },
+    {
+      match: '/world/fixture-team.dcl.eth/permissions',
+      body: {
+        owner: OTHER_OWNER,
+        permissions: {
+          deployment: { type: 'allow-list', wallets: [MOCK_ADDRESS.toLowerCase()] },
+          access: { type: 'unrestricted' },
+          streaming: { type: 'allow-list', wallets: [] },
+        },
+        summary: {
+          [MOCK_ADDRESS.toLowerCase()]: [
+            options.teamAccess === 'all'
+              ? { permission: 'deployment', worldWide: true }
+              : { permission: 'deployment', worldWide: false, parcelCount: 1 },
+          ],
+        },
       },
     },
     {
@@ -347,12 +407,19 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
     { match: '/world/fixture-two.dcl.eth/scenes', body: { scenes: [], total: 0 } },
     {
       match: '/world/fixture-team.dcl.eth/scenes',
-      body: {
-        scenes: [
-          { entityId: 'w4', parcels: ['0,0'], entity: { metadata: { scene: { base: '0,0' } } } },
-        ],
-        total: 1,
-      },
+      body:
+        options.worldScenes === 'two'
+          ? { scenes: twoWorldScenes('fixture-team.dcl.eth'), total: 2 }
+          : {
+              scenes: [
+                {
+                  entityId: 'w4',
+                  parcels: ['0,0'],
+                  entity: { metadata: { scene: { base: '0,0' } } },
+                },
+              ],
+              total: 1,
+            },
     },
     {
       match: '/world/fixture-stream.dcl.eth/scenes',

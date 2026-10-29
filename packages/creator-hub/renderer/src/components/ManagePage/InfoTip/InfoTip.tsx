@@ -84,7 +84,9 @@ export function InfoTip({ label, variant = 'info', children }: Props) {
       <TipPopper
         open={open}
         anchorEl={anchor}
-        onClose={hide}
+        onClose={event => {
+          if (!anchor?.contains(event.target as Node)) hide();
+        }}
         placement="top"
         disablePortal
         role="presentation"

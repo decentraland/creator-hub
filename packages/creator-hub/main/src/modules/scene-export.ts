@@ -262,18 +262,24 @@ async function request(url: string, signal: AbortSignal): Promise<Response> {
  * recovered from the build's source map.
  */
 export async function exportScene(
-  { entityId, peerUrl, outputPath }: SceneExportOptions,
+  options: SceneExportOptions,
   onProgress: (progress: SceneExportProgress) => void = () => {},
 ): Promise<SceneExportResult> {
+  const { entityId, outputPath } = options;
+  const server =
+    'contentUrl' in options
+      ? options.contentUrl.replace(/\/+$/, '')
+      : `${options.peerUrl.replace(/\/+$/, '')}/content`;
   if (!CONTENT_HASH.test(entityId)) throw new Error(`Invalid entity id: ${entityId}`);
-  if (new URL(peerUrl).protocol !== 'https:') throw new Error(`Invalid catalyst URL: ${peerUrl}`);
+  if (new URL(server).protocol !== 'https:')
+    throw new Error(`Invalid content server URL: ${server}`);
   if (running.has(entityId)) throw new Error(`Scene ${entityId} is already being exported`);
 
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'dcl-scene-export-'));
   const controller = new AbortController();
   const { signal } = controller;
   running.set(entityId, controller);
-  const contentUrl = `${peerUrl.replace(/\/+$/, '')}/content/contents/`;
+  const contentUrl = `${server}/contents/`;
   const partialPath = `${outputPath}.part`;
 
   try {
