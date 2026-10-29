@@ -44,7 +44,6 @@ import {
   getTurnMutations,
   resetTurnMutations,
   resolveSceneOp,
-  REVERT_BLOCKED_MESSAGE,
   revertTurn,
   setExternalMcpAccess,
   setSceneMcpProject,
@@ -99,7 +98,7 @@ describe('reverting an in-app turn', () => {
       await createEntity(assistant);
       windowMock.ops.length = 0;
 
-      await revertTurn(getTurnMutations());
+      expect(await revertTurn(getTurnMutations())).toBe('reverted');
 
       expect(getTurnMutations()).toBe(2);
       expect(windowMock.ops).toEqual(['undo', 'undo']);
@@ -112,7 +111,7 @@ describe('reverting an in-app turn', () => {
       await createEntity(outside);
       windowMock.ops.length = 0;
 
-      await expect(revertTurn(getTurnMutations())).rejects.toThrow(REVERT_BLOCKED_MESSAGE);
+      expect(await revertTurn(getTurnMutations())).toBe('blocked');
 
       expect(getTurnMutations()).toBe(1);
       expect(windowMock.ops).toEqual([]);

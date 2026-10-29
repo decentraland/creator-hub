@@ -56,8 +56,12 @@ export const slice = createSlice({
         );
       })
 
-      .addCase(aiActions.revertTurn.rejected, state => {
-        state.notifications.push(createGenericNotification('error', t('editor.ai.revert_blocked')));
+      .addCase(aiActions.revertTurn.rejected, (state, action) => {
+        const message =
+          action.payload === 'blocked'
+            ? t('editor.ai.revert_blocked')
+            : t('editor.ai.revert_failed');
+        state.notifications.push(createGenericNotification('error', message));
       })
       .addCase(workspaceActions.getAvailable.rejected, (state, payload) => {
         const isPathError = isProjectError(payload.payload, 'INVALID_PATH');

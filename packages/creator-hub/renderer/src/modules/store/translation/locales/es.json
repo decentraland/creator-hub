@@ -128,7 +128,8 @@
       },
       "retry": "Reintentar",
       "revert": "Deshacer los cambios de la IA",
-      "revert_blocked": "No se pudo deshacer este turno: un agente de IA externo a Creator Hub cambió la escena después, y deshacerlo también quitaría sus cambios. Usa Deshacer en el editor.",
+      "revert_blocked": "No se pudo deshacer: otra app de IA cambió la escena después, y deshacer ahora también quitaría sus cambios. Usa Deshacer en el editor.",
+      "revert_failed": "No se pudieron deshacer los cambios de la IA. Usa Deshacer en el editor.",
       "selection": "Selección: {names}",
       "selection_clear": "Limpiar",
       "asset_mention": "Recurso: {name}",
@@ -158,7 +159,7 @@
         "alt_copy": "Copiar configuración",
         "alt_copied": "Copiado",
         "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia.",
-        "alt_access_off": "Para conectar una, activa “Permitir agentes de IA externos a Creator Hub” en Ajustes → IA.",
+        "alt_access_off": "Para conectar una, activa “Permitir que otras apps de IA editen tus escenas” en Ajustes → IA.",
         "install_guide": "Si no funciona, sigue la guía de instalación de {provider}",
         "desktop_detected": "Claude Desktop está instalado, pero el asistente necesita Claude Code, la herramienta de terminal de Anthropic. El inicio de sesión de Desktop no se comparte con ella, así que instala Claude Code e inicia sesión una vez:",
         "gemini_plan_note": "Gemini CLI ahora solo funciona con una clave de API de Gemini de pago o una licencia de Gemini Code Assist Standard/Enterprise.",
@@ -596,11 +597,11 @@
           "help": "Ejecuta tu CLI de Claude, Codex, Cursor o Gemini instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
         },
         "mcp_server": {
-          "label": "Permitir agentes de IA externos a Creator Hub",
-          "help": "Permite que un agente de IA que ejecutas fuera de Creator Hub (Claude Code, Codex, Claude Desktop…) lea y edite la escena abierta en el editor. Mientras está activo, Creator Hub guarda la conexión en mcp-server.json, dentro de su carpeta de datos de la aplicación, y en .mcp.json, dentro de la escena abierta, así los agentes se conectan sin copiar nada. Un agente también puede activarlo por su cuenta, y Creator Hub te avisa cuando lo hace. Al desactivarlo se desconectan todos los agentes externos. El Asistente de IA de arriba no lo necesita.",
+          "label": "Permitir que otras apps de IA editen tus escenas",
+          "help": "Permite que las apps de IA que usas en esta computadora, como Claude Code o Codex, vean y cambien la escena que tienes abierta. Al desactivarlo se desconectan al instante. El Asistente de IA de arriba no lo necesita.",
           "copy": "Copiar configuración",
           "copied": "¡Copiado!",
-          "note": "Solo localhost. La URL y el token cambian cada vez que se reinicia Creator Hub o se desactiva esta opción."
+          "note": "Solo pueden conectarse apps de esta computadora. Estos datos cambian cada vez que Creator Hub se reinicia o se desactiva esta opción."
         },
         "ai_api_key": {
           "label": "Facturar a una clave de API en su lugar",
@@ -954,9 +955,10 @@
       }
     },
     "external_agent_access": {
-      "title": "Un agente de IA externo a Creator Hub activó el acceso a tus escenas.",
+      "title": "Una app de IA de esta computadora quiere ver y cambiar tu escena abierta.",
       "actions": {
-        "turn_off": "Desactivar"
+        "allow": "Permitir",
+        "deny": "No permitir"
       }
     },
     "new_dependency_version": {

@@ -174,15 +174,12 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));
   handle('ai.askResult', (_event, id, answer) => resolveUserPrompt(id, answer));
   handle('ai.revertTurn', (_event, count) => revertTurn(count));
-  // Reveal the CH MCP server's URL + token so an external agent can register it (gated in
-  // the UI behind the exposeMcpServer setting). Starts the server if it isn't up yet.
   // The details an agent outside the Hub connects with; null while outside access is off.
   handle('ai.getMcpServerInfo', () => getExternalMcpInfo());
-  // The editor window reports which scene it has open, so the MCP server targets it and
-  // its connection details are written into the scene for outside agents (mcp-discovery).
-  handle('ai.sceneOpened', (_event, path) => mcpDiscovery.sceneOpened(path));
+  // The editor window reports which scene it has open, so the MCP server targets it.
+  handle('ai.sceneOpened', async (_event, path) => mcpDiscovery.sceneOpened(path));
   handle('ai.sceneClosed', async (_event, path) => mcpDiscovery.sceneClosed(path));
-  handle('ai.takeExternalAccessGrant', async () => mcpDiscovery.takeExternalAccessGrant());
+  handle('ai.takeExternalAccessRequest', async () => mcpDiscovery.takeExternalAccessRequest());
   // Detached AI window (#1504): lifecycle + the mirror/command relay between the two
   // renderer windows (see ai-window.ts).
   handle('ai.openWindow', (_event, locale) => aiWindow.openAiWindow(locale));

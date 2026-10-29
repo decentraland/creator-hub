@@ -63,11 +63,6 @@ export const slice = createSlice({
         state.projects[idx] = project;
       }
     },
-    // Main already saved the flip (an outside agent asked for access); mirror it so the next
-    // settings write doesn't put the old value back.
-    setExposeMcpServer: (state, { payload }: PayloadAction<boolean>) => {
-      state.settings.exposeMcpServer = payload;
-    },
   },
   extraReducers: builder => {
     // nth: generic case adder so we don't end up with this mess 👇

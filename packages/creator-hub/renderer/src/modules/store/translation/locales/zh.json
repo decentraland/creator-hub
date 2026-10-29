@@ -128,7 +128,8 @@
       },
       "retry": "重试",
       "revert": "撤销 AI 的更改",
-      "revert_blocked": "无法撤销此轮更改：Creator Hub 之外的 AI 代理在此之后修改了场景，撤销会连同他们的更改一起移除。请改用编辑器中的撤销。",
+      "revert_blocked": "无法撤销：另一个 AI 应用在此之后修改了场景，现在撤销会连同它的更改一起移除。请改用编辑器中的撤销。",
+      "revert_failed": "无法撤销 AI 的更改。请改用编辑器中的撤销。",
       "selection": "选择：{names}",
       "selection_clear": "清除",
       "asset_mention": "资源：{name}",
@@ -158,7 +159,7 @@
         "alt_copy": "复制配置",
         "alt_copied": "已复制",
         "alt_note": "仅限本地主机。每次 Creator Hub 重启时 URL 和令牌都会更改。",
-        "alt_access_off": "要连接工具，请在“设置 → AI”中开启“允许 Creator Hub 之外的 AI 代理”。",
+        "alt_access_off": "要连接工具，请在“设置 → AI”中开启“允许其他 AI 应用编辑你的场景”。",
         "install_guide": "如果无效，请按照 {provider} 安装指南操作",
         "desktop_detected": "已安装 Claude Desktop，但助手需要 Claude Code（Anthropic 的终端工具）。Desktop 的登录状态不会与其共享，因此请安装 Claude Code 并登录一次：",
         "gemini_plan_note": "Gemini CLI 现在仅支持付费 Gemini API 密钥或 Gemini Code Assist Standard/Enterprise 许可证。",
@@ -596,11 +597,11 @@
           "help": "使用你已安装的 Claude、Codex、Cursor 或 Gemini CLI 运行，拥有与终端相同的对你机器的完全访问权限。只有在你信任所要求的操作时才启用。"
         },
         "mcp_server": {
-          "label": "允许 Creator Hub 之外的 AI 代理",
-          "help": "让你在 Creator Hub 之外运行的 AI 代理（Claude Code、Codex、Claude Desktop 等）读取和编辑编辑器中打开的场景。开启后，Creator Hub 会把连接信息保存到其应用数据文件夹中的 mcp-server.json，以及打开场景中的 .mcp.json，代理无需复制任何内容即可连接。代理也可以自行开启此选项，开启时 Creator Hub 会通知你。关闭后，所有外部代理都会断开连接。上方的 AI 助手不需要此选项。",
+          "label": "允许其他 AI 应用编辑你的场景",
+          "help": "让你在这台电脑上使用的 AI 应用（如 Claude Code 或 Codex）查看和修改你打开的场景。关闭后会立即断开它们。上方的 AI 助手不需要此选项。",
           "copy": "复制配置",
           "copied": "已复制！",
-          "note": "仅限本地。每次重启 Creator Hub 或关闭此选项时，URL 和令牌都会改变。"
+          "note": "只有这台电脑上的应用可以连接。每次重启 Creator Hub 或关闭此选项时，这些信息都会改变。"
         },
         "ai_api_key": {
           "label": "改为计入 API 密钥",
@@ -954,9 +955,10 @@
       }
     },
     "external_agent_access": {
-      "title": "Creator Hub 之外的 AI 代理开启了对你场景的访问。",
+      "title": "这台电脑上的一个 AI 应用想要查看和修改你打开的场景。",
       "actions": {
-        "turn_off": "关闭"
+        "allow": "允许",
+        "deny": "不允许"
       }
     },
     "new_dependency_version": {

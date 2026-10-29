@@ -12,7 +12,7 @@ import http from 'http';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
-import { randomBytes, randomUUID } from 'crypto';
+import { randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 import log from 'electron-log/main';
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -26,6 +26,7 @@ import {
   AI_SCREENSHOT_REQUEST,
   type AiAskExpired,
   type AiAskRequest,
+  type AiRevertResult,
 } from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { getWindow } from './window';
@@ -218,16 +219,16 @@ function requestSceneOp(
   return run;
 }
 
-export const REVERT_BLOCKED_MESSAGE =
-  'An AI agent outside Creator Hub changed the scene after this turn started, so reverting it would undo their changes too. Use Undo in the editor instead.';
-
 // Revert an AI turn's scene-graph changes by undoing `count` steps (serialized like any op).
-export async function revertTurn(count: number): Promise<void> {
-  if (externalMutationsSinceTurn > 0) throw new Error(REVERT_BLOCKED_MESSAGE);
+// Refused ('blocked') once an outside agent has edited since the turn started: its edits sit
+// on the same undo stack, so undoing N steps would remove them instead of the turn's.
+export async function revertTurn(count: number): Promise<AiRevertResult> {
+  if (externalMutationsSinceTurn > 0) return 'blocked';
   for (let i = 0; i < count; i++) {
     const res = await requestSceneOp('undo', {});
     if (!res.ok) break; // nothing left to undo, or the editor went away
   }
+  return 'reverted';
 }
 
 // Called from the `ai.sceneOpResult` IPC handler when the renderer answers.
@@ -843,9 +844,16 @@ const ASSISTANT_TOKEN = randomBytes(24).toString('hex');
 // that was handed out (on disk, pasted into an agent's config) without touching the assistant.
 let externalToken: string | null = null;
 
+// Constant-time, so response timing can't be used to guess a token byte by byte.
+function matchesToken(authorization: string, token: string): boolean {
+  const given = Buffer.from(authorization);
+  const expected = Buffer.from(`Bearer ${token}`);
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
+
 function callerFor(authorization: string): McpCaller | null {
-  if (authorization === `Bearer ${ASSISTANT_TOKEN}`) return 'assistant';
-  if (externalToken !== null && authorization === `Bearer ${externalToken}`) return 'external';
+  if (matchesToken(authorization, ASSISTANT_TOKEN)) return 'assistant';
+  if (externalToken !== null && matchesToken(authorization, externalToken)) return 'external';
   return null;
 }
 

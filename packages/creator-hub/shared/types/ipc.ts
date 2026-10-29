@@ -93,9 +93,15 @@ export const AI_ASK_REQUEST = 'ai.askRequest';
 // nothing is waiting for any more.
 export const AI_ASK_EXPIRED = 'ai.askExpired';
 // Main granted or revoked access to the MCP server for agents outside the Hub
-// (mcp-discovery.ts): Settings refetches the connection, and the renderer checks
-// `ai.takeExternalAccessGrant` in case an agent asked for it, to sync the setting and say so.
+// (mcp-discovery.ts): Settings refetches the connection details.
 export const AI_EXTERNAL_ACCESS_CHANGED = 'ai.externalAccessChanged';
+// An agent outside the Hub asked for access (mcp-discovery.ts). The renderer calls
+// `ai.takeExternalAccessRequest` and, if it's still pending, asks the creator to allow it.
+export const AI_EXTERNAL_ACCESS_REQUESTED = 'ai.externalAccessRequested';
+
+// What `ai.revertTurn` did: 'blocked' means an outside agent edited the scene after the turn
+// started, so nothing was undone (undoing would have removed the agent's edits instead).
+export type AiRevertResult = 'reverted' | 'blocked';
 
 export type AiAskExpired = { id: string };
 
@@ -234,16 +240,15 @@ export interface Ipc {
   'ai.isBusy': () => Promise<boolean>;
   // Revert the scene-graph changes an AI turn made, by undoing `count` steps (the value
   // the `done` event reported as `mutations`).
-  'ai.revertTurn': (count: number) => Promise<void>;
+  'ai.revertTurn': (count: number) => Promise<AiRevertResult>;
   // Connection details for agents outside the Hub; null while `exposeMcpServer` is off.
   'ai.getMcpServerInfo': () => Promise<{ url: string; token: string } | null>;
-  // The editor window's open scene: points the MCP server at it and, while `exposeMcpServer`
-  // is on, writes the server's connection details into the scene (`.mcp.json`) for agents
-  // running outside the Hub. sceneClosed detaches the server and removes that file.
+  // The editor window's open scene: points the MCP server at it. sceneClosed detaches it.
   'ai.sceneOpened': (path: string) => Promise<void>;
   'ai.sceneClosed': (path: string) => Promise<void>;
-  // True once after an outside agent was granted access itself (see AI_EXTERNAL_ACCESS_CHANGED).
-  'ai.takeExternalAccessGrant': () => Promise<boolean>;
+  // True once while an outside agent's access request awaits the creator's answer (see
+  // AI_EXTERNAL_ACCESS_REQUESTED).
+  'ai.takeExternalAccessRequest': () => Promise<boolean>;
   // AI sign-in without a CLI (#1531). signInCli installs the official CLI (if needed) and
   // drives its subscription login, streaming steps over AI_CLI_LOGIN_EVENTS; signOutCli
   // clears the managed sign-in; getCliState reports install/sign-in status per provider.

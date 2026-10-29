@@ -4,9 +4,8 @@ import { ai } from '#preload';
 
 /**
  * While a project is open in the editor, tell main which scene it is, so the Creator Hub MCP
- * server targets it and — with "Allow AI agents outside Creator Hub" on — its connection
- * details are written into the scene (`.mcp.json`) for AI agents running outside the app.
- * On close, main detaches the server from the scene and removes that file.
+ * server targets it. On close, main detaches the server, so scene tools fail fast instead of
+ * acting on a scene that isn't open.
  */
 export function useSceneMcpDiscovery(projectPath: string | undefined) {
   useEffect(() => {

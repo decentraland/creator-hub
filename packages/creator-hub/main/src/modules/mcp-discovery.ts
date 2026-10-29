@@ -1,31 +1,24 @@
 // Let an AI agent running OUTSIDE the Hub — Claude Code in a terminal or VS Code, Codex,
 // Claude Desktop — find and use the scene MCP server (scene-mcp.ts), with no human copying a
 // URL + token out of Settings. Opt-in: nothing is exposed until the creator turns on
-// "Allow AI agents outside Creator Hub", or an agent asks for it (see below). While it is on:
+// "Allow AI agents outside Creator Hub". While it is on, `<userData>/mcp-server.json` holds
+// the url + token for any agent on this machine.
 //
-//   • `<userData>/mcp-server.json` — url + token for any agent, started anywhere.
-//   • `<scene>/.mcp.json` — Claude Code's project-scope config, written into the scene open in
-//     the editor (and removed when it closes), so a client started in that folder finds it.
-//
-// An agent can ask for access itself by creating `<userData>/mcp-server.request`. The Hub
-// turns the setting on, writes `mcp-server.json`, and tells the creator in a notice that offers
-// to turn it off again: no click is needed to grant it, and nothing is hidden either.
+// An agent can ask for access by creating `<userData>/mcp-server.request`. That never grants
+// anything by itself: the creator is asked in the app, and only their "Allow" turns it on.
 //
 // Turning access off revokes it: the external token is dropped (live outside sessions close)
-// and every file written this run is withdrawn. The in-app assistant has its own token and is
-// unaffected either way. Both files are 0600, and a scene's `.mcp.json` is never written when
-// the scene's repo tracks it, so the token can't end up in a commit.
+// and the discovery file is removed. The in-app assistant has its own token and is unaffected
+// either way. Nothing is written into scene folders.
 import fs from 'fs';
 import path from 'path';
-import { execFile } from 'child_process';
 import { app } from 'electron';
 import log from 'electron-log/main';
 
-import { AI_EXTERNAL_ACCESS_CHANGED } from '/shared/types/ipc';
+import { AI_EXTERNAL_ACCESS_CHANGED, AI_EXTERNAL_ACCESS_REQUESTED } from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../mainWindow';
-import { getConfig, writeConfig } from './config';
+import { getConfig } from './config';
 import { getUserDataPath } from './electron';
-import { ensureGitignored, removeMcpServer, upsertMcpServer } from './project-config-files';
 import {
   getExternalMcpInfo,
   type SceneMcpInfo,
@@ -34,8 +27,6 @@ import {
 } from './scene-mcp';
 import { getWindow } from './window';
 
-export const MCP_SERVER_NAME = 'creator-hub';
-export const CLAUDE_MCP_CONFIG_FILE = '.mcp.json';
 export const MCP_DISCOVERY_FILE = 'mcp-server.json';
 export const MCP_ACCESS_REQUEST_FILE = 'mcp-server.request';
 
@@ -43,41 +34,6 @@ export interface McpDiscoveryInfo extends SceneMcpInfo {
   pid: number;
   startedAt: string;
   version: string;
-}
-
-// Claude Code reads `<project>/.mcp.json` (project scope) on session start. The port in `url`
-// changes every launch, so the entry can't be static: write it 0600 and gitignore it first,
-// so there is no window where a secret-bearing file is tracked. Scene templates' `.dclignore`
-// ignores `.*`, so the file never ships with a deployed scene either.
-export function writeClaudeMcpConfig(projectDir: string, mcp: SceneMcpInfo): void {
-  ensureGitignored(projectDir, CLAUDE_MCP_CONFIG_FILE, {
-    comment: 'Creator Hub — holds a local MCP token, do not commit',
-  });
-  upsertMcpServer(
-    path.join(projectDir, CLAUDE_MCP_CONFIG_FILE),
-    MCP_SERVER_NAME,
-    { type: 'http', url: mcp.url, headers: { Authorization: `Bearer ${mcp.token}` } },
-    { mode: 0o600 },
-  );
-}
-
-export function removeClaudeMcpConfig(projectDir: string): void {
-  removeMcpServer(path.join(projectDir, CLAUDE_MCP_CONFIG_FILE), MCP_SERVER_NAME);
-}
-
-// A `.gitignore` rule doesn't untrack a file the repo already has, and Claude Code intends
-// `.mcp.json` to be committed and shared. If the scene's repo tracks it, writing our entry
-// would put a token in the next commit, so leave such a scene alone. No git, or not a repo:
-// nothing can be tracked.
-export function isTrackedByGit(projectDir: string, file: string): Promise<boolean> {
-  return new Promise(resolve => {
-    execFile(
-      'git',
-      ['ls-files', '--error-unmatch', '--', file],
-      { cwd: projectDir, timeout: 5_000, windowsHide: true },
-      error => resolve(error === null),
-    );
-  });
 }
 
 export function discoveryFilePath(userDataDir: string = getUserDataPath()): string {
@@ -108,14 +64,11 @@ export function removeMcpDiscoveryFile(file: string): void {
 
 // The scene open in the editor window, reported by the renderer (ai.sceneOpened/sceneClosed).
 let openProjectDir: string | null = null;
-// Every scene that got a `.mcp.json` entry this run, so turning access off (or quitting)
-// withdraws all of them, not only the one open right now.
-const scenesWithConfig = new Set<string>();
 // When access was last granted, for the discovery file's `startedAt`.
 let grantedAt: string | null = null;
-// An agent's request was granted and the renderer hasn't shown the notice yet. Pulled rather
-// than only pushed, so a request honoured before the window loaded still gets its notice.
-let pendingGrantNotice = false;
+// An agent asked for access and the renderer hasn't asked the creator yet. Pulled rather than
+// only pushed, so a request made before the window loaded still gets its prompt.
+let pendingAccessRequest = false;
 
 async function exposeEnabled(): Promise<boolean> {
   try {
@@ -135,34 +88,12 @@ async function externalInfo(): Promise<SceneMcpInfo | null> {
   }
 }
 
-async function publishProjectFile(projectDir: string, mcp: SceneMcpInfo): Promise<void> {
-  if (await isTrackedByGit(projectDir, CLAUDE_MCP_CONFIG_FILE)) {
-    log.info(`[MCP] ${CLAUDE_MCP_CONFIG_FILE} is tracked by git in ${projectDir}; not writing it`);
-    return;
-  }
-  // The scene may have closed while git answered.
-  if (openProjectDir !== projectDir) return;
-  try {
-    writeClaudeMcpConfig(projectDir, mcp);
-    scenesWithConfig.add(projectDir);
-  } catch (e) {
-    log.warn(`[MCP] could not write ${CLAUDE_MCP_CONFIG_FILE} into ${projectDir}:`, e);
-  }
-}
-
-function withdrawProjectFile(projectDir: string): void {
-  try {
-    removeClaudeMcpConfig(projectDir);
-  } catch (e) {
-    log.warn(`[MCP] could not remove ${CLAUDE_MCP_CONFIG_FILE} from ${projectDir}:`, e);
-  }
-  scenesWithConfig.delete(projectDir);
-}
-
-// Grant outside access and write both files for the running server (starting it if needed).
-// Best-effort: a write failure degrades to "copy it from Settings", never a hard stop.
+// Grant outside access and write the discovery file for the running server (starting it if
+// needed). Best-effort: a write failure degrades to "copy it from Settings", never a hard stop.
 async function publish(): Promise<void> {
   setExternalMcpAccess(true);
+  pendingAccessRequest = false;
+  // Null if access was revoked while the server started, so a quick on→off never leaves a file.
   const mcp = await externalInfo();
   if (mcp === null) return;
   grantedAt ??= new Date().toISOString();
@@ -176,24 +107,20 @@ async function publish(): Promise<void> {
   } catch (e) {
     log.warn('[MCP] could not write the discovery file:', e);
   }
-  if (openProjectDir !== null) await publishProjectFile(openProjectDir, mcp);
-  notifyAccessChanged();
+  notifyRenderer(AI_EXTERNAL_ACCESS_CHANGED);
 }
 
-// Revoke outside access and withdraw every file written for it this run.
+// Revoke outside access and remove the discovery file.
 function withdraw(): void {
   setExternalMcpAccess(false);
   grantedAt = null;
-  pendingGrantNotice = false;
   clearMcpDiscovery();
-  notifyAccessChanged();
+  notifyRenderer(AI_EXTERNAL_ACCESS_CHANGED);
 }
 
-// Settings may have flipped its switch before the write reached us, and an agent's request
-// flips it with no click at all, so the renderer refetches on this rather than guessing.
-function notifyAccessChanged(): void {
+function notifyRenderer(channel: string): void {
   const win = getWindow(MAIN_WINDOW_ID);
-  if (win !== undefined && !win.isDestroyed()) win.webContents.send(AI_EXTERNAL_ACCESS_CHANGED);
+  if (win !== undefined && !win.isDestroyed()) win.webContents.send(channel);
 }
 
 // Called once at app start: expose the server if the creator left access on, then start
@@ -203,52 +130,43 @@ export async function initMcpDiscovery(): Promise<void> {
   watchAccessRequests();
 }
 
-// A scene was opened in the editor. The server is pointed at it right away so an outside
-// agent's tools work before any in-app turn ran, and its `.mcp.json` is written while access
-// is on. With access off, an entry a crashed run left behind is cleaned up instead.
-export async function sceneOpened(projectDir: string): Promise<void> {
+// A scene was opened in the editor. Point the server at it right away, so an outside agent's
+// tools work before any in-app turn ran.
+export function sceneOpened(projectDir: string): void {
   openProjectDir = projectDir;
   setSceneMcpProject(projectDir);
-  if (!(await exposeEnabled())) {
-    withdrawProjectFile(projectDir);
-    return;
-  }
-  const mcp = await externalInfo();
-  if (mcp !== null) await publishProjectFile(projectDir, mcp);
 }
 
 // The editor left the scene. Detach the server, so outside tools answer "No scene is open."
-// instead of acting on a closed scene, and withdraw the scene's `.mcp.json`, so no client
-// keeps retrying a dead port with a dead token.
+// instead of acting on a closed scene.
 export function sceneClosed(projectDir: string): void {
   if (openProjectDir !== projectDir) return;
   openProjectDir = null;
   setSceneMcpProject(null);
-  withdrawProjectFile(projectDir);
 }
 
-// The `exposeMcpServer` setting changed from Settings.
+// The `exposeMcpServer` setting changed (from Settings, or the creator allowed an agent's
+// request).
 export async function syncExposeMcpServer(enabled: boolean): Promise<void> {
   if (enabled) await publish();
   else withdraw();
 }
 
-// Withdraw everything on disk that advertises the server — on quit, and when access goes off.
-// Synchronous so it completes inside the quit path.
+// Stop advertising the server — on quit, and when access goes off. Synchronous so it
+// completes inside the quit path.
 export function clearMcpDiscovery(): void {
   try {
     removeMcpDiscoveryFile(discoveryFilePath());
   } catch (e) {
     log.warn('[MCP] could not remove the discovery file:', e);
   }
-  for (const projectDir of [...scenesWithConfig]) withdrawProjectFile(projectDir);
 }
 
 // --- Access requested by an agent --------------------------------------------------------
 
-// An agent created `<userData>/mcp-server.request`: grant access (or refresh the discovery
-// file if it was already on), then let the creator know. The request file is consumed either
-// way, so one request is honoured once.
+// An agent created `<userData>/mcp-server.request`. If access is already on, refresh the
+// discovery file (the agent may have found it missing). Otherwise ask the creator; nothing is
+// granted until they allow it. The request file is consumed either way.
 async function handleAccessRequest(): Promise<void> {
   const file = accessRequestFilePath();
   if (!fs.existsSync(file)) return;
@@ -257,16 +175,9 @@ async function handleAccessRequest(): Promise<void> {
     await publish();
     return;
   }
-  log.info('[MCP] an AI agent asked for outside access; turning it on');
-  try {
-    const config = await getConfig();
-    await writeConfig({ ...config, settings: { ...config.settings, exposeMcpServer: true } });
-  } catch (e) {
-    log.warn('[MCP] could not save the setting; not granting access:', e);
-    return;
-  }
-  pendingGrantNotice = true;
-  await publish();
+  log.info('[MCP] an AI agent asked for outside access; asking the creator');
+  pendingAccessRequest = true;
+  notifyRenderer(AI_EXTERNAL_ACCESS_REQUESTED);
 }
 
 // fs.watch fires several events per create; chaining keeps one request from being handled
@@ -285,6 +196,12 @@ function watchAccessRequests(): void {
     requestWatcher = fs.watch(getUserDataPath(), (_event, name) => {
       if (name === MCP_ACCESS_REQUEST_FILE) queueAccessRequest();
     });
+    // An unhandled 'error' (EPERM on Windows, the folder going away) would crash the main
+    // process. Requests then only get picked up on the next launch.
+    requestWatcher.on('error', e => {
+      log.warn('[MCP] stopped watching for agent access requests:', e);
+      stopWatchingAccessRequests();
+    });
   } catch (e) {
     log.warn('[MCP] cannot watch for agent access requests:', e);
   }
@@ -295,10 +212,9 @@ export function stopWatchingAccessRequests(): void {
   requestWatcher = null;
 }
 
-// The renderer asks whether an agent was granted access since it last asked, to show the
-// notice once.
-export function takeExternalAccessGrant(): boolean {
-  const pending = pendingGrantNotice;
-  pendingGrantNotice = false;
+// The renderer asks whether an agent is waiting for the creator's answer, to ask them once.
+export function takeExternalAccessRequest(): boolean {
+  const pending = pendingAccessRequest;
+  pendingAccessRequest = false;
   return pending;
 }

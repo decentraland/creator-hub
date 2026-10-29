@@ -3,11 +3,7 @@ import os from 'os';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  ensureGitignored,
-  removeMcpServer,
-  upsertMcpServer,
-} from '../src/modules/project-config-files';
+import { ensureGitignored, upsertMcpServer } from '../src/modules/project-config-files';
 
 let dir: string;
 const gitignore = () => fs.readFileSync(path.join(dir, '.gitignore'), 'utf8');
@@ -49,31 +45,22 @@ describe('ensureGitignored', () => {
   });
 });
 
-describe('upsertMcpServer and removeMcpServer', () => {
+describe('upsertMcpServer', () => {
   const file = () => path.join(dir, 'sub', 'mcp.json');
   const read = () => JSON.parse(fs.readFileSync(file(), 'utf8'));
 
-  it('should add ours beside the user’s servers and remove only ours', () => {
+  it('should add ours beside the user’s servers', () => {
     fs.mkdirSync(path.dirname(file()));
     fs.writeFileSync(file(), JSON.stringify({ mcpServers: { mine: { command: 'x' } } }));
 
     upsertMcpServer(file(), 'creator-hub', { url: 'u' });
+
     expect(read().mcpServers).toEqual({ mine: { command: 'x' }, 'creator-hub': { url: 'u' } });
-
-    expect(removeMcpServer(file(), 'creator-hub')).toBe(true);
-    expect(read().mcpServers).toEqual({ mine: { command: 'x' } });
   });
 
-  it('should create the file with the given mode and delete it once it holds nothing else', () => {
+  it('should create the file with the given mode', () => {
     upsertMcpServer(file(), 'creator-hub', { url: 'u' }, { mode: 0o600 });
+
     expect(fs.statSync(file()).mode & 0o777).toBe(0o600);
-
-    removeMcpServer(file(), 'creator-hub');
-
-    expect(fs.existsSync(file())).toBe(false);
-  });
-
-  it('should report when there was nothing of ours to remove', () => {
-    expect(removeMcpServer(file(), 'creator-hub')).toBe(false);
   });
 });

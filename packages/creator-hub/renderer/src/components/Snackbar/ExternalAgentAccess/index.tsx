@@ -1,18 +1,17 @@
 import { useCallback } from 'react';
-import CloseIcon from '@mui/icons-material/Close';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
-import { Alert, Button, IconButton } from 'decentraland-ui2';
+import { Alert, Button } from 'decentraland-ui2';
 
 import { t } from '/@/modules/store/translation/utils';
 import { useSettings } from '/@/hooks/useSettings';
 
-// An AI agent outside the Hub turned on its own access to the MCP server. It stays up until
-// dismissed, so the creator sees it and can take the access back in one click.
+// An AI agent outside the Hub asked for access to the open scene. It stays up until the
+// creator answers; only "Allow" turns access on.
 export function ExternalAgentAccess({ onClose }: { onClose: () => void }) {
   const { settings, updateAppSettings } = useSettings();
 
-  const handleTurnOff = useCallback(() => {
-    updateAppSettings({ ...settings, exposeMcpServer: false });
+  const handleAllow = useCallback(() => {
+    updateAppSettings({ ...settings, exposeMcpServer: true });
     onClose();
   }, [settings, updateAppSettings, onClose]);
 
@@ -24,14 +23,18 @@ export function ExternalAgentAccess({ onClose }: { onClose: () => void }) {
         <>
           <Button
             variant="text"
-            onClick={handleTurnOff}
+            onClick={onClose}
             sx={{ whiteSpace: 'nowrap' }}
           >
-            {t('snackbar.external_agent_access.actions.turn_off')}
+            {t('snackbar.external_agent_access.actions.deny')}
           </Button>
-          <IconButton onClick={onClose}>
-            <CloseIcon color="secondary" />
-          </IconButton>
+          <Button
+            variant="contained"
+            onClick={handleAllow}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            {t('snackbar.external_agent_access.actions.allow')}
+          </Button>
         </>
       }
       sx={{ alignItems: 'center' }}

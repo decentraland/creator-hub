@@ -398,7 +398,7 @@ describe('when main refuses to revert a turn', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    preloadAi.revertTurn.mockRejectedValue(new Error('an outside agent changed the scene'));
+    preloadAi.revertTurn.mockResolvedValue('blocked');
     dispatched = [];
     const ai = {
       ...reducer(undefined, { type: 'init' }),
@@ -419,7 +419,42 @@ describe('when main refuses to revert a turn', () => {
     expect(dispatched).toContainEqual(actions.unmarkReverted('a-1'));
   });
 
-  it('should report the turn as failed so the snackbar can say why', () => {
-    expect(dispatched).toContainEqual(expect.objectContaining({ type: revertTurn.rejected.type }));
+  it('should report the turn as blocked so the snackbar can say why', () => {
+    expect(dispatched).toContainEqual(
+      expect.objectContaining({ type: revertTurn.rejected.type, payload: 'blocked' }),
+    );
+  });
+});
+
+describe('when reverting a turn fails for another reason', () => {
+  let dispatched: { type: string; payload?: unknown }[];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.revertTurn.mockRejectedValue(new Error('editor went away'));
+    dispatched = [];
+    const ai = {
+      ...reducer(undefined, { type: 'init' }),
+      messages: [{ id: 'a-1', role: 'assistant' as const, parts: [], done: true }],
+    };
+    const dispatch = vi.fn((action: { type: string; payload?: unknown }) => {
+      dispatched.push(action);
+      return action;
+    });
+    await revertTurn({ id: 'a-1', count: 2 })(
+      dispatch as never,
+      (() => ({ ai })) as never,
+      undefined,
+    );
+  });
+
+  it('should keep the turn marked, so a retry can’t undo the user’s own edits', () => {
+    expect(dispatched).not.toContainEqual(actions.unmarkReverted('a-1'));
+  });
+
+  it('should report the turn as failed without the blocked reason', () => {
+    const rejected = dispatched.find(a => a.type === revertTurn.rejected.type);
+    expect(rejected).toBeDefined();
+    expect(rejected?.payload).toBeUndefined();
   });
 });

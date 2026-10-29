@@ -58,23 +58,3 @@ export function upsertMcpServer(
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`, { mode: opts.mode });
 }
-
-// Drop one server from an agent's JSON config, leaving the user's servers alone. The file goes
-// too when nothing else is in it, so a scene is left as we found it. Returns whether the
-// entry was there.
-export function removeMcpServer(file: string, name: string): boolean {
-  if (!fs.existsSync(file)) return false;
-  const config = readJsonObject(file);
-  const servers = serversOf(config);
-  if (!(name in servers)) return false;
-  const rest = { ...servers };
-  delete rest[name];
-  const otherKeys = Object.keys(config).filter(k => k !== 'mcpServers');
-  if (Object.keys(rest).length === 0 && otherKeys.length === 0) {
-    fs.rmSync(file, { force: true });
-    return true;
-  }
-  config.mcpServers = rest;
-  fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
-  return true;
-}

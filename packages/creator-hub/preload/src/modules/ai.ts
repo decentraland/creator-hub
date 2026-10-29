@@ -5,6 +5,7 @@ import {
   AI_ASK_REQUEST,
   AI_CLI_LOGIN_EVENTS,
   AI_EXTERNAL_ACCESS_CHANGED,
+  AI_EXTERNAL_ACCESS_REQUESTED,
   AI_MIRROR_STATE,
   AI_REMOTE_COMMAND,
   AI_SCENE_OP_REQUEST,
@@ -15,6 +16,7 @@ import {
   type AiAskRequest,
   type AiCliLoginEvent,
   type AiCliState,
+  type AiRevertResult,
   type AiSceneOpRequest,
   type AiScreenshotRequest,
   type AiWindowState,
@@ -82,7 +84,7 @@ export async function isBusy(): Promise<boolean> {
 
 // Revert the scene-graph changes an AI turn made (undo `count` steps — the value the
 // turn's `done` event reported as `mutations`).
-export async function revertTurn(count: number): Promise<void> {
+export async function revertTurn(count: number): Promise<AiRevertResult> {
   return invoke('ai.revertTurn', count);
 }
 
@@ -100,16 +102,23 @@ export async function sceneClosed(path: string): Promise<void> {
 }
 
 // Access to the MCP server for outside agents was granted or revoked (see
-// AI_EXTERNAL_ACCESS_CHANGED). `takeExternalAccessGrant` says, exactly once, whether an agent
-// asked for it itself.
+// AI_EXTERNAL_ACCESS_CHANGED).
 export function onExternalAccessChanged(cb: () => void): { cleanup: () => void } {
   const handler = () => cb();
   ipcRenderer.on(AI_EXTERNAL_ACCESS_CHANGED, handler);
   return { cleanup: () => ipcRenderer.off(AI_EXTERNAL_ACCESS_CHANGED, handler) };
 }
 
-export async function takeExternalAccessGrant(): Promise<boolean> {
-  return invoke('ai.takeExternalAccessGrant');
+// An outside agent asked for access (see AI_EXTERNAL_ACCESS_REQUESTED).
+// `takeExternalAccessRequest` says, exactly once, whether a request awaits the creator.
+export function onExternalAccessRequested(cb: () => void): { cleanup: () => void } {
+  const handler = () => cb();
+  ipcRenderer.on(AI_EXTERNAL_ACCESS_REQUESTED, handler);
+  return { cleanup: () => ipcRenderer.off(AI_EXTERNAL_ACCESS_REQUESTED, handler) };
+}
+
+export async function takeExternalAccessRequest(): Promise<boolean> {
+  return invoke('ai.takeExternalAccessRequest');
 }
 
 // AI sign-in without a CLI (#1531). Installs the official CLI on demand (if needed) and
