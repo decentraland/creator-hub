@@ -1056,7 +1056,9 @@
       "domain_set_title": "Set Domain Name",
       "domain_set_body": "Link <b>{name}</b> to {land}?",
       "domain_remove_title": "Remove Domain Name",
-      "domain_remove_body": "Unlink <b>{name}</b> from {land}?"
+      "domain_remove_body": "Unlink <b>{name}</b> from {land}?",
+      "domain_step_resolver": "Set up NAME",
+      "domain_step_link": "Link to LAND"
     },
     "scenes": {
       "columns": {

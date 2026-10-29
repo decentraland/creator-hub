@@ -1,7 +1,15 @@
 import { randomBytes } from 'node:crypto';
 
 import type { BrowserContext, ElectronApplication, Page, Route } from 'playwright';
-import { encodeAbiParameters, keccak256, namehash, toBytes, toFunctionSelector } from 'viem';
+import {
+  concat,
+  encodeAbiParameters,
+  keccak256,
+  namehash,
+  stringToHex,
+  toBytes,
+  toFunctionSelector,
+} from 'viem';
 
 import { buildMockIdentity, MOCK_ADDRESS } from './auth';
 
@@ -29,7 +37,10 @@ const PROFILE_NAMES: Record<string, string> = {
   [FIXTURE_ACCOUNTS.dan]: 'Fixture Dan',
 };
 
-const NAME_CONTENT = '0xe30101701220a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f';
+const NAME_CONTENT = concat([
+  '0x3000f2',
+  stringToHex('https://decentraland.zone/jump?position=96,15'),
+]);
 const ESTATE_REGISTRY = '0x959e104e1a4db6317fa58f8295f586e1a978c297';
 
 /** Which LAND fixtures (spec-00 P1–P5) the subgraph answers with. */
@@ -73,8 +84,8 @@ export type ManageFixtureOptions = {
   ownedEstate?: boolean;
   /** Fixture Dee manages both registries, Fixture Dan only the LAND one. */
   managers?: boolean;
-  /** The NAMEs fixtureone (used by World W1) and fixturethree, the latter linked to P1 when `set`. */
-  names?: 'owned' | 'set';
+  /** The NAMEs fixtureone (used by World W1) and fixturethree: with a resolver when `resolved`, and linked to P1 when `set`. */
+  names?: 'owned' | 'set' | 'resolved';
   /** How the auth relay answers a transaction request, after `delayMs`. */
   relay?: {
     outcome: RelayOutcome | RelayOutcome[];
@@ -395,14 +406,6 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
       },
     },
     {
-      match: '/lands/redirectionHashes',
-      body: {
-        ok: true,
-        data: options.names === 'set' ? [{ x: 96, y: 15, contentHash: NAME_CONTENT.slice(2) }] : [],
-      },
-    },
-    { match: '/redirection', body: { ok: true, data: { contentHash: NAME_CONTENT.slice(2) } } },
-    {
       match: '/world/fixtureone.dcl.eth/scenes',
       body:
         options.worldScenes === 'two'
@@ -530,7 +533,8 @@ function ethCallAnswers(names: ManageFixtureOptions['names']) {
   for (const label of ['fixtureone', 'fixturethree']) {
     const node = namehash(`${label}.dcl.eth`);
     const linked = names === 'set' && label === 'fixturethree';
-    answers[`${toFunctionSelector('resolver(bytes32)')}:${node}`] = linked
+    const resolved = (names === 'set' || names === 'resolved') && label === 'fixturethree';
+    answers[`${toFunctionSelector('resolver(bytes32)')}:${node}`] = resolved
       ? word(FIXTURE_ACCOUNTS.cal)
       : zero;
     answers[`${toFunctionSelector('owner(bytes32)')}:${node}`] = word(MOCK_ADDRESS);

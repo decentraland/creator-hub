@@ -1,10 +1,7 @@
-import type { Hex } from 'viem';
 import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
-import { LandType, type Land } from './land';
 
 const BATCH_SIZE = 1000;
-const REDIRECTION_COORDS_PER_REQUEST = 100;
 
 export type Domain = { name: string };
 export type DomainsQueryResult = { data: { domains: Domain[] } } | { errors: any };
@@ -233,63 +230,5 @@ export class DCLNames {
     }
 
     return results;
-  }
-}
-
-export type LandCoords = { x: number; y: number };
-
-type BuilderResponse<T> = { ok: boolean; data: T; error?: string };
-
-const landCoords = (land: Land): LandCoords[] =>
-  land.type === LandType.ESTATE ? (land.parcels ?? []) : [{ x: land.x!, y: land.y! }];
-
-export class LandRedirections {
-  private url = config.get('BUILDER_SERVER_URL');
-  private timeout = 10000;
-
-  private async read<T>(response: Response): Promise<T> {
-    const body: BuilderResponse<T> = await response.json();
-    if (!response.ok || !body.ok) {
-      throw new Error(body.error || response.status.toString());
-    }
-    return body.data;
-  }
-
-  /** Pins the redirection page of a parcel on IPFS and returns its ENS content hash. */
-  public async create({ x, y }: LandCoords): Promise<Hex> {
-    const response = await fetch(
-      `${this.url}/lands/${x},${y}/redirection`,
-      { method: 'POST' },
-      this.timeout,
-    );
-    const { contentHash } = await this.read<{ contentHash: string }>(response);
-    return `0x${contentHash}`;
-  }
-
-  /** Maps the lowercased content hash of every parcel's redirection page to its land id. */
-  public async fetchHashes(lands: Land[]): Promise<Record<string, string>> {
-    const landIdByCoords = new Map(
-      lands.flatMap(land => landCoords(land).map(({ x, y }) => [`${x},${y}`, land.id])),
-    );
-    const coords = [...landIdByCoords.keys()];
-    const hashes: Record<string, string> = {};
-
-    for (let i = 0; i < coords.length; i += REDIRECTION_COORDS_PER_REQUEST) {
-      const query = coords
-        .slice(i, i + REDIRECTION_COORDS_PER_REQUEST)
-        .map(c => `coords=${c}`)
-        .join('&');
-      const response = await fetch(
-        `${this.url}/lands/redirectionHashes?${query}`,
-        {},
-        this.timeout,
-      );
-      const batch = await this.read<(LandCoords & { contentHash: string })[]>(response);
-      for (const { x, y, contentHash } of batch) {
-        hashes[`0x${contentHash.toLowerCase()}`] = landIdByCoords.get(`${x},${y}`)!;
-      }
-    }
-
-    return hashes;
   }
 }

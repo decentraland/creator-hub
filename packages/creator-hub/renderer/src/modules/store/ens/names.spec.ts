@@ -1,8 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ContractFunctionRevertedError } from 'viem';
+import {
+  concat,
+  ContractFunctionRevertedError,
+  encodeFunctionData,
+  stringToHex,
+  zeroAddress,
+} from 'viem';
+import { namehash } from 'viem/ens';
 
 import type * as Viem from 'viem';
-import { DCLRegistrar } from './abis';
+import { DCLRegistrar, ENS as ENSRegistry, ENSResolver } from './abis';
 import { ENSProvider, type ENS } from './types';
 
 const readContractMock = vi.fn();
@@ -10,7 +17,12 @@ const readContractMock = vi.fn();
 vi.mock('/@/config', () => ({
   config: {
     get: (key: string) =>
-      ({ CHAIN_ID: '11155111', RPC_URL: 'https://rpc.example.org/sepolia' })[key],
+      ({
+        CHAIN_ID: '11155111',
+        RPC_URL: 'https://rpc.example.org/sepolia',
+        ENVIRONMENT: 'development',
+        JUMP_URL: 'https://decentraland.zone/jump',
+      })[key],
   },
 }));
 
@@ -19,9 +31,15 @@ vi.mock('viem', async importOriginal => ({
   createPublicClient: () => ({ readContract: readContractMock }),
 }));
 
-const { buildSetNameContent, getNameUsage, resolveNameOwner, toDCLNameLabel } = await import(
-  './names'
-);
+const {
+  buildLinkName,
+  decodeLandRedirect,
+  encodeLandRedirect,
+  getNameUsage,
+  resolveNameOwner,
+  toDCLNameLabel,
+} = await import('./names');
+const { getSceneJumpInUrl } = await import('/@/modules/utils');
 
 const SEPOLIA_REGISTRAR = '0x7518456ae93eb98f3e64571b689c626616bb7f30';
 const SEPOLIA_RESOLVER = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD';
@@ -112,18 +130,84 @@ describe('resolveNameOwner', () => {
   });
 });
 
-describe('buildSetNameContent', () => {
-  describe('when pointing a NAME at a LAND redirection', () => {
-    it('should call setContenthash on the resolver with the NAME node', () => {
-      expect(
-        buildSetNameContent(
-          'foo.dcl.eth',
-          '0xe3010170122065e4731d4080eb1944ae2a6cdd6a1f53af5021c7123de709349d0932c9876087',
-        ),
-      ).toEqual({
-        to: SEPOLIA_RESOLVER,
-        data: '0x304e6ade9bb7b7bd73d31b16ff599daabd868b2815d6cd9833b8321051e9dc312e20b56e00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000026e3010170122065e4731d4080eb1944ae2a6cdd6a1f53af5021c7123de709349d0932c98760870000000000000000000000000000000000000000000000000000',
+const SEPOLIA_REGISTRY = '0x00000000000c2e074ec69a0dfb2997ba6c7d2e1e';
+const AZUL_15_2 =
+  '0x3000f268747470733a2f2f646563656e7472616c616e642e7a6f6e652f6a756d702f3f706f736974696f6e3d313525324332';
+const setContenthash = (content: string) =>
+  encodeFunctionData({
+    abi: ENSResolver,
+    functionName: 'setContenthash',
+    args: [namehash('foo.dcl.eth'), content as `0x${string}`],
+  });
+
+describe('encodeLandRedirect', () => {
+  describe('when given the base parcel 15,2 on dev', () => {
+    it("should be 0x3000f2 followed by the parcel's jump-in URL", () => {
+      expect(getSceneJumpInUrl({ x: 15, y: 2 })).toBe(
+        'https://decentraland.zone/jump?position=15,2',
+      );
+      expect(encodeLandRedirect({ x: 15, y: 2 })).toBe(
+        concat(['0x3000f2', stringToHex(getSceneJumpInUrl({ x: 15, y: 2 }))]),
+      );
+    });
+  });
+});
+
+describe('decodeLandRedirect', () => {
+  describe('when the contenthash is a 0x3000f2 jump URL', () => {
+    it("should read the parcel from its position, azul.dcl.eth's %2C form included", () => {
+      expect(decodeLandRedirect(AZUL_15_2)).toEqual({ x: 15, y: 2 });
+      expect(decodeLandRedirect(encodeLandRedirect({ x: -100, y: 120 }))).toEqual({
+        x: -100,
+        y: 120,
       });
+    });
+  });
+
+  describe('when the contenthash is anything else', () => {
+    it('should read no parcel', () => {
+      expect(decodeLandRedirect('0xe3010170122065e4731d4080eb1944ae2a6cdd6a1f53af50')).toBeNull();
+      expect(decodeLandRedirect('0x')).toBeNull();
+      expect(decodeLandRedirect('')).toBeNull();
+      expect(decodeLandRedirect('0x3000f2' + '68747470733a2f2f6578616d706c652e6f7267')).toBeNull();
+    });
+  });
+});
+
+describe('buildLinkName', () => {
+  const RESOLVER = '0x1234567890123456789012345678901234567890';
+
+  describe('when the NAME has a resolver', () => {
+    it('should set the contenthash on it, in one transaction', () => {
+      expect(buildLinkName({ subdomain: 'foo.dcl.eth', resolver: RESOLVER }, AZUL_15_2)).toEqual([
+        { to: RESOLVER, data: setContenthash(AZUL_15_2) },
+      ]);
+    });
+  });
+
+  describe('when the NAME has no resolver', () => {
+    it('should set the public resolver on the registry first, then the contenthash on it', () => {
+      expect(buildLinkName({ subdomain: 'foo.dcl.eth', resolver: zeroAddress }, AZUL_15_2)).toEqual(
+        [
+          {
+            to: SEPOLIA_REGISTRY,
+            data: encodeFunctionData({
+              abi: ENSRegistry,
+              functionName: 'setResolver',
+              args: [namehash('foo.dcl.eth'), SEPOLIA_RESOLVER],
+            }),
+          },
+          { to: SEPOLIA_RESOLVER, data: setContenthash(AZUL_15_2) },
+        ],
+      );
+    });
+  });
+
+  describe('when the link is removed', () => {
+    it('should clear the contenthash on the NAME resolver', () => {
+      expect(buildLinkName({ subdomain: 'foo.dcl.eth', resolver: RESOLVER }, '0x')).toEqual([
+        { to: RESOLVER, data: setContenthash('0x') },
+      ]);
     });
   });
 });
@@ -141,10 +225,19 @@ describe('getNameUsage', () => {
     ...overrides,
   });
 
-  describe('when the NAME content is a LAND redirection', () => {
+  describe('when the NAME redirects to a parcel of a LAND', () => {
     it('should return that LAND id', () => {
-      expect(getNameUsage(name({ content: '0xE301AA' }), { '0xe301aa': '42' }, new Set())).toEqual({
+      expect(getNameUsage(name({ content: AZUL_15_2 }), { '15,2': '42' }, new Set())).toEqual({
         landId: '42',
+        world: false,
+      });
+    });
+  });
+
+  describe('when the NAME still points at an old IPFS redirection', () => {
+    it('should count as not linked', () => {
+      expect(getNameUsage(name({ content: '0xe301aa' }), { '15,2': '42' }, new Set())).toEqual({
+        landId: null,
         world: false,
       });
     });
@@ -155,15 +248,6 @@ describe('getNameUsage', () => {
       expect(getNameUsage(name({}), {}, new Set(['foo.dcl.eth']))).toEqual({
         landId: null,
         world: true,
-      });
-    });
-  });
-
-  describe('when the NAME is unused', () => {
-    it('should flag nothing', () => {
-      expect(getNameUsage(name({ content: '0x' }), { '0xe301aa': '42' }, new Set())).toEqual({
-        landId: null,
-        world: false,
       });
     });
   });

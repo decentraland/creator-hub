@@ -1055,7 +1055,9 @@
       "domain_set_title": "Configurar nombre de dominio",
       "domain_set_body": "¿Enlazar <b>{name}</b> a {land}?",
       "domain_remove_title": "Eliminar nombre de dominio",
-      "domain_remove_body": "¿Desenlazar <b>{name}</b> de {land}?"
+      "domain_remove_body": "¿Desenlazar <b>{name}</b> de {land}?",
+      "domain_step_resolver": "Configurar tu NAME",
+      "domain_step_link": "Vincular a tu LAND"
     },
     "scenes": {
       "columns": {

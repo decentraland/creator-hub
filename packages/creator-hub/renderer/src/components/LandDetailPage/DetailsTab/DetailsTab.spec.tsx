@@ -17,12 +17,6 @@ import { DetailShell } from '../../DetailShell';
 import { DetailsTab } from '.';
 
 vi.mock('/@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
-vi.mock('/@/lib/ens', async importOriginal => ({
-  ...(await importOriginal<object>()),
-  LandRedirections: class {
-    fetchHashes = async () => ({});
-  },
-}));
 vi.mock('/@/lib/landTransactions', async importOriginal => ({
   ...(await importOriginal<object>()),
   sendLandTransaction: vi.fn(() => new Promise(() => {})),

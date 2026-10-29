@@ -1055,7 +1055,9 @@
       "domain_set_title": "设置域名",
       "domain_set_body": "将 <b>{name}</b> 链接到 {land}？",
       "domain_remove_title": "移除域名",
-      "domain_remove_body": "取消 <b>{name}</b> 与 {land} 的链接？"
+      "domain_remove_body": "取消 <b>{name}</b> 与 {land} 的链接？",
+      "domain_step_resolver": "设置 NAME",
+      "domain_step_link": "链接到 LAND"
     },
     "scenes": {
       "columns": {

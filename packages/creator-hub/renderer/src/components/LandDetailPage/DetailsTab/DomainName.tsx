@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Hex } from 'viem';
 import { IconButton, MenuItem } from 'decentraland-ui2';
 
 import { useDispatch, useSelector } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
-import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useLandTxFlow } from '/@/hooks/useLandTxFlow';
-import { LandRedirections } from '/@/lib/ens';
 import type { Land } from '/@/lib/land';
 import type { AppState } from '/@/modules/store';
 import { fetchENSList } from '/@/modules/store/ens';
-import { buildSetNameContent } from '/@/modules/store/ens/names';
+import { buildLinkName, encodeLandRedirect } from '/@/modules/store/ens/names';
 import { getLandName } from '/@/modules/store/management/utils';
 import { t } from '/@/modules/store/translation/utils';
 import type { ManagedProject } from '/shared/types/manage';
@@ -21,7 +19,7 @@ import { selectRowStyles } from '../../ManagePage/ViewBar/ViewBar.styled';
 import { DefaultModal } from '../../Modals/DefaultModal';
 import { TxState, txCorner } from '../../Modals/TxState';
 import { ChevronDownIcon, EditIcon } from '../../Icons';
-import { getDomainState } from './details';
+import { getDomainState, toLandIdByParcel } from './details';
 import {
   ClaimLink,
   DomainHelp,
@@ -39,38 +37,26 @@ type Change = { kind: 'set'; name: string } | { kind: 'remove'; name: string };
 export function DomainName({ land, project }: { land: Land; project: ManagedProject }) {
   const dispatch = useDispatch();
   const { wallet = '' } = useAuth();
-  const { pushGeneric } = useSnackbar();
   const names = useSelector(state => state.ens.data);
   const lands = useSelector(state => state.land.data);
   const worlds = useSelector(state => state.management.projects);
   const landProjects = useSelector(state => state.management.lands.projects);
-  const [landIdByHash, setLandIdByHash] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState(false);
   const [change, setChange] = useState<Change | null>(null);
   const [hash, setHash] = useState<Hex | null>(null);
-
-  const loadHashes = useCallback(
-    () =>
-      new LandRedirections()
-        .fetchHashes(lands)
-        .then(setLandIdByHash)
-        .catch(() => setLandIdByHash({})),
-    [lands],
-  );
-  useEffect(() => {
-    void loadHashes();
-  }, [loadHashes]);
+  const [steps, setSteps] = useState<string[] | undefined>(undefined);
+  const landIdByParcel = useMemo(() => toLandIdByParcel(lands), [lands]);
 
   const domain = useMemo(
     () =>
       getDomainState(Object.values(names), {
         self: wallet,
         landId: land.id,
-        landIdByHash,
+        landIdByParcel,
         publishedWorlds: new Set(worlds.filter(world => world.deployment).map(world => world.id)),
         landNameById: Object.fromEntries(landProjects.map(item => [item.id, getLandName(item)])),
       }),
-    [names, wallet, land.id, landIdByHash, worlds, landProjects],
+    [names, wallet, land.id, landIdByParcel, worlds, landProjects],
   );
 
   const isApplied = useCallback(
@@ -82,8 +68,7 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
   );
   const refetch = useCallback(async () => {
     await dispatch(fetchENSList({ address: wallet }));
-    await loadHashes();
-  }, [dispatch, wallet, loadHashes]);
+  }, [dispatch, wallet]);
   const { flow, start, retry, reset } = useLandTxFlow({ isApplied, refetch });
 
   const close = () => {
@@ -93,21 +78,22 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
   };
 
   const confirm = async () => {
-    if (!change) return;
+    const name = change && names[change.name];
+    if (!change || !name) return;
     if (change.kind === 'remove') {
-      await start([buildSetNameContent(change.name, '0x')]);
+      await start(buildLinkName(name, '0x'));
       return;
     }
-    try {
-      const base =
-        project.place?.kind === 'estate' ? project.place.base : { x: land.x!, y: land.y! };
-      const contentHash = await new LandRedirections().create(base);
-      setHash(contentHash);
-      await start([buildSetNameContent(change.name, contentHash)]);
-    } catch {
-      pushGeneric('error', t('tx.failed'));
-      close();
-    }
+    const base = project.place?.kind === 'estate' ? project.place.base : { x: land.x!, y: land.y! };
+    const content = encodeLandRedirect(base);
+    const txs = buildLinkName(name, content);
+    setHash(content);
+    setSteps(
+      txs.length > 1
+        ? [t('land_detail.details.domain_step_resolver'), t('land_detail.details.domain_step_link')]
+        : undefined,
+    );
+    await start(txs);
   };
 
   const landName = getLandName(project);
@@ -213,6 +199,7 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
             doneText={t(
               change?.kind === 'remove' ? 'tx.done.domain_removed' : 'tx.done.domain_set',
             )}
+            stepLabels={steps}
             onRetry={() => void retry()}
             onClose={close}
           />
