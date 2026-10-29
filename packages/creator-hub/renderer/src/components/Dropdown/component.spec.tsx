@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
-import { useTheme } from 'decentraland-ui2';
+import { dclColors, useTheme } from 'decentraland-ui2';
 
 import { Dropdown } from '.';
 
@@ -114,6 +114,40 @@ describe('Dropdown', () => {
       expect(
         screen.getByRole('menuitem', { name: 'Unpublish' }).querySelector('.MenuGlyph'),
       ).toBeNull();
+    });
+  });
+
+  describe('when it is the filled header trigger', () => {
+    const paint = (color: string) => {
+      const probe = document.createElement('div');
+      probe.style.backgroundColor = color;
+      document.body.appendChild(probe);
+      const value = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return value;
+    };
+
+    beforeEach(() => {
+      render(
+        <ThemeProvider theme={dark}>
+          <Dropdown
+            label="Options for Plaza"
+            variant="filled"
+            options={[{ text: 'Copy URL', handler: () => {} }]}
+          />
+        </ThemeProvider>,
+      );
+    });
+
+    it('should have no fill at rest, and White 10 while its menu is open', () => {
+      const trigger = screen.getByRole('button', { name: 'Options for Plaza' });
+      const white10 = paint(dclColors.whiteTransparent.subtle);
+
+      expect(getComputedStyle(trigger).backgroundColor).not.toBe(white10);
+
+      fireEvent.click(trigger);
+
+      expect(getComputedStyle(trigger).backgroundColor).toBe(white10);
     });
   });
 

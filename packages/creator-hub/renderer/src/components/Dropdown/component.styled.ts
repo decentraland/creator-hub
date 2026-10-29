@@ -85,7 +85,7 @@ const Trigger = styled(IconButton, {
   shouldForwardProp: prop => prop !== 'look',
 })<{ look: 'ghost' | 'filled' }>(({ theme, look }) => ({
   width: 40,
-  backgroundColor: look === 'filled' ? whiteTransparent.subtle : 'transparent',
+  backgroundColor: 'transparent',
   height: 40,
   borderRadius: 100,
   color: look === 'filled' ? neutral.softWhite : whiteTransparent.blurry,
