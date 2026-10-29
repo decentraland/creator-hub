@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Hex } from 'viem';
 import { IconButton, MenuItem } from 'decentraland-ui2';
 
@@ -47,7 +47,7 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
   const [landIdByHash, setLandIdByHash] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState(false);
   const [change, setChange] = useState<Change | null>(null);
-  const [hash, setHash] = useState<Hex | null>(null);
+  const hash = useRef<Hex | null>(null);
 
   const loadHashes = useCallback(
     () =>
@@ -77,8 +77,8 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
     (state: AppState) =>
       !!change &&
       (state.ens.data[change.name]?.content ?? '').toLowerCase() ===
-        (change.kind === 'set' ? (hash ?? '') : '0x').toLowerCase(),
-    [change, hash],
+        (change.kind === 'set' ? (hash.current ?? '') : '0x').toLowerCase(),
+    [change],
   );
   const refetch = useCallback(async () => {
     await dispatch(fetchENSList({ address: wallet }));
@@ -102,7 +102,7 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
       const base =
         project.place?.kind === 'estate' ? project.place.base : { x: land.x!, y: land.y! };
       const contentHash = await new LandRedirections().create(base);
-      setHash(contentHash);
+      hash.current = contentHash;
       await start([buildSetNameContent(change.name, contentHash)]);
     } catch {
       pushGeneric('error', t('tx.failed'));

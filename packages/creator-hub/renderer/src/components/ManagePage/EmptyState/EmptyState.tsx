@@ -9,15 +9,15 @@ import { Button } from '../../Button';
 import { InfoTip } from '../InfoTip';
 import { Body, Illustration, ReadMore, Root, Title, TitleRow } from './EmptyState.styled';
 
-export type EmptyStateIcon = 'wave' | 'world' | 'land';
+type EmptyStateIcon = 'wave' | 'world' | 'land';
 
-export type EmptyStateAction = {
+type EmptyStateAction = {
   label: string;
   variant: 'primary' | 'secondary' | 'tertiary';
   onClick: () => void;
 };
 
-export type EmptyStateInfo = { label: string; text: string; readMoreUrl: string };
+type EmptyStateInfo = { label: string; text: string; readMoreUrl: string };
 
 const EMPTY_STATE_ICONS = { wave: EmptySignedOut, world: EmptyWorlds, land: EmptyLands };
 

@@ -42,7 +42,10 @@ export function SpaceUsed() {
     <Root>
       <LabelRow>
         <Label id={labelId}>{t('manage.worlds_storage.used')}</Label>
-        <InfoTip label={t('manage.worlds_storage.info_label')}>
+        <InfoTip
+          label={t('manage.worlds_storage.info_label')}
+          size="small"
+        >
           {t('manage.worlds_storage.description')}{' '}
           <DetailsButton
             type="button"

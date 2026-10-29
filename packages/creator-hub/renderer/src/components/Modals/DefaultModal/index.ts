@@ -1,2 +1,2 @@
 export { DefaultModal } from './DefaultModal';
-export type { ModalStep, PrimaryAction } from './DefaultModal';
+export type { ModalStep } from './DefaultModal';

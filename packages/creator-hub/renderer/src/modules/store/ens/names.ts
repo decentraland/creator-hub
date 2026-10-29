@@ -20,7 +20,7 @@ import type { ContractData, ENS } from './types';
 const DCL_SUFFIX = '.dcl.eth';
 const DCL_LABEL = /^[a-z0-9]{2,15}$/;
 
-export type NameUsage = { landId: string | null; world: boolean };
+type NameUsage = { landId: string | null; world: boolean };
 
 const chainId = (): ChainId => Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 

@@ -373,9 +373,9 @@ export function toLandScenes(
   }));
 }
 
-export type ManagerState = 'full' | 'land-only';
+export type ManagerState = 'full' | 'land-only' | 'estate-only';
 
-/** The account's UpdateManagers, one per address; `land-only` when only the LAND registry approved it. */
+/** The account's UpdateManagers, one per address; `land-only` or `estate-only` when only that registry approved it. */
 export function getManagers(
   authorizations: Authorization[],
 ): Array<{ address: string; state: ManagerState }> {
@@ -385,7 +385,12 @@ export function getManagers(
   }
   return [...types].map(([address, registries]) => ({
     address,
-    state: registries.has(LandType.ESTATE) ? 'full' : 'land-only',
+    state:
+      registries.has(LandType.PARCEL) && registries.has(LandType.ESTATE)
+        ? 'full'
+        : registries.has(LandType.ESTATE)
+          ? 'estate-only'
+          : 'land-only',
   }));
 }
 

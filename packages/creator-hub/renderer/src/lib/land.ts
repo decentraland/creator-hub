@@ -574,8 +574,10 @@ export class Lands {
           undefined,
           ENTITIES_TIMEOUT_MS,
         );
-        if (!result.ok)
+        if (!result.ok) {
+          await result.body?.cancel();
           throw new Error(`Failed to read ${group.length} deployers: ${result.status}`);
+        }
         const body = (await result.json()) as {
           deployments?: Array<{ entityId?: unknown; deployedBy?: unknown }>;
         };

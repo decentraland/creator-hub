@@ -1,7 +1,7 @@
 import { LandType, type Land } from '/@/lib/land';
 
 export type Coord = { x: number; y: number };
-export type CollaboratorScope =
+type CollaboratorScope =
   | { kind: 'token' }
   | { kind: 'estate-wide' }
   | { kind: 'parcels'; parcels: Coord[] };

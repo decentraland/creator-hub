@@ -37,9 +37,9 @@ const DEFAULT_RECEIPT_TIMEOUT_MS = 3 * 60_000;
 
 export type LandTransaction = { to: Address; data: Hex };
 
-export type LandTransactionStatus = 'confirmed' | 'failed' | 'unconfirmed';
+type LandTransactionStatus = 'confirmed' | 'failed' | 'unconfirmed';
 
-export type LandTransactionResult = { hash: Hex; status: LandTransactionStatus };
+type LandTransactionResult = { hash: Hex; status: LandTransactionStatus };
 
 const landRegistry = () => config.get('LAND_REGISTRY_ADDRESS') as Address;
 const estateRegistry = () => config.get('ESTATE_REGISTRY_ADDRESS') as Address;

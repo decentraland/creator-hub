@@ -92,7 +92,6 @@ const Stats = styled('div')(({ theme }) => ({
     fontSize: theme.typography.pxToRem(16),
     fontWeight: 400,
   },
-  '& > span > .LandsGlyph': { padding: 2, boxSizing: 'content-box' },
 }));
 
 const UpdatedAt = styled('time')(({ theme }) => ({
@@ -113,7 +112,12 @@ const Deployer = styled('span')(({ theme }) => ({
   fontSize: theme.typography.pxToRem(16),
   fontWeight: 600,
   '& > .MuiAvatar-root': { flexShrink: 0 },
-  '& > span': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  '& > span': {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    color: 'inherit',
+  },
 }));
 
 const Table = styled('table')(({ theme }) => ({

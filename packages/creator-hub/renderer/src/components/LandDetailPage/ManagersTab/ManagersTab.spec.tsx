@@ -71,7 +71,9 @@ describe('ManagersTab', () => {
 
       expect(screen.getByText('Managers: 2')).toBeTruthy();
       expect(
-        screen.getAllByRole('button', { name: 'Applies to LAND only. Estates not updated.' }),
+        screen.getAllByRole('button', {
+          name: 'Can manage your LANDs only. Add them again to include your Estates.',
+        }),
       ).toHaveLength(1);
     });
   });
@@ -114,6 +116,49 @@ describe('ManagersTab', () => {
         buildSetUpdateManager(SELF, BEN, true)[0],
       );
       expect(screen.getByText('Step 1 of 2 · LAND')).toBeTruthy();
+    }, 15_000);
+  });
+
+  describe.each([
+    [
+      'the Estate',
+      LandType.ESTATE,
+      'Can manage your Estates only. Add them again to include your LANDs.',
+    ],
+    [
+      'the LAND',
+      LandType.PARCEL,
+      'Can manage your LANDs only. Add them again to include your Estates.',
+    ],
+  ])('when a manager approved only on %s registry is added again', (_, registry, note) => {
+    it('should say how to include the other registry, then sign both, LAND first', async () => {
+      vi.mocked(resolveNameOwner).mockResolvedValueOnce(BEN);
+      vi.mocked(sendLandTransaction).mockResolvedValueOnce({
+        hash: `0x${'ab'.repeat(32)}`,
+        status: 'confirmed',
+      });
+      renderTab([{ address: BEN, type: registry }]);
+      expect(screen.getByRole('button', { name: note })).toBeTruthy();
+
+      fireEvent.change(screen.getByRole('textbox', { name: 'Wallet address or NAME' }), {
+        target: { value: 'fixtureben' },
+      });
+      await waitFor(
+        () => expect(screen.getByRole('button', { name: 'Add' })).toHaveProperty('disabled', false),
+        { timeout: 3000 },
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+      await act(async () =>
+        fireEvent.click(screen.getAllByRole('button', { name: 'Add' }).at(-1)!),
+      );
+
+      const [land, estate] = buildSetUpdateManager(SELF, BEN, true);
+      const signed = vi
+        .mocked(sendLandTransaction)
+        .mock.calls.slice(-2)
+        .map(([tx]) => tx);
+      expect(signed).toEqual([land, estate]);
+      expect(await screen.findByText('Step 2 of 2 · Estates')).toBeTruthy();
     }, 15_000);
   });
 

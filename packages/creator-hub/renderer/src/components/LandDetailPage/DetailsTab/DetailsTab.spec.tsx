@@ -8,9 +8,12 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { useAuth } from '/@/hooks/useAuth';
 import { LandType, RoleType, type Land } from '/@/lib/land';
 import { buildUpdateLandMetadata, sendLandTransaction } from '/@/lib/landTransactions';
+import { actions as ensActions } from '/@/modules/store/ens';
+import { ENSProvider, type ENS } from '/@/modules/store/ens/types';
 import { toLandProject } from '/@/modules/store/management/utils';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
+import { pollUntil } from '/shared/utils';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { DetailShell } from '../../DetailShell';
@@ -21,8 +24,19 @@ vi.mock('/@/lib/ens', async importOriginal => ({
   ...(await importOriginal<object>()),
   LandRedirections: class {
     fetchHashes = async () => ({});
+    create = async () => REDIRECT_HASH;
   },
 }));
+vi.mock('/@/modules/store/ens', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  fetchENSList: () => ({ type: 'test/fetchENSList' }),
+}));
+vi.mock('/shared/utils', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  pollUntil: vi.fn(async (check: () => Promise<boolean>) => check()),
+}));
+
+const REDIRECT_HASH = `0x${'cd'.repeat(32)}`;
 vi.mock('/@/lib/landTransactions', async importOriginal => ({
   ...(await importOriginal<object>()),
   sendLandTransaction: vi.fn(() => new Promise(() => {})),
@@ -43,10 +57,10 @@ const land: Land = {
   updateOperator: null,
 };
 
-function renderTab(mode: 'edit' | 'read', subject: Land = land) {
+function renderTab(mode: 'edit' | 'read', subject: Land = land, store = createTestStore()) {
   vi.mocked(useAuth).mockReturnValue({ wallet: '0xme' } as unknown as ReturnType<typeof useAuth>);
   render(
-    <Provider store={createTestStore() as never}>
+    <Provider store={store as never}>
       <MemoryRouter>
         <ThemeProvider theme={dark}>
           <DetailShell
@@ -128,6 +142,37 @@ describe('DetailsTab', () => {
       expect(screen.getByRole('link', { name: 'Claim a NAME' }).getAttribute('href')).toBe(
         'https://decentraland.org/marketplace/names/claim',
       );
+    });
+  });
+
+  describe('when an editor links a NAME to the LAND', () => {
+    it('should stop refetching once the NAME points at the new redirect', async () => {
+      const name: ENS = {
+        name: 'plaza',
+        subdomain: 'plaza',
+        provider: ENSProvider.DCL,
+        nftOwnerAddress: '0xme',
+        ensOwnerAddress: '0xme',
+        tokenId: '1',
+        resolver: '0x0000000000000000000000000000000000000001',
+        content: REDIRECT_HASH,
+      };
+      const store = createTestStore();
+      store.dispatch(ensActions.fetchENSList.fulfilled([name], 'test', { address: '0xme' }));
+      vi.mocked(sendLandTransaction).mockResolvedValueOnce({
+        hash: `0x${'ab'.repeat(32)}`,
+        status: 'confirmed',
+      });
+      vi.mocked(pollUntil).mockClear();
+      renderTab('edit', land, store);
+
+      fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Domain Name' }));
+      fireEvent.click(screen.getByRole('option', { name: 'plaza' }));
+      await act(async () => {
+        fireEvent.click(screen.getAllByRole('button', { name: 'Set Domain Name' }).at(-1)!);
+      });
+
+      expect(await vi.mocked(pollUntil).mock.results[0]?.value).toBe(true);
     });
   });
 

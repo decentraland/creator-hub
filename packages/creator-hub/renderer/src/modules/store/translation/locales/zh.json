@@ -987,6 +987,7 @@
     "expired": "请求在签名前已过期。",
     "failed": "交易失败。",
     "try_again": "重试",
+    "continue": "继续",
     "step": "第 {n} 步，共 {total} 步",
     "done": {
       "transfer": "LAND 已转让。",
@@ -1120,7 +1121,8 @@
       "remove_body": "对方将不再管理你的 LAND。",
       "step_land": "LAND",
       "step_estates": "Estates",
-      "land_only": "仅适用于 LAND。Estates 未更新。"
+      "land_only": "只能管理你的 LAND。重新添加以包含你的 Estates。",
+      "estate_only": "只能管理你的 Estates。重新添加以包含你的 LAND。"
     }
   },
   "world_detail": {

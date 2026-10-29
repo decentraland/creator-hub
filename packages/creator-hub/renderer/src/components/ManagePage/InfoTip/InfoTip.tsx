@@ -22,11 +22,12 @@ const GLYPH: Record<Variant, ReactNode> = {
 type Props = {
   label: string;
   variant?: Variant;
+  size?: 'small' | 'medium';
   children: ReactNode;
 };
 
 /** A toggletip behind an ⓘ or ⚠ glyph: opens on hover, focus or click; Escape, click-away or leaving it closes it. */
-export function InfoTip({ label, variant = 'info', children }: Props) {
+export function InfoTip({ label, variant = 'info', size = 'medium', children }: Props) {
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -74,6 +75,7 @@ export function InfoTip({ label, variant = 'info', children }: Props) {
         ref={setAnchor}
         type="button"
         look={variant}
+        size={size}
         aria-label={label}
         aria-expanded={open}
         aria-controls={bubbleId}

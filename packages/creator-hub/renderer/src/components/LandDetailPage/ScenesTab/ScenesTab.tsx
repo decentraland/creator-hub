@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 
-import { config } from '/@/config';
 import type { Land } from '/@/lib/land';
 import { getLandName } from '/@/modules/store/management/utils';
 import { t } from '/@/modules/store/translation/utils';
@@ -26,7 +25,7 @@ export function ScenesTab({ land, project, mode }: Props) {
       deployers={deployers}
       mode={mode}
       placeName={getLandName(project)}
-      source={{ peerUrl: config.get('PEER_URL') }}
+      source="land"
       unpublishScene={unpublishScene}
       stats={
         <>
@@ -36,7 +35,7 @@ export function ScenesTab({ land, project, mode }: Props) {
           </Meta>
           {project.place?.kind === 'estate' && (
             <Meta>
-              <LayoutOutlineIcon className="LandsGlyph" />
+              <LayoutOutlineIcon />
               {t('manage.cards.land.lands_count', { count: project.place.size })}
             </Meta>
           )}

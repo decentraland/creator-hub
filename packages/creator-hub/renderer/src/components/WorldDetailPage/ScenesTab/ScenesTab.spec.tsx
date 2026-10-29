@@ -49,6 +49,7 @@ vi.mock('/@/lib/profile', () => ({
 vi.mock('decentraland-ui2', async importOriginal => ({
   ...(await importOriginal<object>()),
   AvatarFace: () => null,
+  Address: ({ value }: { value: string }) => <span>{value}</span>,
 }));
 vi.mock('/@/components/WorldAtlas', async importOriginal => ({
   ...(await importOriginal<object>()),

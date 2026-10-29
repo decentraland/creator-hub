@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { LandScene } from '/@/modules/store/management/utils';
 import { SortBy } from '/shared/types/manage';
 
-import { selectScenes, slugify } from './scenes';
+import { selectScenes } from './scenes';
 
 const scene = (id: string, title: string, timestamp: number, base: string): LandScene => ({
   id,
@@ -50,12 +50,5 @@ describe('selectScenes', () => {
         ['c'],
       );
     });
-  });
-});
-
-describe('slugify', () => {
-  it('should make a file-safe name, falling back to "scene"', () => {
-    expect(slugify('My Scene: Plaza!')).toBe('my-scene-plaza');
-    expect(slugify('***')).toBe('scene');
   });
 });

@@ -7,6 +7,7 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 
+import { PublicIcon } from '../../Icons';
 import { PlaceCard } from '.';
 
 type CardProps = Parameters<typeof PlaceCard>[0];
@@ -110,7 +111,10 @@ describe('PlaceCard', () => {
       const card = screen.getByRole('article', { name: 'Plaza' });
       expect(card.textContent).toContain('plaza.dcl.eth');
       expect(card.textContent).toContain('2 Scenes');
-      expect(card.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 19 19');
+      const globe = render(<PublicIcon />)
+        .container.querySelector('path')
+        ?.getAttribute('d');
+      expect(card.querySelector('svg path')?.getAttribute('d')).toBe(globe);
     });
 
     it('should tag a collaborator', () => {

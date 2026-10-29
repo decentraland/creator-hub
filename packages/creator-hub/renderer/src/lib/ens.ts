@@ -236,7 +236,7 @@ export class DCLNames {
   }
 }
 
-export type LandCoords = { x: number; y: number };
+type LandCoords = { x: number; y: number };
 
 type BuilderResponse<T> = { ok: boolean; data: T; error?: string };
 
