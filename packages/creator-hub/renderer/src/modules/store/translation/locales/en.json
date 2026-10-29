@@ -907,7 +907,8 @@
       "title": "About",
       "app_name": "Decentraland Creator Hub",
       "action": "OK"
-    }
+    },
+    "close": "Close"
   },
   "popup": {
     "copied_to_clipboard": "Copied!"
@@ -1074,23 +1075,23 @@
   },
   "manage": {
     "header": {
-      "title": "Manage Worlds"
+      "title": "Manage"
     },
-    "items": "{count} {count, plural, one {item} other {items}}",
     "load_more": "Load more",
     "search": "Search",
     "sort_by": "Sort by",
     "sort": {
-      "latest": "Last published",
-      "name": "Domain name"
+      "latest": "Last Updated",
+      "name": "Name"
     },
-    "filter_by": "Filter by",
     "filters": {
+      "all": "All",
       "published": "Published",
-      "unpublished": "Not published"
+      "unpublished": "Not Published"
     },
     "sign_in": {
-      "title": "Sign in to manage your worlds",
+      "title": "Hi there!",
+      "description": "Sign In to start managing your Worlds and LANDs.",
       "action": "Sign In"
     },
     "empty_list": {
@@ -1106,27 +1107,35 @@
         "title": "No places to display",
         "description": "Mint a NAME or become a collaborator to see more results."
       },
-      "all": {
-        "title": "No places to display",
-        "description": "Mint a NAME or become a collaborator to add your first Place."
+      "worlds": {
+        "title": "No Worlds to manage yet",
+        "description": "Mint a new Decentraland <name>NAME</name> or claim an <ens>ENS Domain</ens> to create your World and start publishing your scenes.",
+        "info": "Decentraland Worlds are your own personal 3D space to hang out, host events, and build—all you need is a Decentraland NAME.",
+        "info_label": "What is a World?"
+      },
+      "lands": {
+        "title": "No LANDs to manage yet",
+        "description": "Rent or buy LAND to publish your scenes.",
+        "info": "LAND is a non-fungible token that includes a record of its coordinates, its owner, and a reference to a content description file or parcel manifest that describes and encodes the content the owner wishes to serve on their LAND.",
+        "info_label": "What is LAND?"
       }
     },
     "actions": {
       "view_scenes": "View Scenes",
-      "mint_name": "Mint a new NAME"
+      "mint_name": "Mint New NAME",
+      "rent_or_buy_land": "Rent or Buy LAND"
     },
     "worlds_storage": {
-      "used": "Space used",
-      "for_names": "for Decentraland NAMEs",
+      "used": "Space Used",
       "description": "Total storage is calculated based on MANA, LAND, and NAME holdings.",
-      "link": "View details"
+      "link": "View Details →",
+      "usage": "<b>{used}</b> / {max} MB",
+      "info_label": "About Space Used"
     },
     "cards": {
-      "published_scene": "Published Scene",
       "roles": {
         "owner": "Owner",
         "collaborator": "Collaborator",
-        "operator": "Operator",
         "tenant": "Tenant"
       },
       "menu": {
@@ -1134,32 +1143,204 @@
         "copy_url": "Copy URL",
         "edit_name": "Edit Name",
         "permissions": "Permissions",
-        "parcel": "Parcel",
         "view_storage": "View Storage",
-        "unpublish": "Unpublish"
+        "unpublish": "Unpublish",
+        "create_event": "Create Event",
+        "transfer": "Transfer"
       },
       "no_scene": {
-        "title": "No scene published",
-        "view_scenes": "VIEW SCENES"
+        "title": "No Scene Published",
+        "view_scenes": "View Scenes"
       },
       "worlds": {
-        "world": "World",
-        "multi-scene": "Multi-scene",
-        "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
-        "scene_settings": "Scene Settings",
         "world_settings": "Settings",
         "layout": "Layout",
         "published_world": "Published World"
       },
       "land": {
-        "land": "LAND",
-        "land_settings": "LAND Settings",
-        "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
-        "land_coords": "{coordX}, {coordY}"
-      }
+        "lands_count": "{count, plural, one {# LAND} other {# LANDs}}",
+        "parcel_name": "Parcel {coords}",
+        "estate_name": "Estate {id}"
+      },
+      "scenes_count": "{count, plural, one {# Scene} other {# Scenes}}"
     },
     "unpublish_world_confirmation": {
       "title": "Unpublish <b>{worldName}</b>?"
+    },
+    "view": "View",
+    "tabs": {
+      "worlds": "Worlds",
+      "lands": "LANDs"
+    },
+    "read_more": "Read More →",
+    "errors": {
+      "fetch": {
+        "title": "Something went wrong.",
+        "description": "Please, try again.",
+        "retry": "Try again"
+      }
+    }
+  },
+  "menu": {
+    "options_for": "Options for {name}"
+  },
+  "recipient": {
+    "label": "Wallet address or NAME",
+    "placeholder": "0x… or name.dcl.eth",
+    "errors": {
+      "invalid": "Enter a wallet address or a NAME.",
+      "not_found": "This NAME doesn't exist.",
+      "self_transfer": "You can't transfer to yourself.",
+      "self_add": "You can't add yourself."
+    }
+  },
+  "tx": {
+    "waiting_signature": "Confirm this transaction in your browser.",
+    "pending": "Transaction sent. Waiting for confirmation…",
+    "view_explorer": "View on Etherscan",
+    "not_confirmed": "Not confirmed yet. It can take a few minutes; check again later.",
+    "rejected": "You rejected the request in your browser.",
+    "expired": "The request expired before it was signed.",
+    "failed": "The transaction failed.",
+    "try_again": "Try again",
+    "continue": "Continue",
+    "step": "Step {n} of {total}",
+    "done": {
+      "transfer": "LAND transferred.",
+      "details": "Details saved.",
+      "domain_set": "Domain Name set.",
+      "domain_removed": "Domain Name removed.",
+      "collaborator_added": "Collaborator added.",
+      "collaborator_replaced": "Collaborator replaced.",
+      "collaborator_removed": "Collaborator removed.",
+      "collaborators_removed": "Collaborators removed.",
+      "parcels_updated": "Parcels updated.",
+      "manager_added": "Manager added.",
+      "manager_removed": "Manager removed."
+    }
+  },
+  "land_transfer": {
+    "title": "Transfer LAND",
+    "body": "You are about to transfer <b>{name}</b>. This is an irreversible operation, so please check the address carefully.",
+    "confirm": "Transfer LAND"
+  },
+  "unpublish_scene": {
+    "title": "Unpublish Scene",
+    "title_many": "Unpublish Scenes",
+    "body": "Are you sure you want to unpublish <b>{scene}</b> from {land}?",
+    "body_many": "Are you sure you want to unpublish {count} scenes from {land}?",
+    "confirm": "Unpublish",
+    "confirm_many": "Unpublish {count} scenes",
+    "progress": "Unpublishing {done} of {count}…",
+    "error": "Couldn't unpublish {scene}. Try again.",
+    "done": "Scene unpublished.",
+    "done_many": "{count} scenes unpublished."
+  },
+  "title": {
+    "back": "Back"
+  },
+  "land_detail": {
+    "title": "Manage - {name}",
+    "role": "Role",
+    "owner": "Owner",
+    "tabs": {
+      "details": "Details",
+      "scenes": "Scenes",
+      "collaborators": "Collaborators",
+      "managers": "Managers"
+    },
+    "not_found": "This LAND is no longer in your list.",
+    "back_to_manage": "Back to Manage",
+    "save": "Save",
+    "discard": "Discard",
+    "details": {
+      "name": "Land Name",
+      "name_placeholder": "Write here",
+      "description": "Description",
+      "description_placeholder": "Write something about your LAND here",
+      "name_required": "Enter a name.",
+      "counter": "{count}/{max}",
+      "too_long": "Use {max} characters or fewer.",
+      "save_title": "Save details",
+      "save_body": "Save the new name and description on the blockchain?",
+      "domain": "Domain Name",
+      "domain_help": "You can use a Decentraland NAME to create a custom link for your LAND.",
+      "domain_placeholder": "Choose a NAME",
+      "claim_name": "Claim a NAME",
+      "domain_used": "Used by {target}",
+      "domain_change": "Change Domain Name",
+      "domain_remove": "Remove link",
+      "domain_set_title": "Set Domain Name",
+      "domain_set_body": "Link <b>{name}</b> to {land}?",
+      "domain_remove_title": "Remove Domain Name",
+      "domain_remove_body": "Unlink <b>{name}</b> from {land}?"
+    },
+    "scenes": {
+      "columns": {
+        "name": "Name",
+        "parcels": "Parcels",
+        "location": "Location",
+        "last_updated": "Last Updated",
+        "published_by": "Published by"
+      },
+      "select_all": "Select all scenes",
+      "select": "Select {scene}",
+      "selected": "{count} selected",
+      "unpublish_selected": "Unpublish selected",
+      "download": "Download {scene}",
+      "unpublish": "Unpublish {scene}",
+      "empty": "No scenes published on this LAND."
+    },
+    "download": {
+      "title": "Download {scene}?",
+      "body": "You'll get a project you can open in Creator Hub. Custom code can't always be recovered from a published scene; check RECOVERY.md in the folder.",
+      "confirm": "Download",
+      "progress": "Downloading… {done}/{total}",
+      "done_self_contained": "Scene downloaded.",
+      "done_partial": "Scene downloaded. Some code couldn't be recovered; see RECOVERY.md.",
+      "done_none": "Scene downloaded without its source code; see RECOVERY.md.",
+      "error": "Couldn't download {scene}. Try again.",
+      "cancel": "Cancel download {scene}"
+    },
+    "collaborators": {
+      "description": "Collaborators can publish scenes on this LAND.",
+      "count": "Collaborators: {count}",
+      "add": "Add",
+      "all_parcels": "All Parcels",
+      "permissions_column": "Deploy Permissions in",
+      "n_parcels": "{count, plural, one {# Parcel} other {# Parcels}}",
+      "custom_parcels": "Custom parcels…",
+      "select_all": "Select all collaborators",
+      "select": "Select {name}",
+      "remove_label": "Remove {name}",
+      "parcels_label": "Parcels for {name}",
+      "selected": "{count} selected",
+      "remove_selected": "Remove selected",
+      "add_title": "Add collaborator",
+      "add_body": "<b>{name}</b> will be able to publish scenes on {land}.",
+      "replace_title": "Replace collaborator",
+      "replace_body": "<b>{new}</b> will replace <b>{current}</b> as this LAND's collaborator.",
+      "replace_confirm": "Replace",
+      "remove_title": "Remove {name}?",
+      "remove_body": "They will no longer be able to publish on this LAND.",
+      "remove_confirm": "Remove",
+      "remove_many_title": "Remove {count} collaborators?",
+      "parcels_title": "Update parcels",
+      "parcels_body": "<b>{name}</b> will publish on {count, plural, one {# parcel} other {# parcels}}.",
+      "empty": "No collaborators yet"
+    },
+    "managers": {
+      "description": "Managers can publish scenes and add or remove collaborators on all your LAND, not only this one.",
+      "count": "Managers: {count}",
+      "empty": "No managers yet",
+      "add_title": "Add manager",
+      "add_body": "<b>{name}</b> will be able to publish scenes and manage collaborators on all your LAND.",
+      "remove_title": "Remove {name}?",
+      "remove_body": "They will no longer manage your LAND.",
+      "step_land": "LAND",
+      "step_estates": "Estates",
+      "land_only": "Can manage your LANDs only. Add them again to include your Estates.",
+      "estate_only": "Can manage your Estates only. Add them again to include your LANDs."
     }
   },
   "analytics": {

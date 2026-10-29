@@ -1,0 +1,1 @@
+export { LandDetailPage } from './LandDetailPage';

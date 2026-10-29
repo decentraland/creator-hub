@@ -1,8 +1,10 @@
-import type { OpenDialogOptions } from 'electron';
+import type { OpenDialogOptions, SaveDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
 import type { DeployOptions, DeployServer } from '/shared/types/deploy';
+import type { SceneExportResult } from '/shared/types/scene-export';
+import type { EmptySceneDeploy, EmptySceneDraft } from '/shared/types/land-unpublish';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
@@ -174,6 +176,11 @@ export interface Ipc {
   'updater.getReleaseNotes': (version: string) => Promise<ReleaseNotes | undefined>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
+  'electron.showSaveDialog': (opts: Partial<SaveDialogOptions>) => Promise<string | null>;
+  'sceneExport.export': (entityId: string, title: string) => Promise<SceneExportResult | null>;
+  'sceneExport.cancel': (entityId: string) => Promise<void>;
+  'landUnpublish.prepare': (parcel: string) => Promise<EmptySceneDraft>;
+  'landUnpublish.deploy': (request: EmptySceneDeploy) => Promise<void>;
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;

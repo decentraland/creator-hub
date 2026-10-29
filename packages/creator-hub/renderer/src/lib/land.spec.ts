@@ -6,11 +6,16 @@ const fetchMock = vi.fn();
 
 vi.mock('/shared/fetch', () => ({ fetch: (...args: unknown[]) => fetchMock(...args) }));
 
+const CONFIG: Record<string, string> = {
+  LAND_REGISTRY_ADDRESS: '0xland',
+  ESTATE_REGISTRY_ADDRESS: '0xestate',
+};
+
 vi.mock('/@/config', () => ({
-  config: { get: () => 'https://peer.example.org' },
+  config: { get: (key: string) => CONFIG[key] ?? 'https://peer.example.org' },
 }));
 
-const { Lands } = await import('./land');
+const { Lands, RoleType } = await import('./land');
 
 const ok = (scenes: Array<{ id: string }>) => ({
   ok: true,
@@ -97,6 +102,334 @@ describe('Lands.fetchLandPublishedScenes', () => {
   describe('when the wallet holds no parcels', () => {
     it('should ask for nothing', async () => {
       expect(await new Lands().fetchLandPublishedScenes([])).toEqual([]);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when a parcel holds the empty scene an unpublish leaves behind', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        ok([
+          { id: 'empty', metadata: { source: { isEmpty: true } } },
+          { id: 'scene-a', metadata: { source: { isEmpty: false } } },
+          { id: 'scene-b' },
+        ] as Array<{ id: string }>),
+      );
+    });
+
+    it('should leave it out, since nothing is published there', async () => {
+      const scenes = await new Lands().fetchLandPublishedScenes(parcels(3));
+
+      expect(scenes.map(scene => scene.id)).toEqual(['scene-a', 'scene-b']);
+    });
+  });
+});
+
+const ZERO = '0x0000000000000000000000000000000000000000';
+
+const parcelFields = (x: number, y: number, updateOperator: string | null = null) => ({
+  x: String(x),
+  y: String(y),
+  tokenId: `token-${x}-${y}`,
+  owner: { address: '0xowner' },
+  updateOperator,
+  data: null,
+});
+
+const estateFields = (id: string, parcelOperators: Array<string | null>) => ({
+  id,
+  owner: { address: '0xowner' },
+  updateOperator: null,
+  size: parcelOperators.length,
+  parcels: parcelOperators.map((updateOperator, i) => ({
+    x: String(i),
+    y: '9',
+    tokenId: `token-${i}-9`,
+    updateOperator,
+  })),
+  data: null,
+});
+
+const landQuery = (data: Record<string, unknown>) => ({
+  ok: true,
+  status: 200,
+  json: () =>
+    Promise.resolve({
+      data: {
+        tenantParcels: [],
+        tenantEstates: [],
+        lessorParcels: [],
+        lessorEstates: [],
+        ownerParcels: [],
+        ownerEstates: [],
+        updateOperatorParcels: [],
+        updateOperatorEstates: [],
+        ownerAuthorizations: [],
+        operatorAuthorizations: [],
+        ...data,
+      },
+    }),
+});
+
+describe('Lands.fetchLand', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+  });
+
+  describe('when the account is the update operator of a parcel', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        landQuery({ updateOperatorParcels: [parcelFields(1, 1, '0xme')] }),
+      );
+    });
+
+    it('should give it the operator role, the one tagged as Collaborator', async () => {
+      const [lands] = await new Lands().fetchLand('0xme');
+
+      expect(lands.map(land => [land.id, land.role])).toEqual([['1,1', RoleType.OPERATOR]]);
+    });
+  });
+
+  describe('when an owner made the account an UpdateManager of their LAND', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        landQuery({
+          operatorAuthorizations: [
+            {
+              owner: {
+                address: '0xowner',
+                parcels: [parcelFields(2, 2)],
+                estates: [estateFields('7', [null])],
+              },
+              isApproved: true,
+              tokenAddress: '0xland',
+            },
+          ],
+        }),
+      );
+    });
+
+    it('should give the parcels the manager role, apart from token operators', async () => {
+      const [lands] = await new Lands().fetchLand('0xme');
+
+      expect(lands.find(land => land.id === '2,2')?.role).toBe(RoleType.MANAGER);
+    });
+
+    it('should leave out the estates, which the LAND registry approval does not cover', async () => {
+      const [lands] = await new Lands().fetchLand('0xme');
+
+      expect(lands.map(land => land.id)).toEqual(['2,2']);
+    });
+  });
+
+  describe('when an owner made the account an UpdateManager of their estates', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        landQuery({
+          operatorAuthorizations: [
+            {
+              owner: {
+                address: '0xowner',
+                parcels: [parcelFields(2, 2)],
+                estates: [estateFields('7', [null])],
+              },
+              isApproved: true,
+              tokenAddress: '0xestate',
+            },
+          ],
+        }),
+      );
+    });
+
+    it('should list only the estates, as managed', async () => {
+      const [lands] = await new Lands().fetchLand('0xme');
+
+      expect(lands.map(land => [land.id, land.role])).toEqual([['7', RoleType.MANAGER]]);
+    });
+  });
+
+  describe('when the UpdateManager approval was revoked', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        landQuery({
+          operatorAuthorizations: [
+            {
+              owner: { address: '0xowner', parcels: [parcelFields(2, 2)], estates: [] },
+              isApproved: false,
+              tokenAddress: '0xland',
+            },
+          ],
+        }),
+      );
+    });
+
+    it('should not list the owner LAND', async () => {
+      const [lands] = await new Lands().fetchLand('0xme');
+
+      expect(lands).toEqual([]);
+    });
+  });
+
+  describe('when a token has its own update operator', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        landQuery({
+          ownerParcels: [parcelFields(1, 1, '0xop'), parcelFields(2, 2, ZERO)],
+          ownerEstates: [{ ...estateFields('7', [null]), updateOperator: '0xestate-op' }],
+        }),
+      );
+    });
+
+    it('should keep it apart from managers, and read the zero address as none', async () => {
+      const [lands] = await new Lands().fetchLand('0xme');
+
+      expect(Object.fromEntries(lands.map(land => [land.id, land.updateOperator]))).toEqual({
+        '1,1': '0xop',
+        '2,2': null,
+        '7': '0xestate-op',
+      });
+    });
+  });
+
+  describe('when a parcel and an estate carry no on-chain name', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        landQuery({
+          ownerParcels: [parcelFields(3, 4)],
+          ownerEstates: [estateFields('7', [null])],
+        }),
+      );
+    });
+
+    it('should leave both names empty, so a LAND named "Parcel" stays distinguishable', async () => {
+      const [lands] = await new Lands().fetchLand('0xme');
+
+      expect(Object.fromEntries(lands.map(land => [land.id, land.name]))).toEqual({
+        '3,4': '',
+        '7': '',
+      });
+    });
+  });
+
+  describe('when an estate parcel has its own update operator', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        landQuery({ ownerEstates: [estateFields('7', ['0xparcel-op', ZERO, null])] }),
+      );
+    });
+
+    it('should ask the subgraph for each estate parcel operator', async () => {
+      await new Lands().fetchLand('0xme');
+
+      const { query } = JSON.parse(fetchMock.mock.calls[0][1].body);
+      expect(query).toMatch(/parcels\(first: 1000\) \{[^}]*updateOperator/);
+    });
+
+    it('should keep it on that parcel, and no operator on the others', async () => {
+      const [[estate]] = await new Lands().fetchLand('0xme');
+
+      expect(estate.parcels?.map(parcel => parcel.updateOperator)).toEqual([
+        '0xparcel-op',
+        null,
+        null,
+      ]);
+    });
+  });
+});
+
+describe('Lands.fetchDeployers', () => {
+  const ids = (count: number) => Array.from({ length: count }, (_, i) => `bafkreientity${i}`);
+  const deployer = (i: number) => `0x${i.toString(16).padStart(40, '0')}`;
+  const answer = (url: string) => {
+    const asked = new URL(url).searchParams.getAll('entityId');
+    return {
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          deployments: asked.map(entityId => ({
+            entityId,
+            deployedBy: deployer(Number(entityId.replace('bafkreientity', ''))),
+          })),
+        }),
+    };
+  };
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+  });
+
+  describe('when a LAND has more scenes than one request takes', () => {
+    it('should ask in chunks of 50 and merge every answer into one map', async () => {
+      fetchMock.mockImplementation((url: string) => Promise.resolve(answer(url)));
+
+      const deployers = await new Lands().fetchDeployers(ids(120));
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      const sizes = fetchMock.mock.calls.map(
+        ([url]) => new URL(url).searchParams.getAll('entityId').length,
+      );
+      expect(sizes).toEqual([50, 50, 20]);
+      expect(fetchMock.mock.calls[0][0]).toMatch(
+        /^https:\/\/peer\.example\.org\/content\/deployments\?/,
+      );
+      expect(Object.keys(deployers)).toHaveLength(120);
+      expect(deployers.bafkreientity119).toBe(deployer(119));
+    });
+  });
+
+  describe('when the catalyst answers with entries nobody asked for or without an address', () => {
+    it('should keep only the asked ids with a 0x deployer, lowercased', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            deployments: [
+              {
+                entityId: 'bafkreientity0',
+                deployedBy: '0xABCDEF0000000000000000000000000000000001',
+              },
+              { entityId: 'bafkreientity1', deployedBy: 'not-an-address' },
+              { entityId: 'bafkreiother', deployedBy: deployer(9) },
+            ],
+          }),
+      });
+
+      expect(await new Lands().fetchDeployers(ids(2))).toEqual({
+        bafkreientity0: '0xabcdef0000000000000000000000000000000001',
+      });
+    });
+  });
+
+  describe('when one chunk fails', () => {
+    let cancel: ReturnType<typeof vi.fn>;
+    let deployers: Record<string, string>;
+
+    beforeEach(async () => {
+      cancel = vi.fn(async () => {});
+      fetchMock.mockImplementation((url: string) =>
+        url.includes('entityId=bafkreientity50&')
+          ? Promise.resolve({ ok: false, status: 503, body: { cancel } })
+          : Promise.resolve(answer(url)),
+      );
+      deployers = await new Lands().fetchDeployers(ids(120));
+    });
+
+    it('should keep the deployers from the chunks that answered', () => {
+      expect(Object.keys(deployers)).toHaveLength(70);
+      expect(deployers.bafkreientity0).toBe(deployer(0));
+      expect(deployers.bafkreientity50).toBeUndefined();
+    });
+
+    it("should cancel the failed chunk's body", () => {
+      expect(cancel).toHaveBeenCalled();
+    });
+  });
+
+  describe('when there is nothing to ask', () => {
+    it('should not call the catalyst', async () => {
+      expect(await new Lands().fetchDeployers([])).toEqual({});
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

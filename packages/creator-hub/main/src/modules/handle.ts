@@ -30,7 +30,9 @@ export async function handle<T extends keyof Ipc>(
         extra.stderr = error.stderr.toString('utf8');
       }
 
-      captureException(error, { tags: { source: 'ipc-handle' }, extra });
+      if (name !== 'AbortError') {
+        captureException(error, { tags: { source: 'ipc-handle' }, extra });
+      }
       const result: IpcError = {
         success: false,
         error: {

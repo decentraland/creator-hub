@@ -1,0 +1,1 @@
+export { DefaultModal } from './DefaultModal';

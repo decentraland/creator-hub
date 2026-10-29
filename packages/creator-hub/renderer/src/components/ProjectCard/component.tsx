@@ -73,7 +73,12 @@ export function ProjectCard({
       <div className="info">
         <div className="title">
           <Typography variant="h6">{title}</Typography>
-          {!!dropdownOptions?.length && <Dropdown options={dropdownOptions} />}
+          {!!dropdownOptions?.length && (
+            <Dropdown
+              label={t('menu.options_for', { name: title })}
+              options={dropdownOptions}
+            />
+          )}
         </div>
         {description && <p className="description">{description}</p>}
         {content && <div className="content">{content}</div>}

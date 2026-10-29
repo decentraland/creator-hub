@@ -6,6 +6,8 @@ export enum FilterBy {
   UNPUBLISHED = 'unpublished',
 }
 
+export type ManageTab = 'worlds' | 'lands';
+
 export enum SortBy {
   LATEST = 'last_deployed_at',
   NAME = 'name',
@@ -28,7 +30,13 @@ export type ManagedProject = {
    * coordinates are needed to ask about it — most are `0,0`, but far from all.
    */
   scenes?: Array<{ x: number; y: number }>;
+  place?: LandPlace;
 };
+
+/** Where a LAND sits: a parcel at its coordinates, or an estate of `size` parcels with its lowest parcel as `base`. */
+export type LandPlace =
+  | { kind: 'parcel'; x: number; y: number }
+  | { kind: 'estate'; size: number; base: { x: number; y: number } };
 
 export type ProjectDeployment = {
   title: string;
