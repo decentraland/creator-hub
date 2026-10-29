@@ -122,7 +122,7 @@ const WorldAtlas: React.FC<Props> = React.memo(
               <Box className="WorldSize">
                 <ParcelsIcon />
                 <Typography variant="body2">
-                  {t('modal.world_settings.layout.world_layout.world_size', { size: worldSize })}
+                  {t('world_atlas.world_size', { size: worldSize })}
                 </Typography>
               </Box>
             )}

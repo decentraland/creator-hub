@@ -55,6 +55,8 @@ export type ManageFixtureOptions = {
   worldNoThumbnail?: boolean;
   /** Gives W1 and W4 two titled scenes (Plaza on 0,0 and 1,0, Stage on 2,0), or W1 none. */
   worldScenes?: 'two' | 'none';
+  /** W1's access: public by default, invitation only (with or without invites) or password protected. */
+  access?: 'invite' | 'invite-empty' | 'password';
   /** The signed-in account's deployment rights on W4: parcel 2,0, every parcel, or only the empty 9,9. */
   teamAccess?: 'parcels' | 'all' | 'none';
   /** Holds the LAND subgraph answer back this long. */
@@ -218,6 +220,25 @@ function activeEntities(lands: LandFixture[], pointers: string[]) {
   return all.filter(entity => entity.pointers.some(pointer => pointers.includes(pointer)));
 }
 
+const FIXTURE_CLUB = '6f9619ff-8b86-d011-b42d-00c04fc964ff';
+const FIXTURE_GUESTS = [
+  '0x00000000000000000000000000000000000000c3',
+  '0x00000000000000000000000000000000000000d4',
+];
+
+function fixtureAccess(access: ManageFixtureOptions['access']) {
+  if (access === 'password') return { type: 'shared-secret' };
+  if (access === 'invite')
+    return {
+      type: 'allow-list',
+      wallets: [MOCK_ADDRESS.toLowerCase(), ...FIXTURE_GUESTS],
+      communities: [FIXTURE_CLUB],
+    };
+  if (access === 'invite-empty')
+    return { type: 'allow-list', wallets: [MOCK_ADDRESS.toLowerCase()] };
+  return { type: 'unrestricted' };
+}
+
 function twoWorldScenes(worldName: string) {
   const scene = (
     entityId: string,
@@ -369,6 +390,26 @@ function stubAnswers(options: ManageFixtureOptions): StubAnswer[] {
                 ],
                 total: 1,
               },
+    },
+    {
+      match: '/world/fixtureone.dcl.eth/permissions',
+      body: {
+        owner: MOCK_ADDRESS,
+        permissions: {
+          deployment: { type: 'allow-list', wallets: [] },
+          access: fixtureAccess(options.access),
+          streaming: { type: 'allow-list', wallets: [] },
+        },
+        summary: {},
+      },
+    },
+    {
+      match: '/v1/communities?',
+      body: { data: { results: [{ id: FIXTURE_CLUB, name: 'Fixture Club', membersCount: 3 }] } },
+    },
+    {
+      match: `/v1/communities/${FIXTURE_CLUB}`,
+      body: { data: { id: FIXTURE_CLUB, name: 'Fixture Club', membersCount: 3 } },
     },
     {
       match: '/world/fixture-team.dcl.eth/permissions/deployment/address/',
@@ -790,7 +831,7 @@ export async function installManageFixtures(
     },
     { answers, entities, dynamic },
   );
-  await context.route(/\/contents\/[^/?]+$/, (route: Route) => {
+  await context.route(/\/contents\/[^/?]+$|\/raw-thumbnail\.png$/, (route: Route) => {
     const hash = route.request().url().split('/').pop()!;
     return route.fulfill({
       status: 200,

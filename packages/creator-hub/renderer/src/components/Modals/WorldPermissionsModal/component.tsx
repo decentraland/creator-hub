@@ -5,7 +5,6 @@ import {
   fetchParcelsPermission,
   addAddressPermission,
   removeAddressPermission,
-  updateWorldPermissions,
   fetchWorldScenes,
   actions as managementActions,
 } from '/@/modules/store/management';
@@ -14,22 +13,15 @@ import { WorldPermissionName, WorldPermissionType, type WorldPermissions } from 
 import { useDispatch } from '#store';
 import { Loader } from '../../Loader';
 import { TabsModal, type Props as TabsModalProps } from '../TabsModal';
-import { WorldPermissionsAccessTab } from './tabs/WorldPermissionsAccessTab';
-import type { CsvData } from './WorldPermissionsAddUserForm';
 import { WorldPermissionsCollaboratorsTab } from './tabs/WorldPermissionsCollaboratorsTab';
 import { WorldPermissionsParcelsTab } from './tabs/WorldPermissionsParcelsTab';
 import './styles.css';
 
 enum WorldPermissionsTab {
-  ACCESS = 'access',
   COLLABORATORS = 'collaborators',
 }
 
 const WORLD_PERMISSIONS_TABS: Array<{ label: string; value: WorldPermissionsTab }> = [
-  {
-    label: t('modal.world_permissions.tabs.access.label'),
-    value: WorldPermissionsTab.ACCESS,
-  },
   {
     label: t('modal.world_permissions.tabs.collaborators.label'),
     value: WorldPermissionsTab.COLLABORATORS,
@@ -58,7 +50,9 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
     onClose,
     ...props
   }) => {
-    const [activeTab, setActiveTab] = useState<WorldPermissionsTab>(WorldPermissionsTab.ACCESS);
+    const [activeTab, setActiveTab] = useState<WorldPermissionsTab>(
+      WorldPermissionsTab.COLLABORATORS,
+    );
     const [activeCollaboratorAddress, setActiveCollaboratorAddress] = useState<string | null>(null);
     const [updating, setUpdating] = useState(false);
     const dispatch = useDispatch();
@@ -77,172 +71,6 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
       setActiveTab(tab);
       setActiveCollaboratorAddress(null);
     }, []);
-
-    const handleChangeAccessType = useCallback(
-      (accessType: WorldPermissionType) => {
-        if (!worldPermissions) return;
-        withUpdating(
-          dispatch(
-            updateWorldPermissions({
-              worldName,
-              worldPermissionName: WorldPermissionName.Access,
-              worldPermissionType: accessType,
-            }),
-          ),
-        );
-      },
-      [worldName, worldPermissions],
-    );
-
-    const handleSetAccessPassword = useCallback(
-      (password: string) => {
-        withUpdating(
-          dispatch(
-            updateWorldPermissions({
-              worldName,
-              worldPermissionName: WorldPermissionName.Access,
-              worldPermissionType: WorldPermissionType.SharedSecret,
-              options: { secret: password },
-            }),
-          ),
-        );
-      },
-      [worldName],
-    );
-
-    const handleAddAccessToAddress = useCallback(
-      (walletAddress: string) => {
-        const formattedWalletAddress = walletAddress.toLowerCase();
-        if (
-          formattedWalletAddress !== worldOwnerAddress.toLowerCase() &&
-          worldPermissions?.access.type === WorldPermissionType.AllowList &&
-          !worldPermissions.access.wallets?.includes(formattedWalletAddress)
-        ) {
-          withUpdating(
-            dispatch(
-              addAddressPermission({
-                worldName,
-                permissionName: WorldPermissionName.Access,
-                walletAddress: formattedWalletAddress,
-              }),
-            ),
-          );
-        }
-      },
-      [worldName, worldOwnerAddress, worldPermissions],
-    );
-
-    const handleAddAccessToCommunity = useCallback(
-      (communityId: string) => {
-        if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
-        const currentCommunities = worldPermissions.access.communities ?? [];
-        if (currentCommunities.includes(communityId)) return;
-        withUpdating(
-          dispatch(
-            updateWorldPermissions({
-              worldName,
-              worldPermissionName: WorldPermissionName.Access,
-              worldPermissionType: WorldPermissionType.AllowList,
-              options: {
-                wallets: worldPermissions.access.wallets,
-                communities: [...currentCommunities, communityId],
-              },
-            }),
-          ),
-        );
-      },
-      [worldName, worldPermissions],
-    );
-
-    const handleSubmitCsvData = useCallback(
-      (data: CsvData) => {
-        if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
-        const currentWallets = worldPermissions.access.wallets ?? [];
-        const currentCommunities = worldPermissions.access.communities ?? [];
-
-        const newWallets = data.addresses.filter(a => !currentWallets.includes(a));
-        const newCommunities = data.communityIds.filter(c => !currentCommunities.includes(c));
-
-        if (newWallets.length === 0 && newCommunities.length === 0) return;
-
-        withUpdating(
-          dispatch(
-            updateWorldPermissions({
-              worldName,
-              worldPermissionName: WorldPermissionName.Access,
-              worldPermissionType: WorldPermissionType.AllowList,
-              options: {
-                wallets: [...currentWallets, ...newWallets],
-                communities: [...currentCommunities, ...newCommunities],
-              },
-            }),
-          ),
-        );
-      },
-      [worldName, worldPermissions],
-    );
-
-    const handleRemoveAccessFromAddress = useCallback(
-      (walletAddress: string) => {
-        if (
-          worldPermissions?.access.type === WorldPermissionType.AllowList &&
-          worldPermissions.access.wallets?.includes(walletAddress)
-        ) {
-          withUpdating(
-            dispatch(
-              removeAddressPermission({
-                worldName,
-                permissionName: WorldPermissionName.Access,
-                walletAddress,
-              }),
-            ),
-          );
-        }
-      },
-      [worldName, worldPermissions],
-    );
-
-    const handleRemoveAccessFromCommunity = useCallback(
-      (communityId: string) => {
-        if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
-        const currentCommunities = worldPermissions.access.communities ?? [];
-        if (!currentCommunities.includes(communityId)) return;
-        withUpdating(
-          dispatch(
-            updateWorldPermissions({
-              worldName,
-              worldPermissionName: WorldPermissionName.Access,
-              worldPermissionType: WorldPermissionType.AllowList,
-              options: {
-                wallets: worldPermissions.access.wallets,
-                communities: currentCommunities.filter(c => c !== communityId),
-              },
-            }),
-          ),
-        );
-      },
-      [worldName, worldPermissions],
-    );
-
-    const handleClearAccessList = useCallback(() => {
-      if (worldPermissions?.access.type !== WorldPermissionType.AllowList) return;
-      const ownerLower = worldOwnerAddress.toLowerCase();
-      const collaboratorLowers = collaboratorUsersList.map(c => c.toLowerCase());
-      const walletsToKeep = worldPermissions.access.wallets.filter(wallet => {
-        const lower = wallet.toLowerCase();
-        return lower === ownerLower || collaboratorLowers.includes(lower);
-      });
-      withUpdating(
-        dispatch(
-          updateWorldPermissions({
-            worldName,
-            worldPermissionName: WorldPermissionName.Access,
-            worldPermissionType: WorldPermissionType.AllowList,
-            options: { wallets: walletsToKeep, communities: [] },
-          }),
-        ),
-      );
-    }, [worldName, worldOwnerAddress, collaboratorUsersList, worldPermissions]);
 
     const handleAddCollaborator = useCallback(
       (walletAddress: string) => {
@@ -349,7 +177,7 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
 
     const handleClose = useCallback(() => {
       // Reset state when the modal is closed.
-      setActiveTab(WorldPermissionsTab.ACCESS);
+      setActiveTab(WorldPermissionsTab.COLLABORATORS);
       setActiveCollaboratorAddress(null);
       dispatch(managementActions.clearPermissionsState());
       onClose();
@@ -372,22 +200,6 @@ const WorldPermissionsModal: React.FC<Props> = React.memo(
           !!worldPermissions && (
             <>
               {updating && <Loader overlay />}
-              {activeTab === WorldPermissionsTab.ACCESS && (
-                <WorldPermissionsAccessTab
-                  worldAccessPermissions={worldPermissions?.access}
-                  worldOwnerAddress={worldOwnerAddress}
-                  collaboratorAddresses={collaboratorUsersList}
-                  isLoadingNewUser={isLoadingNewUser}
-                  onChangeAccessType={handleChangeAccessType}
-                  onAddAccessToAddress={handleAddAccessToAddress}
-                  onAddAccessToCommunity={handleAddAccessToCommunity}
-                  onSubmitCsv={handleSubmitCsvData}
-                  onRemoveAccessFromAddress={handleRemoveAccessFromAddress}
-                  onRemoveAccessFromCommunity={handleRemoveAccessFromCommunity}
-                  onClearAccessList={handleClearAccessList}
-                  onSetAccessPassword={handleSetAccessPassword}
-                />
-              )}
               {activeTab === WorldPermissionsTab.COLLABORATORS &&
                 (!activeCollaboratorAddress ? (
                   <WorldPermissionsCollaboratorsTab

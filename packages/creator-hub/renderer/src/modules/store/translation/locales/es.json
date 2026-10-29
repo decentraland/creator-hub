@@ -386,7 +386,6 @@
             "title": "Mundo Multi-Escena (Avanzado)",
             "description": "Permite que tu mundo contenga más de 1 escena. El tamaño total del mundo dependerá del diseño de tu mundo publicado.",
             "current_world": "Mundo Actual",
-            "settings_button": "Configuración",
             "scenes_count": "{count} {count, plural, one {escena} other {escenas}}"
           },
           "location": {
@@ -498,7 +497,8 @@
           "url": "La URL para acceder a tu {target} es:",
           "world": "Mundo",
           "land": "Tierra",
-          "jump_in": "Entrar"
+          "jump_in": "Entrar",
+          "world_settings": "Configuración del Mundo"
         }
       }
     },
@@ -646,93 +646,6 @@
       "names_buy": "COMPRAR NAME",
       "proposal": "Estas reglas de almacenamiento fueron votadas y aprobadas en una propuesta de la DAO.",
       "learn_more": "APRENDER MÁS"
-    },
-    "world_settings": {
-      "title": "Configuración del Mundo - {worldName}",
-      "tabs": {
-        "details": {
-          "label": "Detalles"
-        },
-        "layout": {
-          "label": "Diseño"
-        },
-        "general": {
-          "label": "Varios"
-        }
-      },
-      "actions": {
-        "save": "Guardar",
-        "discard": "Descartar"
-      },
-      "general": {
-        "world_spawn_coordinate": "Coordenada de Aparición del Mundo",
-        "position": "Posición",
-        "world_skybox": "Skybox del Mundo",
-        "auto_skybox": "Auto (hora de Decentraland)",
-        "max_offset": "Desplazamiento Máximo",
-        "general": "General",
-        "single_player": "Un Solo Jugador",
-        "show_in_places": "Mostrar en Places",
-        "single_player_streaming_note": "La transmisión en vivo no es compatible con el modo un solo jugador."
-      },
-      "details": {
-        "world_title": "Título del Mundo",
-        "description": "Descripción",
-        "age_rating": "Clasificación de Contenido",
-        "categories": "Categorías",
-        "author": "Autor (Opcional)",
-        "email": "Correo Electrónico (Opcional)",
-        "thumbnail": "Miniatura",
-        "replace_image": "Reemplazar Imagen",
-        "set_image": "Elegir imagen",
-        "no_image": "No hay imagen",
-        "age_rating_options": {
-          "adult": "A (Adultos, PG 18+)"
-        },
-        "categories_options": {
-          "art": "🎨 Arte",
-          "game": "🕹️ Juego",
-          "casino": "🃏 Casino",
-          "social": "👥 Social",
-          "music": "🎶 Música",
-          "fashion": "👠 Moda",
-          "crypto": "🪙 Cripto",
-          "education": "📚 Educación",
-          "shop": "🛍️ Tienda",
-          "business": "🏢 Negocios",
-          "sports": "🏅 Deportes"
-        }
-      },
-      "layout": {
-        "world_layout": {
-          "title": "Diseño del Mundo",
-          "world_size": "Tamaño del mundo: {size}"
-        },
-        "multi_scene_title": "Mundo Multi-Escena",
-        "multi_scene_description": "Permite que tu mundo contenga más de 1 escena.\nEl tamaño total del mundo dependerá del diseño del mundo publicado.",
-        "empty_world": {
-          "title": "No hay escenas publicadas en este mundo.",
-          "description": "Puedes agregar cualquier escena publicándola dentro de este dominio.",
-          "view_scenes": "Ver Escenas"
-        },
-        "current_world": "Mundo Actual",
-        "title_placeholder": "Título del Mundo",
-        "scene_title_placeholder": "Título de la Escena",
-        "scenes_count": "{count} {count, plural, one {escena} other {escenas}}",
-        "parcels_count": "{count} {count, plural, one {parcela} other {parcelas}}",
-        "world_map": "Mapa del Mundo",
-        "scenes_title": "Escenas",
-        "actions": {
-          "edit_scene": "Editar Escena",
-          "unpublish": "Quitar del Mundo",
-          "confirm": "Confirmar",
-          "cancel": "Cancelar"
-        },
-        "unpublish_confirmation": {
-          "title": "¿Quitar <b>{name}</b> de este mundo?",
-          "warning_title": "Tu mundo se republicará automáticamente para aplicar estos cambios."
-        }
-      }
     },
     "world_permissions": {
       "tabs": {
@@ -1331,7 +1244,24 @@
       "description_placeholder": "Escribe algo sobre tu Mundo aquí",
       "thumbnail_hint": "PNG o JPG | 1920x1080 (16:9)",
       "change_thumbnail": "Cambiar miniatura",
-      "saved": "Cambios guardados"
+      "saved": "Cambios guardados",
+      "categories": "Categorías",
+      "description": "Descripción",
+      "no_image": "No hay imagen",
+      "thumbnail": "Miniatura",
+      "categories_options": {
+        "art": "🎨 Arte",
+        "game": "🕹️ Juego",
+        "casino": "🃏 Casino",
+        "social": "👥 Social",
+        "music": "🎶 Música",
+        "fashion": "👠 Moda",
+        "crypto": "🪙 Cripto",
+        "education": "📚 Educación",
+        "shop": "🛍️ Tienda",
+        "business": "🏢 Negocios",
+        "sports": "🏅 Deportes"
+      }
     },
     "scenes": {
       "parcels_shape": "{w}×{h} Parcelas",
@@ -1340,11 +1270,51 @@
       "last_scene": "Esta es la última escena de {world}. Al despublicarla, el Mundo queda fuera de línea y se eliminan su título, descripción, miniatura y configuración.",
       "empty": "No hay escenas publicadas en este Mundo.",
       "empty_filtered": "Aún no hay escenas en tus parcelas.",
-      "multi_scene_info": "Acerca del Mundo multiescena"
+      "multi_scene_info": "Acerca del Mundo multiescena",
+      "multi_scene_description": "Permite que tu mundo contenga más de 1 escena.\nEl tamaño total del mundo dependerá del diseño del mundo publicado.",
+      "multi_scene_title": "Mundo Multi-Escena",
+      "world_map": "Mapa del Mundo"
+    },
+    "settings": {
+      "spawn": "Coordenada de aparición",
+      "skybox": "Hora del día/noche (skybox)",
+      "skybox_auto": "Auto (hora de Decentraland)",
+      "skybox_slider": "Hora del día/noche",
+      "discoverable": "Visible en Places",
+      "access": {
+        "invitation_only": "Solo con invitación",
+        "password_protected": "Protegido con contraseña",
+        "invitation_only_description": "Pueden unirse los usuarios y comunidades de la lista blanca",
+        "password_protected_description": "Cualquiera con la contraseña puede unirse",
+        "tab_user": "Añadir billetera de usuario",
+        "tab_community": "Añadir comunidad",
+        "search": "Buscar",
+        "csv_browse": "busca en tus archivos.",
+        "invited": "Invitados",
+        "invited_empty": "Aún no has invitado a nadie.",
+        "select_all": "Seleccionar todos los invitados",
+        "select": "Seleccionar {name}",
+        "remove": "Quitar {name}",
+        "remove_selected": "Quitar seleccionados",
+        "remove_body": "Ya no podrán unirse a este Mundo.",
+        "remove_many_title": "¿Quitar {count} invitaciones?"
+      },
+      "password": {
+        "requirements": "Tu contraseña debe tener",
+        "min_length": "Al menos 8 caracteres",
+        "min_numbers": "Al menos 2 números",
+        "mismatch": "Las contraseñas no coinciden",
+        "show": "Mostrar contraseña",
+        "hide": "Ocultar contraseña"
+      },
+      "general": "General",
+      "single_player": "Un Solo Jugador",
+      "single_player_streaming_note": "La transmisión en vivo no es compatible con el modo un solo jugador."
     }
   },
   "detail_shell": {
-    "unsaved": "Tienes cambios sin guardar. ¿Guardar antes de salir?"
+    "unsaved": "Tienes cambios sin guardar. ¿Guardar antes de salir?",
+    "discard": "Descartar"
   },
   "parcel_picker": {
     "title": "Actualizar parcelas",
@@ -1575,5 +1545,8 @@
       "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
       "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
     }
+  },
+  "world_atlas": {
+    "world_size": "Tamaño del mundo: {size}"
   }
 }

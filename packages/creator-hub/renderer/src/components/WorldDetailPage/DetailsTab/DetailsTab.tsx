@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import { MenuItem } from 'decentraland-ui2';
 
-import { useDispatch, useSelector } from '#store';
+import { useDispatch } from '#store';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { SceneCategory, type WorldSettings } from '/@/lib/worlds';
 import { actions as managementActions } from '/@/modules/store/management';
@@ -15,6 +15,7 @@ import { DESCRIPTION_MAX, NAME_MAX } from '../../LandDetailPage/DetailsTab/detai
 import { DetailsField } from '../../LandDetailPage/DetailsTab/DetailsField';
 import { DomainSelect, Field, FieldTitle } from '../../LandDetailPage/DetailsTab/DetailsTab.styled';
 import { Loader } from '../../Loader';
+import { useWorldSettings } from '../useWorldSettings';
 import { selectRowStyles } from '../../ManagePage/ViewBar/ViewBar.styled';
 import {
   CheckSlot,
@@ -47,7 +48,7 @@ const toDraft = (settings: WorldSettings): Draft => ({
 });
 
 const categoryLabel = (category: SceneCategory) =>
-  t(`modal.world_settings.details.categories_options.${category}`);
+  t(`world_detail.details.categories_options.${category}`);
 
 const tooLong = (value: string, max: number) =>
   value.length > max ? { key: 'land_detail.details.too_long' as const, max } : null;
@@ -120,7 +121,7 @@ function DetailsForm({ worldName, saved }: { worldName: string; saved: WorldSett
           onChange={title => setDraft(current => ({ ...current, title }))}
         />
         <DetailsField
-          label={t('modal.world_settings.details.description')}
+          label={t('world_detail.details.description')}
           value={draft.description}
           max={DESCRIPTION_MAX}
           error={errors.description}
@@ -129,12 +130,12 @@ function DetailsForm({ worldName, saved }: { worldName: string; saved: WorldSett
           onChange={description => setDraft(current => ({ ...current, description }))}
         />
         <Field>
-          <FieldTitle as="span">{t('modal.world_settings.details.categories')}</FieldTitle>
+          <FieldTitle as="span">{t('world_detail.details.categories')}</FieldTitle>
           <DomainSelect
             multiple
             value={draft.categories}
             IconComponent={ChevronDownIcon}
-            inputProps={{ 'aria-label': t('modal.world_settings.details.categories') }}
+            inputProps={{ 'aria-label': t('world_detail.details.categories') }}
             renderValue={selected => (selected as SceneCategory[]).map(categoryLabel).join(', ')}
             onChange={event =>
               setDraft(current => ({
@@ -179,16 +180,16 @@ function DetailsForm({ worldName, saved }: { worldName: string; saved: WorldSett
         </Field>
       </Form>
       <ThumbnailColumn>
-        <ThumbnailTitle>{t('modal.world_settings.details.thumbnail')}</ThumbnailTitle>
+        <ThumbnailTitle>{t('world_detail.details.thumbnail')}</ThumbnailTitle>
         <ThumbnailHint>{t('world_detail.details.thumbnail_hint')}</ThumbnailHint>
         <ThumbnailBox>
           {thumbnail ? (
             <img
               src={thumbnail}
-              alt={t('modal.world_settings.details.thumbnail')}
+              alt={t('world_detail.details.thumbnail')}
             />
           ) : (
-            <NoImage>{t('modal.world_settings.details.no_image')}</NoImage>
+            <NoImage>{t('world_detail.details.no_image')}</NoImage>
           )}
           <EditButton
             disableFocusRipple
@@ -212,24 +213,13 @@ function DetailsForm({ worldName, saved }: { worldName: string; saved: WorldSett
 
 /** The World's name, description, categories and thumbnail, saved off-chain from the shell's SAVE. */
 export function DetailsTab({ worldName }: { worldName: string }) {
-  const dispatch = useDispatch();
-  const state = useSelector(store => store.management.worldSettings);
-
-  useEffect(() => {
-    dispatch(managementActions.fetchWorldSettings({ worldName }));
-  }, [dispatch, worldName]);
-
-  const current = state.worldName === worldName;
-  const ready =
-    current &&
-    (state.status === 'succeeded' ||
-      (state.status === 'loading' && Object.keys(state.settings).length > 0));
-  if (!ready) return current && state.status === 'failed' ? null : <Loader size={70} />;
-
+  const settings = useWorldSettings(worldName);
+  if (settings === 'failed') return null;
+  if (settings === 'loading') return <Loader size={70} />;
   return (
     <DetailsForm
       worldName={worldName}
-      saved={state.settings}
+      saved={settings}
     />
   );
 }

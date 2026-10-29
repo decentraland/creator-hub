@@ -194,7 +194,7 @@ export function DetailShell({ title, basePath, people, menu, tabs, activeTab, ch
         open={!!exit}
         title={t('detail_shell.unsaved')}
         onClose={() => setExit(null)}
-        secondary={{ label: t('modal.world_settings.actions.discard'), onClick: discardAndLeave }}
+        secondary={{ label: t('detail_shell.discard'), onClick: discardAndLeave }}
         primary={{
           label: t('land_detail.save'),
           state: draft?.valid ? 'idle' : 'blocked',

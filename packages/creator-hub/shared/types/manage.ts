@@ -57,11 +57,3 @@ export type SceneDeployment = {
   publishedAt: number;
   parcels: string[];
 };
-
-export enum WorldSettingsTab {
-  DETAILS = 'details',
-  LAYOUT = 'layout',
-  GENERAL = 'general',
-  VARIABLES = 'variables',
-  PERMISSIONS = 'permissions',
-}

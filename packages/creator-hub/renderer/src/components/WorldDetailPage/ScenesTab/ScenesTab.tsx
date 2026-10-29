@@ -88,11 +88,11 @@ export function ScenesTab({ worldName, mode }: Props) {
                 <Switch
                   checked={all.length > 1}
                   disabled
-                  inputProps={{ 'aria-label': t('modal.world_settings.layout.multi_scene_title') }}
+                  inputProps={{ 'aria-label': t('world_detail.scenes.multi_scene_title') }}
                 />
-                {t('modal.world_settings.layout.multi_scene_title')}
+                {t('world_detail.scenes.multi_scene_title')}
                 <InfoTip label={t('world_detail.scenes.multi_scene_info')}>
-                  {t('modal.world_settings.layout.multi_scene_description')}
+                  {t('world_detail.scenes.multi_scene_description')}
                 </InfoTip>
               </MultiScene>
             )}
@@ -104,7 +104,7 @@ export function ScenesTab({ worldName, mode }: Props) {
               aria-pressed={map}
               onClick={() => setMap(open => !open)}
             >
-              {t('modal.world_settings.layout.world_map')}
+              {t('world_detail.scenes.world_map')}
             </Button>
           </>
         }

@@ -386,7 +386,6 @@
             "title": "多場景世界（高級）",
             "description": "允許你的世界包含超過1個場景。總世界大小將取決於你發布的世界佈局。",
             "current_world": "當前世界",
-            "settings_button": "設定",
             "scenes_count": "{count} {count, plural, one {场景} other {场景}}"
           },
           "location": {
@@ -498,7 +497,8 @@
           "url": "跳转到您的 {target} 的URL是：",
           "world": "世界",
           "land": "土地",
-          "jump_in": "跳转"
+          "jump_in": "跳转",
+          "world_settings": "世界设置"
         }
       }
     },
@@ -646,93 +646,6 @@
       "names_buy": "购买 NAME",
       "proposal": "这些存储规则经过治理 DAO 提案的投票并获得通过。",
       "learn_more": "了解更多"
-    },
-    "world_settings": {
-      "title": "世界设置 - {worldName}",
-      "tabs": {
-        "details": {
-          "label": "详情"
-        },
-        "layout": {
-          "label": "布局"
-        },
-        "general": {
-          "label": "其他"
-        }
-      },
-      "actions": {
-        "save": "保存更改",
-        "discard": "放弃"
-      },
-      "general": {
-        "world_spawn_coordinate": "世界生成坐标",
-        "position": "位置",
-        "world_skybox": "世界天空盒",
-        "auto_skybox": "自动（Decentraland 时间）",
-        "max_offset": "最大偏移",
-        "general": "常规",
-        "single_player": "单人游戏",
-        "show_in_places": "在 Places 中显示",
-        "single_player_streaming_note": "单人模式下不支持直播。"
-      },
-      "details": {
-        "world_title": "世界标题",
-        "description": "描述",
-        "age_rating": "内容分级",
-        "categories": "类别",
-        "author": "作者（可选）",
-        "email": "电子邮件（可选）",
-        "thumbnail": "缩略图",
-        "replace_image": "替换图片",
-        "set_image": "选择图片",
-        "no_image": "未设置图片",
-        "age_rating_options": {
-          "adult": "A（成人，PG 18+）"
-        },
-        "categories_options": {
-          "art": "🎨 艺术",
-          "game": "🕹️ 游戏",
-          "casino": "🃏 赌场",
-          "social": "👥 社交",
-          "music": "🎶 音乐",
-          "fashion": "👠 时尚",
-          "crypto": "🪙 加密货币",
-          "education": "📚 教育",
-          "shop": "🛍️ 商店",
-          "business": "🏢 商务",
-          "sports": "🏅 体育"
-        }
-      },
-      "layout": {
-        "world_layout": {
-          "title": "世界布局",
-          "world_size": "世界大小：{size}"
-        },
-        "multi_scene_title": "多场景世界",
-        "multi_scene_description": "允许您的世界包含多个场景。\n总的世界大小将取决于您发布的世界布局。",
-        "empty_world": {
-          "title": "此世界中未发布场景。",
-          "description": "您可以通过在此域中发布任何场景来添加它。",
-          "view_scenes": "查看场景"
-        },
-        "current_world": "当前世界",
-        "title_placeholder": "世界标题",
-        "scene_title_placeholder": "场景标题",
-        "scenes_count": "{count} 个{count, plural, one {场景} other {场景}}",
-        "parcels_count": "{count} 个{count, plural, one {地块} other {地块}}",
-        "world_map": "世界地图",
-        "scenes_title": "场景",
-        "actions": {
-          "edit_scene": "编辑场景",
-          "unpublish": "从世界中移除",
-          "confirm": "确认",
-          "cancel": "取消"
-        },
-        "unpublish_confirmation": {
-          "title": "从这个世界中移除 <b>{name}</b>？",
-          "warning_title": "您的世界将自动重新发布以应用这些更改。"
-        }
-      }
     },
     "world_permissions": {
       "tabs": {
@@ -1331,7 +1244,24 @@
       "description_placeholder": "在此写一些关于你的世界的内容",
       "thumbnail_hint": "PNG 或 JPG | 1920x1080 (16:9)",
       "change_thumbnail": "更换缩略图",
-      "saved": "更改已保存"
+      "saved": "更改已保存",
+      "categories": "类别",
+      "description": "描述",
+      "no_image": "未设置图片",
+      "thumbnail": "缩略图",
+      "categories_options": {
+        "art": "🎨 艺术",
+        "game": "🕹️ 游戏",
+        "casino": "🃏 赌场",
+        "social": "👥 社交",
+        "music": "🎶 音乐",
+        "fashion": "👠 时尚",
+        "crypto": "🪙 加密货币",
+        "education": "📚 教育",
+        "shop": "🛍️ 商店",
+        "business": "🏢 商务",
+        "sports": "🏅 体育"
+      }
     },
     "scenes": {
       "parcels_shape": "{w}×{h} 地块",
@@ -1340,11 +1270,51 @@
       "last_scene": "这是 {world} 中的最后一个场景。取消发布后，该世界将下线，其标题、描述、缩略图和设置都会被删除。",
       "empty": "此世界中尚未发布场景。",
       "empty_filtered": "你的地块上还没有场景。",
-      "multi_scene_info": "关于多场景世界"
+      "multi_scene_info": "关于多场景世界",
+      "multi_scene_description": "允许您的世界包含多个场景。\n总的世界大小将取决于您发布的世界布局。",
+      "multi_scene_title": "多场景世界",
+      "world_map": "世界地图"
+    },
+    "settings": {
+      "spawn": "出生点坐标",
+      "skybox": "昼夜时间（天空盒）",
+      "skybox_auto": "自动（Decentraland 时间）",
+      "skybox_slider": "昼夜时间",
+      "discoverable": "可在 Places 中发现",
+      "access": {
+        "invitation_only": "仅限邀请",
+        "password_protected": "密码保护",
+        "invitation_only_description": "白名单中的用户和社区可以加入",
+        "password_protected_description": "任何拥有密码的人都可以加入",
+        "tab_user": "添加用户钱包",
+        "tab_community": "添加社区",
+        "search": "搜索",
+        "csv_browse": "浏览你的设备文件。",
+        "invited": "已邀请",
+        "invited_empty": "你还没有邀请任何人。",
+        "select_all": "全选已邀请",
+        "select": "选择 {name}",
+        "remove": "移除 {name}",
+        "remove_selected": "移除所选",
+        "remove_body": "他们将无法再加入这个世界。",
+        "remove_many_title": "移除 {count} 个邀请？"
+      },
+      "password": {
+        "requirements": "你的密码必须包含",
+        "min_length": "至少 8 个字符",
+        "min_numbers": "至少 2 个数字",
+        "mismatch": "密码不匹配",
+        "show": "显示密码",
+        "hide": "隐藏密码"
+      },
+      "general": "常规",
+      "single_player": "单人游戏",
+      "single_player_streaming_note": "单人模式下不支持直播。"
     }
   },
   "detail_shell": {
-    "unsaved": "您有未保存的更改。离开前保存？"
+    "unsaved": "您有未保存的更改。离开前保存？",
+    "discard": "放弃"
   },
   "parcel_picker": {
     "title": "更新地块",
@@ -1575,5 +1545,8 @@
       "NO_INTERNET_CONNECTION": "无可用的互联网连接",
       "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
     }
+  },
+  "world_atlas": {
+    "world_size": "世界大小：{size}"
   }
 }

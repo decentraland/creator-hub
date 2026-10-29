@@ -1,1 +1,0 @@
-export { WorldPermissionsPasswordForm } from './component';

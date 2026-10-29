@@ -18,6 +18,7 @@ import { getWorldMenuOptions } from '../ManagePage/ManagedProjectsList/worldMenu
 import { getRoleTag } from '../ManagePage/RoleTag';
 import { DetailsTab } from './DetailsTab';
 import { ScenesTab } from './ScenesTab';
+import { SettingsTab } from './SettingsTab';
 import { getWorldPermissions, type WorldTab } from './worldPermissions';
 
 export function WorldDetailPage() {
@@ -95,6 +96,7 @@ export function WorldDetailPage() {
         activeTab={activeTab}
       >
         {activeTab === 'details' && <DetailsTab worldName={project.id} />}
+        {activeTab === 'settings' && <SettingsTab worldName={project.id} />}
         {activeTab === 'scenes' && (
           <ScenesTab
             worldName={project.id}

@@ -387,7 +387,6 @@
             "title": "Multi-Scene World (Advanced)",
             "description": "Allow your world to contain more than 1 scene. Total world size will depend on your published world layout.",
             "current_world": "Current World",
-            "settings_button": "Settings",
             "scenes_count": "{count} {count, plural, one {scene} other {scenes}}"
           },
           "location": {
@@ -499,7 +498,8 @@
           "url": "The URL to jump in your {target} is:",
           "world": "World",
           "land": "Land",
-          "jump_in": "Jump In"
+          "jump_in": "Jump In",
+          "world_settings": "World Settings"
         }
       }
     },
@@ -647,93 +647,6 @@
       "names_buy": "BUY NAME",
       "proposal": "These storage rules were voted on and passed in a governance DAO proposal.",
       "learn_more": "LEARN MORE"
-    },
-    "world_settings": {
-      "title": "World Settings - {worldName}",
-      "tabs": {
-        "details": {
-          "label": "Details"
-        },
-        "layout": {
-          "label": "Layout"
-        },
-        "general": {
-          "label": "Misc."
-        }
-      },
-      "actions": {
-        "save": "Save changes",
-        "discard": "Discard"
-      },
-      "general": {
-        "world_spawn_coordinate": "World Spawn Coordinate",
-        "position": "Position",
-        "world_skybox": "World Skybox",
-        "auto_skybox": "Auto (decentraland time)",
-        "max_offset": "Max Offset",
-        "general": "General",
-        "single_player": "Single Player",
-        "show_in_places": "Show in Places",
-        "single_player_streaming_note": "Live streaming is not supported in single player mode."
-      },
-      "details": {
-        "world_title": "World Title",
-        "description": "Description",
-        "age_rating": "Content Rating",
-        "categories": "Categories",
-        "author": "Author (Optional)",
-        "email": "Email (Optional)",
-        "thumbnail": "Thumbnail",
-        "replace_image": "Replace Image",
-        "set_image": "Choose image",
-        "no_image": "No image set",
-        "age_rating_options": {
-          "adult": "A (Adults, PG 18+)"
-        },
-        "categories_options": {
-          "art": "🎨 Art",
-          "game": "🕹️ Game",
-          "casino": "🃏 Casino",
-          "social": "👥 Social",
-          "music": "🎶 Music",
-          "fashion": "👠 Fashion",
-          "crypto": "🪙 Crypto",
-          "education": "📚 Education",
-          "shop": "🛍️ Shop",
-          "business": "🏢 Business",
-          "sports": "🏅 Sports"
-        }
-      },
-      "layout": {
-        "world_layout": {
-          "title": "World Layout",
-          "world_size": "World size: {size}"
-        },
-        "multi_scene_title": "Multi-Scene World",
-        "multi_scene_description": "Allow your world to contain more than 1 scene.\nTotal world size will depend on your published world layout.",
-        "empty_world": {
-          "title": "No scene published in this world.",
-          "description": "You can add any scene by publishing it within this domain.",
-          "view_scenes": "View Scenes"
-        },
-        "current_world": "Current World",
-        "title_placeholder": "World Title",
-        "scene_title_placeholder": "Scene Title",
-        "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
-        "parcels_count": "{count} {count, plural, one {parcel} other {parcels}}",
-        "world_map": "World Map",
-        "scenes_title": "Scenes",
-        "actions": {
-          "edit_scene": "Edit Scene",
-          "unpublish": "Remove from World",
-          "confirm": "Confirm",
-          "cancel": "Cancel"
-        },
-        "unpublish_confirmation": {
-          "title": "Remove <b>{name}</b> from this world?",
-          "warning_title": "Your world will be automatically re-published to apply these changes."
-        }
-      }
     },
     "world_permissions": {
       "tabs": {
@@ -1332,7 +1245,24 @@
       "description_placeholder": "Write something about your world here",
       "thumbnail_hint": "PNG or JPG | 1920x1080 (16:9)",
       "change_thumbnail": "Change thumbnail",
-      "saved": "Changes saved"
+      "saved": "Changes saved",
+      "categories": "Categories",
+      "description": "Description",
+      "no_image": "No image set",
+      "thumbnail": "Thumbnail",
+      "categories_options": {
+        "art": "🎨 Art",
+        "game": "🕹️ Game",
+        "casino": "🃏 Casino",
+        "social": "👥 Social",
+        "music": "🎶 Music",
+        "fashion": "👠 Fashion",
+        "crypto": "🪙 Crypto",
+        "education": "📚 Education",
+        "shop": "🛍️ Shop",
+        "business": "🏢 Business",
+        "sports": "🏅 Sports"
+      }
     },
     "scenes": {
       "parcels_shape": "{w}×{h} Parcels",
@@ -1341,11 +1271,51 @@
       "last_scene": "This is the last scene in {world}. Unpublishing it takes the World offline and deletes its title, description, thumbnail and settings.",
       "empty": "No scenes published in this World.",
       "empty_filtered": "No scenes on your parcels yet.",
-      "multi_scene_info": "About Multi-Scene World"
+      "multi_scene_info": "About Multi-Scene World",
+      "multi_scene_description": "Allow your world to contain more than 1 scene.\nTotal world size will depend on your published world layout.",
+      "multi_scene_title": "Multi-Scene World",
+      "world_map": "World Map"
+    },
+    "settings": {
+      "spawn": "Spawn Coordinate",
+      "skybox": "Night/Day Time (skybox)",
+      "skybox_auto": "Auto (Decentraland Time)",
+      "skybox_slider": "Night/Day Time",
+      "discoverable": "Discoverable in Places",
+      "access": {
+        "invitation_only": "Invitation Only",
+        "password_protected": "Password Protected",
+        "invitation_only_description": "Users and Communities on the whitelist can join",
+        "password_protected_description": "Anyone with the password can join",
+        "tab_user": "Add User Wallet",
+        "tab_community": "Add Community",
+        "search": "Search",
+        "csv_browse": "browse your device files.",
+        "invited": "Invited",
+        "invited_empty": "You haven't invited anyone yet.",
+        "select_all": "Select all invited",
+        "select": "Select {name}",
+        "remove": "Remove {name}",
+        "remove_selected": "Remove selected",
+        "remove_body": "They will no longer be able to join this World.",
+        "remove_many_title": "Remove {count} invites?"
+      },
+      "password": {
+        "requirements": "Your password must have",
+        "min_length": "At least 8 characters",
+        "min_numbers": "At least 2 numbers",
+        "mismatch": "Passwords don't match",
+        "show": "Show password",
+        "hide": "Hide password"
+      },
+      "general": "General",
+      "single_player": "Single Player",
+      "single_player_streaming_note": "Live streaming is not supported in single player mode."
     }
   },
   "detail_shell": {
-    "unsaved": "You have unsaved changes. Save before leaving?"
+    "unsaved": "You have unsaved changes. Save before leaving?",
+    "discard": "Discard"
   },
   "parcel_picker": {
     "title": "Update parcels",
@@ -1601,5 +1571,8 @@
       "NO_INTERNET_CONNECTION": "No internet connection available",
       "REQUEST_TIMEOUT": "Request timed out. Please check your connection and try again."
     }
+  },
+  "world_atlas": {
+    "world_size": "World size: {size}"
   }
 }

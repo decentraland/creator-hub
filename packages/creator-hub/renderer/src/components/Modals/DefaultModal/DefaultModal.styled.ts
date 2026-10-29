@@ -5,11 +5,7 @@ const { blackTransparent, neutral, rarity, whiteTransparent } = dclColors;
 const Actions = styled('div')(({ theme }) => ({
   display: 'flex',
   gap: theme.spacing(2.5),
-  '&& .MuiButton-root': {
-    flex: '1 1 0',
-    height: 46,
-    margin: 0,
-  },
+  '& > button': { flex: '1 1 0' },
 }));
 
 const Body = styled('div')(({ theme }) => ({
@@ -47,10 +43,6 @@ const Content = styled('div')(({ theme }) => ({
   width: 500,
   maxWidth: '100%',
   margin: '0 auto',
-  '& .MuiButton-root:focus-visible': {
-    outline: `2px solid ${theme.palette.info.light}`,
-    outlineOffset: 2,
-  },
 }));
 
 const Frame = styled('div')(({ theme }) => ({
