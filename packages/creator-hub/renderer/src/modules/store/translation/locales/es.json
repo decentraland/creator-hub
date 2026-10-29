@@ -468,6 +468,15 @@
             "loading": "En proceso...",
             "failed": "Error"
           },
+          "progress": {
+            "checking": "Preparando la subida...",
+            "uploading": "Subiendo {sent} de {total}",
+            "processing": "Publicando...",
+            "batches": "Lote {completed} de {total} subido",
+            "cancel_too_early": "No se puede cancelar mientras se eliminan las escenas anteriores. Inténtalo de nuevo en un momento.",
+            "cancel_unauthorized": "No se pudo cancelar la publicación desde aquí. Sal de Creator Hub para detenerla.",
+            "cancel_unsupported": "Actualiza el SDK de esta escena para cancelar publicaciones desde aquí."
+          },
           "errors": {
             "details": "Detalles",
             "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo.",
@@ -482,12 +491,16 @@
             "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
             "max_scene_size_exceeded": "Tu escena excede el tamaño máximo permitido.\nReducí la cantidad o el tamaño de los assets e intentá de nuevo.",
+            "deploy_state_lost": "Se perdió el seguimiento de la publicación, que aún podría completarse.\nRevisa la escena en la sección Gestionar antes de volver a publicar.",
+            "deploy_request_timeout": "La publicación no terminó en 60 minutos y aún podría estar en curso.\nRevisa la escena en la sección Gestionar antes de volver a publicar.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
           },
           "actions": {
             "report_issue": "Informar un problema",
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "cancel": "Cancelar",
+            "cancelling": "Cancelando..."
           },
           "redirect": {
             "sign_in": "Serás redirigido al inicio de sesión en {seconds} segundos..."
@@ -986,7 +999,8 @@
       "init_failed": "No se pudo inicializar el inicio de sesión. Por favor, verifica tu conexión.",
       "identity_not_found": "No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.",
       "identity_expired": "Tu solicitud de inicio de sesión expiró. Por favor, inténtalo de nuevo.",
-      "network_mismatch": "No se pudo completar el inicio de sesión. Desactiva cualquier VPN o relay privado del navegador e inténtalo de nuevo."
+      "network_mismatch": "No se pudo completar el inicio de sesión. Desactiva cualquier VPN o relay privado del navegador e inténtalo de nuevo.",
+      "verifier_mismatch": "No se pudo completar el inicio de sesión: se inició desde otra sesión. Por favor, inténtalo de nuevo."
     }
   },
   "more": {
@@ -1023,7 +1037,6 @@
     "title": "Elija una plantilla",
     "results": "{count} {count, plural, one {plantilla} other {plantillas}}",
     "actions": {
-      "preview": "Previsualizar Plantilla",
       "code": "Ver Código"
     },
     "new_scene": {

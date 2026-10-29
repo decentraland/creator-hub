@@ -2,7 +2,7 @@ import type { OpenDialogOptions, SaveDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
-import type { DeployOptions } from '/shared/types/deploy';
+import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 import type { SceneExportOptions, SceneExportResult } from '/shared/types/scene-export';
 import type { EmptySceneDeploy, EmptySceneDraft } from '/shared/types/land-unpublish';
 
@@ -215,7 +215,7 @@ export interface Ipc {
   'cli.start': (path: string, opts: PreviewOptions, mobile?: boolean) => Promise<string>;
   'cli.cancelPreview': (path: string) => Promise<void>;
   'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
-  'cli.deploy': (opts: DeployOptions) => Promise<number>;
+  'cli.deploy': (opts: DeployOptions) => Promise<DeployServer>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;
   'analytics.track': <T extends keyof Events>(event: T, data?: Events[T]) => void;

@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import type { ChainId } from '@dcl/schemas';
 
 import { actions, type Deployment } from '/@/modules/store/deployment';
 import { deriveOverallStatus as _deriveOverallStatus } from '/@/modules/store/deployment/utils';
@@ -18,14 +17,6 @@ export const useDeploy = () => {
   const getDeploymentHistory = useCallback(
     (path: string): Deployment[] => history[path] || [],
     [history],
-  );
-
-  const initializeDeployment = useCallback(
-    async (path: string, port: number, chainId: ChainId, wallet: string) => {
-      const payload = { path, port, chainId, wallet };
-      dispatch(actions.initializeDeployment(payload));
-    },
-    [dispatch],
   );
 
   const executeDeployment = useCallback(
@@ -54,7 +45,6 @@ export const useDeploy = () => {
     history,
     getDeployment,
     getDeploymentHistory,
-    initializeDeployment,
     executeDeployment,
     deriveOverallStatus,
     removeDeployment,
