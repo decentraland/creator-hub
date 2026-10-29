@@ -6,8 +6,7 @@ export type NotificationId = string;
 export type CustomNotificationType =
   | { type: 'missing-scenes' }
   | { type: 'new-dependency-version'; project: Project }
-  // `installed`: the scene has the skills and they are outdated, else it has none.
-  | { type: 'sdk-skills'; project: Project; installed: boolean }
+  | { type: 'sdk-skills'; project: Project }
   | { type: 'deploy'; path: string };
 
 export type Opts = {

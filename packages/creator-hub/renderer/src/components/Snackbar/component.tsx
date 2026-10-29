@@ -37,7 +37,6 @@ export function SnackbarComponent() {
           <SdkSkills
             onClose={close(notification.id)}
             project={notification.project}
-            installed={notification.installed}
           />
         );
       case 'deploy':

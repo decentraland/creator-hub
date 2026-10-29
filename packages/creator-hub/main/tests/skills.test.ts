@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { execFileSync } from 'child_process';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { run } from '../src/modules/bin';
 import {
@@ -111,9 +111,14 @@ describe('linkSkillsIntoProject', () => {
 
 const APP_VERSION = '1.0.0';
 
-// A scene whose skills-lock.json lists the given decentraland/sdk-skills folders and hashes.
+// A scene whose skills-lock.json lists the given decentraland/sdk-skills folders and hashes,
+// with those skills in .agents/skills as `skills add` leaves them.
 function setupInstalledScene(installed: Record<string, string>) {
   const { cache, project } = setup();
+  for (const folder of Object.keys(installed)) {
+    fs.mkdirSync(path.join(project, '.agents', 'skills', folder), { recursive: true });
+    fs.writeFileSync(path.join(project, '.agents', 'skills', folder, 'SKILL.md'), '# skill');
+  }
   const skills = Object.fromEntries(
     Object.entries(installed).map(([folder, computedHash]) => [
       folder,
@@ -194,6 +199,45 @@ describe('getProjectSkillsStatus', () => {
     seedCache('head', { 'skill-a': ['h-a'], 'report-sdk-issue': ['h-r'] });
     stubLatestSha('head');
     expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(true);
+  });
+
+  it("doesn't ask for the skills whose flow Creator Hub owns", async () => {
+    const { project } = setupInstalledScene({ 'skill-a': 'h-a' });
+    seedCache('head', { 'skill-a': ['h-a'], 'deploy-scene': ['h-d'] });
+    stubLatestSha('head');
+    expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(false);
+  });
+
+  it('still keeps one of those up to date when the creator installed it', async () => {
+    const { project } = setupInstalledScene({ 'skill-a': 'h-a', 'deploy-scene': 'old' });
+    seedCache('head', { 'skill-a': ['h-a'], 'deploy-scene': ['h-d'] });
+    stubLatestSha('head');
+    expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(true);
+  });
+
+  it('is outdated when the lock is there but the skills folders are not (a fresh clone)', async () => {
+    const { project } = setupInstalledScene({ 'skill-a': 'h-a' });
+    fs.rmSync(path.join(project, '.agents'), { recursive: true });
+    // Creator Hub's own link into the cache doesn't count as the scene having the skills.
+    const cacheSkills = path.join(userData, 'sdk-skills', 'skills');
+    seedCache('head', { 'skill-a': ['h-a'] });
+    fs.mkdirSync(path.join(cacheSkills, 'skill-a'), { recursive: true });
+    fs.writeFileSync(path.join(cacheSkills, 'skill-a', 'SKILL.md'), '# a');
+    linkSkillsIntoProject(project, cacheSkills, noop);
+    stubLatestSha('head');
+    expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(true);
+  });
+
+  it('stops offering an update that already ran and did not help', async () => {
+    const { project } = setupInstalledScene({ 'skill-a': 'old' });
+    seedCache('head', { 'skill-a': ['new'] });
+    stubLatestSha('head');
+    vi.mocked(run).mockReturnValue({
+      wait: async () => Buffer.from(''),
+    } as unknown as ReturnType<typeof run>);
+    await updateProjectSkills(project, noop); // the stub leaves the lock as it was
+    vi.mocked(run).mockReset();
+    expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(false);
   });
 
   it('ignores lock entries for skills removed upstream', async () => {
@@ -287,6 +331,43 @@ describe('ensureSkillsCache', () => {
   });
 });
 
+describe('ensureSkillsCache line endings', () => {
+  it('leaves files git would not convert byte-exact in the CRLF hash', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'skills-repo-'));
+    tmpDirs.push(root);
+    const repo = path.join(root, 'sdk-skills-head');
+    fs.mkdirSync(path.join(repo, 'skill-a', 'scripts'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'skill-a', 'SKILL.md'), '# a\n');
+    fs.writeFileSync(path.join(repo, 'skill-a', 'scripts', 'gen.mjs'), 'x\n'); // glob below
+    fs.writeFileSync(path.join(repo, 'skill-a', 'scripts', 'mixed.txt'), 'a\r\nb\n'); // has a CR
+    fs.writeFileSync(path.join(repo, '.gitattributes'), '*.mjs -text\n');
+    const tarball = path.join(root, 'repo.tar.gz');
+    execFileSync('tar', ['-czf', tarball, '-C', root, 'sdk-skills-head'], {
+      env: { ...process.env, COPYFILE_DISABLE: '1' },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(fs.readFileSync(tarball))),
+    );
+    const cacheDir = path.join(root, 'cache');
+
+    await ensureSkillsCache(cacheDir, APP_VERSION, noop, 'head'); // SHA already known: no call
+
+    const sha256 = (...parts: string[]) => {
+      const hash = crypto.createHash('sha256');
+      for (const part of parts) hash.update(part);
+      return hash.digest('hex');
+    };
+    const meta = JSON.parse(fs.readFileSync(path.join(cacheDir, 'meta.json'), 'utf8'));
+    expect(meta.hashes['skill-a'][1]).toBe(
+      sha256('scripts/gen.mjs', 'x\n', 'scripts/mixed.txt', 'a\r\nb\n', 'SKILL.md', '# a\r\n'),
+    );
+    expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url))).toEqual([
+      expect.stringContaining('codeload.github.com'),
+    ]);
+  });
+});
+
 describe('unlinkSkillsFromProject', () => {
   it('removes the links Creator Hub made, whole-dir and per-skill, and nothing else', () => {
     const { cache, project } = setup();
@@ -303,31 +384,103 @@ describe('unlinkSkillsFromProject', () => {
     expect(fs.readdirSync(agentsSkills)).toEqual(['my-skill']);
     expect(fs.readdirSync(cache).sort()).toEqual(['skill-a', 'skill-b']);
   });
+
+  it('takes back the .gitignore lines it added, so the installed skills can be committed', () => {
+    const { cache, project } = setup();
+    fs.mkdirSync(path.join(project, '.agents'), { recursive: true });
+    fs.writeFileSync(path.join(project, '.agents', '.gitignore'), 'notes.md\n');
+    linkSkillsIntoProject(project, cache, noop);
+
+    unlinkSkillsFromProject(project, cache);
+
+    expect(fs.existsSync(path.join(project, '.claude', '.gitignore'))).toBe(false);
+    expect(fs.readFileSync(path.join(project, '.agents', '.gitignore'), 'utf8')).toBe('notes.md\n');
+  });
 });
 
 describe('updateProjectSkills', () => {
-  function stubSkillsCli(wait: () => Promise<unknown>) {
-    vi.mocked(run).mockReturnValue({ wait } as unknown as ReturnType<typeof run>);
+  function stubSkillsCli(wait: () => Promise<unknown>, kill = vi.fn(async () => {})) {
+    vi.mocked(run).mockReturnValue({ wait, kill } as unknown as ReturnType<typeof run>);
+    return kill;
   }
 
-  afterEach(() => vi.mocked(run).mockReset());
+  beforeEach(() => {
+    seedCache('head', { 'skill-a': ['h-a'], 'skill-b': ['h-b'], 'deploy-scene': ['h-d'] });
+    stubLatestSha('head');
+  });
+  afterEach(() => {
+    vi.mocked(run).mockReset();
+    vi.useRealTimers();
+    fs.rmSync(path.join(userData, 'sdk-skills'), { recursive: true, force: true });
+  });
 
-  it('runs `skills add` for Claude Code and the shared .agents folder only', async () => {
+  it('runs a pinned `skills add` for Claude Code and the shared .agents folder only', async () => {
     const { project } = setup();
     stubSkillsCli(async () => Buffer.from(''));
 
     await updateProjectSkills(project, noop);
 
-    const { args, cwd } = vi.mocked(run).mock.calls[0][2]!;
+    const { args, cwd, env } = vi.mocked(run).mock.calls[0][2]!;
     expect(cwd).toBe(project);
-    expect(args).toEqual(
-      expect.arrayContaining(['add', 'decentraland/sdk-skills', '--skill', '*']),
-    );
+    expect(args!.slice(0, 4)).toEqual(['--yes', 'skills@1.7.4', 'add', 'decentraland/sdk-skills']);
     expect(args!.slice(args!.indexOf('--agent') + 1, args!.indexOf('-y'))).toEqual([
       'claude-code',
       'codex',
     ]);
     expect(args).not.toContain('--all');
+    expect(env).toEqual(expect.objectContaining({ DO_NOT_TRACK: '1' }));
+  });
+
+  it('names every upstream skill except the ones whose flow Creator Hub owns', async () => {
+    const { project } = setup();
+    stubSkillsCli(async () => Buffer.from(''));
+
+    await updateProjectSkills(project, noop);
+
+    const { args } = vi.mocked(run).mock.calls[0][2]!;
+    expect(args!.slice(args!.indexOf('--skill') + 1, args!.indexOf('--agent'))).toEqual([
+      'skill-a',
+      'skill-b',
+    ]);
+  });
+
+  it('keeps one of those the creator installed themselves', async () => {
+    const { project } = setupInstalledScene({ 'skill-a': 'h-a', 'deploy-scene': 'old' });
+    stubSkillsCli(async () => Buffer.from(''));
+
+    await updateProjectSkills(project, noop);
+
+    const { args } = vi.mocked(run).mock.calls[0][2]!;
+    expect(args).toContain('deploy-scene');
+  });
+
+  it("fails without touching the scene when the latest skills can't be read", async () => {
+    const { cache, project } = setup();
+    linkSkillsIntoProject(project, cache, noop);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    );
+
+    await expect(updateProjectSkills(project, noop)).rejects.toThrow('offline');
+    expect(run).not.toHaveBeenCalled();
+    expect(fs.lstatSync(path.join(project, '.claude', 'skills')).isSymbolicLink()).toBe(true);
+  });
+
+  it('stops a `skills add` that hangs, so the AI assistant is not held off forever', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { project } = setup();
+    const kill = stubSkillsCli(() => new Promise(() => {}));
+
+    const update = updateProjectSkills(project, noop);
+    const failed = expect(update).rejects.toThrow('was stopped');
+    await vi.waitFor(() => expect(run).toHaveBeenCalled());
+    await vi.advanceTimersByTimeAsync(3 * 60_000);
+
+    await failed;
+    expect(kill).toHaveBeenCalled();
   });
 
   it("removes Creator Hub's links before the CLI runs", async () => {
@@ -343,7 +496,6 @@ describe('updateProjectSkills', () => {
     await updateProjectSkills(project, noop);
 
     expect(linkedWhileRunning).toBe(false);
-    fs.rmSync(path.join(userData, 'sdk-skills'), { recursive: true, force: true });
   });
 
   it('rejects when the CLI exits with an error', async () => {
@@ -371,8 +523,6 @@ describe('updateProjectSkills', () => {
 
   it('holds off linking the AI assistant skills until the update is done', async () => {
     const { project } = setup();
-    seedCache('head', {});
-    stubLatestSha('head');
     let finish!: () => void;
     stubSkillsCli(() => new Promise<void>(resolve => (finish = resolve)));
 
@@ -388,6 +538,5 @@ describe('updateProjectSkills', () => {
     await update;
     await linking;
     expect(fs.lstatSync(path.join(project, '.claude', 'skills')).isSymbolicLink()).toBe(true);
-    fs.rmSync(path.join(userData, 'sdk-skills'), { recursive: true, force: true });
   });
 });

@@ -139,7 +139,12 @@ const initialState: EditorState = {
 export const slice = createSlice({
   name: 'editor',
   initialState,
-  reducers: {},
+  reducers: {
+    // The editor was closed: a scene that was still opening no longer is.
+    leaveProject: state => {
+      state.openingProjectPath = undefined;
+    },
+  },
   extraReducers: builder => {
     builder.addCase(setPreviewProgress, (state, action) => {
       state.previewProgress = action.payload;
@@ -171,6 +176,7 @@ export const slice = createSlice({
         });
       }
       state.project = undefined;
+      state.openingProjectPath = undefined;
     });
     builder.addCase(startInspector.pending, state => {
       state.inspectorPort = 0;

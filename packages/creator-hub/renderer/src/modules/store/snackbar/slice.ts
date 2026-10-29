@@ -234,16 +234,19 @@ export const slice = createSlice({
       .addCase(workspaceActions.runProject.pending, state => {
         state.notifications = state.notifications.filter($ => $.type !== 'sdk-skills');
       })
+      .addCase(editorActions.leaveProject, state => {
+        state.notifications = state.notifications.filter($ => $.type !== 'sdk-skills');
+      })
       .addCase(
         workspaceActions.checkSdkSkillsUpdate.fulfilled,
-        (state, { meta, payload: { project, offer } }) => {
+        (state, { meta, payload: { project, offerUpdate } }) => {
           state.notifications = state.notifications.filter(
             $ => !isSdkSkillsToastFor($, project.path),
           );
-          if (offer) {
+          if (offerUpdate) {
             state.notifications.push(
               createCustomNotification(
-                { type: 'sdk-skills', project, installed: offer === 'update' },
+                { type: 'sdk-skills', project },
                 { duration: 0, requestId: meta.requestId },
               ),
             );

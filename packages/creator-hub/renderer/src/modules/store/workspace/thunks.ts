@@ -130,27 +130,26 @@ export const updateSdkSkills = createAsyncThunk(
     }
   },
 );
-// What to offer for the scene's AI skills: installing them, updating them, or nothing.
-export type SdkSkillsOffer = 'install' | 'update' | null;
-// Follows the dependency update strategy: the skills are as much a part of keeping a scene
-// current as its packages.
+// Only for scenes whose creator installed the AI skills themselves (`npx skills add`): a scene
+// without them is left alone, since the built-in assistant brings its own. Follows the
+// dependency update strategy: the skills are as much a part of keeping a scene current as its
+// packages.
 export const checkSdkSkillsUpdate = createAsyncThunk(
   'workspace/checkSdkSkillsUpdate',
   async (project: Project, { dispatch, getState }) => {
-    const nothing = { project, offer: null as SdkSkillsOffer };
+    const nothing = { project, offerUpdate: false };
     const strategy = getState().workspace.settings.dependencyUpdateStrategy;
     if (strategy === DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING) return nothing;
 
     const { installed, outdated } = await skills.getProjectStatus(project.path);
-    // The creator may have opened another scene meanwhile; the offer is for this one only.
+    // The creator may have left or opened another scene meanwhile; this is for this one only.
     if (getState().editor.openingProjectPath !== project.path) return nothing;
-    // Asked even under Auto-update: installing adds new folders and a lock to the scene.
-    if (!installed) return { project, offer: 'install' as SdkSkillsOffer };
-    if (outdated && strategy === DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE) {
+    if (!installed || !outdated) return nothing;
+    if (strategy === DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE) {
       await dispatch(updateSdkSkills(project)).unwrap();
       return nothing;
     }
-    return { project, offer: (outdated ? 'update' : null) as SdkSkillsOffer };
+    return { project, offerUpdate: true };
   },
 );
 export const runProject = createAsyncThunk(
@@ -164,9 +163,6 @@ export const runProject = createAsyncThunk(
       dispatch(actions.moveProjectToMissing(project));
       return rejectWithValue(new WorkspaceError('PROJECT_NOT_FOUND'));
     }
-
-    // Not awaited: it hits GitHub and must never hold up opening the scene.
-    dispatch(checkSdkSkillsUpdate(project));
 
     // It's possible for "node_modules" to not exist because it was never installed before
     // or because the user deleted it while the app was running.
@@ -196,10 +192,16 @@ export const runProject = createAsyncThunk(
       dependencyAvailableUpdates = {};
     }
 
+    // Not awaited: it hits GitHub and must never hold up opening the scene. Started after the
+    // package install above so an AI skills update doesn't run in the folder alongside it.
+    const checkSdkSkills = () => dispatch(checkSdkSkillsUpdate(project));
+
     if (shouldUpdateDependencies(strategy, dependencyAvailableUpdates)) {
       await dispatch(updatePackages({ ...project, dependencyAvailableUpdates })).unwrap();
+      checkSdkSkills();
       return { ...project, dependencyAvailableUpdates: {} };
     }
+    checkSdkSkills();
 
     const { project: updatedProject } = await dispatch(
       updateAvailableDependencyUpdates({ project, updates: dependencyAvailableUpdates }),
