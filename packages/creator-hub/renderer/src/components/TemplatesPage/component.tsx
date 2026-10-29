@@ -2,12 +2,10 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MenuItem, type SelectChangeEvent, Chip, Typography } from 'decentraland-ui2';
 
-import type { Template } from '/shared/types/workspace';
-import { STUDIOS_ADMIN_URL } from '/shared/urls';
-
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { ProjectCard } from '/@/components/ProjectCard';
 import { t } from '/@/modules/store/translation/utils';
+import { TEMPLATES, Difficulty, type Template } from '/@/modules/templates';
 
 import NewScenePng from '/assets/images/new-scene.png';
 
@@ -20,16 +18,25 @@ import { Title } from '../Title';
 import { TutorialsWrapper } from '../Tutorials';
 import { CreateProject } from '../Modals/CreateProject';
 
-import { SortBy, Difficulty, type ModalType, type CreateProjectValue } from './types';
+import { SortBy, type ModalType, type CreateProjectValue } from './types';
 import { sortTemplatesBy } from './utils';
 
 import './styles.css';
 
+// A chip that matches no template would only ever filter down to the Empty Scene card.
+const DIFFICULTY_FILTERS = (
+  [
+    { value: Difficulty.EASY, label: 'templates.filters.difficulty.easy' },
+    { value: Difficulty.INTERMEDIATE, label: 'templates.filters.difficulty.medium' },
+    { value: Difficulty.HARD, label: 'templates.filters.difficulty.hard' },
+  ] as const
+).filter(({ value }) => TEMPLATES.some($ => $.difficulty === value));
+
 export function TemplatesPage() {
   const navigate = useNavigate();
-  const { createProject, templates: _templates, getAvailableProject } = useWorkspace();
+  const { createProject, getAvailableProject } = useWorkspace();
   const [openModal, setOpenModal] = useState<ModalType | undefined>();
-  const [templates, setTemplates] = useState(_templates);
+  const [templates, setTemplates] = useState(TEMPLATES);
   const [sortBy, setSortBy] = useState(SortBy.DEFAULT);
   const [difficulty, setDifficulty] = useState<Difficulty | undefined>();
 
@@ -61,61 +68,30 @@ export function TemplatesPage() {
     [createProject],
   );
 
-  const handlePreviewTemplate = useCallback(
-    ({ play_link: link }: Template) =>
-      () => {
-        if (link) misc.openExternal(link);
-      },
-    [],
-  );
-
   const handleViewCode = useCallback(
-    ({ github_link: link }: Template) =>
+    ({ repo }: Template) =>
       () => {
-        misc.openExternal(link);
+        misc.openExternal(repo);
       },
     [],
   );
 
-  const handleClickDifficulty = useCallback(
-    (value?: Difficulty) => {
-      const templates = value ? _templates.filter($ => $.difficulty_level === value) : _templates;
-      setDifficulty(value);
-      setTemplates(templates);
-    },
-    [_templates],
-  );
+  const handleClickDifficulty = useCallback((value?: Difficulty) => {
+    setDifficulty(value);
+    setTemplates(value ? TEMPLATES.filter($ => $.difficulty === value) : TEMPLATES);
+  }, []);
 
   const handleSort = useCallback((value: SortBy) => {
     setSortBy(value);
   }, []);
 
-  const dropdownOptions = useCallback((template: Template) => {
-    const previewOption = template.play_link
-      ? [
-          {
-            text: t('templates.actions.preview'),
-            handler: handlePreviewTemplate(template),
-          },
-        ]
-      : [];
-
-    return [
-      ...previewOption,
+  const dropdownOptions = useCallback(
+    (template: Template) => [
       {
         text: t('templates.actions.code'),
         handler: handleViewCode(template),
       },
-    ];
-  }, []);
-
-  const getTemplateThumbnailUrl = useCallback(
-    ({ image_1: imageUrl, video_1: videoUrl }: Template) => {
-      const assetId = videoUrl || imageUrl;
-      if (!assetId) return undefined;
-      const url = `${STUDIOS_ADMIN_URL}/assets/${assetId}`;
-      return videoUrl ? { videoUrl: url } : { imageUrl: url };
-    },
+    ],
     [],
   );
 
@@ -157,12 +133,13 @@ export function TemplatesPage() {
                 key={template.id}
                 title={template.title}
                 description={template.description}
-                {...getTemplateThumbnailUrl(template)}
+                imageUrl={template.imageUrl}
+                videoUrl={template.videoUrl}
                 dropdownOptions={dropdownOptions(template)}
                 width={300}
                 height={480}
-                onClick={handleClickTemplate(template.github_link)}
-                content={(template.tags || []).map($ => (
+                onClick={handleClickTemplate(template.repo)}
+                content={template.tags.map($ => (
                   <Chip
                     key={$}
                     label={$}
@@ -205,30 +182,17 @@ function Filters({
   return (
     <div className="filter-by">
       <Typography variant="body1">{t('templates.filters.title')}</Typography>
-      <Chip
-        label={t('templates.filters.difficulty.easy')}
-        color="default"
-        size="medium"
-        variant={value === Difficulty.EASY ? 'filled' : 'outlined'}
-        clickable
-        onClick={handleClick(Difficulty.EASY)}
-      />
-      <Chip
-        label={t('templates.filters.difficulty.medium')}
-        color="default"
-        size="medium"
-        variant={value === Difficulty.INTERMEDIATE ? 'filled' : 'outlined'}
-        clickable
-        onClick={handleClick(Difficulty.INTERMEDIATE)}
-      />
-      <Chip
-        label={t('templates.filters.difficulty.hard')}
-        color="default"
-        size="medium"
-        variant={value === Difficulty.HARD ? 'filled' : 'outlined'}
-        clickable
-        onClick={handleClick(Difficulty.HARD)}
-      />
+      {DIFFICULTY_FILTERS.map(filter => (
+        <Chip
+          key={filter.value}
+          label={t(filter.label)}
+          color="default"
+          size="medium"
+          variant={value === filter.value ? 'filled' : 'outlined'}
+          clickable
+          onClick={handleClick(filter.value)}
+        />
+      ))}
     </div>
   );
 }

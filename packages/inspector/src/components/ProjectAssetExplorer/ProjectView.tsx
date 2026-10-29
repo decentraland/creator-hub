@@ -258,7 +258,8 @@ function ProjectView({ folders, thumbnails }: Props) {
       ];
       for (const component of referencing) {
         for (const [entity, value] of sdk.engine.getEntitiesWith(component)) {
-          if (collectAssetReferences(value).includes(assetPath)) entitiesWithAsset.add(entity);
+          const references = collectAssetReferences(value).map(path => path.toLowerCase());
+          if (references.includes(assetPath.toLowerCase())) entitiesWithAsset.add(entity);
         }
       }
 

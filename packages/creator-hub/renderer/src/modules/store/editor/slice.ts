@@ -12,6 +12,7 @@ import { isWorkspaceError } from '/shared/types/workspace';
 import { editor } from '#preload';
 
 import { actions as deploymentActions } from '../deployment';
+import { registerDeployServer } from '../deployment/deploy-api';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
@@ -45,10 +46,21 @@ export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
-    const port = await editor.publishScene({ ...opts, language: translation.locale });
-    const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
-    await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
-    return port;
+    // Main stops the previous CLI, so a retry of the previous deployment must not start another.
+    dispatch(deploymentActions.markDeploymentReplaced({ path: opts.path }));
+    const server = await editor.publishScene({ ...opts, language: translation.locale });
+    const { supportsDeployResource, hasCancelToken } = registerDeployServer(server);
+    await dispatch(
+      deploymentActions.initializeDeployment({
+        path: opts.path,
+        port: server.port,
+        supportsDeployResource,
+        hasCancelToken,
+        chainId: opts.chainId,
+        wallet: opts.wallet,
+      }),
+    ).unwrap();
+    return server.port;
   },
 );
 export const killPreviewScene = createAsyncThunk(

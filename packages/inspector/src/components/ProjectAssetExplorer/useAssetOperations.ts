@@ -126,8 +126,8 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
   );
 
   const updateSceneReferences = useCallback(
-    async (map: (path: string) => string | undefined) => {
-      if (!sdk) return;
+    async (map: (path: string) => string | undefined): Promise<boolean> => {
+      if (!sdk) return true;
       const { components, engine } = sdk;
       const referencing = [
         components.GltfContainer,
@@ -138,9 +138,10 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
         components.Actions,
       ];
       let changed = false;
+      let unreachable = false;
       for (const component of referencing) {
         for (const [entity, value] of engine.getEntitiesWith(component)) {
-          const next = replaceAssetReferences(value, map);
+          const next = replaceAssetReferences(value, map, () => (unreachable = true));
           if (next !== value) {
             (component as any).createOrReplace(entity, next);
             changed = true;
@@ -148,6 +149,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
         }
       }
       if (changed) await sdk.operations.dispatch();
+      return !unreachable;
     },
     [sdk],
   );
@@ -193,9 +195,10 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
         const storage = getStorage();
         if (isFolder && storage) await removeEmptyFolders(storage, [withAssetDir(fromPath)]);
         try {
-          await updateSceneReferences(
+          const updated = await updateSceneReferences(
             createPathMapper(withAssetDir(fromPath), withAssetDir(toPath)),
           );
+          if (!updated) outcome.staleReferences = true;
         } catch (referencesError) {
           console.error(`Failed to update the scene references to ${fromPath}`, referencesError);
           outcome.staleReferences = true;
