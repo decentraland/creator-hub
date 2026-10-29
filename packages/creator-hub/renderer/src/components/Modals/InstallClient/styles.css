@@ -19,11 +19,11 @@
   height: 64px;
 }
 
-.Title {
-  font-weight: 500 !important;
-  margin-bottom: 32px !important;
+.InstallClientModal .Title {
+  font-weight: 500;
+  margin-bottom: 32px;
   font-size: 24px;
-  line-height: 32px !important;
+  line-height: 32px;
 }
 
 .InstallClientModal .Actions {
