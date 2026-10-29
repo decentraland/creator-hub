@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { encodeLandRedirect } from '/@/modules/store/ens/names';
 import { ENSProvider, type ENS } from '/@/modules/store/ens/types';
 
 import { getDomainState, validateDetails } from './details';
@@ -42,7 +43,7 @@ describe('getDomainState', () => {
   const context = {
     self: SELF,
     landId: '96,15',
-    landIdByHash: { '0xaaa': '96,15', '0xbbb': '7' },
+    landIdByParcel: { '96,15': '96,15', '5,5': '7' },
     publishedWorlds: new Set(['fixtureone.dcl.eth']),
     landNameById: { '7': 'Plaza' },
   };
@@ -59,7 +60,7 @@ describe('getDomainState', () => {
         getDomainState(
           [
             name('fixtureone.dcl.eth'),
-            name('fixturetwo.dcl.eth', '0xBBB'),
+            name('fixturetwo.dcl.eth', encodeLandRedirect({ x: 5, y: 5 })),
             name('fixturethree.dcl.eth'),
           ],
           context,
@@ -77,7 +78,12 @@ describe('getDomainState', () => {
 
   describe('when one of its NAMEs points at this LAND', () => {
     it('should show it as set', () => {
-      expect(getDomainState([name('fixturethree.dcl.eth', '0xaaa')], context)).toEqual({
+      expect(
+        getDomainState(
+          [name('fixturethree.dcl.eth', encodeLandRedirect({ x: 96, y: 15 }))],
+          context,
+        ),
+      ).toEqual({
         kind: 'set',
         name: 'fixturethree.dcl.eth',
         options: [{ subdomain: 'fixturethree.dcl.eth' }],

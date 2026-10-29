@@ -28,12 +28,13 @@ export const getJumpInDeeplink = (world: string) => {
 /**
  * Shareable web link for a published world. Opens in the browser, so it works
  * for people without the desktop client installed. `/jump` is the canonical
- * path: the older `/play/world/<name>` form only 301-redirects to it.
+ * path: the older `/play/world/<name>` form only 301-redirects to it. The dev
+ * config jumps to the World on the dev Worlds content server.
  */
 export const getJumpInUrl = (world: string) => {
-  return import.meta.env.DEV
-    ? `https://decentraland.zone/jump?realm=${config.get('WORLDS_CONTENT_SERVER_URL')}/world/${world}&NETWORK=sepolia`
-    : `https://decentraland.org/jump?realm=${world}`;
+  return config.get('ENVIRONMENT') === 'development'
+    ? `${config.get('JUMP_URL')}?realm=${config.get('WORLDS_CONTENT_SERVER_URL')}/world/${world}&NETWORK=sepolia`
+    : `${config.get('JUMP_URL')}?realm=${world}`;
 };
 
 /**
@@ -44,8 +45,7 @@ export const getJumpInUrl = (world: string) => {
  */
 export const getSceneJumpInUrl = (location: { world?: string; x: number; y: number }) => {
   if (location.world) return getJumpInUrl(location.world);
-  const base = import.meta.env.DEV ? 'https://decentraland.zone' : 'https://decentraland.org';
-  return `${base}/jump?position=${location.x},${location.y}`;
+  return `${config.get('JUMP_URL')}?position=${location.x},${location.y}`;
 };
 
 export const getSceneJumpInDeeplink = (location: { world?: string; x: number; y: number }) => {

@@ -1,11 +1,15 @@
 import {
   BaseError,
+  concat,
   ContractFunctionRevertedError,
   createPublicClient,
   encodeFunctionData,
+  hexToString,
   http,
   keccak256,
+  stringToHex,
   toBytes,
+  zeroAddress,
   type Address,
   type Hex,
 } from 'viem';
@@ -13,12 +17,16 @@ import { namehash } from 'viem/ens';
 import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import { config } from '/@/config';
 import type { LandTransaction } from '/@/lib/landTransactions';
-import { DCLRegistrar, ENSResolver } from './abis';
-import { dclRegistrar, ensResolver } from './contracts';
+import { getSceneJumpInUrl } from '/@/modules/utils';
+import { DCLRegistrar, ENS as ENSRegistry, ENSResolver } from './abis';
+import { dclRegistrar, ens, ensResolver } from './contracts';
 import type { ContractData, ENS } from './types';
 
 const DCL_SUFFIX = '.dcl.eth';
 const DCL_LABEL = /^[a-z0-9]{2,15}$/;
+const REDIRECT_PROTOCODE = '0x3000f2';
+
+type Parcel = { x: number; y: number };
 
 type NameUsage = { landId: string | null; world: boolean };
 
@@ -60,26 +68,62 @@ export async function resolveNameOwner(name: string): Promise<Address | null> {
   }
 }
 
-/** Points a NAME at the content hash from `LandRedirections.create`. */
-export function buildSetNameContent(subdomain: string, contentHash: Hex): LandTransaction {
-  return {
-    to: contractAddress(ensResolver),
+/** A NAME's contenthash that eth.limo answers with a 308 to the jump URL of the parcel (draft URI protocode). */
+export function encodeLandRedirect(parcel: Parcel): Hex {
+  return concat([REDIRECT_PROTOCODE, stringToHex(getSceneJumpInUrl(parcel))]);
+}
+
+/** The parcel a `encodeLandRedirect` contenthash jumps to; null for any other content. */
+export function decodeLandRedirect(content: string): Parcel | null {
+  if (!content.toLowerCase().startsWith(REDIRECT_PROTOCODE)) return null;
+  try {
+    const url = new URL(hexToString(`0x${content.slice(REDIRECT_PROTOCODE.length)}`));
+    const [x, y] = (url.searchParams.get('position') ?? '').split(',').map(Number);
+    return Number.isInteger(x) && Number.isInteger(y) ? { x, y } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Sets a NAME's contenthash (`0x` clears it); a NAME with no resolver first gets the public one. */
+export function buildLinkName(
+  name: Pick<ENS, 'subdomain' | 'resolver'>,
+  content: Hex,
+): LandTransaction[] {
+  const node = namehash(name.subdomain);
+  const hasResolver = !!name.resolver && name.resolver.toLowerCase() !== zeroAddress;
+  const resolver = hasResolver ? (name.resolver as Address) : contractAddress(ensResolver);
+  const setContent = {
+    to: resolver,
     data: encodeFunctionData({
       abi: ENSResolver,
       functionName: 'setContenthash',
-      args: [namehash(subdomain), contentHash],
+      args: [node, content],
     }),
   };
+  if (hasResolver) return [setContent];
+  return [
+    {
+      to: contractAddress(ens),
+      data: encodeFunctionData({
+        abi: ENSRegistry,
+        functionName: 'setResolver',
+        args: [node, contractAddress(ensResolver)],
+      }),
+    },
+    setContent,
+  ];
 }
 
-/** Which LAND (from `LandRedirections.fetchHashes`) or published World already uses a NAME. */
+/** Which LAND (by the parcel its contenthash jumps to) or published World already uses a NAME. */
 export function getNameUsage(
   name: ENS,
-  landIdByHash: Record<string, string>,
+  landIdByParcel: Record<string, string>,
   publishedWorlds: Set<string>,
 ): NameUsage {
+  const parcel = decodeLandRedirect(name.content ?? '');
   return {
-    landId: landIdByHash[name.content.toLowerCase()] ?? null,
+    landId: parcel ? (landIdByParcel[`${parcel.x},${parcel.y}`] ?? null) : null,
     world: publishedWorlds.has(name.subdomain),
   };
 }
