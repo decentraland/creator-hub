@@ -1,2 +1,2 @@
 export { RecipientField } from './RecipientField';
-export type { Recipient, RecipientPurpose } from './resolveRecipient';
+export type { Recipient } from './resolveRecipient';

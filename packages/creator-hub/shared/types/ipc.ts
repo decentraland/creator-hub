@@ -3,7 +3,7 @@ import type { OpenDialogOptions, SaveDialogOptions } from 'electron';
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
 import type { DeployOptions, DeployServer } from '/shared/types/deploy';
-import type { SceneExportOptions, SceneExportResult } from '/shared/types/scene-export';
+import type { SceneExportResult, SceneSource } from '/shared/types/scene-export';
 import type { EmptySceneDeploy, EmptySceneDraft } from '/shared/types/land-unpublish';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
@@ -177,7 +177,11 @@ export interface Ipc {
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.showSaveDialog': (opts: Partial<SaveDialogOptions>) => Promise<string | null>;
-  'sceneExport.export': (options: SceneExportOptions) => Promise<SceneExportResult>;
+  'sceneExport.export': (
+    entityId: string,
+    title: string,
+    source: SceneSource,
+  ) => Promise<SceneExportResult | null>;
   'sceneExport.cancel': (entityId: string) => Promise<void>;
   'landUnpublish.prepare': (parcel: string) => Promise<EmptySceneDraft>;
   'landUnpublish.deploy': (request: EmptySceneDeploy) => Promise<void>;

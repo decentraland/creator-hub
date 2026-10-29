@@ -18,7 +18,7 @@ import {
 
 type Action = { label: string; onClick: () => void };
 
-export type PrimaryAction = Action & { state: 'idle' | 'blocked' | 'busy' };
+type PrimaryAction = Action & { state: 'idle' | 'blocked' | 'busy' };
 
 type Props = {
   open: boolean;

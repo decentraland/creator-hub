@@ -5,7 +5,7 @@ import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
-import { misc, sceneExport } from '#preload';
+import { sceneExport } from '#preload';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { LandType, RoleType, type Land, type LandDeployment } from '/@/lib/land';
 import type * as LandModule from '/@/lib/land';
@@ -23,6 +23,9 @@ vi.mock('/@/hooks/useSnackbar', () => ({ useSnackbar: vi.fn() }));
 vi.mock('decentraland-ui2', async importOriginal => ({
   ...(await importOriginal<object>()),
   AvatarFace: () => null,
+  Address: ({ value, shorten }: { value: string; shorten?: boolean }) => (
+    <span>{shorten ? `short ${value}` : value}</span>
+  ),
 }));
 vi.mock('/@/lib/profile', () => ({
   default: { fetchProfile: () => Promise.resolve(undefined) },
@@ -195,7 +198,7 @@ describe('ScenesTab', () => {
       renderTab('manage', scenes, { [ANA]: 'Fixture Ana' });
 
       expect(await row('Scene A').findByText('Fixture Ana', {}, { timeout: 3000 })).toBeTruthy();
-      expect(await row('Scene B').findByText('0x0000…00b2', {}, { timeout: 3000 })).toBeTruthy();
+      expect(await row('Scene B').findByText(`short ${BEN}`, {}, { timeout: 3000 })).toBeTruthy();
       expect(fetchDeployersMock).toHaveBeenCalledWith(['a', 'b']);
     }, 15_000);
 
@@ -221,13 +224,12 @@ describe('ScenesTab', () => {
 
   describe('when a scene is downloaded', () => {
     beforeEach(async () => {
-      vi.mocked(misc.showSaveDialog).mockResolvedValue('/tmp/scene-a.zip');
       vi.mocked(sceneExport.subscribeProgress).mockReturnValue({ cleanup: () => {} });
       renderTab('manage', twoScenes);
       fireEvent.click(screen.getByRole('button', { name: 'Download Scene A' }));
     });
 
-    it('should warn first, then save where the user picks and report the recovery', async () => {
+    it('should warn first, then export the scene by id and title and report the recovery', async () => {
       vi.mocked(sceneExport.exportScene).mockResolvedValue({
         files: 1,
         bytes: 1,
@@ -239,17 +241,23 @@ describe('ScenesTab', () => {
 
       await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Download' })));
 
-      expect(misc.showSaveDialog).toHaveBeenCalledWith(
-        expect.objectContaining({ defaultPath: 'scene-a.zip' }),
-      );
-      expect(sceneExport.exportScene).toHaveBeenCalledWith(
-        expect.objectContaining({ entityId: 'a', outputPath: '/tmp/scene-a.zip' }),
-      );
+      expect(sceneExport.exportScene).toHaveBeenCalledWith('a', 'Scene A', 'land');
       expect(pushGeneric).toHaveBeenCalledWith(
         'warning',
         "Scene downloaded. Some code couldn't be recovered; see RECOVERY.md.",
       );
     });
+
+    it('should say nothing when the user cancels the save dialog', async () => {
+      vi.mocked(sceneExport.exportScene).mockResolvedValue(null);
+
+      await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Download' })));
+
+      expect(pushGeneric).not.toHaveBeenCalled();
+      expect(
+        await screen.findByRole('button', { name: 'Download Scene A' }, { timeout: 3000 }),
+      ).toBeTruthy();
+    }, 15_000);
 
     it('should only offer to cancel while downloading, and say nothing once cancelled', async () => {
       let reject: (error: Error) => void = () => {};

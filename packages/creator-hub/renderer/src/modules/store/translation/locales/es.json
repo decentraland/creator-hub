@@ -987,6 +987,7 @@
     "expired": "La solicitud expiró antes de ser firmada.",
     "failed": "La transacción falló.",
     "try_again": "Reintentar",
+    "continue": "Continuar",
     "step": "Paso {n} de {total}",
     "done": {
       "transfer": "LAND transferida.",
@@ -1122,7 +1123,8 @@
       "remove_body": "Ya no gestionará tus LAND.",
       "step_land": "LAND",
       "step_estates": "Estates",
-      "land_only": "Solo aplica a LAND. Los Estates no se actualizaron."
+      "land_only": "Solo puede gestionar tus LANDs. Vuelve a añadirlo para incluir tus Estates.",
+      "estate_only": "Solo puede gestionar tus Estates. Vuelve a añadirlo para incluir tus LANDs."
     }
   },
   "world_detail": {

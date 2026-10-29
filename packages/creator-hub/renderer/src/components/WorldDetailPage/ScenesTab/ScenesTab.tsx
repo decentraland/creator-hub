@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Switch } from 'decentraland-ui2';
 
 import { useSelector } from '#store';
-import { config } from '/@/config';
 import { toMB } from '/@/modules/file';
 import { getCurrentLocale, t } from '/@/modules/store/translation/utils';
 import { getWorldDimensions } from '/@/modules/world';
@@ -49,7 +48,7 @@ export function ScenesTab({ worldName, mode }: Props) {
         deployers={deployers}
         mode={mode}
         placeName={worldName}
-        source={{ contentUrl: config.get('WORLDS_CONTENT_SERVER_URL') }}
+        source="world"
         unpublishScene={unpublishScene}
         noticeFor={targets =>
           targets.length === all.length
@@ -64,7 +63,7 @@ export function ScenesTab({ worldName, mode }: Props) {
             </Meta>
             {width > 0 && (
               <Meta>
-                <LayoutOutlineIcon className="LandsGlyph" />
+                <LayoutOutlineIcon />
                 {t('world_detail.scenes.parcels_shape', { w: width, h: height })}
               </Meta>
             )}

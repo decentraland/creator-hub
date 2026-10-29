@@ -15,7 +15,7 @@ export type CollaboratorChange =
   | { kind: 'remove'; collaborators: Collaborator[] }
   | { kind: 'parcels'; address: string; parcels: Coord[]; previous: Coord[] };
 
-export type CollaboratorPlan = {
+type CollaboratorPlan = {
   txs: LandTransaction[];
   doneKey: TranslationPath;
   isApplied: (land: Land) => boolean;
@@ -31,7 +31,10 @@ export function planCollaboratorChange(land: Land, change: CollaboratorChange): 
     return {
       txs: [buildSetLandOperator(land, change.address as Address)],
       doneKey: replaces ? 'tx.done.collaborator_replaced' : 'tx.done.collaborator_added',
-      isApplied: next => getCollaborators(next).some(row => same(row.address, change.address)),
+      isApplied: next =>
+        getCollaborators(next).some(
+          row => row.scope.kind !== 'parcels' && same(row.address, change.address),
+        ),
     };
   }
 

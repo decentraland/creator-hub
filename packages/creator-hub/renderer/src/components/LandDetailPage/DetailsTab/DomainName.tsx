@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Hex } from 'viem';
 import { IconButton, MenuItem } from 'decentraland-ui2';
 
@@ -43,7 +43,7 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
   const landProjects = useSelector(state => state.management.lands.projects);
   const [editing, setEditing] = useState(false);
   const [change, setChange] = useState<Change | null>(null);
-  const [hash, setHash] = useState<Hex | null>(null);
+  const hash = useRef<Hex | null>(null);
   const [steps, setSteps] = useState<string[] | undefined>(undefined);
   const landIdByParcel = useMemo(() => toLandIdByParcel(lands), [lands]);
 
@@ -63,8 +63,8 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
     (state: AppState) =>
       !!change &&
       (state.ens.data[change.name]?.content ?? '').toLowerCase() ===
-        (change.kind === 'set' ? (hash ?? '') : '0x').toLowerCase(),
-    [change, hash],
+        (change.kind === 'set' ? (hash.current ?? '') : '0x').toLowerCase(),
+    [change],
   );
   const refetch = useCallback(async () => {
     await dispatch(fetchENSList({ address: wallet }));
@@ -87,7 +87,7 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
     const base = project.place?.kind === 'estate' ? project.place.base : { x: land.x!, y: land.y! };
     const content = encodeLandRedirect(base);
     const txs = buildLinkName(name, content);
-    setHash(content);
+    hash.current = content;
     setSteps(
       txs.length > 1
         ? [t('land_detail.details.domain_step_resolver'), t('land_detail.details.domain_step_link')]

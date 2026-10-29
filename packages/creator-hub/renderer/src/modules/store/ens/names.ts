@@ -28,7 +28,7 @@ const REDIRECT_PROTOCODE = '0x3000f2';
 
 type Parcel = { x: number; y: number };
 
-export type NameUsage = { landId: string | null; world: boolean };
+type NameUsage = { landId: string | null; world: boolean };
 
 const chainId = (): ChainId => Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 

@@ -7,7 +7,7 @@ import type { TxFlow, TxPhase } from '/@/hooks/useLandTxFlow';
 import { t } from '/@/modules/store/translation/utils';
 import type { TranslationPath } from '/@/modules/store/translation/types';
 
-import { Button } from '../../Button';
+import { DialogButton } from '../../DialogButton';
 import { ClockIcon, WarningCircleIcon } from '../../Icons';
 import { Loader } from '../../Loader';
 import { Actions } from '../DefaultModal/DefaultModal.styled';
@@ -75,6 +75,12 @@ const PHASES: Record<
   },
 };
 
+const UNCONFIRMED_STEP: (typeof PHASES)[TxPhase] = {
+  ...PHASES.unconfirmed,
+  secondary: { label: 'modal.close', action: 'close' },
+  primary: { label: 'tx.continue', action: 'retry' },
+};
+
 const GLYPHS: Record<Tone, JSX.Element> = {
   progress: <Loader size={24} />,
   success: <CheckCircleIcon aria-hidden />,
@@ -98,7 +104,8 @@ export const txCorner = (flow: TxFlow | null): 'close' | 'none' =>
 
 /** The transaction state block shown inside a DefaultModal once an on-chain action is confirmed. */
 export function TxState({ flow, doneText, stepLabels, onRetry, onClose }: Props) {
-  const phase = PHASES[flow.phase];
+  const hasNextStep = !!flow.step && flow.step.n < flow.step.total;
+  const phase = flow.phase === 'unconfirmed' && hasNextStep ? UNCONFIRMED_STEP : PHASES[flow.phase];
   const glyph = flow.phase === 'unconfirmed' ? <ClockIcon /> : GLYPHS[phase.tone];
   const handlers = { close: onClose, retry: onRetry };
 
@@ -126,25 +133,23 @@ export function TxState({ flow, doneText, stepLabels, onRetry, onClose }: Props)
       )}
       <Actions>
         {phase.secondary && (
-          <Button
-            variant="contained"
-            color="secondary"
-            size="large"
+          <DialogButton
+            type="button"
+            tone="secondary"
             onClick={handlers[phase.secondary.action]}
           >
             {t(phase.secondary.label)}
-          </Button>
+          </DialogButton>
         )}
         {phase.primary && (
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
+          <DialogButton
+            type="button"
+            tone="primary"
             autoFocus={phase.primary.action === 'retry'}
             onClick={handlers[phase.primary.action]}
           >
             {t(phase.primary.label)}
-          </Button>
+          </DialogButton>
         )}
       </Actions>
     </Root>

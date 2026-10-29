@@ -6,11 +6,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { SceneExportProgress } from '/shared/types/scene-export';
 
-const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
+import { Env } from '/shared/types/env';
+
+const mocks = vi.hoisted(() => ({
+  fetch: vi.fn(),
+  showSaveDialog: vi.fn(),
+  env: { value: null as string | null },
+}));
 
 vi.mock('electron', () => ({ net: { fetch: mocks.fetch } }));
 
-import { cancelSceneExport, exportScene } from '../src/modules/scene-export';
+vi.mock('../src/modules/electron', () => ({
+  getEnvOverride: () => mocks.env.value,
+  showSaveDialog: mocks.showSaveDialog,
+}));
+
+import { cancelSceneExport, exportScene, saveScene } from '../src/modules/scene-export';
 
 const PEER = 'https://peer.example.org';
 const ENTITY_ID = 'bafkreientity';
@@ -47,12 +58,12 @@ function text(entries: Map<string, ZipEntry>, name: string) {
   return entries.get(name)?.data.toString('utf8');
 }
 
-function serve(contents: Record<string, string | Buffer>, entity: unknown) {
+function serve(contents: Record<string, string | Buffer>, entity: unknown, peer = PEER) {
   mocks.fetch.mockImplementation(async (url: string) => {
-    if (url === `${PEER}/content/contents/${ENTITY_ID}`) {
+    if (url === `${peer}/content/contents/${ENTITY_ID}`) {
       return new Response(JSON.stringify(entity));
     }
-    const hash = url.slice(`${PEER}/content/contents/`.length);
+    const hash = url.slice(`${peer}/content/contents/`.length);
     const body = contents[hash];
     return body === undefined
       ? new Response('not found', { status: 404 })
@@ -96,6 +107,7 @@ describe('exportScene', () => {
 
   beforeEach(async () => {
     mocks.fetch.mockReset();
+    mocks.showSaveDialog.mockReset();
     dir = await fs.mkdtemp(path.join(os.tmpdir(), 'scene-export-test-'));
     outputPath = path.join(dir, 'out.zip');
   });
@@ -317,6 +329,37 @@ describe('exportScene', () => {
       });
     });
 
+    describe('and the code imports packages that @dcl/sdk already brings in', () => {
+      it('should add only the separately versioned package, beside the template SDK', async () => {
+        const { entries } = await exportWithMap({
+          sources: [
+            '../src/index.ts',
+            '../node_modules/@dcl/ecs/dist/index.js',
+            '../node_modules/@dcl/react-ecs/dist/index.js',
+            '../node_modules/@dcl/ecs-math/dist/index.js',
+            '../node_modules/@dcl-sdk/utils/dist/index.js',
+          ],
+          sourcesContent: [
+            [
+              "import { engine } from '@dcl/ecs'",
+              "import ReactEcs from '@dcl/react-ecs'",
+              "import { Vector3 } from '@dcl/ecs-math'",
+              "import * as utils from '@dcl-sdk/utils'",
+              'export function main() {}',
+            ].join('\n'),
+            'ecs',
+            'react-ecs',
+            'ecs-math',
+            'utils',
+          ],
+        });
+
+        const pkg = JSON.parse(text(entries, 'recovered/package.json')!);
+        expect(pkg.dependencies).toEqual({ '@dcl-sdk/utils': 'latest' });
+        expect(pkg.devDependencies['@dcl/sdk']).toBe('latest');
+      });
+    });
+
     describe('and the sources rely on aliases, missing files and unreviewed packages', () => {
       let result: Awaited<ReturnType<typeof exportScene>>;
       let entries: Map<string, ZipEntry>;
@@ -483,6 +526,54 @@ describe('exportScene', () => {
     });
   });
 
+  describe('when entity file names are case or dot variants of reserved paths', () => {
+    let entries: Map<string, ZipEntry>;
+
+    beforeEach(async () => {
+      serve(
+        { hscene: sceneJson, hok: 'ok', hpkg: '{"name":"deployed"}' },
+        {
+          id: ENTITY_ID,
+          pointers: ['1,1'],
+          metadata: { display: { title: 'x' } },
+          content: [
+            { file: 'scene.json', hash: 'hscene' },
+            { file: 'NODE_MODULES/x/index.js', hash: 'hok' },
+            { file: '.NPMRC', hash: 'hok' },
+            { file: '.git/config', hash: 'hok' },
+            { file: 'node_modules./x', hash: 'hok' },
+            { file: 'node_modules /y', hash: 'hok' },
+            { file: '.vscode/tasks.json', hash: 'hok' },
+            { file: 'PACKAGE.JSON', hash: 'hpkg' },
+            { file: 'Original-Build/bin/index.js', hash: 'hok' },
+            { file: 'SRC/INDEX.TS', hash: 'hok' },
+          ],
+        },
+      );
+      await exportScene({ entityId: ENTITY_ID, peerUrl: PEER, outputPath });
+      entries = await readZip(outputPath);
+    });
+
+    it('should skip every variant of node_modules and of a dotfile', () => {
+      const names = [...entries.keys()].map(name => name.toLowerCase());
+      expect(names.some(name => /node_modules|npmrc|\.git\/|\.vscode/.test(name))).toBe(false);
+      expect(names.some(name => name.startsWith('x/original-build/'))).toBe(false);
+    });
+
+    it('should keep only the template package.json', () => {
+      const packages = [...entries.keys()].filter(name => name.toLowerCase() === 'x/package.json');
+      expect(packages).toEqual(['x/package.json']);
+      expect(JSON.parse(text(entries, 'x/package.json')!).name).toBe('dcl-project');
+    });
+
+    it('should write one entry point, the deployed one', () => {
+      const entryPoints = [...entries.keys()].filter(
+        name => name.toLowerCase() === 'x/src/index.ts',
+      );
+      expect(entryPoints).toEqual(['x/SRC/INDEX.TS']);
+    });
+  });
+
   describe('when the entity id is not a content hash', () => {
     it('should reject without fetching', async () => {
       await expect(exportScene({ entityId: '../x', peerUrl: PEER, outputPath })).rejects.toThrow();
@@ -510,6 +601,20 @@ describe('exportScene', () => {
         /404/,
       );
       expect(await fs.readdir(dir)).toEqual([]);
+    });
+
+    it('should cancel the failed response body', async () => {
+      const failed = new Response('not found', { status: 404 });
+      const cancel = vi.spyOn(failed.body!, 'cancel');
+      const serveEntity = mocks.fetch.getMockImplementation()!;
+      mocks.fetch.mockImplementation(async (url: string) =>
+        url.endsWith('hmissing') ? failed : serveEntity(url),
+      );
+
+      await expect(
+        exportScene({ entityId: ENTITY_ID, peerUrl: PEER, outputPath }),
+      ).rejects.toThrow();
+      expect(cancel).toHaveBeenCalled();
     });
   });
 
@@ -539,6 +644,83 @@ describe('exportScene', () => {
         exportScene({ entityId: ENTITY_ID, peerUrl: PEER, outputPath }),
       ).rejects.toThrow();
       expect(await fs.readdir(dir)).toEqual([]);
+    });
+  });
+
+  describe('when saving a scene from the renderer', () => {
+    beforeEach(() => {
+      mocks.env.value = Env.PROD;
+      serve(
+        { hscene: sceneJson },
+        {
+          id: ENTITY_ID,
+          pointers: ['0,0'],
+          content: [{ file: 'scene.json', hash: 'hscene' }],
+        },
+        'https://peer.decentraland.org',
+      );
+    });
+
+    describe('and the user picks a file', () => {
+      let result: Awaited<ReturnType<typeof saveScene>>;
+
+      beforeEach(async () => {
+        mocks.showSaveDialog.mockResolvedValue(outputPath);
+        result = await saveScene(ENTITY_ID, 'My Cool Scene!', 'land');
+      });
+
+      it('should suggest a file named after the scene', () => {
+        expect(mocks.showSaveDialog).toHaveBeenCalledWith(
+          expect.objectContaining({ defaultPath: 'my-cool-scene.zip' }),
+        );
+      });
+
+      it("should export from the catalyst of the app's environment to that file", async () => {
+        expect(mocks.fetch).toHaveBeenCalledWith(
+          `https://peer.decentraland.org/content/contents/${ENTITY_ID}`,
+          expect.anything(),
+        );
+        expect(result?.bytes).toBe((await fs.stat(outputPath)).size);
+      });
+    });
+
+    describe('and the user cancels the dialog', () => {
+      it('should resolve null without fetching', async () => {
+        mocks.showSaveDialog.mockResolvedValue(null);
+        await expect(saveScene(ENTITY_ID, 'x', 'land')).resolves.toBeNull();
+        expect(mocks.fetch).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('and the scene lives in a World', () => {
+      it("should export from the Worlds content server of the app's environment", async () => {
+        const worlds = 'https://worlds-content-server.decentraland.org/contents/';
+        mocks.fetch.mockImplementation(async (url: string) => {
+          if (url === `${worlds}${ENTITY_ID}`) {
+            return new Response(
+              JSON.stringify({
+                id: ENTITY_ID,
+                pointers: ['0,0'],
+                content: [{ file: 'scene.json', hash: 'hscene' }],
+              }),
+            );
+          }
+          if (url === `${worlds}hscene`) return new Response(sceneJson);
+          return new Response('not found', { status: 404 });
+        });
+        mocks.showSaveDialog.mockResolvedValue(outputPath);
+
+        await saveScene(ENTITY_ID, 'x', 'world');
+
+        expect(mocks.fetch).toHaveBeenCalledWith(`${worlds}${ENTITY_ID}`, expect.anything());
+      });
+    });
+
+    describe('and the source is not a known one', () => {
+      it('should reject before asking where to save', async () => {
+        await expect(saveScene(ENTITY_ID, 'x', 'https://evil.example.org')).rejects.toThrow();
+        expect(mocks.showSaveDialog).not.toHaveBeenCalled();
+      });
     });
   });
 });

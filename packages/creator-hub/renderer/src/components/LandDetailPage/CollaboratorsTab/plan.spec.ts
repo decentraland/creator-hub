@@ -49,6 +49,16 @@ describe('planCollaboratorChange', () => {
     });
   });
 
+  describe('when adding estate-wide someone who already has a parcel scope', () => {
+    it('should wait for the estate-wide operator, not the parcel one', () => {
+      const land = estate(null, [ANA]);
+      const plan = planCollaboratorChange(land, { kind: 'add', address: ANA });
+
+      expect(plan.isApplied(land)).toBe(false);
+      expect(plan.isApplied(estate(ANA, [ANA]))).toBe(true);
+    });
+  });
+
   describe('when removing an estate-wide row and two parcel rows together', () => {
     it('should revoke the estate-wide one, then all those parcels in one transaction', () => {
       const land = estate(ANA, [BEN, null, BEN]);

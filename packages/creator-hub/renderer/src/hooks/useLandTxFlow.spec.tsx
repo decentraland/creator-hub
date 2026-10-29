@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { act, renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 import { RelayError } from '/@/lib/auth';
 import { sendLandTransaction, type LandTransaction } from '/@/lib/landTransactions';
@@ -100,6 +100,92 @@ describe('useLandTxFlow', () => {
 
       expect(vi.mocked(sendLandTransaction).mock.calls.at(-1)?.[0]).toBe(ESTATE_TX);
       expect(flow.result.current.flow?.phase).toBe('done');
+    });
+  });
+
+  describe('when the flow is reset while a step is pending', () => {
+    let settle: (value: { hash: typeof HASH; status: 'confirmed' }) => void;
+    let refetch: Mock<[], Promise<void>>;
+
+    async function resetDuring(txs: LandTransaction[]) {
+      vi.mocked(sendLandTransaction).mockImplementationOnce(
+        () => new Promise(resolve => (settle = resolve)),
+      );
+      vi.mocked(pollUntil).mockClear();
+      refetch = vi.fn(async () => {});
+      const flow = renderFlow(refetch);
+      let running: Promise<void> = Promise.resolve();
+      act(() => {
+        running = flow.result.current.start(txs);
+      });
+      act(() => flow.result.current.reset());
+      await act(async () => {
+        settle({ hash: HASH, status: 'confirmed' });
+        await running;
+      });
+      return flow;
+    }
+
+    it('should stay cleared, send no further step and refetch once', async () => {
+      const { result } = await resetDuring([LAND_TX, ESTATE_TX]);
+
+      expect(result.current.flow).toBeNull();
+      expect(sendLandTransaction).toHaveBeenCalledTimes(1);
+      expect(pollUntil).not.toHaveBeenCalled();
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should still refetch until applied once the last step confirms', async () => {
+      const { result } = await resetDuring([LAND_TX]);
+
+      expect(result.current.flow).toBeNull();
+      expect(pollUntil).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the first of two steps ends unconfirmed', () => {
+    let flow: ReturnType<typeof renderFlow>;
+    let refetch: Mock<[], Promise<void>>;
+
+    beforeEach(async () => {
+      vi.mocked(sendLandTransaction).mockResolvedValueOnce({ hash: HASH, status: 'unconfirmed' });
+      refetch = vi.fn(async () => {});
+      flow = renderFlow(refetch);
+      await act(() => flow.result.current.start([LAND_TX, ESTATE_TX]));
+    });
+
+    it('should stop on step 1 as unconfirmed and refetch', () => {
+      expect(flow.result.current.flow).toEqual({
+        phase: 'unconfirmed',
+        hash: HASH,
+        step: { n: 1, total: 2 },
+      });
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should continue with the next step', async () => {
+      confirm();
+
+      await act(() => flow.result.current.retry());
+
+      expect(vi.mocked(sendLandTransaction).mock.calls.at(-1)?.[0]).toBe(ESTATE_TX);
+      expect(flow.result.current.flow).toEqual({
+        phase: 'done',
+        hash: HASH,
+        step: { n: 2, total: 2 },
+      });
+    });
+  });
+
+  describe.each(['failed', 'unconfirmed'] as const)('when the receipt ends %s', status => {
+    it('should refetch', async () => {
+      vi.mocked(sendLandTransaction).mockResolvedValueOnce({ hash: HASH, status });
+      const refetch = vi.fn(async () => {});
+      const { result } = renderFlow(refetch);
+
+      await act(() => result.current.start([LAND_TX]));
+
+      expect(refetch).toHaveBeenCalledTimes(1);
     });
   });
 

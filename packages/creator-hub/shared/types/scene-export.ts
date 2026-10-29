@@ -1,12 +1,7 @@
 export const SCENE_EXPORT_PROGRESS_EVENT = 'sceneExport.progress';
 
-/** Where the scene is deployed: a catalyst peer (LAND) or a content server such as the Worlds one. */
-export type SceneSource = { peerUrl: string } | { contentUrl: string };
-
-export type SceneExportOptions = {
-  entityId: string;
-  outputPath: string;
-} & SceneSource;
+/** Where the scene is deployed: Genesis City's catalyst (LAND) or the Worlds content server. */
+export type SceneSource = 'land' | 'world';
 
 export type SceneExportProgress = {
   entityId: string;

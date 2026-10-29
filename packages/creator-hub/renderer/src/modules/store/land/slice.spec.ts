@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isPlain } from '@reduxjs/toolkit';
 
-import type { Authorization, Rental } from '/@/lib/land';
+import type { Authorization, Land, Rental } from '/@/lib/land';
 import { LandType } from '/@/lib/land';
 import { fetchLandList, initialState, reducer } from './slice';
 
@@ -35,6 +35,27 @@ describe('land reducer', () => {
 
     it('should keep them serializable for the store', () => {
       expect(state.rentals.every(rental => Object.values(rental).every(isPlain))).toBe(true);
+    });
+  });
+
+  describe('when an older land list request answers after a newer one', () => {
+    const args = { address: '0xme' };
+    const list = (id: string) => ({
+      land: [{ id } as Land],
+      authorizations: [],
+      rentals: [],
+    });
+    const state = [
+      fetchLandList.pending('older', args),
+      fetchLandList.pending('newer', args),
+      fetchLandList.fulfilled(list('newer'), 'newer', args),
+      fetchLandList.fulfilled(list('older'), 'older', args),
+      fetchLandList.rejected(new Error('late'), 'older', args),
+    ].reduce(reducer, initialState);
+
+    it('should keep the newer list', () => {
+      expect(state.data.map(land => land.id)).toEqual(['newer']);
+      expect(state.status).toBe('succeeded');
     });
   });
 });
