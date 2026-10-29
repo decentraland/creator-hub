@@ -3219,12 +3219,13 @@ Frame [`5660:4294`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjBulU/?node-id
 | Sub-bar stats | "{n} Scenes · {w}×{h} Parcels" (the World's shape); for a deploy collaborator, {n} counts the scenes they see (user decision) |
 | Collaborator filter | a deploy collaborator sees only the scenes with at least one parcel in their allowed parcels; with All Parcels they see every scene (user decision) |
 | ✱ No scenes on their parcels | the LAND Scenes EmptyState with "No scenes on your parcels yet." and no button (user decision; new string, not drawn) |
-| Sub-bar controls | Sort by and Search as LAND; today's Multi-Scene toggle and World Map button sit in the sub-bar, restyled to the DS (user decision) |
+| Sub-bar controls | Sort by and Search as LAND; the Multi-Scene indicator and the World Map button sit in the sub-bar, restyled to the DS (user decision) |
 | Columns | as the LAND Scenes tab: Name · Parcels · Location · Last Updated (no glyph) · Published by (user decision) |
 | Row actions | download and unpublish; no Edit Scene (user decision); a deploy collaborator sees download only |
 | Last scene | the unpublish confirm adds "This is the last scene in {world}. Unpublishing it takes the World offline and deletes its title, description, thumbnail and settings." (user decision) |
 | ✱ Manage Storage | not drawn (user decision): the sub-bar's stats end with "· {size} used" (the sum of the World's scene sizes) and a "Manage Storage" link (`H7 Semi` 14 Primary, underline 1px, offset 3) that opens `WorldsYourStorageModal`; owner only |
-| ✱ Multi-Scene info | the Multi-Scene description sits in an ⓘ DS Tooltip beside the Switch (user decision; not drawn) |
+| ✱ Multi-Scene | a read-only indicator: the DS `Switch` labelled "Multi-Scene World", disabled, checked when the World has more than one scene; beside it an ⓘ toggletip named "About Multi-Scene World" holds the Multi-Scene description (user decision). The Worlds API has no multi-scene setting, so there is nothing to toggle |
+| ✱ Empty (owner) | a World with no scenes: the LAND Scenes EmptyState with "No scenes published in this World." and the Secondary "View Scenes", as LAND (user decision; new string, not drawn) |
 
 #### World Settings tab
 
