@@ -1,3 +1,19 @@
+/** `name` inside `parent`, or `name` itself when `parent` is empty. */
+export function joinPath(parent: string, name: string): string {
+  return parent ? `${parent}/${name}` : name;
+}
+
+/** Resolves `.` and `..` segments, keeping the ones that climb above the start (`../x`). */
+export function normalizePath(path: string): string {
+  const parts: string[] = [];
+  for (const part of path.split(/[\\/]/)) {
+    if (!part || part === '.') continue;
+    if (part === '..' && parts.length && parts[parts.length - 1] !== '..') parts.pop();
+    else parts.push(part);
+  }
+  return parts.join('/');
+}
+
 /**
  * Returns the common directory prefix of all resource paths.
  * Used to compute the asset base path for relative path resolution.
