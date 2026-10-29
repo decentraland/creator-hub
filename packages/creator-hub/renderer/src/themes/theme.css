@@ -279,6 +279,10 @@ body,
   font-optical-sizing: none;
 }
 
+html body {
+  letter-spacing: 0;
+}
+
 footer {
   padding: 32px;
 }
