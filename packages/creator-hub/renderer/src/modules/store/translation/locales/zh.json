@@ -1037,7 +1037,6 @@
     "title": "选择一个模板",
     "results": "{count} {count, plural, one {模板} other {模板}}",
     "actions": {
-      "preview": "预览模板",
       "code": "查看代码"
     },
     "new_scene": {
