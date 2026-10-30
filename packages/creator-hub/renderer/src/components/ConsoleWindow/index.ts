@@ -1,0 +1,1 @@
+export { ConsoleWindow } from './component';

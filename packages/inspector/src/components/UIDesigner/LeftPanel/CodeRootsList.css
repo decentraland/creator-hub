@@ -105,6 +105,45 @@
   outline-offset: -1px;
 }
 
+/* The MobileHUD entry sits as a fixed first row above the authored GUIs, set off
+   by a divider. It selects a read-only mode rather than opening a GUI file. */
+.ui-designer-mobile-hud-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  padding: 3px var(--uid-space-2);
+  cursor: pointer;
+  color: var(--ui-designer-text);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.ui-designer-mobile-hud-row svg {
+  color: var(--ui-designer-glyph);
+  flex-shrink: 0;
+}
+
+.ui-designer-mobile-hud-row:hover {
+  background: var(--ui-designer-control-accent-15);
+}
+
+.ui-designer-mobile-hud-row.is-active {
+  background: var(--selected-item);
+}
+
+.ui-designer-mobile-hud-row:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: -2px;
+}
+
+.ui-designer-mobile-hud-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ui-designer-roots-error {
   margin: var(--uid-space-1) var(--uid-space-2);
   padding: 6px var(--uid-space-2);

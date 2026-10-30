@@ -307,6 +307,7 @@ const ImportAsset = React.forwardRef<InputRef, ImportAssetProps>((props, ref) =>
   } = useAssetImport({
     multiple,
     acceptExtensions: accept,
+    validateFile: props.validateFile,
     onImportComplete: handleImportComplete,
   });
 

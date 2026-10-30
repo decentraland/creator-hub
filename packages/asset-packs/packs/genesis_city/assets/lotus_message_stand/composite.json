@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/lotus_message_stand/lotus_message_stand.glb"
+          }
+        }
+      }
+    }
+  ]
+}

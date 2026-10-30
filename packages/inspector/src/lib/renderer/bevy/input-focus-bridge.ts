@@ -32,14 +32,48 @@
 const BARE_SHORTCUT_KEYS = new Set([
   'f', // focus selected
   '`', // toggle free camera
+  'm', // position gizmo
+  'g', // position gizmo (Blender's grab)
+  'r', // rotation gizmo
+  'x', // scale gizmo
   'Delete',
   'Backspace',
 ]);
 
-function isForwardedKey(e: KeyboardEvent): boolean {
+// The numeric-transform grammar (#1087): axis letters, digits and Enter, forwarded
+// ONLY while that entry is armed. They are ordinary scene input the rest of the
+// time — a bare `2` must keep reaching a running scene — so unlike the set above
+// they can't be allowlisted outright. `x` is in both: it opens the entry as the
+// scale tool, then means the X axis once armed.
+const TRANSFORM_INPUT_KEYS = new Set([
+  'x',
+  'y',
+  'z',
+  '0',
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '.',
+  ',',
+  '-',
+  'Enter',
+  'Escape',
+]);
+
+function isForwardedKey(e: KeyboardEvent, isTransformInputArmed: () => boolean): boolean {
   // Modifier combos are always editor shortcuts (undo/redo/copy/paste/save/dup).
   if (e.metaKey || e.ctrlKey) return true;
-  return BARE_SHORTCUT_KEYS.has(e.key) || BARE_SHORTCUT_KEYS.has(e.key.toLowerCase());
+  if (BARE_SHORTCUT_KEYS.has(e.key) || BARE_SHORTCUT_KEYS.has(e.key.toLowerCase())) return true;
+  return (
+    isTransformInputArmed() &&
+    (TRANSFORM_INPUT_KEYS.has(e.key) || TRANSFORM_INPUT_KEYS.has(e.key.toLowerCase()))
+  );
 }
 
 export interface InputFocusBridgeOptions {
@@ -54,6 +88,10 @@ export interface InputFocusBridgeOptions {
    * combos (undo/save/copy) are still forwarded (they don't conflict with scene
    * input). Defaults to always-on. */
   isEditingEnabled?: () => boolean;
+  /** True while numeric transform entry is armed, gating TRANSFORM_INPUT_KEYS.
+   * Injected rather than imported so the bridge stays a pure function of its
+   * options. Defaults to never-armed. */
+  isTransformInputArmed?: () => boolean;
 }
 
 /**
@@ -64,9 +102,10 @@ export function createInputFocusBridge(options: InputFocusBridgeOptions): () => 
   const hostWindow = options.hostWindow ?? window;
   const iframe = options.iframe;
   const isEditingEnabled = options.isEditingEnabled ?? (() => true);
+  const isTransformInputArmed = options.isTransformInputArmed ?? (() => false);
 
   const onKey = (e: KeyboardEvent) => {
-    if (!isForwardedKey(e)) return;
+    if (!isForwardedKey(e, isTransformInputArmed)) return;
     const isModifierCombo = e.metaKey || e.ctrlKey;
     // In Interact mode (editing off), a BARE editor-shortcut key (F, `, Delete…)
     // must reach only the running scene, not fire the editor action — don't forward

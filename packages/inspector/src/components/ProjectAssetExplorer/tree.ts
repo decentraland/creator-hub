@@ -1,6 +1,7 @@
 import { Filter } from './Filters/types';
 import type { AssetNode, AssetNodeFolder, AssetNodeItem, IAsset } from './types';
 import { mapAssetTypeToFilter } from './utils';
+import { getParentPath } from './file-ops';
 
 export const ROOT = 'File System';
 
@@ -13,11 +14,11 @@ const hasSearchMatch = (name: string, searchTerm: string): boolean => {
   return !!(searchTerm && name.toLowerCase().includes(searchTerm.toLowerCase()));
 };
 
-const shouldIncludeAsset = (assetType: IAsset['type'], activeFilter: Filter): boolean => {
+const shouldIncludeAsset = (asset: IAsset, activeFilter: Filter): boolean => {
   if (activeFilter === Filter.All || activeFilter === Filter.Recents) {
     return true;
   }
-  const assetFilter = mapAssetTypeToFilter(assetType);
+  const assetFilter = mapAssetTypeToFilter(asset);
   return assetFilter === activeFilter;
 };
 
@@ -75,10 +76,10 @@ export const generateAssetTree = (
         }
       } else {
         const assetNode = child as AssetNodeItem;
-        const filter = mapAssetTypeToFilter(assetNode.asset.type);
+        const filter = mapAssetTypeToFilter(assetNode.asset);
         if (filter) foundFilters.add(filter);
 
-        if (shouldIncludeAsset(assetNode.asset.type, activeFilter)) {
+        if (shouldIncludeAsset(assetNode.asset, activeFilter)) {
           validChildren.push(childPath);
           hasValidChildren = true;
           tree.set(childPath, {
@@ -122,6 +123,17 @@ export const generateAssetTree = (
   return { tree, filters: foundFilters };
 };
 
+/** The folders that hold nothing but `paths`, so removing or moving those out leaves them empty. */
+export function getEmptiedFolders(tree: Map<string, TreeNode>, paths: string[]): string[] {
+  const leaving = new Set(paths);
+  const parents = new Set(
+    paths.map(getParentPath).filter(parent => parent && !leaving.has(parent)),
+  );
+  return [...parents].filter(parent =>
+    tree.get(parent)?.children?.every(child => leaving.has(child)),
+  );
+}
+
 export const getChildren = (
   val: string,
   tree: Map<string, TreeNode>,
@@ -146,7 +158,7 @@ export const getChildren = (
       if (!childNode) return matches;
 
       if (childNode.type === 'asset') {
-        const childFilter = mapAssetTypeToFilter((childNode as AssetNodeItem).asset.type);
+        const childFilter = mapAssetTypeToFilter((childNode as AssetNodeItem).asset);
         const matchesFilter =
           activeFilter === Filter.All ||
           activeFilter === Filter.Recents ||
@@ -192,7 +204,7 @@ export const getTiles = (
   // Helper to get all matching files from a node or its children
   const getAllMatchingFiles = (startNode: TreeNode): TreeNode[] => {
     if (startNode.type === 'asset') {
-      const assetFilter = mapAssetTypeToFilter((startNode as AssetNodeItem).asset.type);
+      const assetFilter = mapAssetTypeToFilter((startNode as AssetNodeItem).asset);
       const matchesFilter =
         activeFilter === Filter.All ||
         activeFilter === Filter.Recents ||

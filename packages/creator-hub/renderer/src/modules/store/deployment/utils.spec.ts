@@ -44,7 +44,7 @@ vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
 }));
 
 // Imported after the mocks: `utils` reads the registry hosts from config at module load.
-const { fetchDeploymentStatus, getAvailableCatalystServer } = await import('./utils');
+const { deploy, fetchDeploymentStatus, getAvailableCatalystServer } = await import('./utils');
 
 describe('getAvailableCatalystServer', () => {
   it('should return a server for sepolia network', () => {
@@ -116,97 +116,96 @@ describe('fetchDeploymentStatus', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     identity = {} as AuthIdentity;
-    info = { rootCID: SCENE_ID, isWorld: false } as Info;
+    info = { rootCID: SCENE_ID } as Info;
   });
 
   describe('when the abgen pipeline is off', () => {
     beforeEach(async () => {
-      fetchMock.mockResolvedValue(
-        registryResponse({
-          assetBundles: bothPlatforms('complete'),
-          lods: bothPlatforms('complete'),
-        }),
-      );
+      fetchMock.mockResolvedValue(registryResponse({ assetBundles: bothPlatforms('complete') }));
       status = await fetchDeploymentStatus(info, identity, false);
     });
 
-    it('should read every component from the regular registry in a single request', () => {
+    it('should read the status from the regular registry in a single request', () => {
       expect(requestedUrls()).toEqual([statusUrl(REGISTRY)]);
     });
 
-    it('should derive all three statuses from that response', () => {
-      expect(status).toEqual({
-        catalyst: 'complete',
-        assetBundle: 'complete',
-        lods: 'complete',
-      });
+    it('should derive both statuses from that response', () => {
+      expect(status).toEqual({ catalyst: 'complete', assetBundle: 'complete' });
     });
   });
 
   describe('when the abgen pipeline is on', () => {
-    describe('and the scene is not a world', () => {
-      beforeEach(async () => {
-        // Only the abgen registry has the bundles; only the regular one has the LODs.
-        fetchMock.mockImplementation((url: URL) =>
-          url.toString().startsWith(ABGEN_REGISTRY)
-            ? registryResponse({ assetBundles: bothPlatforms('complete') })
-            : registryResponse({ lods: bothPlatforms('complete') }),
-        );
-        status = await fetchDeploymentStatus(info, identity, true);
-      });
-
-      it('should ask both registries about the same entity', () => {
-        expect(requestedUrls()).toEqual([statusUrl(ABGEN_REGISTRY), statusUrl(REGISTRY)]);
-      });
-
-      it('should take the asset bundle status from the abgen registry', () => {
-        expect(status.assetBundle).toBe('complete');
-      });
-
-      it('should take the lods status from the regular registry', () => {
-        expect(status.lods).toBe('complete');
-      });
+    beforeEach(async () => {
+      fetchMock.mockResolvedValue(registryResponse({ assetBundles: bothPlatforms('complete') }));
+      status = await fetchDeploymentStatus(info, identity, true);
     });
 
-    describe('and the scene is a world', () => {
-      beforeEach(async () => {
-        info = { rootCID: SCENE_ID, isWorld: true } as Info;
-        fetchMock.mockResolvedValue(registryResponse({ assetBundles: bothPlatforms('complete') }));
-        status = await fetchDeploymentStatus(info, identity, true);
-      });
-
-      it('should not ask the regular registry for lods it never needs', () => {
-        expect(requestedUrls()).toEqual([statusUrl(ABGEN_REGISTRY)]);
-      });
-
-      it('should report the lods as complete', () => {
-        expect(status.lods).toBe('complete');
-      });
+    it('should read the status from the abgen registry alone', () => {
+      expect(requestedUrls()).toEqual([statusUrl(ABGEN_REGISTRY)]);
     });
 
-    describe('and the regular registry does not know the entity yet', () => {
-      let cancelErrorBody: ReturnType<typeof vi.fn>;
+    it('should derive both statuses from that response', () => {
+      expect(status).toEqual({ catalyst: 'complete', assetBundle: 'complete' });
+    });
+  });
 
-      beforeEach(() => {
-        cancelErrorBody = vi.fn().mockResolvedValue(undefined);
-        fetchMock.mockImplementation((url: URL) =>
-          url.toString().startsWith(ABGEN_REGISTRY)
-            ? registryResponse({ assetBundles: bothPlatforms('complete') })
-            : { ok: false, status: 404, body: { cancel: cancelErrorBody } },
-        );
-      });
+  describe('when the registry still reports the lods as pending', () => {
+    it('should report the deployment as complete, since lods are not a component', async () => {
+      fetchMock.mockResolvedValue(
+        registryResponse({
+          assetBundles: bothPlatforms('complete'),
+          lods: bothPlatforms('pending'),
+        }),
+      );
 
-      it('should reject so the caller retries instead of reporting a partial status', async () => {
-        await expect(fetchDeploymentStatus(info, identity, true)).rejects.toThrow(
-          'Error fetching deployment status: 404',
-        );
-      });
-
-      it('should release the error body rather than leave it to the collector', async () => {
-        await fetchDeploymentStatus(info, identity, true).catch(() => undefined);
-
-        expect(cancelErrorBody).toHaveBeenCalled();
+      await expect(fetchDeploymentStatus(info, identity, true)).resolves.toEqual({
+        catalyst: 'complete',
+        assetBundle: 'complete',
       });
     });
+  });
+
+  describe('when the registry does not know the entity yet', () => {
+    let cancelErrorBody: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      cancelErrorBody = vi.fn().mockResolvedValue(undefined);
+      fetchMock.mockResolvedValue({ ok: false, status: 404, body: { cancel: cancelErrorBody } });
+    });
+
+    it('should reject so the caller retries instead of reporting a partial status', async () => {
+      await expect(fetchDeploymentStatus(info, identity, true)).rejects.toThrow(
+        'Error fetching deployment status: 404',
+      );
+    });
+
+    it('should release the error body rather than leave it to the collector', async () => {
+      await fetchDeploymentStatus(info, identity, true).catch(() => undefined);
+
+      expect(cancelErrorBody).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('deploy', () => {
+  const URL = 'http://localhost:4000/api';
+  const PAYLOAD = { address: '0xabc', authChain: [], chainId: ChainId.ETHEREUM_MAINNET };
+
+  let cancelBody: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    cancelBody = vi.fn(async () => undefined);
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({ ok: true, status: 200, body: { cancel: cancelBody } });
+    await deploy(URL, PAYLOAD);
+  });
+
+  it('should give the blocking request far longer than an upload of a large scene takes', () => {
+    const [, , timeoutMs] = fetchMock.mock.calls[0];
+    expect(timeoutMs).toBeGreaterThanOrEqual(30 * 60 * 1000);
+  });
+
+  it('should release the unread response body', () => {
+    expect(cancelBody).toHaveBeenCalled();
   });
 });

@@ -57,6 +57,6 @@
   width: var(--right-menu-width);
 }
 
-.TriggerActionsContainer > .TriggerAction > .RightMenu > .MoreOptionsMenu .MoreOptionsContent {
+.MoreOptionsContent.TriggerActionMenu {
   min-width: 185px;
 }

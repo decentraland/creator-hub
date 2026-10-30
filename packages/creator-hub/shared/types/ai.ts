@@ -3,15 +3,15 @@
 // the other IPC payloads, they live in `shared/` where every layer can import them
 // but main/preload cannot import each other.
 //
-// Phase 1: main spawns the user's own installed coding CLI (Claude Code / Codex) as
-// a child process, one per turn, with the open project as its working directory. It
+// Phase 1: main spawns the user's own installed coding CLI (Claude Code / Codex / Cursor /
+// Gemini) as a child process, one per turn, with the open project as its working directory. It
 // runs on the user's subscription/OAuth session (API keys are stripped from the
 // child env on purpose), reads the scene and writes SDK7 code under `src/`. The
 // renderer only sends prompts and renders the streamed events below. The transport
 // sits behind this contract so it can be swapped (e.g. for ACP) without touching the
 // panel or the IPC surface.
 
-export type AiProvider = 'claude' | 'codex';
+export type AiProvider = 'claude' | 'codex' | 'cursor' | 'gemini';
 
 // One selectable backend, as reported to the chat UI. `available` is false when the
 // CLI binary isn't installed (or, best-effort, isn't logged in) — the UI disables it
@@ -27,6 +27,10 @@ export interface AiProviderInfo {
   // Absent when the binary isn't found or didn't report a parseable version. Used to
   // warn when the CLI is too old for the newest models (see isClaudeCliOutdated).
   version?: string;
+  /** Whether the app signs this CLI in and out: the vendor allows it and no terminal install is in use. */
+  managedSignIn: boolean;
+  desktopInstalled?: boolean;
+  needsLogin?: boolean;
 }
 
 // Newest Claude models (e.g. Fable) are gated on the CLI version: an older `claude`
@@ -34,12 +38,73 @@ export interface AiProviderInfo {
 // UI nudges users up to. Bump it as newer models raise the requirement.
 export const MIN_CLAUDE_CLI_VERSION = '2.1.251';
 
-// Install + sign-in commands per agent, shown on the chat setup card and the settings
-// "Connect" section. Obviously-safe public package names.
-export const AI_CLI_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
-  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
-  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
+type CliCommands = {
+  install: string;
+  installWindows?: string;
+  signin: string;
+  relogin: string[];
+  apiKeyEnv: string;
+  guideUrl: string;
+  guideAnchors?: { windows: string; unix: string };
 };
+
+export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
+  claude: {
+    install: 'curl -fsSL https://claude.ai/install.sh | bash',
+    installWindows: 'winget install Anthropic.ClaudeCode',
+    signin: 'claude auth login',
+    relogin: ['claude auth logout', 'claude auth login'],
+    apiKeyEnv: 'ANTHROPIC_API_KEY',
+    guideUrl: 'https://code.claude.com/docs/en/terminal-guide',
+    guideAnchors: { windows: '#windows', unix: '#macos-and-linux' },
+  },
+  codex: {
+    install: 'curl -fsSL https://chatgpt.com/codex/install.sh | sh',
+    installWindows:
+      'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"',
+    signin: 'codex login',
+    relogin: ['codex logout', 'codex login'],
+    apiKeyEnv: 'OPENAI_API_KEY',
+    guideUrl: 'https://developers.openai.com/codex/cli',
+  },
+  cursor: {
+    install: 'curl https://cursor.com/install -fsS | bash',
+    installWindows:
+      'powershell -ExecutionPolicy ByPass -c "irm \'https://cursor.com/install?win32=true\' | iex"',
+    signin: 'cursor-agent login',
+    relogin: ['cursor-agent logout', 'cursor-agent login'],
+    apiKeyEnv: 'CURSOR_API_KEY',
+    guideUrl: 'https://cursor.com/docs/cli/installation',
+  },
+  gemini: {
+    install: 'npm install -g @google/gemini-cli',
+    signin: 'gemini',
+    relogin: ['gemini', '/auth logout', '/auth login'],
+    apiKeyEnv: 'GEMINI_API_KEY',
+    guideUrl: 'https://www.geminicli.com/docs/get-started/installation',
+  },
+};
+
+/** How to use this agent with an API key instead of a sign-in, completing "Or …". */
+export function apiKeyAlternative(provider: AiProvider): string {
+  return `set \`${AI_CLI_COMMANDS[provider].apiKeyEnv}\` and turn on "Bill this to an API key instead" in Settings → AI`;
+}
+
+/** The terminal install command, sign-in command, sign-out-then-in steps, API key name and install-guide link for this OS. */
+export function cliSetup(
+  provider: AiProvider,
+  windows: boolean,
+): { install: string; signin: string; relogin: string[]; apiKeyEnv: string; guideUrl: string } {
+  const cmds = AI_CLI_COMMANDS[provider];
+  const anchor = cmds.guideAnchors?.[windows ? 'windows' : 'unix'] ?? '';
+  return {
+    install: (windows ? cmds.installWindows : undefined) ?? cmds.install,
+    signin: cmds.signin,
+    relogin: cmds.relogin,
+    apiKeyEnv: cmds.apiKeyEnv,
+    guideUrl: cmds.guideUrl + anchor,
+  };
+}
 
 // True when `version` is a parseable semver strictly older than `min`. Unknown/absent
 // versions are treated as NOT outdated — we never nag when we couldn't read the version.
@@ -59,11 +124,30 @@ export function isCliVersionOutdated(version: string | undefined, min: string): 
   return false;
 }
 
-// Pasted/attached images, as data URLs. Main writes them to temp files and hands the
-// CLI paths (claude reads them with its Read tool; codex takes -i).
-export interface AiImageAttachment {
+// A file the user attached to a prompt — an image, a 3D model, audio, or any other file.
+// How it reaches the CLI depends on where it came from:
+//   • Dropped/picked from disk → `path` (its real absolute path). Handed to the CLI as-is:
+//     no copy, no base64 round-trip, no size cap. Claude reads images with its Read tool and
+//     references models/audio/etc. by path when writing scene code; codex takes images via -i.
+//   • Pasted from the clipboard (no file on disk) → `dataUrl`. Main writes it to a temp file
+//     and hands over that path instead.
+// Exactly one of `path` / `dataUrl` is set. `kind` classifies it for the UI and for codex's
+// image-only -i flag; `mimeType` is best-effort (absent for some dropped files).
+export type AiAttachmentKind = 'image' | 'model' | 'audio' | 'file';
+
+export interface AiAttachment {
   name: string;
-  dataUrl: string;
+  kind: AiAttachmentKind;
+  mimeType?: string;
+  path?: string;
+  dataUrl?: string;
+}
+
+// The subset of an attachment kept on a persisted user message, for the transcript's chips —
+// just enough to label it. The bytes/paths themselves aren't stored in the transcript.
+export interface AiAttachmentMeta {
+  name: string;
+  kind: AiAttachmentKind;
 }
 
 // A single user turn to run. `text` is the prompt the user typed; `context` is editor
@@ -76,7 +160,7 @@ export interface AiSendParams {
   model?: string;
   text: string;
   context?: string;
-  images?: AiImageAttachment[];
+  attachments?: AiAttachment[];
   // When true, the assistant keeps the API key in its environment (bill via API key) instead
   // of stripping it to force subscription billing. From the `useApiKeyFromEnv` setting.
   apiKeyFromEnv?: boolean;
@@ -138,6 +222,16 @@ export interface AiMirrorMessage {
   error?: string;
   mutations?: number;
   reverted?: boolean;
+  // Files the user attached to this prompt (chips under the user bubble). Name + kind only.
+  attachments?: AiAttachmentMeta[];
+}
+
+// A local asset the user mentioned for the next prompt: a scene file (scene-relative path), or a
+// built-in avatar animation, which every scene can play by name and which has no file.
+export type AiAssetMention = { path: string } | { builtInEmote: string };
+
+export function assetMentionKey(mention: AiAssetMention): string {
+  return 'path' in mention ? `path:${mention.path}` : `emote:${mention.builtInEmote}`;
 }
 
 export interface AiMirrorState {
@@ -148,6 +242,7 @@ export interface AiMirrorState {
   busy: boolean;
   detecting: boolean;
   selection: { id: number; name: string }[];
+  assetMentions: AiAssetMention[];
   billingDismissed: boolean;
   sessions: { id: string; title: string; updatedAt: number }[];
   currentSessionId: string;
@@ -158,7 +253,7 @@ export interface AiMirrorState {
 // A user action taken in the detached window, forwarded to the main window to run against
 // the single store. `sync` asks the main window to push the current state (on mount).
 export type AiRemoteCommand =
-  | { type: 'send'; text: string }
+  | { type: 'send'; text: string; attachments?: AiAttachment[] }
   | { type: 'stop' }
   | { type: 'newChat' }
   | { type: 'setProvider'; provider: AiProvider }
@@ -169,6 +264,7 @@ export type AiRemoteCommand =
   | { type: 'switchSession'; id: string }
   | { type: 'deleteSession'; id: string }
   | { type: 'clearSelection' }
+  | { type: 'removeAssetMention'; mention: AiAssetMention }
   // The detached window's close button: shut the assistant entirely (close the window AND the
   // inline panel), instead of just docking back — so close is consistent whether detached or not.
   | { type: 'closeAssistant' }

@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StopIcon from '@mui/icons-material/Stop';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import ViewInArOutlinedIcon from '@mui/icons-material/ViewInArOutlined';
+import AudiotrackIcon from '@mui/icons-material/Audiotrack';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
 import CheckIcon from '@mui/icons-material/Check';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -11,6 +16,7 @@ import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import type { Theme } from '@mui/material/styles';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
   Button,
@@ -25,10 +31,15 @@ import {
   Tooltip,
 } from 'decentraland-ui2';
 
-import type { AiProvider } from '/shared/types/ai';
-import { AI_CLI_COMMANDS, MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
+import type { AiAssetMention, AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
+import {
+  MIN_CLAUDE_CLI_VERSION,
+  assetMentionKey,
+  cliSetup,
+  isCliVersionOutdated,
+} from '/shared/types/ai';
 
-import { ai as aiPreload } from '#preload';
+import { ai as aiPreload, misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
 
@@ -39,12 +50,19 @@ import {
   AssistantBubble,
   AssistantImage,
   AssistantText,
+  AttachButton,
+  AttachmentBar,
+  AttachmentChip,
+  AttachmentName,
+  AttachmentRemove,
   BillingBody,
   BillingCard,
   BillingTitle,
   CommandLine,
   Composer,
+  DropHint,
   ErrorRow,
+  GuideLink,
   HeaderActions,
   HeaderTitle,
   IntroMessage,
@@ -73,6 +91,8 @@ import {
   SetupBox,
   SetupDivider,
   SetupStep,
+  SignInHintBody,
+  StopButton,
   ThinkingRow,
   Toolbar,
   ToolbarPill,
@@ -91,6 +111,24 @@ const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {
   overrides: { a: { props: { target: '_blank', rel: 'noopener noreferrer' } } },
 };
 
+// Both toolbar dropdowns (the chat menu and the agent select) open below their trigger with a
+// 10px gap and share the same dark rounded paper + 12px option labels (#1619). `aiMenuSx` takes
+// extra paper styles so the chat menu can widen its paper on top of the shared chrome.
+const AI_MENU_ORIGIN = {
+  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+  transformOrigin: { vertical: 'top', horizontal: 'left' },
+} as const;
+
+const aiMenuSx = (theme: Theme, paper?: Record<string, string | number>) => ({
+  '& .MuiPaper-root': {
+    backgroundColor: 'var(--ai-menu-bg)',
+    borderRadius: '12px',
+    marginTop: theme.spacing(1.25),
+    ...paper,
+  },
+  '& .MuiMenuItem-root': { fontSize: theme.typography.pxToRem(12) },
+});
+
 // Compact "last used" label for a session in the history menu.
 function formatWhen(ts: number): string {
   const min = Math.floor((Date.now() - ts) / 60_000);
@@ -107,6 +145,68 @@ function formatWhen(ts: number): string {
 // re-sending the last prompt on retry.
 function messageText(msg: AiMessage): string {
   return msg.parts.map(p => (p.kind === 'text' ? p.text : '')).join('');
+}
+
+function isAwaitingAnswer(msg: AiMessage | undefined): boolean {
+  return (
+    msg?.parts.some(
+      p => p.kind === 'prompt' && p.prompt.answer === undefined && p.prompt.dismissed !== true,
+    ) ?? false
+  );
+}
+
+// Cap on how many files a single prompt carries (mirrors MAX_ATTACHMENTS in main/modules/ai.ts).
+const MAX_ATTACHMENTS = 8;
+
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'avif'];
+const MODEL_EXTS = ['glb', 'gltf'];
+const AUDIO_EXTS = ['mp3', 'wav', 'ogg', 'm4a', 'flac'];
+
+// Classify a file for its chip icon and codex's image-only -i flag. Prefers the MIME type the OS
+// reported, falling back to the extension (dropped files often arrive with an empty MIME type).
+function classifyAttachment(name: string, mimeType: string): AiAttachmentKind {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (mimeType.startsWith('image/') || IMAGE_EXTS.includes(ext)) return 'image';
+  if (mimeType.startsWith('model/') || MODEL_EXTS.includes(ext)) return 'model';
+  if (mimeType.startsWith('audio/') || AUDIO_EXTS.includes(ext)) return 'audio';
+  return 'file';
+}
+
+// Turn a dropped/picked/pasted File into an attachment. A file on disk (drop or picker) resolves
+// to its real path via preload — Electron hides File.path from the renderer, so main hands the
+// CLI that path directly (no copy, no size limit). A pasted blob has no path, so read its bytes
+// into a data URL and let main temp-file it.
+async function fileToAttachment(file: File): Promise<AiAttachment | null> {
+  const kind = classifyAttachment(file.name, file.type);
+  const mimeType = file.type !== '' ? file.type : undefined;
+  const name = file.name !== '' ? file.name : 'attachment';
+  const diskPath = aiPreload.getPathForFile(file);
+  if (diskPath !== '') return { name, kind, mimeType, path: diskPath };
+  const dataUrl = await new Promise<string | null>(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+  return dataUrl === null ? null : { name, kind, mimeType, dataUrl };
+}
+
+// Whether a drag carries files (not a text/selection drag within the composer).
+function isFileDrag(e: React.DragEvent): boolean {
+  return Array.from(e.dataTransfer.types).includes('Files');
+}
+
+function AttachmentIcon({ kind }: { kind: AiAttachmentKind }) {
+  switch (kind) {
+    case 'image':
+      return <ImageOutlinedIcon />;
+    case 'model':
+      return <ViewInArOutlinedIcon />;
+    case 'audio':
+      return <AudiotrackIcon />;
+    default:
+      return <InsertDriveFileOutlinedIcon />;
+  }
 }
 
 // An interactive `ask_user` prompt rendered inline in the transcript. Single-select answers on
@@ -226,12 +326,17 @@ export interface ChatViewProps {
     available: boolean;
     reason?: string;
     version?: string;
+    managedSignIn: boolean;
+    desktopInstalled?: boolean;
+    needsLogin?: boolean;
   }[];
   provider: AiProvider;
   messages: AiMessage[];
   busy: boolean;
   detecting: boolean;
   selection: { id: number; name: string }[];
+  // Local asset paths mentioned for the next prompt (double-clicked in the Local Assets panel).
+  assetMentions: AiAssetMention[];
   // The user dismissed the billing hint for this scene (#1505) — hide it.
   billingDismissed: boolean;
   // The scene's saved conversations (newest first) and which one is active, for the history menu.
@@ -244,7 +349,7 @@ export interface ChatViewProps {
   // True when rendered as the detached window: fills the window and shows a "dock" affordance
   // instead of "pop out".
   detached?: boolean;
-  onSend: (text: string) => void;
+  onSend: (text: string, attachments?: AiAttachment[]) => void;
   onStop: () => void;
   onNewChat: () => void;
   onProviderChange: (provider: AiProvider) => void;
@@ -259,10 +364,37 @@ export interface ChatViewProps {
   onDeleteSession: (id: string) => void;
   // Deselect all entities (clears the selection chips).
   onClearSelection: () => void;
+  // Drop one mentioned asset from the next prompt.
+  onRemoveAssetMention: (mention: AiAssetMention) => void;
   // Open the detached window (inline only — omitted/no-op in the detached window).
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
   onClose: () => void;
+  // A prompt seeded from the inspector (Trigger Area "describe a reaction"). When its nonce
+  // changes the composer copies `text` into its input and calls onDraftConsumed. Inline only.
+  draftPrompt?: { text: string; nonce: number } | null;
+  onDraftConsumed?: () => void;
+}
+
+function ClearMentionButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Tooltip title={label}>
+      <IconButton
+        size="small"
+        aria-label={label}
+        onClick={onClick}
+        sx={{
+          flexShrink: 0,
+          padding: 0.25,
+          color: 'text.primary',
+          backgroundColor: 'action.hover',
+          '&:hover': { backgroundColor: 'action.selected' },
+        }}
+      >
+        <CloseIcon sx={{ fontSize: 13 }} />
+      </IconButton>
+    </Tooltip>
+  );
 }
 
 export function ChatView(props: ChatViewProps) {
@@ -273,6 +405,7 @@ export function ChatView(props: ChatViewProps) {
     busy,
     detecting,
     selection,
+    assetMentions,
     billingDismissed,
     sessions,
     currentSessionId,
@@ -290,12 +423,33 @@ export function ChatView(props: ChatViewProps) {
     onSwitchSession,
     onDeleteSession,
     onClearSelection,
+    onRemoveAssetMention,
     onPopOut,
     onClose,
+    draftPrompt,
+    onDraftConsumed,
   } = props;
 
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState<AiAttachment[]>([]);
+  const [dragging, setDragging] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Seed the composer from an inspector-supplied prompt (Trigger Area). Replaces the current
+  // draft and focuses so the user can finish typing; consumes it so it fires once per click.
+  useEffect(() => {
+    if (!draftPrompt) return;
+    setInput(draftPrompt.text);
+    onDraftConsumed?.();
+    requestAnimationFrame(() => {
+      const el = composerRef.current;
+      if (el === null) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    });
+  }, [draftPrompt?.nonce]);
   const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
   const [mcpCopied, setMcpCopied] = useState(false);
   // Anchor for the "New Chat" dropdown (new chat + recent sessions), replacing the old
@@ -305,11 +459,28 @@ export function ChatView(props: ChatViewProps) {
   // Saved conversations for the history menu (the current not-yet-used session isn't listed).
   const savedSessions = useMemo(() => sessions.filter(s => s.title !== ''), [sessions]);
 
+  // The active saved conversation, if any — its title labels the dropdown button; otherwise the
+  // button reads "New chat" (#1619).
+  const currentSession = useMemo(
+    () => savedSessions.find(s => s.id === currentSessionId),
+    [savedSessions, currentSessionId],
+  );
+
   const currentProvider = useMemo(
     () => providers.find(p => p.id === provider),
     [providers, provider],
   );
   const available = currentProvider?.available ?? false;
+  const cmds = cliSetup(provider, navigator.userAgent.includes('Windows'));
+  const guideLink = (
+    <GuideLink
+      type="button"
+      onClick={() => void misc.openExternal(cmds.guideUrl)}
+    >
+      {t('editor.ai.setup.install_guide', { provider: currentProvider?.label ?? provider })}
+      <OpenInNewIcon fontSize="inherit" />
+    </GuideLink>
+  );
 
   // In-app sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login (browser OAuth), streaming steps here. On success we re-detect so
@@ -320,11 +491,10 @@ export function ChatView(props: ChatViewProps) {
     cancel: handleCancelSignIn,
   } = useCliSignIn(provider, onRecheck);
 
-  // Keep the newest message in view as text streams in.
   useEffect(() => {
     const el = transcriptRef.current;
     if (el !== null) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, busy]);
 
   // No CLI installed? Reveal the scene's MCP server so a tool the user already has (Claude
   // Desktop, the VS Code extension, …) can connect to this scene instead (#1502). Fetch it
@@ -367,17 +537,35 @@ export function ChatView(props: ChatViewProps) {
 
   const handleCopyMcpConfig = useCallback(() => {
     if (mcpConfigSnippet === null) return;
-    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+    void misc.copyToClipboard(mcpConfigSnippet).then(() => {
       setMcpCopied(true);
       setTimeout(() => setMcpCopied(false), 2000);
     });
   }, [mcpConfigSnippet]);
 
+  // Resolve dropped/picked/pasted files to attachments and append them, keeping within the cap.
+  const addFiles = useCallback(async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    const resolved = (await Promise.all(list.map(fileToAttachment))).filter(
+      (a): a is AiAttachment => a !== null,
+    );
+    if (resolved.length === 0) return;
+    setAttachments(prev => [...prev, ...resolved].slice(0, MAX_ATTACHMENTS));
+  }, []);
+
+  const removeAttachment = useCallback((index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
   const handleSend = useCallback(() => {
-    if (busy || input.trim() === '') return;
-    onSend(input.trim());
+    if (busy) return;
+    const text = input.trim();
+    if (text === '' && attachments.length === 0) return;
+    onSend(text, attachments.length > 0 ? attachments : undefined);
     setInput('');
-  }, [busy, input, onSend]);
+    setAttachments([]);
+  }, [busy, input, attachments, onSend]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -389,51 +577,107 @@ export function ChatView(props: ChatViewProps) {
     [handleSend],
   );
 
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (!isFileDrag(e)) return;
+      // Always swallow the default: an unprevented file drop makes the window try to open the
+      // file (will-navigate then blocks it, but the flash is ugly). Only signal/accept when the
+      // provider is available.
+      e.preventDefault();
+      e.dataTransfer.dropEffect = available ? 'copy' : 'none';
+      if (available) setDragging(true);
+    },
+    [available],
+  );
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Ignore leaves into a child element — only clear when the pointer exits the composer.
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      if (!isFileDrag(e)) return;
+      e.preventDefault();
+      setDragging(false);
+      if (available && e.dataTransfer.files.length > 0) void addFiles(e.dataTransfer.files);
+    },
+    [available, addFiles],
+  );
+
+  // Pasting an image from the clipboard attaches it (it has no disk path, so it rides as a data URL).
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      if (!available || e.clipboardData.files.length === 0) return;
+      e.preventDefault();
+      void addFiles(e.clipboardData.files);
+    },
+    [available, addFiles],
+  );
+
+  const handleFilePick = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files !== null) void addFiles(e.target.files);
+      e.target.value = ''; // reset so the same file can be picked again
+    },
+    [addFiles],
+  );
+
   const handleProviderChange = useCallback(
     (e: SelectChangeEvent) => onProviderChange(e.target.value as AiProvider),
     [onProviderChange],
   );
 
   const renderSetup = () => {
-    const cmds = AI_CLI_COMMANDS[provider];
     return (
       <SetupBox>
         <strong>{t('editor.ai.setup.title')}</strong>
         <span>{t('editor.ai.setup.description')}</span>
-        {/* Primary path (#1531): sign in with the subscription in-app — installs the
-            official CLI on demand and drives its browser OAuth. No terminal needed. */}
-        <Button
-          color="primary"
-          size="small"
-          disabled={signIn.busy}
-          startIcon={signIn.busy ? <CircularProgress size={16} /> : undefined}
-          onClick={handleSignIn}
-        >
-          {t('editor.ai.setup.signin_button', { provider: currentProvider?.label ?? provider })}
-        </Button>
-        {signIn.busy && signIn.message !== '' && <span>{signIn.message}</span>}
-        {signIn.busy && (
-          <Button
-            color="secondary"
-            size="small"
-            onClick={handleCancelSignIn}
-          >
-            {t('editor.ai.setup.signin_cancel')}
-          </Button>
+        {currentProvider?.desktopInstalled === true && (
+          <span>{t('editor.ai.setup.desktop_detected')}</span>
         )}
-        {signIn.url !== null && (
-          <SetupStep>
-            <span>{t('editor.ai.setup.signin_browser')}</span>
-            <CommandLine>{signIn.url}</CommandLine>
-          </SetupStep>
+        {provider === 'gemini' && <span>{t('editor.ai.setup.gemini_plan_note')}</span>}
+        {currentProvider?.managedSignIn === true && (
+          <>
+            <Button
+              color="primary"
+              size="small"
+              disabled={signIn.busy}
+              startIcon={signIn.busy ? <CircularProgress size={16} /> : undefined}
+              onClick={handleSignIn}
+            >
+              {t('editor.ai.setup.signin_button', {
+                provider: currentProvider?.label ?? provider,
+              })}
+            </Button>
+            {signIn.busy && signIn.message !== '' && <span>{signIn.message}</span>}
+            {signIn.busy && (
+              <Button
+                color="secondary"
+                size="small"
+                onClick={handleCancelSignIn}
+              >
+                {t('editor.ai.setup.signin_cancel')}
+              </Button>
+            )}
+            {signIn.url !== null && (
+              <SetupStep>
+                <span>{t('editor.ai.setup.signin_browser')}</span>
+                <CommandLine>{signIn.url}</CommandLine>
+              </SetupStep>
+            )}
+            {signIn.error !== null && <ErrorRow>{signIn.error}</ErrorRow>}
+            <SetupDivider />
+          </>
         )}
-        {signIn.error !== null && <ErrorRow>{signIn.error}</ErrorRow>}
-        <SetupDivider />
-        {/* Fallback: run the CLI yourself in a terminal. */}
-        <span>{t('editor.ai.setup.manual_title')}</span>
+        {currentProvider?.managedSignIn === true && (
+          <span>{t('editor.ai.setup.manual_title')}</span>
+        )}
         <SetupStep>
           <span>{t('editor.ai.setup.install')}</span>
           <CommandLine>{cmds.install}</CommandLine>
+          {guideLink}
         </SetupStep>
         <SetupStep>
           <span>{t('editor.ai.setup.signin')}</span>
@@ -479,7 +723,19 @@ export function ChatView(props: ChatViewProps) {
     const lastId = messages[messages.length - 1]?.id;
     const transcript = messages.map(msg =>
       msg.role === 'user' ? (
-        <UserBubble key={msg.id}>{messageText(msg)}</UserBubble>
+        <UserBubble key={msg.id}>
+          {messageText(msg)}
+          {msg.attachments !== undefined && msg.attachments.length > 0 && (
+            <AttachmentBar sx={{ mt: messageText(msg) !== '' ? 0.75 : 0, mb: 0 }}>
+              {msg.attachments.map((att, i) => (
+                <AttachmentChip key={`${att.name}-${i}`}>
+                  <AttachmentIcon kind={att.kind} />
+                  <AttachmentName title={att.name}>{att.name}</AttachmentName>
+                </AttachmentChip>
+              ))}
+            </AttachmentBar>
+          )}
+        </UserBubble>
       ) : (
         <AssistantBubble key={msg.id}>
           {msg.parts.map((part, i) => {
@@ -520,12 +776,6 @@ export function ChatView(props: ChatViewProps) {
               }
             }
           })}
-          {!msg.done && msg.parts.length === 0 && msg.error === undefined && (
-            <ThinkingRow>
-              <CircularProgress size={12} />
-              {t('editor.ai.thinking')}
-            </ThinkingRow>
-          )}
           {msg.error !== undefined && (
             <ErrorRow>
               {msg.error}
@@ -564,6 +814,12 @@ export function ChatView(props: ChatViewProps) {
       <>
         <IntroMessage>{t('editor.ai.empty')}</IntroMessage>
         {transcript}
+        {busy && !isAwaitingAnswer(messages.at(-1)) && (
+          <ThinkingRow role="status">
+            <CircularProgress size={12} />
+            {t('editor.ai.thinking')}
+          </ThinkingRow>
+        )}
       </>
     );
   };
@@ -606,11 +862,16 @@ export function ChatView(props: ChatViewProps) {
       <>
         <Toolbar>
           <ToolbarPill
+            open={chatMenuAnchor !== null}
             aria-label={t('editor.ai.new_chat')}
+            aria-haspopup="menu"
+            aria-expanded={chatMenuAnchor !== null}
             onClick={e => setChatMenuAnchor(e.currentTarget)}
           >
-            <AddCommentOutlinedIcon fontSize="small" />
-            <ToolbarPillLabel>{t('editor.ai.new_chat')}</ToolbarPillLabel>
+            <AddCommentOutlinedIcon sx={{ fontSize: 16 }} />
+            <ToolbarPillLabel>
+              {currentSession !== undefined ? currentSession.title : t('editor.ai.new_chat')}
+            </ToolbarPillLabel>
             <KeyboardArrowDownIcon
               fontSize="small"
               sx={{ marginLeft: 'auto' }}
@@ -620,16 +881,13 @@ export function ChatView(props: ChatViewProps) {
             anchorEl={chatMenuAnchor}
             open={chatMenuAnchor !== null}
             onClose={() => setChatMenuAnchor(null)}
-            sx={{
-              '& .MuiPaper-root': {
-                backgroundColor: 'var(--ai-menu-bg)',
-                borderRadius: '12px',
-                width: '300px',
-              },
+            {...AI_MENU_ORIGIN}
+            sx={theme => ({
+              ...aiMenuSx(theme, { width: '300px' }),
               '& .MuiMenuItem-root.Mui-selected, & .MuiMenuItem-root.Mui-selected:hover': {
                 backgroundColor: 'var(--ai-session-selected)',
               },
-            }}
+            })}
           >
             <MenuItem
               disabled={busy || messages.length === 0}
@@ -639,7 +897,7 @@ export function ChatView(props: ChatViewProps) {
                 setChatMenuAnchor(null);
               }}
             >
-              <AddCommentOutlinedIcon fontSize="small" />
+              <AddCommentOutlinedIcon sx={{ fontSize: 16 }} />
               {t('editor.ai.new_chat')}
             </MenuItem>
             {savedSessions.length > 0 && [
@@ -656,6 +914,12 @@ export function ChatView(props: ChatViewProps) {
                   setChatMenuAnchor(null);
                 }}
               >
+                <CheckIcon
+                  sx={{
+                    fontSize: 16,
+                    visibility: s.id === currentSessionId ? 'visible' : 'hidden',
+                  }}
+                />
                 <SessionText>
                   <SessionTitle>{s.title}</SessionTitle>
                   <SessionWhen>{formatWhen(s.updatedAt)}</SessionWhen>
@@ -681,18 +945,16 @@ export function ChatView(props: ChatViewProps) {
               disabled={busy}
               IconComponent={KeyboardArrowDownIcon}
               MenuProps={{
-                sx: {
-                  '& .MuiPaper-root': {
-                    backgroundColor: 'var(--ai-menu-bg)',
-                    borderRadius: '12px',
-                  },
+                ...AI_MENU_ORIGIN,
+                sx: theme => ({
+                  ...aiMenuSx(theme),
                   '& .MuiMenuItem-root.Mui-selected': {
                     backgroundColor: 'var(--ai-selected)',
                   },
                   '& .MuiMenuItem-root.Mui-selected:hover': {
                     backgroundColor: 'var(--ai-selected-hover)',
                   },
-                },
+                }),
               }}
               sx={{
                 flex: 1,
@@ -700,7 +962,10 @@ export function ChatView(props: ChatViewProps) {
                 height: theme => theme.spacing(3.75),
                 borderRadius: theme => theme.spacing(1),
                 backgroundColor: 'var(--ai-menu-bg)',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                fontSize: theme => theme.typography.pxToRem(12),
+                // Outline only on hover / while open, transparent at rest — matches the New Chat
+                // pill (#1619).
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
                 '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
                 '& .MuiSelect-select': { display: 'flex', alignItems: 'center' },
@@ -757,6 +1022,34 @@ export function ChatView(props: ChatViewProps) {
             </OutdatedHint>
           )}
 
+        {available && currentProvider?.needsLogin === true && (
+          <OutdatedHint>
+            <WarningCircleIcon size={28} />
+            <SignInHintBody>
+              <strong>
+                {t('editor.ai.setup.needs_login_title', { provider: currentProvider.label })}
+              </strong>
+              {currentProvider.managedSignIn ? (
+                <span>{t('editor.ai.setup.needs_login_managed_help')}</span>
+              ) : (
+                <>
+                  <span>{t('editor.ai.setup.needs_login_help')}</span>
+                  {cmds.relogin.map(step => (
+                    <CommandLine key={step}>{step}</CommandLine>
+                  ))}
+                </>
+              )}
+              <span>
+                {t('editor.ai.setup.api_key_alternative', {
+                  envVar: cmds.apiKeyEnv,
+                  setting: t('modal.app_settings.fields.ai_api_key.label'),
+                })}
+              </span>
+              {guideLink}
+            </SignInHintBody>
+          </OutdatedHint>
+        )}
+
         {available && !billingDismissed && (
           <BillingCard>
             <BillingTitle>{t('editor.ai.billing_title')}</BillingTitle>
@@ -768,10 +1061,14 @@ export function ChatView(props: ChatViewProps) {
               onClick={onDismissBilling}
               sx={{
                 backgroundColor: 'var(--dark-gray)',
+                borderRadius: theme => theme.spacing(1),
+                paddingLeft: theme => theme.spacing(2.5),
+                paddingRight: theme => theme.spacing(2.5),
                 '&:hover': { backgroundColor: 'var(--light-gray)' },
-                // ui2 pins secondary-text buttons to secondary.contrast (grey) in every state at
-                // 0,6,0 specificity; out-specify it (repeated & = 0,7,0) so the label stays white.
-                '&&&&&&&': { color: 'var(--white)' },
+                // ui2 pins secondary-text buttons' color AND textTransform (forced uppercase) at
+                // 0,6,0 specificity; out-specify both here (repeated & = 0,7,0) so the label stays
+                // white and reads as "Got It" rather than "GOT IT".
+                '&&&&&&&': { color: 'var(--white)', textTransform: 'none' },
               }}
             >
               {t('editor.ai.billing_dismiss')}
@@ -787,37 +1084,85 @@ export function ChatView(props: ChatViewProps) {
                 names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
               })}
             </SelectionNames>
-            <Tooltip title={t('editor.ai.selection_clear')}>
-              <IconButton
-                size="small"
-                aria-label={t('editor.ai.selection_clear')}
-                onClick={onClearSelection}
-                sx={{
-                  flexShrink: 0,
-                  padding: 0.25,
-                  color: 'text.primary',
-                  backgroundColor: 'action.hover',
-                  '&:hover': { backgroundColor: 'action.selected' },
-                }}
-              >
-                <CloseIcon sx={{ fontSize: 13 }} />
-              </IconButton>
-            </Tooltip>
+            <ClearMentionButton
+              label={t('editor.ai.selection_clear')}
+              onClick={onClearSelection}
+            />
           </SelectionBar>
         )}
 
-        <Composer>
+        {available &&
+          assetMentions.map(mention => (
+            <SelectionBar key={assetMentionKey(mention)}>
+              <InsertDriveFileOutlinedIcon fontSize="small" />
+              {'path' in mention ? (
+                <SelectionNames title={mention.path}>
+                  {t('editor.ai.asset_mention', {
+                    name: mention.path.split('/').pop() ?? mention.path,
+                  })}
+                </SelectionNames>
+              ) : (
+                <SelectionNames>
+                  {t('editor.ai.asset_mention_built_in', { name: mention.builtInEmote })}
+                </SelectionNames>
+              )}
+              <ClearMentionButton
+                label={t('editor.ai.asset_mention_remove')}
+                onClick={() => onRemoveAssetMention(mention)}
+              />
+            </SelectionBar>
+          ))}
+
+        <Composer
+          dragging={dragging}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {dragging && (
+            <DropHint>
+              <AttachFileIcon fontSize="small" />
+              {t('editor.ai.attach.drop_hint')}
+            </DropHint>
+          )}
+          {attachments.length > 0 && (
+            <AttachmentBar>
+              {attachments.map((att, i) => (
+                <AttachmentChip key={`${att.name}-${i}`}>
+                  <AttachmentIcon kind={att.kind} />
+                  <AttachmentName title={att.name}>{att.name}</AttachmentName>
+                  <Tooltip title={t('editor.ai.attach.remove')}>
+                    <AttachmentRemove
+                      aria-label={t('editor.ai.attach.remove')}
+                      onClick={() => removeAttachment(i)}
+                    >
+                      <CloseIcon />
+                    </AttachmentRemove>
+                  </Tooltip>
+                </AttachmentChip>
+              ))}
+            </AttachmentBar>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={handleFilePick}
+          />
           <TextField
             fullWidth
             multiline
             maxRows={6}
             size="small"
             autoFocus
+            inputRef={composerRef}
             placeholder={t('editor.ai.placeholder')}
             value={input}
             disabled={!available}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             sx={{
               // Rounded field with the send control living inside it; a white focus/hover
               // outline instead of the default primary (ruby) ring (#1576).
@@ -835,22 +1180,34 @@ export function ChatView(props: ChatViewProps) {
               },
             }}
             InputProps={{
+              startAdornment: (
+                <Tooltip title={t('editor.ai.attach.button')}>
+                  <span>
+                    <AttachButton
+                      aria-label={t('editor.ai.attach.button')}
+                      disabled={!available || attachments.length >= MAX_ATTACHMENTS}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <AttachFileIcon fontSize="small" />
+                    </AttachButton>
+                  </span>
+                </Tooltip>
+              ),
               endAdornment: busy ? (
                 <Tooltip title={t('editor.ai.stop')}>
-                  <IconButton
-                    color="error"
+                  <StopButton
                     aria-label={t('editor.ai.stop')}
                     onClick={onStop}
                   >
-                    <StopIcon />
-                  </IconButton>
+                    <StopIcon fontSize="small" />
+                  </StopButton>
                 </Tooltip>
               ) : (
                 <Tooltip title={t('editor.ai.send')}>
                   <span>
                     <SendButton
                       aria-label={t('editor.ai.send')}
-                      disabled={!available || input.trim() === ''}
+                      disabled={!available || (input.trim() === '' && attachments.length === 0)}
                       onClick={handleSend}
                     >
                       <ArrowUpwardIcon fontSize="small" />

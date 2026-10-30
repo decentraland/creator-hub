@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/round_tree_planter/round_tree_planter.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -41,6 +41,10 @@ export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  // Marker for the one-time `previewOptions.debugger` promotion (the toolbar's "Open Debug
+  // Console" checkbox was removed, so this is now the only way an existing install gets it
+  // turned on) — see `promoteDebugConsoleSetting`.
+  debugConsolePromoted?: boolean;
   // Per-project Optimize Assets preference, keyed by project path. `previewOptions.optimizedAssets`
   // is the ephemeral value for the open project; this map is the persisted per-project source of
   // truth so the toggle comes back on for a project that had it on, without carrying across projects.
@@ -52,9 +56,8 @@ export type AppSettings = {
   experimental: boolean;
   // Which engine the inspector uses to render the scene in the editor viewport.
   renderer: RENDERER;
-  // Experimental: the in-editor AI scene assistant chat panel. Opt-in under Experimental
-  // features (like the renderer picker); off by default and reset when experimental is off.
   aiAssistant: boolean;
+  aiAssistantPromoted?: boolean;
   // Opt-in: expose the Creator Hub MCP server's URL + token in settings so an AI agent
   // running OUTSIDE the app (e.g. a studio agent) can register it and drive the open scene.
   // The in-app assistant uses that server regardless; this only reveals its connection
@@ -65,7 +68,9 @@ export type AppSettings = {
   // default — the assistant strips those keys to force subscription billing. Base-URL
   // overrides are always stripped regardless (they could redirect the OAuth token).
   useApiKeyFromEnv: boolean;
-  guiEditor: boolean;
+  // The creator ticked "don't show this again" on the Optimize tools disclosure. Per machine;
+  // the install screen still says when tools are being downloaded.
+  optimizerConsentAcknowledged?: boolean;
 };
 
 export interface ReleaseNotes {

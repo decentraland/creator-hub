@@ -7,11 +7,16 @@ export class Sign {
   private lastState: string = '';
   private openEntity: Entity | null = null;
   private closedEntity: Entity | null = null;
+  // Reactions subscribe here (via getAllScriptInstances + onEvent); applyState() fans out.
+  private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
    * A sign that swaps between showing its Open and Closed sides. Flip it from other
    * smart items, for example a button or a lever. Its state is shared with other
    * players, so everyone sees the same side.
+   *
+   * @event open
+   * @event close
    *
    * @param sound - Name of an audio file inside this smart item's folder, played whenever the sign flips. Leave empty for no sound.
    * @param onOpen - Action triggered every time the sign flips to Open.
@@ -99,9 +104,16 @@ export class Sign {
     }
     if (isOpen) {
       if (this.onOpen) this.onOpen();
+      for (const fn of this.subs.open ?? []) fn();
     } else {
       if (this.onClose) this.onClose();
+      for (const fn of this.subs.close ?? []) fn();
     }
+  }
+
+  /** Subscribe a reaction to this item's events ('open' / 'close'). */
+  onEvent(name: string, fn: (arg?: Entity) => void) {
+    (this.subs[name] ??= []).push(fn);
   }
 
   private setState(next: string) {

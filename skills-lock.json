@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "figma-create-design-system-rules": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/.curated/figma-create-design-system-rules/SKILL.md",
+      "computedHash": "b53e004819bb2067c46f759a6fdba1133c645d7115c371de0ebf048477f7266c"
+    },
+    "figma-implement-design": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/.curated/figma-implement-design/SKILL.md",
+      "computedHash": "78b017706f6e3732a1f9e87968cdc8ce7f31b0a59741f7d0f7cf9a531fe47e7a"
+    }
+  }
+}

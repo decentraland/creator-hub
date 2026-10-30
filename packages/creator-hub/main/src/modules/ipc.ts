@@ -4,11 +4,13 @@ import * as electron from './electron';
 import * as updater from './updater';
 import * as inspector from './inspector';
 import * as bevyRealm from './bevy-realm';
+import * as projectWatcher from './project-watcher';
 import * as cli from './cli';
 import * as bin from './bin';
 import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
+import * as skills from './skills';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as oxc from './oxc';
@@ -16,6 +18,7 @@ import * as metrics from './metrics';
 import * as ai from './ai';
 import * as aiCli from './ai-cli';
 import * as aiWindow from './ai-window';
+import * as consoleWindow from './console-window';
 import {
   captureViewport,
   ensureSceneMcpServer,
@@ -24,6 +27,7 @@ import {
   resolveUserPrompt,
   revertTurn,
 } from './scene-mcp';
+import * as optimizer from './optimizer';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -57,12 +61,20 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
 
   // inspector
   handle('inspector.start', () => inspector.start());
-  handle('inspector.attachSceneDebugger', (_event, path) => inspector.attachSceneDebugger(path));
-  handle('inspector.detachSceneDebugger', (_event, path) => inspector.detachSceneDebugger(path));
+  handle('inspector.attachSceneDebugger', (event, path) =>
+    inspector.attachSceneDebugger(event.sender, path),
+  );
+  handle('inspector.detachSceneDebugger', (event, path) =>
+    inspector.detachSceneDebugger(event.sender, path),
+  );
 
   // bevy realm (headless sdk-commands server feeding the embedded Bevy editor engine)
   handle('bevyRealm.start', (_event, path) => bevyRealm.start(path));
   handle('bevyRealm.kill', (_event, path) => bevyRealm.kill(path));
+
+  // project asset watcher (auto-refresh the inspector catalog on out-of-editor file drops)
+  handle('projectWatcher.start', async (_event, path) => projectWatcher.startProjectWatcher(path));
+  handle('projectWatcher.stop', (_event, path) => projectWatcher.stopProjectWatcher(path));
 
   // cli
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
@@ -124,6 +136,8 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
+  handle('skills.getProjectStatus', (_event, path) => skills.getProjectSkillsStatus(path));
+  handle('skills.updateProject', (_event, path) => skills.updateProjectSkills(path));
 
   handle('oxc.parse', (_event, filename, source) => oxc.parse(filename, source));
 
@@ -144,7 +158,9 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.isBusy', async () => ai.aiBusy());
   // AI sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login; steps stream over AI_CLI_LOGIN_EVENTS.
-  handle('ai.signInCli', (_event, provider) => aiCli.signInCli(provider));
+  handle('ai.signInCli', (_event, provider) =>
+    aiCli.signInCli(provider).then(() => ai.clearNeedsLogin(provider)),
+  );
   handle('ai.cancelSignInCli', () => aiCli.cancelSignInCli());
   handle('ai.signOutCli', (_event, provider) => aiCli.signOutCli(provider));
   handle('ai.getCliState', async () => aiCli.getCliState());
@@ -166,4 +182,17 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.isWindowOpen', async () => aiWindow.isAiWindowOpen());
   handle('ai.mirrorPush', (_event, state) => aiWindow.pushMirrorState(state));
   handle('ai.remoteCommand', (_event, command) => aiWindow.forwardRemoteCommand(command));
+  // Detached console window (#1272): lifecycle + the preview-running relay to it.
+  handle('console.openWindow', (_event, path, locale) =>
+    consoleWindow.openConsoleWindow(path, locale),
+  );
+  handle('console.closeWindow', async () => consoleWindow.closeConsoleWindow());
+  handle('console.isWindowOpen', async () => consoleWindow.isConsoleWindowOpen());
+  handle('console.mirrorPush', (_event, state) => consoleWindow.pushMirrorState(state));
+  // optimizer (model/texture optimization)
+  handle('optimizer.scan', (_event, path) => optimizer.scan(path));
+  handle('optimizer.run', (_event, path, options) => optimizer.run(path, options));
+  handle('optimizer.revert', (_event, path) => optimizer.revert(path));
+  handle('optimizer.tools', () => optimizer.tools());
+  handle('optimizer.installTools', (_event, path) => optimizer.installTools(path));
 }

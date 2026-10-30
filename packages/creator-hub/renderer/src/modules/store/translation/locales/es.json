@@ -43,6 +43,7 @@
         "title": "Error al cargar",
         "timeout": "La escena está tardando demasiado en cargar. Puede tener un error en su código.",
         "back": "Volver a escenas",
+        "retry": "Reintentar",
         "outdated_deps": "Las dependencias de esta escena están desactualizadas y no son compatibles con el renderizador Bevy. Actualízalas para continuar.",
         "update_deps": "Actualizar dependencias"
       }
@@ -50,17 +51,17 @@
     "header": {
       "actions": {
         "code": "Código",
-        "preview": "Previsualizar",
+        "optimize": "Optimizar",
+        "play": "Jugar",
         "optimizing": "Optimizando",
         "cancel_optimizing": "Cancelar la optimización",
         "publish": "Publicar",
         "refresh": "Recargar escena desde disco",
         "preview_options": {
-          "title": "Opciones de Previsualización",
+          "title": "Opciones de Juego",
           "client": {
-            "label": "Previsualizar con",
             "desktop": "Cliente de Escritorio",
-            "bevy_web": "Bevy (Web)"
+            "bevy_web": "Web (Bevy)"
           },
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
           "skip_auth_screen": "Omitir la pantalla de autenticación",
@@ -69,11 +70,12 @@
           "landscape_terrain_disabled_by_scene": "El terreno panorámico está oculto por la configuración de esta escena",
           "multi_instance": "Vista previa multi-instancia",
           "mcp": "Habilitar servidor MCP",
-          "optimized_assets": "Optimizar assets",
-          "optimized_assets_tooltip": "Previsualiza la escena con assets optimizados, igual que se ve en producción",
+          "optimized_assets": "Comprimir Assets",
+          "optimized_assets_tooltip": "Previsualiza la escena con los assets comprimidos igual que en producción",
           "mobile_preview": "Mostrar código QR para móvil"
         },
         "publish_options": {
+          "title": "Opciones de Publicación",
           "publish_scene": "Publicar Escena",
           "republish_to_world": "Republicar en {name}",
           "republish_to_land": "Republicar en {coords}"
@@ -85,6 +87,11 @@
           "failed": "Falló"
         }
       }
+    },
+    "console": {
+      "clear": "Limpiar consola",
+      "dock": "Traerla de vuelta al editor",
+      "empty": "Ejecuta una escena para ver la salida de depuración"
     },
     "ai": {
       "title": "Asistente IA",
@@ -105,6 +112,11 @@
       "billing": "El Asistente IA consume tokens de tu cuenta conectada. Vigila el uso de tu cuenta.",
       "billing_dismiss": "Entendido",
       "screenshot_alt": "Captura de pantalla del asistente",
+      "attach": {
+        "button": "Adjuntar archivos",
+        "remove": "Quitar",
+        "drop_hint": "Suelta archivos para adjuntarlos"
+      },
       "history": {
         "title": "Historial de chats",
         "empty": "Aún no hay chats guardados.",
@@ -118,6 +130,9 @@
       "revert": "Deshacer los cambios de la IA",
       "selection": "Selección: {names}",
       "selection_clear": "Limpiar",
+      "asset_mention": "Recurso: {name}",
+      "asset_mention_built_in": "Animación incluida: {name}",
+      "asset_mention_remove": "Quitar",
       "provider": "Asistente",
       "provider_signin": "Iniciar sesión",
       "prompt": {
@@ -141,7 +156,15 @@
         "alt_description": "¿Ya iniciaste sesión en Claude Desktop, la extensión de VS Code u otra herramienta compatible con MCP? Apúntala a esta escena, sin necesidad de CLI. Agrega esto a su configuración MCP:",
         "alt_copy": "Copiar configuración",
         "alt_copied": "Copiado",
-        "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia."
+        "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia.",
+        "install_guide": "Si no funciona, sigue la guía de instalación de {provider}",
+        "desktop_detected": "Claude Desktop está instalado, pero el asistente necesita Claude Code, la herramienta de terminal de Anthropic. El inicio de sesión de Desktop no se comparte con ella, así que instala Claude Code e inicia sesión una vez:",
+        "gemini_plan_note": "Gemini CLI ahora solo funciona con una clave de API de Gemini de pago o una licencia de Gemini Code Assist Standard/Enterprise.",
+        "needs_login_status": "Inicio de sesión necesario",
+        "needs_login_title": "{provider} te pidió que inicies sesión",
+        "needs_login_help": "Puede que su sesión guardada haya caducado, aunque aparezca como conectado. Cierra sesión y vuelve a iniciarla: ejecuta esto en una terminal, un comando a la vez, y termina en tu navegador. Luego vuelve a enviar tu mensaje:",
+        "needs_login_managed_help": "Puede que su inicio de sesión guardado haya caducado, aunque apareciera como conectado. En Configuración → IA, haz clic en Cerrar sesión y luego en Iniciar sesión, y vuelve a enviar tu mensaje.",
+        "api_key_alternative": "O usa una clave de API: define {envVar} y activa \"{setting}\" en Configuración → IA."
       }
     }
   },
@@ -172,6 +195,102 @@
     "badges": {
       "published": "Publicado"
     }
+  },
+  "optimize": {
+    "title": "Optimizar modelos",
+    "subtitle": "Reduce el tamaño de los GLB de tu escena comprimiendo y deduplicando texturas y limpiando las mallas. Se guarda una copia de los originales para poder revertir.",
+    "docs_link": "Cómo funciona cada opción",
+    "consent": {
+      "blurb": "La optimización se ejecuta por completo en tu equipo con herramientas de código abierto. Se descargan de npm la primera vez que continúas, fijadas a versiones concretas, y se guardan en la carpeta de datos de la app. Tus modelos nunca salen de tu computadora.",
+      "show_tools": "Ver las {count} herramientas de código abierto",
+      "hide_tools": "Ocultar la lista de herramientas",
+      "dont_show_again": "No volver a mostrar",
+      "npm": "npm",
+      "source": "Código",
+      "note": "Tus modelos originales se respaldan y pueden revertirse en cualquier momento.",
+      "download": "Se descargarán unos {size} MB ahora.",
+      "continue": "Continuar",
+      "cancel": "Cancelar",
+      "purpose": {
+        "sharp": "Redimensiona, recodifica y comprime texturas sin pérdida.",
+        "gltf": "Lee y escribe GLBs; ejecuta la limpieza de mallas.",
+        "meshopt": "Reordenado de mallas y el códec Meshopt."
+      }
+    },
+    "tools": {
+      "installing_blurb": "Preparando las herramientas de optimización. Esto ocurre una sola vez.",
+      "installing": "Descargando herramientas de optimización…",
+      "failed": "No se pudieron descargar las herramientas de optimización: {message}",
+      "retry": "Reintentar"
+    },
+    "select_project": "Selecciona una escena",
+    "no_projects": "No se encontraron escenas. Crea o importa una escena primero.",
+    "scan": {
+      "glbs": "{count} modelos",
+      "size": "Tamaño total: {size} (modelos {models} + texturas {textures})",
+      "textures": "{embedded} texturas embebidas · {external} texturas externas",
+      "last_optimized": "Optimizado el {date} · puedes volver a los originales",
+      "empty": "Esta escena no tiene modelos GLB para optimizar."
+    },
+    "options": {
+      "title": "Optimizaciones",
+      "mesh": {
+        "title": "Mallas",
+        "enabled": "Optimizar mallas (soldar, reordenar, limpiar)",
+        "enabled_tip": "Limpieza sin pérdida: fusiona vértices duplicados (weld), reordena índices para mejor uso de la caché GPU, elimina datos sin usar o duplicados y convierte texturas de color plano en colores de material. El resultado carga en todos los runtimes."
+      },
+      "textures": {
+        "title": "Texturas",
+        "compress": "Comprimir y redimensionar texturas",
+        "compress_tip": "Redimensiona cada textura a su tamaño máximo por tipo y la vuelve a codificar. PNG se recomprime sin pérdida; JPEG/WebP usan el control de Calidad.",
+        "dedup": "Eliminar texturas duplicadas",
+        "dedup_tip": "Encuentra texturas con píxeles idénticos (SHA-256) y hace que todos los modelos apunten a una única copia compartida. El mayor ahorro cuando la misma textura se reutiliza en muchos modelos.",
+        "externalize": "Extraer texturas incrustadas a archivos",
+        "externalize_tip": "Saca las texturas del GLB a archivos compartidos en assets/optimized-textures/, para que una textura compartida se descargue una sola vez. Necesario para la deduplicación entre modelos; estos archivos se despliegan con tu escena.",
+        "format": "Formato",
+        "format_tip": "Formato de imagen de salida. PNG es sin pérdida (recomendado). JPEG y WebP son más pequeños pero con pérdida y usan el control de Calidad.",
+        "quality": "Calidad",
+        "quality_tip": "Calidad de codificación para JPEG/WebP (1–100). Más alto conserva más detalle con mayor tamaño. Se ignora para PNG.",
+        "denoise": "Reducción de ruido",
+        "sizes": "Tamaños máximos de textura (px)",
+        "sizes_tip": "Altura máxima en píxeles por tipo de textura; lo más grande se reduce proporcionalmente. El color base y los normal maps suelen necesitar más resolución que ORM o emisivo.",
+        "baseColor": "Color base",
+        "normal": "Normal",
+        "orm": "ORM",
+        "emissive": "Emisivo",
+        "other": "Otras"
+      }
+    },
+    "run": "Optimizar",
+    "run_again": "Optimizar de nuevo",
+    "done": "Listo",
+    "running": "Optimizando…",
+    "revert": "Revertir a originales",
+    "reverting": "Restaurando originales…",
+    "revert_error": "No se pudieron restaurar los originales: {message}",
+    "result": {
+      "title": "Listo",
+      "saved": "Ahorrado {saved} ({percent}%)",
+      "before_after": "{before} → {after} (modelos + texturas)",
+      "glbs_changed": "{count} modelos actualizados",
+      "textures_extracted": "{count} texturas extraídas",
+      "textures_deduped": "{count} duplicados eliminados",
+      "textures_removed": "{count} texturas reemplazadas eliminadas ({bytes})",
+      "unchanged_skipped": "{unchanged} sin cambios · {skipped} omitidos",
+      "failed": "{count} modelos fallaron — mira el detalle por modelo",
+      "ignored_files": "{count} texturas extraídas coinciden con un patrón de tu .dclignore y NO se publicarán — edita el patrón o el modelo cargará sin ellas: {files}",
+      "up_to_date": "{count} ya optimizados, sin cambios",
+      "show_details": "Ver detalles por modelo",
+      "hide_details": "Ocultar detalles por modelo",
+      "status": {
+        "optimized": "optimizado",
+        "unchanged": "sin cambios",
+        "skipped": "omitido",
+        "up_to_date": "ya optimizado",
+        "failed": "falló"
+      }
+    },
+    "error": "La optimización falló: {message}"
   },
   "navbar": {
     "menu": {
@@ -339,16 +458,23 @@
         },
         "deploying": {
           "publish": "Publicando...",
-          "finishing": "Terminando...",
           "failed": "Error al publicar",
           "try_again": "Por favor inténtalo de nuevo",
           "step": {
             "uploading": "Subiendo",
             "converting": "Convirtiendo",
-            "optimizing": "Optimizando",
             "unpublishing": "Despublicando",
             "loading": "En proceso...",
             "failed": "Error"
+          },
+          "progress": {
+            "checking": "Preparando la subida...",
+            "uploading": "Subiendo {sent} de {total}",
+            "processing": "Publicando...",
+            "batches": "Lote {completed} de {total} subido",
+            "cancel_too_early": "No se puede cancelar mientras se eliminan las escenas anteriores. Inténtalo de nuevo en un momento.",
+            "cancel_unauthorized": "No se pudo cancelar la publicación desde aquí. Sal de Creator Hub para detenerla.",
+            "cancel_unsupported": "Actualiza el SDK de esta escena para cancelar publicaciones desde aquí."
           },
           "errors": {
             "details": "Detalles",
@@ -364,12 +490,16 @@
             "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
             "max_scene_size_exceeded": "Tu escena excede el tamaño máximo permitido.\nReducí la cantidad o el tamaño de los assets e intentá de nuevo.",
+            "deploy_state_lost": "Se perdió el seguimiento de la publicación, que aún podría completarse.\nRevisa la escena en la sección Gestionar antes de volver a publicar.",
+            "deploy_request_timeout": "La publicación no terminó en 60 minutos y aún podría estar en curso.\nRevisa la escena en la sección Gestionar antes de volver a publicar.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
           },
           "actions": {
             "report_issue": "Informar un problema",
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "cancel": "Cancelar",
+            "cancelling": "Cancelando..."
           },
           "redirect": {
             "sign_in": "Serás redirigido al inicio de sesión en {seconds} segundos..."
@@ -380,8 +510,7 @@
           "url": "La URL para acceder a tu {target} es:",
           "world": "Mundo",
           "land": "Tierra",
-          "jump_in": "Entrar",
-          "in_progress": "Ahora puedes acceder a tu escena incluso mientras aún se está procesando."
+          "jump_in": "Entrar"
         }
       }
     },
@@ -403,6 +532,9 @@
         },
         "editor": {
           "label": "EDITOR"
+        },
+        "ai": {
+          "label": "IA"
         },
         "experimental": {
           "label": "EXPERIMENTAL"
@@ -459,7 +591,7 @@
         },
         "ai_assistant": {
           "label": "Activar el Asistente IA",
-          "help": "Ejecuta tu CLI de Claude o Codex instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
+          "help": "Ejecuta tu CLI de Claude, Codex, Cursor o Gemini instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
         },
         "mcp_server": {
           "label": "Exponer el servidor MCP del asistente de IA",
@@ -470,11 +602,7 @@
         },
         "ai_api_key": {
           "label": "Facturar a una clave de API en su lugar",
-          "help": "Usa ANTHROPIC_API_KEY / OPENAI_API_KEY de tu entorno. Desactivado por defecto."
-        },
-        "gui_editor": {
-          "toggle": "Activar el editor de UI",
-          "hint": "Habilitar esta función te permitirá combinar objetos de interfaz, propiedades y scripting para crear UI en el editor."
+          "help": "Usa la API key de tu proveedor desde tu entorno (ANTHROPIC_API_KEY, OPENAI_API_KEY, CURSOR_API_KEY o GEMINI_API_KEY). Desactivado por defecto."
         },
         "ai_connect": {
           "title": "Conectar",
@@ -792,6 +920,9 @@
       "delete_scene": "Borrando escena...",
       "delete_scene_failed": "Error al borrar escena",
       "dependencies_updated": "Las dependencias de la escena fueron actualizadas",
+      "updating_sdk_skills": "Instalando las últimas habilidades de IA...",
+      "sdk_skills_updated": "Las habilidades de IA están al día",
+      "sdk_skills_update_failed": "No se pudieron instalar las habilidades de IA",
       "installing_dependencies": "Instalando dependencias...",
       "installing_dependencies_failed": "Error al instalar dependencias",
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
@@ -827,6 +958,16 @@
       "title": "Se detectó una nueva versión de dependencias",
       "actions": {
         "update": "Actualizar"
+      }
+    },
+    "sdk_skills": {
+      "outdated": {
+        "title": "Hay una actualización de las habilidades de IA para esta escena",
+        "action": "Actualizar"
+      },
+      "missing": {
+        "title": "Esta escena no tiene las habilidades de IA de Decentraland",
+        "action": "Instalar"
       }
     },
     "deploy": {
@@ -869,7 +1010,8 @@
       "init_failed": "No se pudo inicializar el inicio de sesión. Por favor, verifica tu conexión.",
       "identity_not_found": "No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.",
       "identity_expired": "Tu solicitud de inicio de sesión expiró. Por favor, inténtalo de nuevo.",
-      "network_mismatch": "No se pudo completar el inicio de sesión. Desactiva cualquier VPN o relay privado del navegador e inténtalo de nuevo."
+      "network_mismatch": "No se pudo completar el inicio de sesión. Desactiva cualquier VPN o relay privado del navegador e inténtalo de nuevo.",
+      "verifier_mismatch": "No se pudo completar el inicio de sesión: se inició desde otra sesión. Por favor, inténtalo de nuevo."
     }
   },
   "more": {
@@ -906,7 +1048,6 @@
     "title": "Elija una plantilla",
     "results": "{count} {count, plural, one {plantilla} other {plantillas}}",
     "actions": {
-      "preview": "Previsualizar Plantilla",
       "code": "Ver Código"
     },
     "new_scene": {

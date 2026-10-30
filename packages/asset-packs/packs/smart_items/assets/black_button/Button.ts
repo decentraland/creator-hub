@@ -3,10 +3,15 @@ import { Animator, AudioSource, pointerEventsSystem } from '@dcl/sdk/ecs';
 import type { ActionCallback } from '~sdk/script-utils';
 
 export class Button {
+  // Reactions subscribe here (via getAllScriptInstances + onEvent) instead of touching the
+  // pointer system, which keeps only one callback per entity. press() fans out to them.
+  private subs: Record<string, Array<(arg?: Entity) => void>> = {};
+
   /**
    * A button that players can press to trigger an action on any smart item.
    * Pressing it plays the button's press animation and sound.
    *
+   * @event click
    * @param hoverText - Text shown when the player points at the button.
    * @param onClick - Action triggered every time the button is pressed.
    * @param inputButton - Input that presses the button: 0 = mouse click, 1 = E key, 2 = F key.
@@ -66,5 +71,11 @@ export class Button {
       AudioSource.playSound(this.entity, `${this.src}/${this.sound}`);
     }
     if (this.onClick) this.onClick();
+    for (const fn of this.subs.click ?? []) fn();
+  }
+
+  /** Subscribe a reaction to this item's events (currently 'click'). */
+  onEvent(name: string, fn: (arg?: Entity) => void) {
+    (this.subs[name] ??= []).push(fn);
   }
 }

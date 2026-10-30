@@ -12,8 +12,13 @@ import {
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
 import { getActionEvents } from '@dcl/asset-packs/dist/events';
 
+/**
+ * @event unlock
+ */
 export class PadlockScript {
   private wheels: Entity[] = [];
+  // Reactions subscribe here (via getAllScriptInstances + onEvent); onSolve() fans out to them.
+  private subs: Record<string, Array<(arg?: Entity) => void>> = {};
   private digits: number[] = [0, 0, 0, 0];
   private buttonPressSound: Entity;
   private resolveSound: Entity;
@@ -156,6 +161,13 @@ export class PadlockScript {
     // Play resolve sound
     const audioSource = AudioSource.getMutable(this.resolveSound);
     audioSource.playing = true;
+
+    for (const fn of this.subs.unlock ?? []) fn();
+  }
+
+  /** Subscribe a reaction to this item's events (currently 'unlock'). */
+  onEvent(name: string, fn: (arg?: Entity) => void) {
+    (this.subs[name] ??= []).push(fn);
   }
 
   /**

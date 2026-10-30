@@ -4,6 +4,15 @@ export interface IAsset {
   src: string;
   type: 'unknown' | 'gltf' | 'composite' | 'audio' | 'video' | 'image' | 'script';
   id?: string;
+  // Set on the read-only "Built-in animations" entries, which are listed from the catalog and
+  // have no file in the scene.
+  builtInEmote?: BuiltInEmoteAsset;
+}
+
+export interface BuiltInEmoteAsset {
+  name: string;
+  thumbnailUrl: string;
+  previewUrl?: string;
 }
 
 export interface FolderCellProp {

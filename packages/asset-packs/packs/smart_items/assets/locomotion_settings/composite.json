@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/shoe-cube.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Locomotion Settings"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/locomotion-settings.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"walkSpeed\":{\"type\":\"slider\",\"value\":1.5,\"min\":0,\"max\":10,\"step\":0.1,\"optional\":true,\"tooltip\":\"Speed when walking, in meters per second (default: 1.5)\"},\"jogSpeed\":{\"type\":\"slider\",\"value\":8,\"min\":0,\"max\":30,\"step\":0.5,\"optional\":true,\"tooltip\":\"Speed when jogging (the standard way to move), in meters per second (default: 8)\"},\"runSpeed\":{\"type\":\"slider\",\"value\":10,\"min\":0,\"max\":50,\"step\":0.5,\"optional\":true,\"tooltip\":\"Speed when running, in meters per second (default: 10)\"},\"jumpHeight\":{\"type\":\"slider\",\"value\":1,\"min\":0,\"max\":10,\"step\":0.1,\"optional\":true,\"tooltip\":\"Height of a regular jump, in meters (default: 1)\"},\"runJumpHeight\":{\"type\":\"slider\",\"value\":1.5,\"min\":0,\"max\":10,\"step\":0.1,\"optional\":true,\"tooltip\":\"Height of a jump while running, in meters (default: 1.5)\"},\"doubleJumpHeight\":{\"type\":\"slider\",\"value\":2,\"min\":0,\"max\":15,\"step\":0.1,\"optional\":true,\"tooltip\":\"Height of the second jump when double-jumping, in meters (default: 2)\"},\"glidingSpeed\":{\"type\":\"slider\",\"value\":6,\"min\":0,\"max\":30,\"step\":0.5,\"optional\":true,\"tooltip\":\"Horizontal speed while gliding, in meters per second (default: 6)\"},\"glidingFallingSpeed\":{\"type\":\"slider\",\"value\":1,\"min\":0,\"max\":10,\"step\":0.1,\"optional\":true,\"tooltip\":\"Maximum falling speed while gliding, in meters per second (default: 1)\"},\"hardLandingCooldown\":{\"type\":\"slider\",\"value\":0.75,\"min\":0,\"max\":5,\"step\":0.05,\"optional\":true,\"tooltip\":\"Time the player can't move after a hard landing, in seconds (default: 0.75)\"}}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

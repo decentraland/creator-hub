@@ -1,0 +1,19 @@
+{
+  "id": "f0fdd9ac-5451-4d84-9964-ea437b11b211",
+  "name": "Locomotion Settings",
+  "category": "utils",
+  "tags": [
+    "speed",
+    "jump",
+    "walk",
+    "jog",
+    "run",
+    "glide",
+    "locomotion",
+    "movement",
+    "player",
+    "avatar"
+  ],
+  "description": "A tool to change how fast the player moves and how high they jump.",
+  "author": "Decentraland Foundation"
+}

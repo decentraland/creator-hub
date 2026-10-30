@@ -118,7 +118,15 @@ jobs:
 
           if [[ "${{ github.ref }}" == "refs/heads/main" || ${{ inputs.asset_packs_changed }} == "false" ]]; then
             echo "Installing latest asset-packs version: ${{ inputs.asset_packs_version }}"
-            npm install @dcl/asset-packs@${{ inputs.asset_packs_version }}
+            # The asset-packs job published this version seconds ago and npm serves a CDN-cached
+            # packument for 300s, so resolution needs a forced revalidate and a wait longer than that.
+            for ((i = 1; i <= 10; i++)); do
+              npm install --prefer-online "@dcl/asset-packs@${{ inputs.asset_packs_version }}" && exit 0
+              echo "@dcl/asset-packs@${{ inputs.asset_packs_version }} not resolvable yet (attempt $i); retrying in 30s"
+              sleep 30
+            done
+            npm view @dcl/asset-packs versions --json | tail -5 || true
+            exit 1
           else
             echo "Installing asset-packs version from S3 bucket: ${{ inputs.asset_packs_s3_bucket_key }}"
             npm install ${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ inputs.asset_packs_s3_bucket_key }}

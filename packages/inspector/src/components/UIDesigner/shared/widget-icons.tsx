@@ -15,6 +15,21 @@ const base = {
 /** The shared rounded-square frame the field-like widgets are built on. */
 const SQUIRCLE = { x: 4, y: 4, width: 16, height: 16, rx: 5 } as const;
 
+/** MobileHUD: a HUD frame with a centred plus, from the HUD Revamp Figma. */
+export const MobileHudIcon: React.FC = () => (
+  <svg
+    width="1em"
+    height="1em"
+    viewBox="0 0 16 16"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M15.2 4.42308C15.2 3.78583 14.6627 3.26923 14 3.26923H2C1.33726 3.26923 0.8 3.78583 0.8 4.42308V11.5769C0.8 12.2142 1.33726 12.7308 2 12.7308H14C14.6627 12.7308 15.2 12.2142 15.2 11.5769V4.42308ZM16 11.5769C16 12.639 15.1046 13.5 14 13.5H2C0.895431 13.5 0 12.639 0 11.5769V4.42308C1.03083e-07 3.36099 0.895431 2.5 2 2.5H14C15.1046 2.5 16 3.36099 16 4.42308V11.5769Z" />
+    <path d="M9.5 8.21429H8.21429V9.5H7.78571V8.21429H6.5V7.78571H7.78571V6.5H8.21429V7.78571H9.5V8.21429Z" />
+    <path d="M13 5V11H3V5H13ZM3.2002 10.7998H12.7998V5.2002H3.2002V10.7998Z" />
+  </svg>
+);
+
 /** A GUI root: a uniform 2×2 grid of panels. */
 export const GuiGridIcon: React.FC = () => (
   <svg {...base}>

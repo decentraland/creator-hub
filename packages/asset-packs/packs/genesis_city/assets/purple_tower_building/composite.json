@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/purple_tower_building/purple_tower_building.glb"
+          }
+        }
+      }
+    }
+  ]
+}

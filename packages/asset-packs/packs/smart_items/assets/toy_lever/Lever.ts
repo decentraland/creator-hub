@@ -5,11 +5,16 @@ import type { ActionCallback } from '~sdk/script-utils';
 
 export class Lever {
   private lastState: string = '';
+  // Reactions subscribe here (via getAllScriptInstances + onEvent); update() fans out to them.
+  private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
    * A lever that can be flipped by clicking it or by other smart items, to activate
    * or deactivate anything in the scene. Its state is shared with other players, so
    * everyone sees the same position.
+   *
+   * @event activate
+   * @event deactivate
    *
    * @param activateAnimation - Name of the animation clip in the lever's model that plays when it is activated.
    * @param deactivateAnimation - Name of the animation clip in the lever's model that plays when it is deactivated.
@@ -84,9 +89,16 @@ export class Lever {
     }
     if (isActivated) {
       if (this.onActivate) this.onActivate();
+      for (const fn of this.subs.activate ?? []) fn();
     } else {
       if (this.onDeactivate) this.onDeactivate();
+      for (const fn of this.subs.deactivate ?? []) fn();
     }
+  }
+
+  /** Subscribe a reaction to this item's events ('activate' / 'deactivate'). */
+  onEvent(name: string, fn: (arg?: Entity) => void) {
+    (this.subs[name] ??= []).push(fn);
   }
 
   /**

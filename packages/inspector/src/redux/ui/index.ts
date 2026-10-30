@@ -13,10 +13,12 @@ export interface UiState {
   selectedSceneInspectorTab: SceneInspectorTab;
   hiddenSceneInspectorTabs: Partial<Record<SceneInspectorTab, boolean>>;
   debugConsoleEnabled: boolean;
+  debugConsoleDetached: boolean;
   mobileDebugSessionEnabled: boolean;
   uiDesignerTool: UIDesignerTool;
   uiDesignerSnapEnabled: boolean;
   sceneRunIntent: boolean;
+  assetExplorerActive: boolean;
 }
 
 export const initialState: UiState = {
@@ -28,10 +30,12 @@ export const initialState: UiState = {
   selectedSceneInspectorTab: SceneInspectorTab.DETAILS,
   hiddenSceneInspectorTabs: {},
   debugConsoleEnabled: false,
+  debugConsoleDetached: false,
   mobileDebugSessionEnabled: false,
   uiDesignerTool: UIDesignerTool.FREE,
   uiDesignerSnapEnabled: true,
   sceneRunIntent: false,
+  assetExplorerActive: false,
 };
 
 export const appState = createSlice({
@@ -75,6 +79,9 @@ export const appState = createSlice({
     setDebugConsoleEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
       state.debugConsoleEnabled = payload.enabled;
     },
+    setDebugConsoleDetached: (state, { payload }: PayloadAction<{ detached: boolean }>) => {
+      state.debugConsoleDetached = payload.detached;
+    },
     setMobileDebugSessionEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
       if (payload.enabled) {
         state.mobileDebugSessionEnabled = true;
@@ -89,6 +96,9 @@ export const appState = createSlice({
     setSceneRunIntent: (state, { payload }: PayloadAction<{ running: boolean }>) => {
       state.sceneRunIntent = payload.running;
     },
+    setAssetExplorerActive: (state, { payload }: PayloadAction<{ active: boolean }>) => {
+      state.assetExplorerActive = payload.active;
+    },
   },
 });
 
@@ -102,10 +112,12 @@ export const {
   selectSceneInspectorTab,
   toggleSceneInspectorTab,
   setDebugConsoleEnabled,
+  setDebugConsoleDetached,
   setMobileDebugSessionEnabled,
   setUIDesignerTool,
   setUIDesignerSnap,
   setSceneRunIntent,
+  setAssetExplorerActive,
 } = appState.actions;
 
 // Selectors
@@ -120,12 +132,14 @@ export const getHiddenSceneInspectorTabs = (state: RootState) => state.ui.hidden
 export const areGizmosDisabled = (state: RootState) => state.ui.disableGizmos;
 export const isGroundGridDisabled = (state: RootState) => state.ui.disableGroundGrid;
 export const getDebugConsoleEnabled = (state: RootState) => state.ui.debugConsoleEnabled;
+export const getDebugConsoleDetached = (state: RootState) => state.ui.debugConsoleDetached;
 export const getMobileDebugSessionEnabled = (state: RootState) =>
   state.ui.mobileDebugSessionEnabled;
 export const getUIDesignerTool = (state: RootState): UIDesignerTool => state.ui.uiDesignerTool;
 export const getUIDesignerSnapEnabled = (state: RootState): boolean =>
   state.ui.uiDesignerSnapEnabled;
 export const getSceneRunIntent = (state: RootState): boolean => state.ui.sceneRunIntent;
+export const isAssetExplorerActive = (state: RootState): boolean => state.ui.assetExplorerActive;
 
 // Reducer
 export default appState.reducer;

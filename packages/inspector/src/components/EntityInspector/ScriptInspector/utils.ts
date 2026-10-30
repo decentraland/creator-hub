@@ -79,12 +79,20 @@ export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptL
         ...value,
         value: Math.min(Math.max(storedValue, value.min), value.max),
       };
+    } else if (value.type === 'enum' && targetParam.type === 'enum') {
+      // options always come from the fresh parse; keep the stored choice only if still valid
+      const storedValue =
+        typeof targetParam.value === 'string' && value.options.includes(targetParam.value)
+          ? targetParam.value
+          : value.value;
+      layout.params[name] = { ...value, value: storedValue };
     } else {
       layout.params[name] = { ...value, ...targetParam };
     }
   }
 
   layout.actions = source.actions;
+  layout.events = source.events;
   layout.error = source.error;
 
   return layout;

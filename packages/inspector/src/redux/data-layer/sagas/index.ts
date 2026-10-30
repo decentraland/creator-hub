@@ -10,8 +10,10 @@ import {
   getAssetCatalog,
   importAsset,
   removeAsset,
+  removeAssets,
   getThumbnails,
   saveThumbnail,
+  saveAnimatedThumbnail,
   createCustomAsset,
   deleteCustomAsset,
   renameCustomAsset,
@@ -28,9 +30,10 @@ import { getAssetCatalogSaga } from './get-asset-catalog';
 import { undoRedoSaga } from './undo-redo';
 import { importAssetSaga } from './import-asset';
 import { removeAssetSaga } from './remove-asset';
+import { removeAssetsSaga } from './remove-assets';
 import { connectedSaga } from './connected';
 import { getThumbnailsSaga } from './get-thumbnails';
-import { saveThumbnailSaga } from './save-thumbnail';
+import { saveAnimatedThumbnailSaga, saveThumbnailSaga } from './save-thumbnail';
 import { createCustomAssetSaga } from './create-custom-asset';
 import { deleteCustomAssetSaga } from './delete-custom-asset';
 import { renameCustomAssetSaga } from './rename-custom-asset';
@@ -48,8 +51,10 @@ export function* dataLayerSaga() {
   yield undoRedoSaga();
   yield fork(importAssetSaga, importAsset.type);
   yield takeEvery(removeAsset.type, removeAssetSaga);
+  yield takeEvery(removeAssets.type, removeAssetsSaga);
   yield takeEvery(getThumbnails.type, getThumbnailsSaga);
   yield takeEvery(saveThumbnail.type, saveThumbnailSaga);
+  yield takeEvery(saveAnimatedThumbnail.type, saveAnimatedThumbnailSaga);
   yield takeEvery(createCustomAsset.type, createCustomAssetSaga);
   yield takeLatest(deleteCustomAsset.type, deleteCustomAssetSaga);
   yield takeEvery(renameCustomAsset.type, renameCustomAssetSaga);

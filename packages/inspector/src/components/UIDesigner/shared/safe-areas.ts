@@ -18,7 +18,13 @@ export type HudKind =
   | 'chat'
   | 'compass'
   | 'counter'
-  | 'pointer';
+  | 'pointer'
+  | 'crosshair'
+  | 'plus'
+  | 'action1'
+  | 'action2'
+  | 'action3'
+  | 'action4';
 
 export interface HudGuide {
   id: string;

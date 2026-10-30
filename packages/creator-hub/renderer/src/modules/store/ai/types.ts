@@ -1,4 +1,11 @@
-import type { AiPart, AiPromptData, AiProvider, AiProviderInfo } from '/shared/types/ai';
+import type {
+  AiAttachmentMeta,
+  AiPart,
+  AiPromptData,
+  AiProvider,
+  AiProviderInfo,
+  AiAssetMention,
+} from '/shared/types/ai';
 
 // The message content model (parts + prompt) is shared with the detached-window mirror, so it
 // lives in shared/types/ai and is re-exported here for the store's own consumers.
@@ -18,6 +25,9 @@ export interface AiMessage {
   mutations?: number;
   // Set once the user reverts this turn's scene changes, so the button hides.
   reverted?: boolean;
+  // Files the user attached to this prompt (user messages only), shown as chips under the
+  // bubble. Name + kind only — the bytes/paths aren't kept in the transcript.
+  attachments?: AiAttachmentMeta[];
 }
 
 // One saved conversation for a scene, shown in the history picker. `title` is the first
@@ -54,4 +64,16 @@ export interface AiState {
   // while the panel is open). Shown as a composer chip and prepended to the turn as context
   // so the assistant can resolve "this" / "the selected entity".
   selection: { id: number; name: string }[];
+  // Local assets (scene-relative paths) the user mentioned by double-clicking them in the
+  // inspector's Local Assets panel. Shown beside the selection and attached as context to the
+  // next turn only, then cleared.
+  assetMentions: AiAssetMention[];
+  // Whether the chat is showing anywhere (inline panel or detached window). Mentions are only
+  // accepted while it is, so a double-click with the assistant closed does nothing.
+  chatVisible: boolean;
+  // A prompt seeded from elsewhere in the editor — e.g. the Trigger Area inspector's
+  // "describe a reaction" buttons (inspector→host `prompt_assistant` RPC). EditorPage opens
+  // the panel on it and the composer seeds its input from `text`, then clears it. `nonce`
+  // makes the same text fire again (a second click on the same button).
+  draftPrompt: { text: string; nonce: number } | null;
 }

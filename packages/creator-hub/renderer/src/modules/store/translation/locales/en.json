@@ -43,6 +43,7 @@
         "title": "Loading failed",
         "timeout": "The scene is taking too long to load. It may have an error in its code.",
         "back": "Back to scenes",
+        "retry": "Retry",
         "outdated_deps": "This scene's dependencies are out of date and don't support the Bevy renderer. Update them to continue.",
         "update_deps": "Update dependencies"
       }
@@ -50,17 +51,17 @@
     "header": {
       "actions": {
         "code": "Code",
-        "preview": "Preview",
+        "optimize": "Optimize",
+        "play": "Play",
         "optimizing": "Optimizing",
         "cancel_optimizing": "Cancel optimization",
         "publish": "Publish",
         "refresh": "Reload scene from disk",
         "preview_options": {
-          "title": "Preview Options",
+          "title": "Play Options",
           "client": {
-            "label": "Preview with",
             "desktop": "Desktop Client",
-            "bevy_web": "Bevy (Web)"
+            "bevy_web": "Web (Bevy)"
           },
           "debugger": "Open Debug Console",
           "skip_auth_screen": "Skip Auth Screen",
@@ -69,11 +70,12 @@
           "landscape_terrain_disabled_by_scene": "Landscape terrain is hidden by this scene's settings",
           "multi_instance": "Multi-Instance Preview",
           "mcp": "Enable MCP Server",
-          "optimized_assets": "Optimize Assets",
-          "optimized_assets_tooltip": "Preview the scene with optimized assets, matching how it renders in production",
+          "optimized_assets": "Compress Assets",
+          "optimized_assets_tooltip": "Preview the scene with assets compressed the same way they are in production",
           "mobile_preview": "Show QR Code for Mobile"
         },
         "publish_options": {
+          "title": "Publish Options",
           "publish_scene": "Publish Scene",
           "republish_to_world": "Republish to {name}",
           "republish_to_land": "Republish to {coords}"
@@ -85,6 +87,11 @@
           "failed": "Failed"
         }
       }
+    },
+    "console": {
+      "clear": "Clear console",
+      "dock": "Dock back in the editor",
+      "empty": "Run a scene to see debug output"
     },
     "ai": {
       "title": "AI Assistant",
@@ -106,6 +113,11 @@
       "billing_dismiss": "Got It",
       "outdated": "Your Claude CLI (v{version}) is out of date — run \"claude update\" in a terminal to use the latest models.",
       "screenshot_alt": "Screenshot from the assistant",
+      "attach": {
+        "button": "Attach files",
+        "remove": "Remove",
+        "drop_hint": "Drop files to attach"
+      },
       "history": {
         "title": "Chat history",
         "empty": "No saved chats yet.",
@@ -119,6 +131,9 @@
       "revert": "Undo AI changes",
       "selection": "Selection: {names}",
       "selection_clear": "Clear",
+      "asset_mention": "Asset: {name}",
+      "asset_mention_built_in": "Built-in animation: {name}",
+      "asset_mention_remove": "Remove",
       "provider": "Assistant",
       "provider_signin": "Sign in",
       "prompt": {
@@ -142,7 +157,15 @@
         "alt_description": "Already signed into Claude Desktop, the VS Code extension, or another MCP-capable tool? Point it at this scene instead — no CLI needed. Add this to its MCP configuration:",
         "alt_copy": "Copy configuration",
         "alt_copied": "Copied",
-        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts."
+        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts.",
+        "install_guide": "If that doesn't work, follow the {provider} install guide",
+        "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so install Claude Code and sign in once:",
+        "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license.",
+        "needs_login_status": "Sign-in needed",
+        "needs_login_title": "{provider} asked you to sign in",
+        "needs_login_help": "Its saved sign-in may have expired, even if it showed as connected. Sign out and back in: run these in a terminal, one at a time, and finish in your browser. Then send your message again:",
+        "needs_login_managed_help": "Its saved sign-in may have expired, even if it showed as connected. In Settings → AI, click Sign out, then Sign in, then send your message again.",
+        "api_key_alternative": "Or use an API key: set {envVar} and turn on \"{setting}\" in Settings → AI."
       }
     }
   },
@@ -173,6 +196,102 @@
     "badges": {
       "published": "Published"
     }
+  },
+  "optimize": {
+    "title": "Optimize models",
+    "subtitle": "Shrink your scene's GLBs by compressing and deduplicating textures and cleaning up meshes. Originals are backed up so you can revert.",
+    "docs_link": "How each option works",
+    "consent": {
+      "blurb": "Optimizing runs entirely on your machine with open-source tools. They are downloaded from npm the first time you continue, pinned to fixed versions, and kept in the app's data folder. Your models never leave your computer.",
+      "show_tools": "Show the {count} open-source tools",
+      "hide_tools": "Hide the tool list",
+      "dont_show_again": "Don't show this again",
+      "npm": "npm",
+      "source": "Source",
+      "note": "Your original models are backed up and can be reverted at any time.",
+      "download": "About {size} MB will be downloaded now.",
+      "continue": "Continue",
+      "cancel": "Cancel",
+      "purpose": {
+        "sharp": "Resizes, re-encodes and losslessly compresses textures.",
+        "gltf": "Reads and writes GLBs; runs the mesh cleanup.",
+        "meshopt": "Mesh reorder and the Meshopt codec."
+      }
+    },
+    "tools": {
+      "installing_blurb": "Getting the optimizer tools ready. This happens once.",
+      "installing": "Downloading optimizer tools…",
+      "failed": "Could not download the optimizer tools: {message}",
+      "retry": "Retry"
+    },
+    "select_project": "Select a scene",
+    "no_projects": "No scenes found. Create or import a scene first.",
+    "scan": {
+      "glbs": "{count} models",
+      "size": "Total size: {size} (models {models} + textures {textures})",
+      "textures": "{embedded} embedded textures · {external} external textures",
+      "last_optimized": "Optimized on {date} · you can revert to the originals",
+      "empty": "This scene has no GLB models to optimize."
+    },
+    "options": {
+      "title": "Optimizations",
+      "mesh": {
+        "title": "Meshes",
+        "enabled": "Optimize meshes (weld, reorder, clean up)",
+        "enabled_tip": "Lossless cleanup: merges duplicate vertices (weld), reorders indices for GPU cache efficiency, removes unused/duplicate data, and folds flat-color textures into material colors. Output loads in every runtime."
+      },
+      "textures": {
+        "title": "Textures",
+        "compress": "Compress and resize textures",
+        "compress_tip": "Resizes each texture to its per-type max size and re-encodes it. PNG is recompressed losslessly (no quality loss); JPEG/WebP use the Quality slider.",
+        "dedup": "Remove duplicate textures",
+        "dedup_tip": "Finds textures with identical pixels (SHA-256) and points every model at a single shared copy. Biggest win when the same texture is reused across many models.",
+        "externalize": "Extract embedded textures to files",
+        "externalize_tip": "Pulls textures out of the GLB into shared files under assets/optimized-textures/, so a shared texture downloads once instead of per-model. Required for cross-model dedup; these files deploy with your scene.",
+        "format": "Format",
+        "format_tip": "Output image format. PNG is lossless (recommended). JPEG and WebP are smaller but lossy and use the Quality slider.",
+        "quality": "Quality",
+        "quality_tip": "Encoding quality for JPEG/WebP (1–100). Higher keeps more detail at a larger file size. Ignored for PNG.",
+        "denoise": "Denoise",
+        "sizes": "Max texture sizes (px)",
+        "sizes_tip": "Maximum height in pixels per texture type; anything taller is downscaled proportionally. Base color and normal maps usually need more resolution than ORM or emissive.",
+        "baseColor": "Base color",
+        "normal": "Normal",
+        "orm": "ORM",
+        "emissive": "Emissive",
+        "other": "Other"
+      }
+    },
+    "run": "Optimize",
+    "run_again": "Optimize again",
+    "done": "Done",
+    "running": "Optimizing…",
+    "revert": "Revert to originals",
+    "reverting": "Restoring originals…",
+    "revert_error": "Could not restore the originals: {message}",
+    "result": {
+      "title": "Done",
+      "saved": "Saved {saved} ({percent}%)",
+      "before_after": "{before} → {after} (models + textures)",
+      "glbs_changed": "{count} models updated",
+      "textures_extracted": "{count} textures extracted",
+      "textures_deduped": "{count} duplicates removed",
+      "textures_removed": "{count} superseded textures removed ({bytes})",
+      "unchanged_skipped": "{unchanged} unchanged · {skipped} skipped",
+      "failed": "{count} models failed — see the per-model details",
+      "ignored_files": "{count} extracted textures match a pattern in your .dclignore and will NOT deploy — edit the pattern or the model will load without them: {files}",
+      "up_to_date": "{count} already optimized, left as they were",
+      "show_details": "Show per-model details",
+      "hide_details": "Hide per-model details",
+      "status": {
+        "optimized": "optimized",
+        "unchanged": "no change",
+        "skipped": "skipped",
+        "up_to_date": "already optimized",
+        "failed": "failed"
+      }
+    },
+    "error": "Optimization failed: {message}"
   },
   "navbar": {
     "menu": {
@@ -340,16 +459,23 @@
         },
         "deploying": {
           "publish": "Publishing...",
-          "finishing": "Finishing up...",
           "failed": "Publishing failed",
           "try_again": "Please try again",
           "step": {
             "uploading": "Uploading",
             "converting": "Converting",
-            "optimizing": "Optimizing",
             "unpublishing": "Unpublishing",
             "loading": "In process...",
             "failed": "Error"
+          },
+          "progress": {
+            "checking": "Preparing the upload...",
+            "uploading": "Uploading {sent} of {total}",
+            "processing": "Publishing...",
+            "batches": "Batch {completed} of {total} uploaded",
+            "cancel_too_early": "Can't cancel while the previous scenes are being removed. Try again in a moment.",
+            "cancel_unauthorized": "Couldn't cancel the deployment from here. Quit Creator Hub to stop it.",
+            "cancel_unsupported": "Update the SDK of this scene to cancel deployments from here."
           },
           "errors": {
             "details": "Details",
@@ -365,12 +491,16 @@
             "invalid_identity": "Failed to validate your identity.",
             "max_file_size_exceeded": "One or more assets exceed the allowed limit ({maxFileSizeInMb}MB).\nOptimize or remove large files and try again.",
             "max_scene_size_exceeded": "Your scene exceeds the maximum allowed size.\nReduce the number or size of assets and try again.",
+            "deploy_state_lost": "Lost track of the deployment, which may still finish.\nCheck the scene in the Manage section before publishing again.",
+            "deploy_request_timeout": "The deployment did not finish within 60 minutes and may still be running.\nCheck the scene in the Manage section before publishing again.",
             "unknown": "Something went wrong.\nPlease, try again.",
             "invalid_creator_wallet": "Creator must be a valid Ethereum wallet address."
           },
           "actions": {
             "report_issue": "Report an issue",
-            "retry": "Retry"
+            "retry": "Retry",
+            "cancel": "Cancel",
+            "cancelling": "Cancelling..."
           },
           "redirect": {
             "sign_in": "You will be redirected to Sign In step in {seconds} seconds..."
@@ -381,8 +511,7 @@
           "url": "The URL to jump in your {target} is:",
           "world": "World",
           "land": "Land",
-          "jump_in": "Jump In",
-          "in_progress": "You can now access your scene even while it's still processing."
+          "jump_in": "Jump In"
         }
       }
     },
@@ -404,6 +533,9 @@
         },
         "editor": {
           "label": "EDITOR"
+        },
+        "ai": {
+          "label": "AI"
         },
         "experimental": {
           "label": "EXPERIMENTAL"
@@ -460,7 +592,7 @@
         },
         "ai_assistant": {
           "label": "Enable AI Assistant",
-          "help": "Runs your installed Claude or Codex CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."
+          "help": "Runs your installed Claude, Codex, Cursor, or Gemini CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."
         },
         "mcp_server": {
           "label": "Expose AI assistant MCP server",
@@ -471,11 +603,7 @@
         },
         "ai_api_key": {
           "label": "Bill this to an API key instead",
-          "help": "Uses ANTHROPIC_API_KEY / OPENAI_API_KEY from your environment. Off by default."
-        },
-        "gui_editor": {
-          "toggle": "Enable UI Editor",
-          "hint": "Enabling this feature will allow you to combine GUI objects, properties and scripting to build UI in the editor."
+          "help": "Uses your provider's API key from your environment (ANTHROPIC_API_KEY, OPENAI_API_KEY, CURSOR_API_KEY, or GEMINI_API_KEY). Off by default."
         },
         "ai_connect": {
           "title": "Connect",
@@ -793,6 +921,9 @@
       "delete_scene": "Deleting scene...",
       "delete_scene_failed": "Failed deleting scene",
       "dependencies_updated": "Scene dependencies were updated",
+      "updating_sdk_skills": "Installing the latest AI skills...",
+      "sdk_skills_updated": "AI skills are up to date",
+      "sdk_skills_update_failed": "Could not install the AI skills",
       "installing_dependencies": "Installing dependencies...",
       "installing_dependencies_failed": "Failed installing dependencies",
       "invalid_scenes_folder": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
@@ -828,6 +959,16 @@
       "title": "New dependencies version detected",
       "actions": {
         "update": "Update"
+      }
+    },
+    "sdk_skills": {
+      "outdated": {
+        "title": "AI skills update available for this scene",
+        "action": "Update"
+      },
+      "missing": {
+        "title": "This scene doesn't have the Decentraland AI skills",
+        "action": "Install"
       }
     },
     "deploy": {
@@ -870,7 +1011,8 @@
       "init_failed": "Failed to initialize signin. Please check your connection.",
       "identity_not_found": "Sign-in could not be completed. Please try signing in again.",
       "identity_expired": "Your sign-in request expired. Please try signing in again.",
-      "network_mismatch": "Couldn't complete sign-in. Disable any VPN or browser private relay and try again."
+      "network_mismatch": "Couldn't complete sign-in. Disable any VPN or browser private relay and try again.",
+      "verifier_mismatch": "Couldn't complete sign-in: it was started from another session. Please try signing in again."
     }
   },
   "more": {
@@ -907,7 +1049,6 @@
     "title": "Choose a Template",
     "results": "{count} {count, plural, one {template} other {templates}}",
     "actions": {
-      "preview": "Preview Template",
       "code": "View Code"
     },
     "new_scene": {

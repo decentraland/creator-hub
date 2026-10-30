@@ -28,7 +28,7 @@ export type Asset = ModelAsset | BaseAsset;
 
 export type ValidationError =
   | {
-      type: 'size' | 'type' | 'name' | 'model';
+      type: 'size' | 'type' | 'name' | 'model' | 'dimensions';
       message: string;
     }
   | undefined;
@@ -63,6 +63,8 @@ interface BaseProps {
   disabled?: boolean;
   /** Called after successful import with the imported asset paths */
   onImportComplete?: (paths: string[]) => void;
+  /** Extra per-file check run before the import modal opens; a returned error blocks the import */
+  validateFile?: (file: File) => Promise<ValidationError>;
 }
 
 export interface WrapperModeProps extends BaseProps {

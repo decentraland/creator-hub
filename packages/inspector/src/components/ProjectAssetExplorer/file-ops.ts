@@ -1,0 +1,239 @@
+/**
+ * Pure helpers for the Local Assets tab file operations (rename / duplicate / copy-paste).
+ * Paths here are relative to the `assets/` directory, e.g. `my-pack/model.glb`.
+ */
+
+import { DIRECTORY, getParentPath } from '../../lib/data-layer/host/fs-utils';
+import { resolveScriptFile } from '../../lib/utils/script-files';
+
+export { getParentPath } from '../../lib/data-layer/host/fs-utils';
+export { joinPath, normalizePath } from '../../lib/utils/path-utils';
+
+/**
+ * The scene's own folder (`assets/scene`, holding `main.composite`) is listed like any other
+ * because `.composite` is a catalogued extension, but the build and the preview read it from
+ * that fixed path: it must never be renamed, moved or deleted from the explorer.
+ */
+export function isProtectedPath(path: string): boolean {
+  return path === DIRECTORY.SCENE || path.startsWith(DIRECTORY.SCENE + '/');
+}
+
+export function getBaseName(path: string): string {
+  const idx = path.lastIndexOf('/');
+  return idx === -1 ? path : path.slice(idx + 1);
+}
+
+/** Whether a `normalizePath` result is empty, climbs above the assets folder or names a drive. */
+export function isOutsideAssets(path: string): boolean {
+  return !path || path === '..' || path.startsWith('../') || path.includes(':');
+}
+
+/** The names `paths` take directly inside `folder` (a file, or the first folder on the way). */
+export function namesBelow(folder: string, paths: string[]): string[] {
+  const prefix = folder ? folder + '/' : '';
+  const names = paths
+    .filter(path => path.startsWith(prefix))
+    .map(path => path.slice(prefix.length).split('/')[0]);
+  return Array.from(new Set(names));
+}
+
+/** Splits `model.final.glb` into `{ base: 'model.final', ext: '.glb' }`. Folders pass `isFolder`. */
+export function splitName(name: string, isFolder = false): { base: string; ext: string } {
+  if (isFolder) return { base: name, ext: '' };
+  const idx = name.lastIndexOf('.');
+  if (idx <= 0) return { base: name, ext: '' };
+  return { base: name.slice(0, idx), ext: name.slice(idx) };
+}
+
+/** Returns an error message when `name` can't be used as a file/folder name, otherwise undefined. */
+export function validateName(name: string, siblings: Iterable<string>, current?: string) {
+  const trimmed = name.trim();
+  if (!trimmed) return 'The name cannot be empty';
+  if (trimmed === '.' || trimmed === '..') return 'Invalid name';
+  if (/[\\/:*?"<>|]/.test(trimmed)) return 'The name contains invalid characters';
+  if (trimmed !== current) {
+    for (const sibling of siblings) {
+      if (sibling !== current && sibling.toLowerCase() === trimmed.toLowerCase()) {
+        return `"${trimmed}" already exists in this folder`;
+      }
+    }
+  }
+  return undefined;
+}
+
+/** `model.glb` -> `model copy.glb` -> `model copy 2.glb`, skipping any name in `siblings`. */
+export function getUniqueCopyName(name: string, siblings: Iterable<string>, isFolder = false) {
+  const taken = new Set(Array.from(siblings, $ => $.toLowerCase()));
+  const { base, ext } = splitName(name, isFolder);
+  let candidate = `${base} copy${ext}`;
+  let i = 2;
+  while (taken.has(candidate.toLowerCase())) {
+    candidate = `${base} copy ${i}${ext}`;
+    i++;
+  }
+  return candidate;
+}
+
+/**
+ * Builds a function that maps a path inside `from` (the file itself or anything below it, when
+ * it is a folder) to the equivalent path below `to`, ignoring letter case as the explorer's file
+ * lookup does. Returns undefined for unrelated paths.
+ */
+export function createPathMapper(from: string, to: string) {
+  const lowerFrom = from.toLowerCase();
+  return (path: string): string | undefined => {
+    const lowerPath = path.toLowerCase();
+    if (lowerPath === lowerFrom) return to;
+    if (lowerPath.startsWith(lowerFrom + '/')) return to + path.slice(from.length);
+    return undefined;
+  };
+}
+
+type PathMap = (path: string) => string | undefined;
+type OnUnreachable = (path: string) => void;
+
+// `scriptPath` is the CALL_SCRIPT_METHOD action's copy of a Script component `path`.
+const REFERENCE_KEYS = new Set(['src', 'audioClipUrl', 'path', 'scriptPath']);
+// asset-packs Actions keep their per-action payload as a JSON string; the paths are inside it.
+const JSON_PAYLOAD_KEY = 'jsonPayload';
+
+function parseJsonPayload(payload: string): unknown {
+  try {
+    return JSON.parse(payload);
+  } catch {
+    return undefined;
+  }
+}
+
+const SCRIPT_LAYOUT_KEY = 'layout';
+
+type ScriptParam = { type?: unknown; value?: unknown };
+type ScriptLayout = { params?: Record<string, ScriptParam> };
+
+function isScriptLayout(
+  key: string,
+  child: unknown,
+  owner: Record<string, unknown>,
+): child is string {
+  return key === SCRIPT_LAYOUT_KEY && typeof child === 'string' && typeof owner.path === 'string';
+}
+
+type FileParam = { name: string; value: string; file: string };
+
+function getFileParams(layout: string, scriptPath: string): FileParam[] {
+  const { params } = (parseJsonPayload(layout) ?? {}) as ScriptLayout;
+  return Object.entries(params ?? {}).flatMap(([name, param]) => {
+    if (param?.type !== 'string' || typeof param.value !== 'string') return [];
+    const file = resolveScriptFile(scriptPath, param.value);
+    return file ? [{ name, value: param.value, file }] : [];
+  });
+}
+
+function replaceScriptParams(
+  layout: string,
+  scriptPath: string,
+  map: PathMap,
+  onUnreachable?: OnUnreachable,
+): string {
+  const newFolder = getParentPath(map(scriptPath) ?? scriptPath);
+  const prefix = newFolder ? `${newFolder}/` : '';
+  const values: Record<string, string> = {};
+  for (const { name, value, file } of getFileParams(layout, scriptPath)) {
+    const moved = map(file);
+    if (!moved) continue;
+    if (!moved.toLowerCase().startsWith(prefix.toLowerCase())) {
+      onUnreachable?.(moved);
+      continue;
+    }
+    const next = moved.slice(prefix.length);
+    if (next !== value) values[name] = next;
+  }
+  if (!Object.keys(values).length) return layout;
+  const parsed = parseJsonPayload(layout) as ScriptLayout;
+  const params = { ...parsed.params };
+  for (const [name, value] of Object.entries(values)) params[name] = { ...params[name], value };
+  return JSON.stringify({ ...parsed, params });
+}
+
+/**
+ * Deep-walks a component value replacing the string fields that hold asset paths
+ * (`src`, `audioClipUrl`, `path`, `scriptPath`, also inside an Action's `jsonPayload`) through
+ * `map`, and the file names a Script's string parameters give relative to its folder.
+ * Returns the same reference when nothing changed.
+ *
+ * @param onUnreachable - called with each moved file a Script parameter can't name, because the
+ * script only reads files inside its own folder; the parameter is left as it was.
+ */
+export function replaceAssetReferences<T>(
+  value: T,
+  map: PathMap,
+  onUnreachable?: OnUnreachable,
+): T {
+  if (Array.isArray(value)) {
+    let changed = false;
+    const next = value.map(item => {
+      const replaced = replaceAssetReferences(item, map, onUnreachable);
+      if (replaced !== item) changed = true;
+      return replaced;
+    });
+    return (changed ? next : value) as T;
+  }
+  if (value && typeof value === 'object' && !(value instanceof Uint8Array)) {
+    let changed = false;
+    const next: Record<string, unknown> = {};
+    const owner = value as Record<string, unknown>;
+    for (const [key, child] of Object.entries(owner)) {
+      let replaced: unknown = child;
+      if (REFERENCE_KEYS.has(key) && typeof child === 'string') {
+        replaced = map(child) ?? child;
+      } else if (isScriptLayout(key, child, owner)) {
+        replaced = replaceScriptParams(child, owner.path as string, map, onUnreachable);
+      } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
+        const payload = parseJsonPayload(child);
+        const replacedPayload = replaceAssetReferences(payload, map, onUnreachable);
+        if (payload !== undefined && replacedPayload !== payload) {
+          replaced = JSON.stringify(replacedPayload);
+        }
+      } else {
+        replaced = replaceAssetReferences(child, map, onUnreachable);
+      }
+      if (replaced !== child) changed = true;
+      next[key] = replaced;
+    }
+    return (changed ? next : value) as T;
+  }
+  return value;
+}
+
+/** Every asset path a component value references, read from the same fields `replaceAssetReferences` rewrites. */
+export function collectAssetReferences(value: unknown, into: string[] = []): string[] {
+  if (Array.isArray(value)) {
+    for (const item of value) collectAssetReferences(item, into);
+  } else if (value && typeof value === 'object' && !(value instanceof Uint8Array)) {
+    const owner = value as Record<string, unknown>;
+    for (const [key, child] of Object.entries(owner)) {
+      if (REFERENCE_KEYS.has(key) && typeof child === 'string') into.push(child);
+      else if (isScriptLayout(key, child, owner)) {
+        for (const { file } of getFileParams(child, owner.path as string)) into.push(file);
+      } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
+        collectAssetReferences(parseJsonPayload(child), into);
+      } else collectAssetReferences(child, into);
+    }
+  }
+  return into;
+}
+
+/** Drops the paths that are inside another path of the list: the ancestor already covers them. */
+export function pruneNestedPaths(paths: string[]): string[] {
+  const unique = Array.from(new Set(paths));
+  return unique.filter(path => !unique.some($ => $ !== path && path.startsWith($ + '/')));
+}
+
+/** The items between `from` and `to` (both included) in `ordered`, in display order. */
+export function getRange(ordered: string[], from: string, to: string): string[] {
+  const start = ordered.indexOf(from);
+  const end = ordered.indexOf(to);
+  if (end === -1) return [];
+  if (start === -1) return [to];
+  return ordered.slice(Math.min(start, end), Math.max(start, end) + 1);
+}

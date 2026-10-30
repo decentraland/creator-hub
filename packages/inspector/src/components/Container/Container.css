@@ -67,7 +67,7 @@
   margin-bottom: 4px;
 }
 
-.Container > .title > .RightContent > .MoreOptionsMenu > .MoreOptionsContent {
+.MoreOptionsContent.ContainerMenu {
   min-width: 175px;
 }
 

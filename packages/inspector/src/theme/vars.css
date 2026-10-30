@@ -9,6 +9,9 @@
   --smart-item-icon-bg-color: #c640cd;
   --list-smart-item-hover-bg-color: #5f326a;
   --ground-icon-bg-color: #828282;
+  /* Panel accent blue with a Charcoal label (5.6:1), per docs/DESIGN.md */
+  --built-in-badge-bg-color: #63b4f6;
+  --built-in-badge-fg-color: #35333b;
   --tree-bg-color: var(--base-20);
   --tree-border-color: var(--vscode-panel-border, #333333);
   --input-border-color: var(--vscode-input-border, #cdcccc);

@@ -21,6 +21,7 @@ import { FORCE_KILL_TIMEOUT_MS, killAllUtilityProcesses } from '/@/modules/bin';
 import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killAllRealms } from '/@/modules/bevy-realm';
+import { stopAllProjectWatchers } from '/@/modules/project-watcher';
 import { killInspectorServer } from '/@/modules/inspector';
 import { aiStop } from '/@/modules/ai';
 import { stopSceneMcpServer } from '/@/modules/scene-mcp';
@@ -181,6 +182,7 @@ export async function killAll() {
     stopExplorerGateway(), // disconnect the AI's Explorer MCP client, then kill its preview
     killAllPreviews(),
     killAllRealms(),
+    stopAllProjectWatchers(),
   ];
   if (deployServer) {
     promises.push(deployServer.stop());

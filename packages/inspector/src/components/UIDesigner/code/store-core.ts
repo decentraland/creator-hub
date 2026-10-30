@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { Entity } from '@dcl/ecs';
 import { getCodeParser } from '../../../lib/logic/code-parser';
-import { markLocalEdit } from '../../../lib/logic/local-edit';
+import { markOwnWrite } from '../../../lib/logic/own-writes';
 import { getStorage } from '../../../lib/data-layer/client/storage';
 import { store as reduxStore } from '../../../redux/store';
 import {
@@ -132,7 +132,7 @@ export async function writeToDisk(path: string, source: string): Promise<void> {
     warnNoStorage('write', path);
     return;
   }
-  markLocalEdit();
+  markOwnWrite(path);
   try {
     await storage.writeFile(path, new TextEncoder().encode(source) as unknown as Buffer);
   } catch (e) {
@@ -587,6 +587,7 @@ export async function regenerateAggregator(roots: CodeRoot[]): Promise<void> {
     top.map(r => ({ component: r.name, from: `./${r.name}`, screenInset: r.screenInset })),
   );
   await writeToDisk(UI_INDEX, src);
+  await removeLegacySingleFile();
 }
 
 export async function ensureMainWired(): Promise<void> {
@@ -616,6 +617,28 @@ export async function removeLegacySingleFile(): Promise<void> {
       await writeToDisk(`${LEGACY_UI_FILE}.bak`, content);
     }
     await storage.delete(LEGACY_UI_FILE);
+  } catch {
+    return;
+  }
+}
+
+export async function restoreOrphanedUiImport(): Promise<void> {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    const entry = await readFromDisk(SCENE_ENTRY);
+    if (!/from\s*['"]\.\/ui['"]/.test(entry)) return;
+    if (await storage.exists(LEGACY_UI_FILE)) return;
+    if (await storage.exists(UI_INDEX)) return;
+    const backup = `${LEGACY_UI_FILE}.bak`;
+    if (await storage.exists(backup)) {
+      const content = await readFromDisk(backup);
+      if (content.trim() !== '') {
+        await writeToDisk(LEGACY_UI_FILE, content);
+        return;
+      }
+    }
+    await writeToDisk(UI_INDEX, generateUiIndex([]));
   } catch {
     return;
   }
@@ -807,11 +830,12 @@ export function bootstrapCodeMode(): void {
   bootstrapped = true;
   void (async () => {
     const roots = await refreshRoots();
-    await removeLegacySingleFile();
     if (roots.length > 0) {
       await regenerateAggregator(roots);
       await ensureMainWired();
       await selectRootFile(roots[0].filename);
+    } else {
+      await restoreOrphanedUiImport();
     }
     startWatching();
   })();

@@ -1,5 +1,4 @@
 import { PublishProject } from '../../Modals/PublishProject';
-import { PublishHistory } from '../../Modals/PublishHistory';
 import { InstallClient } from '../../Modals/InstallClient';
 import { WarningModal } from '../../Modals/WarningModal';
 
@@ -12,13 +11,6 @@ export function DeployModal({ type, initialStep, ...props }: Props) {
         <PublishProject
           open={type === 'publish'}
           initialStep={initialStep}
-          {...props}
-        />
-      );
-    case 'publish-history':
-      return (
-        <PublishHistory
-          open={type === 'publish-history'}
           {...props}
         />
       );

@@ -265,9 +265,82 @@ const ErrorRow = styled(Box)(({ theme }) => ({
   wordBreak: 'break-word',
 }));
 
-const Composer = styled(Box)(({ theme }) => ({
+const Composer = styled(Box, { shouldForwardProp: prop => prop !== 'dragging' })<{
+  dragging?: boolean;
+}>(({ theme, dragging }) => ({
+  position: 'relative',
   padding: theme.spacing(1.5),
   borderTop: `1px solid ${theme.palette.divider}`,
+  ...(dragging === true && {
+    outline: `2px dashed ${theme.palette.secondary.main}`,
+    outlineOffset: theme.spacing(-1),
+    borderRadius: theme.spacing(1),
+    backgroundColor: theme.palette.action.hover,
+  }),
+}));
+
+// A drop hint shown over the composer while a file is dragged over it.
+const DropHint = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: theme.spacing(1),
+  borderRadius: theme.spacing(1),
+  backgroundColor: 'var(--ai-input-bg)',
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+  pointerEvents: 'none',
+  zIndex: 1,
+}));
+
+// The row of attachment pills above the input (both the pending composer chips and the ones
+// shown under a sent user bubble). Wraps when several files are attached.
+const AttachmentBar = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: theme.spacing(0.75),
+  marginBottom: theme.spacing(1),
+}));
+
+const AttachmentChip = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.5),
+  maxWidth: theme.spacing(22),
+  padding: theme.spacing(0.5, 0.75),
+  borderRadius: theme.spacing(0.75),
+  backgroundColor: theme.palette.action.hover,
+  color: theme.palette.text.primary,
+  fontSize: theme.typography.pxToRem(11),
+  '& > svg': { flexShrink: 0, fontSize: theme.typography.pxToRem(15) },
+}));
+
+const AttachmentName = styled('span')({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+const AttachmentRemove = styled(IconButton)(({ theme }) => ({
+  flexShrink: 0,
+  padding: 0,
+  width: theme.spacing(2),
+  height: theme.spacing(2),
+  color: theme.palette.text.secondary,
+  '& svg': { fontSize: theme.typography.pxToRem(14) },
+  '&:hover': { color: theme.palette.text.primary },
+}));
+
+// The paperclip that opens the file picker, sitting inside the input at its left edge.
+const AttachButton = styled(IconButton)(({ theme }) => ({
+  flexShrink: 0,
+  width: theme.spacing(3.5),
+  height: theme.spacing(3.5),
+  color: theme.palette.text.secondary,
+  '&:hover': { color: theme.palette.text.primary },
+  '&.Mui-disabled': { color: theme.palette.action.disabled },
 }));
 
 const HistoryList = styled(Box)(({ theme }) => ({
@@ -366,6 +439,22 @@ const CommandLine = styled('pre')(({ theme }) => ({
   whiteSpace: 'pre',
 }));
 
+const GuideLink = styled('button')(({ theme }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  alignSelf: 'flex-start',
+  gap: theme.spacing(0.5),
+  padding: 0,
+  border: 'none',
+  background: 'none',
+  color: theme.palette.primary.main,
+  font: 'inherit',
+  fontSize: theme.typography.caption.fontSize,
+  textAlign: 'left',
+  cursor: 'pointer',
+  '&:hover': { textDecoration: 'underline' },
+}));
+
 // The row of pill controls under the header: the chat/session picker on the left, the agent
 // picker on the right. No bottom border — the transcript flows straight under it.
 const Toolbar = styled(Box)(({ theme }) => ({
@@ -377,8 +466,11 @@ const Toolbar = styled(Box)(({ theme }) => ({
 }));
 
 // A dark rounded pill used for the toolbar controls (New Chat menu + agent select), matching
-// the CODE/PREVIEW pills in the editor top bar but on the panel's darker surface.
-const ToolbarPill = styled('button')(({ theme }) => ({
+// the CODE/PREVIEW pills in the editor top bar but on the panel's darker surface. The outline is
+// transparent at rest and only shows on hover or while the menu is open (#1619).
+const ToolbarPill = styled('button', {
+  shouldForwardProp: prop => prop !== 'open',
+})<{ open?: boolean }>(({ theme, open }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(0.75),
@@ -387,11 +479,11 @@ const ToolbarPill = styled('button')(({ theme }) => ({
   width: theme.spacing(20),
   height: theme.spacing(3.75),
   padding: theme.spacing(0, 1.25),
-  border: `1px solid ${theme.palette.divider}`,
+  border: `1px solid ${open === true ? theme.palette.text.secondary : 'transparent'}`,
   borderRadius: theme.spacing(1),
   backgroundColor: 'var(--ai-menu-bg)',
   color: theme.palette.text.primary,
-  fontSize: theme.typography.body2.fontSize,
+  fontSize: theme.typography.pxToRem(12),
   fontFamily: 'inherit',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
@@ -416,6 +508,11 @@ const SendButton = styled(IconButton)(({ theme }) => ({
   '&:hover': { backgroundColor: theme.palette.primary.dark },
   '&.Mui-disabled': { backgroundColor: theme.palette.action.disabledBackground },
 }));
+
+// The stop button shown while a turn streams — the same ruby circle as SendButton with a white
+// square, so the composer control keeps a constant size and style whether idle or busy
+// (#1618: the old raw IconButton was taller and stretched the input; #1620: match the Send style).
+const StopButton = styled(SendButton)({});
 
 const ProviderRow = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -449,11 +546,11 @@ const BillingCard = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-start',
-  gap: theme.spacing(1),
+  gap: theme.spacing(2),
   margin: theme.spacing(0, 1.5, 1),
-  padding: theme.spacing(1.5),
-  borderRadius: theme.spacing(1),
-  backgroundColor: 'var(--card)',
+  padding: theme.spacing(2.5),
+  borderRadius: theme.spacing(1.5),
+  backgroundColor: '#35333b',
 }));
 
 const BillingTitle = styled('span')(({ theme }) => ({
@@ -471,10 +568,10 @@ const BillingBody = styled('span')(({ theme }) => ({
 const OutdatedHint = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(1.25),
+  gap: theme.spacing(2),
   margin: theme.spacing(0, 1.5, 1),
-  padding: theme.spacing(1.5, 1.75),
-  borderRadius: theme.spacing(1.25),
+  padding: theme.spacing(1.5, 2.5),
+  borderRadius: theme.spacing(1.5),
   backgroundColor: 'var(--ai-warning-bg)',
   color: theme.palette.warning.main,
   fontSize: theme.typography.caption.fontSize,
@@ -482,8 +579,17 @@ const OutdatedHint = styled(Box)(({ theme }) => ({
   '& svg': { flexShrink: 0 },
 }));
 
+const SignInHintBody = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(0.75),
+  minWidth: 0,
+}));
+
+// Left inset matches a menu item's content start (mx:1 = 8px margin + MUI's 16px item padding),
+// so 'Chat History' lines up with the row icons above and below it (#1619).
 const MenuSectionLabel = styled('div')(({ theme }) => ({
-  padding: theme.spacing(0.75, 2, 0.25),
+  padding: theme.spacing(0.75, 2, 0.25, 3),
   color: theme.palette.text.secondary,
   fontSize: theme.typography.pxToRem(11),
   textTransform: 'uppercase',
@@ -512,13 +618,20 @@ export {
   AssistantBubble,
   AssistantImage,
   AssistantText,
+  AttachButton,
+  AttachmentBar,
+  AttachmentChip,
+  AttachmentName,
+  AttachmentRemove,
   BillingBody,
   BillingCard,
   BillingTitle,
   CommandLine,
   Composer,
+  DropHint,
   EmptyState,
   ErrorRow,
+  GuideLink,
   HeaderActions,
   HeaderTitle,
   HistoryBar,
@@ -551,6 +664,8 @@ export {
   SetupBox,
   SetupDivider,
   SetupStep,
+  SignInHintBody,
+  StopButton,
   ThinkingRow,
   Toolbar,
   ToolbarPill,

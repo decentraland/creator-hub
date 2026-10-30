@@ -11,7 +11,13 @@ import type { PropTypes } from './types';
 
 import './Error.css';
 
-export function Error({ assets, errorMessage, primaryAction, secondaryAction }: PropTypes) {
+export function Error({
+  assets,
+  errorMessage,
+  description,
+  primaryAction,
+  secondaryAction,
+}: PropTypes) {
   const getErrorMessage = useCallback((error: ValidationError): string => {
     switch (error?.type) {
       case 'type':
@@ -29,6 +35,7 @@ export function Error({ assets, errorMessage, primaryAction, secondaryAction }: 
     <div className="ImportError">
       <div className="alert-icon"></div>
       <h3>{errorMessage}</h3>
+      {description ? <p className="description">{description}</p> : null}
       <div className="errors">
         {assets.map(
           ($, i) =>
@@ -69,11 +76,14 @@ export function Error({ assets, errorMessage, primaryAction, secondaryAction }: 
 
 function ErrorMessage({ asset, message }: { asset: PropTypes['assets'][0]; message: string }) {
   const errorMessage = asset.error?.message;
+  // A rejected size is the whole story, so it reads inline; the other types
+  // carry long validator output that only belongs in the tooltip.
+  const showInline = asset.error?.type === 'dimensions' && !!errorMessage;
   return (
     <span>
       {formatFileName(asset)}
-      {message && ` - ${message}`}
-      {errorMessage && (
+      {` - ${showInline ? errorMessage : message}`}
+      {errorMessage && !showInline && (
         <InfoTooltip
           text={errorMessage}
           type="help"

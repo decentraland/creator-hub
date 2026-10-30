@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cx from 'classnames';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
-import { misc, env } from '#preload';
+import { misc } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import { type File, type Info, type Status } from '/@/lib/deploy';
@@ -14,7 +14,8 @@ import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useCounter } from '/@/hooks/useCounter';
 
-import { type Deployment } from '/@/modules/store/deployment/slice';
+import { actions as deploymentActions, type Deployment } from '/@/modules/store/deployment/slice';
+import { isFinalPhase } from '/@/modules/store/deployment/deploy-api';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
 import {
   actions as managementActions,
@@ -22,7 +23,7 @@ import {
 } from '/@/modules/store/management/slice';
 
 import { t } from '/@/modules/store/translation/utils';
-import { REPORT_ISSUES_URL } from '/@/modules/utils';
+import { REPORT_ISSUES_URL, getSceneJumpInDeeplink, getSceneJumpInUrl } from '/@/modules/utils';
 import { formatSize } from '/@/modules/file';
 
 import { PublishModal } from '/@/components/Modals/PublishProject/PublishModal';
@@ -34,14 +35,13 @@ import { ExpandMore } from '/@/components/ExpandMore';
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
+import { parseCoords } from '/@/components/Modals/PublishProject/utils';
+
+import { DeployProgress, type DeployCancel } from './DeployProgress';
 
 import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
-
-function getDclEnv() {
-  return env.getEnv() === 'dev' ? 'zone' : 'org';
-}
 
 function getPath(filename: string) {
   return filename.length > MAX_FILE_PATH_LENGTH
@@ -52,7 +52,7 @@ function getPath(filename: string) {
 }
 
 export function Deploy(props: Props) {
-  const { project, previousStep, onStep, onBack, deploymentMetadata } = props;
+  const { project, previousStep, onStep, onBack, onClose, deploymentMetadata } = props;
   const { signOut, wallet } = useAuth();
   const dispatch = useDispatch();
   const { updateProjectInfo } = useWorkspace();
@@ -65,7 +65,6 @@ export function Deploy(props: Props) {
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
-  const dclEnv = useMemo(() => getDclEnv(), []);
 
   /** True if the project needs to undeploy existing world scenes before deploying the new one.
    * True when deploying to a single-scene world and there are existing scenes in the world that do not overlap with the project parcels. */
@@ -117,18 +116,56 @@ export function Deploy(props: Props) {
     setSkipWarning(false);
   }, []);
 
-  // jump in
-  const jumpInUrl = useMemo(() => {
-    if (deployment?.info.isWorld && project.worldConfiguration) {
-      return `decentraland://?realm=${project.worldConfiguration.name}&dclenv=${dclEnv}`;
+  const canCancel =
+    !!deployment?.supportsDeployResource &&
+    deployment.status === 'pending' &&
+    !!deployment.phase &&
+    !isFinalPhase(deployment.phase);
+
+  const handleCancel = useCallback(
+    async () =>
+      (await dispatch(deploymentActions.cancelDeployment(project.path)).unwrap()).rejection,
+    [dispatch, project.path],
+  );
+
+  const cancel = useMemo<DeployCancel>(() => {
+    if (!canCancel) return { kind: 'hidden' };
+    if (!deployment.hasCancelToken) return { kind: 'unsupported' };
+    if (deployment.cancelRequested) return { kind: 'cancelling' };
+    return { kind: 'available', onCancel: handleCancel };
+  }, [canCancel, deployment?.hasCancelToken, deployment?.cancelRequested, handleCancel]);
+
+  // A cancelled deployment leaves the CLI unable to deploy again, so leave this step: the
+  // previous step starts a fresh one. Only on the transition, as a deployment cancelled
+  // earlier is still in the store when this step mounts again.
+  const previousStatus = useRef(deployment?.status);
+  useEffect(() => {
+    const wasPending = previousStatus.current === 'pending';
+    previousStatus.current = deployment?.status;
+    if (!wasPending || deployment?.status !== 'cancelled') return;
+    if (previousStep && onBack) {
+      onBack();
     } else {
-      return `decentraland://?position=${project.scene.base}&dclenv=${dclEnv}`;
+      onClose();
     }
+  }, [deployment?.status, previousStep, onBack, onClose]);
+
+  const jumpInLocation = useMemo(() => {
+    const [x, y] = parseCoords(project.scene.base);
+    const world =
+      deployment?.info.isWorld && project.worldConfiguration
+        ? project.worldConfiguration.name
+        : undefined;
+    return { world, x, y };
   }, [deployment, project]);
 
+  /** Web link shown and copied for sharing: it opens for people without the desktop client. */
+  const shareUrl = useMemo(() => getSceneJumpInUrl(jumpInLocation), [jumpInLocation]);
+
+  /** Jump In opens the installed desktop client; the share link stays the web one. */
   const handleJumpIn = useCallback(() => {
-    void misc.openExternal(jumpInUrl);
-  }, [jumpInUrl]);
+    void misc.openExternal(getSceneJumpInDeeplink(jumpInLocation));
+  }, [jumpInLocation]);
 
   const handleReportIssue = useCallback(() => {
     void misc.openExternal(REPORT_ISSUES_URL);
@@ -196,7 +233,7 @@ export function Deploy(props: Props) {
 
     if (!deployment) return stepsList;
 
-    const { catalyst, assetBundle, lods } = deployment.componentsStatus;
+    const { catalyst, assetBundle } = deployment.componentsStatus;
     stepsList.push({
       bulletText: stepNumber++,
       name: t('modal.publish_project.deploy.deploying.step.uploading'),
@@ -210,18 +247,8 @@ export function Deploy(props: Props) {
       state: assetBundle,
     });
 
-    // Only add LODs step for non-world deployments
-    if (!isWorld) {
-      stepsList.push({
-        bulletText: stepNumber++,
-        name: t('modal.publish_project.deploy.deploying.step.optimizing'),
-        description: getStepDescription(lods),
-        state: lods,
-      });
-    }
-
     return stepsList;
-  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus, isWorld]);
+  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus]);
 
   const hasError =
     publishError || !deployment || deployment.status === 'failed' || undeployStatus === 'failed';
@@ -316,18 +343,18 @@ export function Deploy(props: Props) {
                   />
                 )}
                 {(deployment.status === 'pending' || undeployStatus === 'pending') && (
-                  <Deploying
-                    deployment={deployment}
-                    url={jumpInUrl}
-                    steps={steps}
-                    onClick={handleJumpIn}
-                    onRetry={handleDeployRetry}
-                  />
+                  <Deploying steps={steps}>
+                    <DeployProgress
+                      key={deployment.id}
+                      upload={deployment.upload}
+                      cancel={cancel}
+                    />
+                  </Deploying>
                 )}
                 {deployment.status === 'complete' && (
                   <Success
                     info={deployment.info}
-                    url={jumpInUrl}
+                    url={shareUrl}
                     onClick={handleJumpIn}
                   />
                 )}
@@ -404,49 +431,19 @@ function Idle({ files, error, onClick }: IdleProps) {
 }
 
 type DeployingProps = {
-  deployment: Deployment;
-  url: string;
   steps: Step[];
-  onClick: () => void;
-  onRetry: () => void;
+  children?: ReactNode;
 };
 
-function Deploying({ deployment, steps, url, onClick }: DeployingProps) {
-  const { isDeployFinishing } = useDeploy();
-  const isFinishing = isDeployFinishing(deployment);
-
-  const title = useMemo(() => {
-    if (isFinishing) return t('modal.publish_project.deploy.deploying.finishing');
-    return t('modal.publish_project.deploy.deploying.publish');
-  }, [isFinishing]);
-
+function Deploying({ steps, children }: DeployingProps) {
   return (
     <div className="Deploying">
       <div className="header">
         <Loader />
-        <Typography variant="h5">{title}</Typography>
+        <Typography variant="h5">{t('modal.publish_project.deploy.deploying.publish')}</Typography>
       </div>
       <ConnectedSteps steps={steps} />
-      {isFinishing && (
-        <>
-          <div className="jump">
-            <JumpUrl
-              inProgress
-              info={deployment.info}
-              url={url}
-            />
-          </div>
-          <div className="actions">
-            <Button
-              size="large"
-              onClick={onClick}
-            >
-              {t('modal.publish_project.deploy.success.jump_in')}
-              <i className="jump-in-icon" />
-            </Button>
-          </div>
-        </>
-      )}
+      {children}
     </div>
   );
 }
@@ -556,10 +553,9 @@ function Success({ info, url, onClick }: SuccessProps) {
   );
 }
 
-function JumpUrl({ inProgress, info, url }: { inProgress?: boolean; info: Info; url: string }) {
+function JumpUrl({ info, url }: { info: Info; url: string }) {
   return (
     <div className="jump-in-url">
-      {inProgress && <label>{t('modal.publish_project.deploy.success.in_progress')}</label>}
       <label>
         {t('modal.publish_project.deploy.success.url', {
           target: info.isWorld

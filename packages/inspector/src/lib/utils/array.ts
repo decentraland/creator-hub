@@ -14,7 +14,7 @@ export function move<T>(list: T[], from: number, to: number) {
  * @param value value to push
  * @returns updated list
  */
-export function cleanPush<T extends number | string>(list: T[], value: T): T[] {
+export function cleanPush<T extends number | string>(list: readonly T[], value: T): T[] {
   return Array.from(new Set(list).add(value));
 }
 

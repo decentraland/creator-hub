@@ -33,8 +33,9 @@ jobs:
       # Provides index.html + copied runtime assets; the JS bundle is rebuilt below.
       - uses: ./.github/actions/download-build
 
+      # chromium only: it is the sole engine the suite launches (test/e2e/setup.ts).
       - name: install Playwright browsers
-        run: npx playwright install
+        run: npx playwright install chromium
 
       # The UI Designer code-mode e2e needs the wasm parser that --production drops, so
       # e2e rebuilds a dev bundle (~74s) instead of reusing download-build's production

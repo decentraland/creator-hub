@@ -85,7 +85,9 @@
 }
 
 .Tree .selectable-area div {
-  white-space: nowrap;
+  /* `pre`, not `nowrap`: creators look entities up by name from code, so consecutive
+     spaces in a name must stay visible instead of collapsing to one (#376). */
+  white-space: pre;
   overflow: hidden;
   text-overflow: ellipsis;
 }

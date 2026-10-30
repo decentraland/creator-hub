@@ -1,7 +1,7 @@
 import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { extractBindingSurface, isActionNameTaken } from './bindings';
+import { extractBindingSurface, instanceResolveMap, isActionNameTaken } from './bindings';
 
 function surfaceOf(source: string) {
   const r = parseSync('s.tsx', source);
@@ -83,5 +83,52 @@ describe('when naming a new @ui-action', () => {
 
   it('should accept a free name', () => {
     expect(isActionNameTaken(surface, 'onStop')).toBe(false);
+  });
+});
+
+describe('instanceResolveMap', () => {
+  const defaults = { 'state.score': '0' };
+
+  it('previews a literal instance prop in place of the props.<name> binding', () => {
+    const map = instanceResolveMap(defaults, [{ name: 'label', value: 'Play' }], () => undefined);
+
+    expect(map['props.label']).toBe('Play');
+    expect(map['state.score']).toBe('0');
+  });
+
+  it('stringifies number and boolean literals', () => {
+    const map = instanceResolveMap(
+      {},
+      [
+        { name: 'count', value: 5 },
+        { name: 'active', value: true },
+      ],
+      () => undefined,
+    );
+
+    expect(map['props.count']).toBe('5');
+    expect(map['props.active']).toBe('true');
+  });
+
+  it('resolves a bound prop through the outer root, and leaves it unresolved otherwise', () => {
+    const outer = (expr: string) => (expr === 'state.title' ? 'Hello' : undefined);
+    const map = instanceResolveMap(
+      {},
+      [
+        { name: 'label', expr: 'state.title' },
+        { name: 'other', expr: 'state.missing' },
+      ],
+      outer,
+    );
+
+    expect(map['props.label']).toBe('Hello');
+    expect(map['props.other']).toBeUndefined();
+  });
+
+  it('does not mutate the component defaults', () => {
+    const map = instanceResolveMap(defaults, [{ name: 'label', value: 'x' }], () => undefined);
+
+    expect(map).not.toBe(defaults);
+    expect(defaults).toEqual({ 'state.score': '0' });
   });
 });

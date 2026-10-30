@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/floor_pressure_button.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/FloorButton.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"activatedBy\":{\"type\":\"enum\",\"options\":[\"all players\",\"my player\"],\"optional\":true,\"tooltip\":\"Who presses the button: 'all players' shares it between everyone; 'my player' reacts only to you, and only you see it.\",\"value\":\"all players\"},\"onPress\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered when the first player steps onto the button.\"},\"onRelease\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered when the last player steps off the button.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played on press and release. Leave empty for no sound.\"},\"pressAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"press\",\"tooltip\":\"Name of the animation clip in the button's model that plays when it is pressed.\"},\"releaseAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"unpress\",\"tooltip\":\"Name of the animation clip in the button's model that plays when it is released.\"}},\"actions\":[{\"methodName\":\"press\",\"description\":\"Holds the button down, as if a player stood on it, until Release is called\",\"params\":{}},{\"methodName\":\"release\",\"description\":\"Lets go of a press made with Press. The button stays down while a player is standing on it.\",\"params\":{}}],\"events\":[\"press\",\"release\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": ["asset-packs::States"]
+          }
+        }
+      }
+    }
+  ]
+}

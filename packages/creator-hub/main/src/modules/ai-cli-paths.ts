@@ -21,11 +21,21 @@ export type CliSpec = {
   /** args that drive an interactive subscription login (browser OAuth), storing creds in
    *  the CLI's standard location so a later `-p` turn reads them via the inherited HOME. */
   loginArgs: string[];
+  /** Whether the app installs this CLI on demand and drives its login (#1531). When false,
+   *  the UI shows terminal install and sign-in steps instead, and a managed binary is ignored. */
+  managedSignIn: boolean;
 };
 
 export const CLI_SPECS: Record<AiProvider, CliSpec> = {
-  claude: { pkg: '@anthropic-ai/claude-code', bin: 'claude', loginArgs: ['setup-token'] },
-  codex: { pkg: '@openai/codex', bin: 'codex', loginArgs: ['login'] },
+  claude: {
+    pkg: '@anthropic-ai/claude-code',
+    bin: 'claude',
+    loginArgs: ['setup-token'],
+    managedSignIn: false,
+  },
+  codex: { pkg: '@openai/codex', bin: 'codex', loginArgs: ['login'], managedSignIn: true },
+  cursor: { pkg: 'cursor-agent', bin: 'cursor-agent', loginArgs: ['login'], managedSignIn: false },
+  gemini: { pkg: '@google/gemini-cli', bin: 'gemini', loginArgs: [], managedSignIn: false },
 };
 
 const MANAGED_DIRNAME = 'ai-cli';
@@ -95,8 +105,8 @@ export function isSignedIn(provider: AiProvider): boolean {
 }
 
 export function getCliState(): AiCliState {
-  return {
-    claude: { installed: isInstalled('claude'), signedIn: isSignedIn('claude') },
-    codex: { installed: isInstalled('codex'), signedIn: isSignedIn('codex') },
-  };
+  const providers = Object.keys(CLI_SPECS) as AiProvider[];
+  return Object.fromEntries(
+    providers.map(id => [id, { installed: isInstalled(id), signedIn: isSignedIn(id) }]),
+  ) as AiCliState;
 }

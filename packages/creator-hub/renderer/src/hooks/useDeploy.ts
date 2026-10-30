@@ -1,11 +1,7 @@
 import { useCallback } from 'react';
-import type { ChainId } from '@dcl/schemas';
 
 import { actions, type Deployment } from '/@/modules/store/deployment';
-import {
-  deriveOverallStatus as _deriveOverallStatus,
-  checkDeploymentCompletion,
-} from '/@/modules/store/deployment/utils';
+import { deriveOverallStatus as _deriveOverallStatus } from '/@/modules/store/deployment/utils';
 import { useDispatch, useSelector } from '#store';
 
 export const useDeploy = () => {
@@ -21,14 +17,6 @@ export const useDeploy = () => {
   const getDeploymentHistory = useCallback(
     (path: string): Deployment[] => history[path] || [],
     [history],
-  );
-
-  const initializeDeployment = useCallback(
-    async (path: string, port: number, chainId: ChainId, wallet: string) => {
-      const payload = { path, port, chainId, wallet };
-      dispatch(actions.initializeDeployment(payload));
-    },
-    [dispatch],
   );
 
   const executeDeployment = useCallback(
@@ -52,20 +40,13 @@ export const useDeploy = () => {
     return _deriveOverallStatus(deployment.componentsStatus);
   }, []);
 
-  const isDeployFinishing = useCallback(
-    (deployment: Deployment) => checkDeploymentCompletion(deployment.componentsStatus),
-    [],
-  );
-
   return {
     deployments,
     history,
     getDeployment,
     getDeploymentHistory,
-    initializeDeployment,
     executeDeployment,
     deriveOverallStatus,
-    isDeployFinishing,
     removeDeployment,
   };
 };

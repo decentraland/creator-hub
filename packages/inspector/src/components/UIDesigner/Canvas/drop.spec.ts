@@ -29,9 +29,10 @@ beforeEach(() => {
 
 describe('applyCanvasDrop', () => {
   it('should nest and track when a GUI component is dropped', () => {
-    applyCanvasDrop({ source: 'component', name: 'Sidebar' } as UIDesignerDragItem, 5);
+    const pos = { top: 40, left: 60 };
+    applyCanvasDrop({ source: 'component', name: 'Sidebar' } as UIDesignerDragItem, 5, pos);
 
-    expect(mocks.spliceInsertComponent).toHaveBeenCalledWith(5, 'Sidebar');
+    expect(mocks.spliceInsertComponent).toHaveBeenCalledWith(5, 'Sidebar', pos);
     expect(mocks.track).toHaveBeenCalledWith(Event.NEST_UI_COMPONENT, {});
   });
 

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/amber_beer_bottle/amber_beer_bottle.glb"
+          }
+        }
+      }
+    }
+  ]
+}

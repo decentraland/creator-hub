@@ -202,10 +202,10 @@ export const IMAGE_TEMPLATE =
   "<UiEntity uiTransform={{ width: 200, height: 200 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 1 }, textureMode: 'center' }} />";
 
 export const FULLSCREEN_TEMPLATE =
-  "<UiEntity uiTransform={{ flexGrow: 1, alignSelf: 'stretch' }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 0.1 } }} />";
+  "<UiEntity uiTransform={{ flexGrow: 1, alignSelf: 'stretch' }} />";
 
 export const FULLSCREEN_FREE_TEMPLATE =
-  "<UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, right: 0, bottom: 0, left: 0 } }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 0.1 } }} />";
+  "<UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, right: 0, bottom: 0, left: 0 } }} />";
 
 export type DropPoint = { top: number; left: number };
 
@@ -326,9 +326,18 @@ export async function canNest(parentRootName: string, childName: string): Promis
   return !wouldCycle(refs, parentRootName, childName);
 }
 
+/** The positioning wrapper a nested `<Component />` instance is placed in; free parents get a pinned wrapper like any palette widget. */
+export function componentWrapperJsx(componentName: string, free: boolean, pos?: DropPoint): string {
+  const transform = free
+    ? `${freePositionFields(pos)}, width: 200, height: 120`
+    : 'width: 200, height: 120';
+  return `<UiEntity uiTransform={{ ${transform} }}>\n  <${componentName} />\n</UiEntity>`;
+}
+
 export async function spliceInsertComponentUnlocked(
   parentEntityId: number,
   componentName: string,
+  pos?: DropPoint,
 ): Promise<void> {
   const ast = astNodeFor(parentEntityId) as Parameters<typeof insertChild>[0] | undefined;
   if (!ast || !state.program || !state.filename) return;
@@ -337,7 +346,8 @@ export async function spliceInsertComponentUnlocked(
     console.warn('[code-mode] refused to nest', componentName, '(would create a cycle)');
     return;
   }
-  const childJsx = `<UiEntity uiTransform={{ width: 200, height: 120 }}>\n  <${componentName} />\n</UiEntity>`;
+  const parent = findCodeNode(state.parsed?.root, parentEntityId);
+  const childJsx = componentWrapperJsx(componentName, parentIsFree(parent), pos);
   const edits = [
     ...insertChild(ast, state.source, childJsx),
     ...ensureNamedImport(state.program as any, componentName, `./${componentName}`),

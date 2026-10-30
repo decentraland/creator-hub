@@ -43,6 +43,7 @@
         "title": "加载失败",
         "timeout": "场景加载时间过长，可能其代码中存在错误。",
         "back": "返回场景",
+        "retry": "重试",
         "outdated_deps": "此场景的依赖项已过时，不支持 Bevy 渲染器。请更新它们以继续。",
         "update_deps": "更新依赖项"
       }
@@ -50,17 +51,17 @@
     "header": {
       "actions": {
         "code": "代码",
-        "preview": "预览",
+        "optimize": "优化",
+        "play": "运行",
         "optimizing": "优化中",
         "cancel_optimizing": "取消优化",
         "publish": "发布",
         "refresh": "从磁盘重新加载场景",
         "preview_options": {
-          "title": "预览选项",
+          "title": "运行选项",
           "client": {
-            "label": "预览方式",
             "desktop": "桌面客户端",
-            "bevy_web": "Bevy（网页）"
+            "bevy_web": "网页（Bevy）"
           },
           "debugger": "在预览期间打开控制台窗口",
           "skip_auth_screen": "跳过认证屏幕",
@@ -69,11 +70,12 @@
           "landscape_terrain_disabled_by_scene": "此场景的设置已隐藏景观地形",
           "multi_instance": "多实例预览",
           "mcp": "启用 MCP 服务器",
-          "optimized_assets": "优化资源",
-          "optimized_assets_tooltip": "使用优化后的资源预览场景，与生产环境的渲染效果一致",
+          "optimized_assets": "压缩资源",
+          "optimized_assets_tooltip": "使用与生产环境相同方式压缩后的资源预览场景",
           "mobile_preview": "显示移动端二维码"
         },
         "publish_options": {
+          "title": "发布选项",
           "publish_scene": "发布场景",
           "republish_to_world": "重新发布到 {name}",
           "republish_to_land": "重新发布到 {coords}"
@@ -85,6 +87,11 @@
           "failed": "失败"
         }
       }
+    },
+    "console": {
+      "clear": "清除控制台",
+      "dock": "停靠回编辑器",
+      "empty": "运行场景以查看调试输出"
     },
     "ai": {
       "title": "AI 助手",
@@ -105,6 +112,11 @@
       "billing": "使用 AI 助手会消耗你所连接账户的额度。请留意你的账户用量。",
       "billing_dismiss": "知道了",
       "screenshot_alt": "助手的截图",
+      "attach": {
+        "button": "添加文件",
+        "remove": "移除",
+        "drop_hint": "拖放文件以添加"
+      },
       "history": {
         "title": "聊天记录",
         "empty": "还没有已保存的聊天。",
@@ -118,6 +130,9 @@
       "revert": "撤销 AI 的更改",
       "selection": "选择：{names}",
       "selection_clear": "清除",
+      "asset_mention": "资源：{name}",
+      "asset_mention_built_in": "内置动画：{name}",
+      "asset_mention_remove": "移除",
       "provider": "助手",
       "provider_signin": "登录",
       "prompt": {
@@ -141,7 +156,15 @@
         "alt_description": "已经登录了 Claude Desktop、VS Code 扩展或其他支持 MCP 的工具？直接让它指向这个场景，无需 CLI。将此内容添加到它的 MCP 配置中：",
         "alt_copy": "复制配置",
         "alt_copied": "已复制",
-        "alt_note": "仅限本地主机。每次 Creator Hub 重启时 URL 和令牌都会更改。"
+        "alt_note": "仅限本地主机。每次 Creator Hub 重启时 URL 和令牌都会更改。",
+        "install_guide": "如果无效，请按照 {provider} 安装指南操作",
+        "desktop_detected": "已安装 Claude Desktop，但助手需要 Claude Code（Anthropic 的终端工具）。Desktop 的登录状态不会与其共享，因此请安装 Claude Code 并登录一次：",
+        "gemini_plan_note": "Gemini CLI 现在仅支持付费 Gemini API 密钥或 Gemini Code Assist Standard/Enterprise 许可证。",
+        "needs_login_status": "需要登录",
+        "needs_login_title": "{provider} 要求你登录",
+        "needs_login_help": "即使显示为已连接，其保存的登录也可能已过期。请先退出再重新登录：在终端中逐条运行以下命令，并在浏览器中完成登录，然后重新发送你的消息：",
+        "needs_login_managed_help": "即使显示为已连接，其保存的登录状态也可能已过期。请在“设置 → AI”中点击“退出登录”，然后点击“登录”，再重新发送你的消息。",
+        "api_key_alternative": "或者使用 API 密钥：设置 {envVar}，并在“设置 → AI”中开启“{setting}”。"
       }
     }
   },
@@ -172,6 +195,102 @@
     "badges": {
       "published": "已发布"
     }
+  },
+  "optimize": {
+    "title": "优化模型",
+    "subtitle": "通过压缩和去重纹理以及清理网格来缩减场景 GLB 的体积。原始文件会被备份，方便随时还原。",
+    "docs_link": "了解每个选项的作用",
+    "consent": {
+      "blurb": "优化完全在你的电脑上运行，使用开源工具。首次继续时会从 npm 下载这些工具（固定版本），并保存在应用数据文件夹中。你的模型不会离开你的电脑。",
+      "show_tools": "查看这 {count} 个开源工具",
+      "hide_tools": "收起工具列表",
+      "dont_show_again": "不再显示",
+      "npm": "npm",
+      "source": "源码",
+      "note": "你的原始模型会被备份，可随时还原。",
+      "download": "现在将下载约 {size} MB。",
+      "continue": "继续",
+      "cancel": "取消",
+      "purpose": {
+        "sharp": "调整尺寸、重新编码并无损压缩纹理。",
+        "gltf": "读取和写入 GLB；执行网格清理。",
+        "meshopt": "网格重排以及 Meshopt 编解码器。"
+      }
+    },
+    "tools": {
+      "installing_blurb": "正在准备优化工具，只需一次。",
+      "installing": "正在下载优化工具…",
+      "failed": "无法下载优化工具：{message}",
+      "retry": "重试"
+    },
+    "select_project": "选择一个场景",
+    "no_projects": "未找到场景。请先创建或导入一个场景。",
+    "scan": {
+      "glbs": "{count} 个模型",
+      "size": "总大小：{size}（模型 {models} + 纹理 {textures}）",
+      "textures": "{embedded} 个内嵌纹理 · {external} 个外部纹理",
+      "last_optimized": "已于 {date} 优化 · 可还原为原始文件",
+      "empty": "该场景没有可优化的 GLB 模型。"
+    },
+    "options": {
+      "title": "优化项",
+      "mesh": {
+        "title": "网格",
+        "enabled": "优化网格（焊接、重排、清理）",
+        "enabled_tip": "无损清理：合并重复顶点（焊接）、为 GPU 缓存效率重排索引、移除未使用或重复的数据，并将纯色纹理折叠为材质颜色。输出可在所有运行时加载。"
+      },
+      "textures": {
+        "title": "纹理",
+        "compress": "压缩并缩放纹理",
+        "compress_tip": "将每个纹理缩放到其按类型的最大尺寸并重新编码。PNG 采用无损重新压缩；JPEG/WebP 使用“质量”滑块。",
+        "dedup": "移除重复纹理",
+        "dedup_tip": "查找像素完全相同的纹理（SHA-256），让所有模型指向单一共享副本。当同一纹理在多个模型中重复使用时收益最大。",
+        "externalize": "将内嵌纹理提取为文件",
+        "externalize_tip": "将纹理从 GLB 中提取到 assets/optimized-textures/ 下的共享文件，使共享纹理只下载一次而非每个模型各下载一次。跨模型去重的前提；这些文件会随场景一起部署。",
+        "format": "格式",
+        "format_tip": "输出图像格式。PNG 无损（推荐）。JPEG 和 WebP 更小但有损，并使用“质量”滑块。",
+        "quality": "质量",
+        "quality_tip": "JPEG/WebP 的编码质量（1–100）。越高保留越多细节，文件越大。对 PNG 无效。",
+        "denoise": "降噪",
+        "sizes": "纹理最大尺寸（像素）",
+        "sizes_tip": "每种纹理类型的最大高度（像素）；更大的会按比例缩小。基础色和法线贴图通常比 ORM 或自发光需要更高分辨率。",
+        "baseColor": "基础色",
+        "normal": "法线",
+        "orm": "ORM",
+        "emissive": "自发光",
+        "other": "其他"
+      }
+    },
+    "run": "优化",
+    "run_again": "再次优化",
+    "done": "完成",
+    "running": "优化中…",
+    "revert": "还原为原始文件",
+    "reverting": "正在还原原始文件…",
+    "revert_error": "无法还原原始文件：{message}",
+    "result": {
+      "title": "完成",
+      "saved": "节省了 {saved}（{percent}%）",
+      "before_after": "{before} → {after}（模型 + 纹理）",
+      "glbs_changed": "更新了 {count} 个模型",
+      "textures_extracted": "提取了 {count} 个纹理",
+      "textures_deduped": "移除了 {count} 个重复项",
+      "textures_removed": "已移除 {count} 个被替代的纹理（{bytes}）",
+      "unchanged_skipped": "{unchanged} 个未更改 · {skipped} 个已跳过",
+      "failed": "{count} 个模型失败 — 请查看每个模型的详情",
+      "ignored_files": "{count} 个提取的纹理匹配 .dclignore 中的模式，将不会被部署 — 请修改该模式，否则模型加载时会缺少这些纹理：{files}",
+      "up_to_date": "{count} 个已优化，保持原样",
+      "show_details": "查看每个模型的详情",
+      "hide_details": "收起每个模型的详情",
+      "status": {
+        "optimized": "已优化",
+        "unchanged": "无变化",
+        "skipped": "已跳过",
+        "up_to_date": "已优化",
+        "failed": "失败"
+      }
+    },
+    "error": "优化失败：{message}"
   },
   "navbar": {
     "menu": {
@@ -339,16 +458,23 @@
         },
         "deploying": {
           "publish": "出版...",
-          "finishing": "整理完毕...",
           "failed": "发布失败",
           "try_again": "请重试",
           "step": {
             "uploading": "上传中...",
             "converting": "转换...",
-            "optimizing": "优化...",
             "unpublishing": "取消发布中...",
             "loading": "加载中...",
             "failed": "失败的"
+          },
+          "progress": {
+            "checking": "正在准备上传...",
+            "uploading": "正在上传 {sent} / {total}",
+            "processing": "发布中...",
+            "batches": "已上传第 {completed} 批，共 {total} 批",
+            "cancel_too_early": "正在移除之前的场景，暂时无法取消。请稍后再试。",
+            "cancel_unauthorized": "无法在此处取消发布。退出 Creator Hub 即可停止。",
+            "cancel_unsupported": "请更新此场景的 SDK 以在此处取消发布。"
           },
           "errors": {
             "details": "详细信息",
@@ -364,12 +490,16 @@
             "invalid_identity": "身份验证失败。",
             "max_file_size_exceeded": "一个或多个资产超过了允许的限制（{maxFileSizeInMb}MB）。\n优化或移除大文件并重试。",
             "max_scene_size_exceeded": "您的场景超过了允许的最大大小。\n请减少资产的数量或大小，然后重试。",
+            "deploy_state_lost": "已无法跟踪此次发布，它可能仍会完成。\n再次发布前，请在“管理”部分查看该场景。",
+            "deploy_request_timeout": "发布未在 60 分钟内完成，可能仍在进行中。\n再次发布前，请在“管理”部分查看该场景。",
             "unknown": "出了问题。\n请重试。",
             "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。"
           },
           "actions": {
             "report_issue": "报告问题",
-            "retry": "重试"
+            "retry": "重试",
+            "cancel": "取消",
+            "cancelling": "正在取消..."
           },
           "redirect": {
             "sign_in": "您将在 {seconds} 秒后被重定向到登录步骤……"
@@ -380,8 +510,7 @@
           "url": "跳转到您的 {target} 的URL是：",
           "world": "世界",
           "land": "土地",
-          "jump_in": "跳转",
-          "in_progress": "现在，即使场景仍在处理中，您也可以访问该场景。"
+          "jump_in": "跳转"
         }
       }
     },
@@ -403,6 +532,9 @@
         },
         "editor": {
           "label": "編輯器"
+        },
+        "ai": {
+          "label": "AI"
         },
         "experimental": {
           "label": "實驗性功能"
@@ -459,7 +591,7 @@
         },
         "ai_assistant": {
           "label": "启用 AI 助手",
-          "help": "使用你已安装的 Claude 或 Codex CLI 运行，拥有与终端相同的对你机器的完全访问权限。只有在你信任所要求的操作时才启用。"
+          "help": "使用你已安装的 Claude、Codex、Cursor 或 Gemini CLI 运行，拥有与终端相同的对你机器的完全访问权限。只有在你信任所要求的操作时才启用。"
         },
         "mcp_server": {
           "label": "公开 AI 助手 MCP 服务器",
@@ -470,11 +602,7 @@
         },
         "ai_api_key": {
           "label": "改为计入 API 密钥",
-          "help": "使用你环境中的 ANTHROPIC_API_KEY / OPENAI_API_KEY。默认关闭。"
-        },
-        "gui_editor": {
-          "toggle": "启用 UI 编辑器",
-          "hint": "启用此功能后，你可以在编辑器中组合 GUI 对象、属性和脚本来构建 UI。"
+          "help": "使用你环境中所用提供方的 API 密钥（ANTHROPIC_API_KEY、OPENAI_API_KEY、CURSOR_API_KEY 或 GEMINI_API_KEY）。默认关闭。"
         },
         "ai_connect": {
           "title": "连接",
@@ -792,6 +920,9 @@
       "delete_scene": "删除场景...",
       "delete_scene_failed": "删除场景失败",
       "dependencies_updated": "場景相依性已更新",
+      "updating_sdk_skills": "正在安裝最新的 AI 技能...",
+      "sdk_skills_updated": "AI 技能已是最新版本",
+      "sdk_skills_update_failed": "無法安裝 AI 技能",
       "installing_dependencies": "安装依赖项",
       "installing_dependencies_failed": "安装依赖项失败",
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
@@ -827,6 +958,16 @@
       "title": "偵測到新的依賴項版本",
       "actions": {
         "update": "更新"
+      }
+    },
+    "sdk_skills": {
+      "outdated": {
+        "title": "此場景的 AI 技能有可用更新",
+        "action": "更新"
+      },
+      "missing": {
+        "title": "此場景尚未安裝 Decentraland AI 技能",
+        "action": "安裝"
       }
     },
     "deploy": {
@@ -869,7 +1010,8 @@
       "init_failed": "無法初始化登入。請檢查您的連接。",
       "identity_not_found": "無法完成登入。請重新登入。",
       "identity_expired": "您的登入請求已過期。請重新登入。",
-      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。"
+      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。",
+      "verifier_mismatch": "無法完成登入：此登入是從其他工作階段發起的。請重新登入。"
     }
   },
   "more": {
@@ -906,7 +1048,6 @@
     "title": "选择一个模板",
     "results": "{count} {count, plural, one {模板} other {模板}}",
     "actions": {
-      "preview": "预览模板",
       "code": "查看代码"
     },
     "new_scene": {
