@@ -1,3 +1,4 @@
+import type { ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -21,6 +22,19 @@ import { DetailShell } from '../../DetailShell';
 import { DetailsTab } from '.';
 
 vi.mock('/@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
+vi.mock('../../Button', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  Button: ({
+    variant: _variant,
+    color: _color,
+    ...props
+  }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string; color?: string }) => (
+    <button
+      type="button"
+      {...props}
+    />
+  ),
+}));
 vi.mock('/@/modules/store/ens', async importOriginal => ({
   ...(await importOriginal<object>()),
   fetchENSList: () => ({ type: 'test/fetchENSList' }),

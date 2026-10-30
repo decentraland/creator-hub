@@ -1,3 +1,4 @@
+import type { ButtonHTMLAttributes } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +9,20 @@ import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 
 import { EmptyState } from '.';
+
+vi.mock('../../Button', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  Button: ({
+    variant: _variant,
+    color: _color,
+    ...props
+  }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string; color?: string }) => (
+    <button
+      type="button"
+      {...props}
+    />
+  ),
+}));
 
 const READ_MORE_URL = 'https://docs.decentraland.org/marketplace/land-manager';
 
