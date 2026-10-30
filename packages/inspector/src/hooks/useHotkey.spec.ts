@@ -1,10 +1,11 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { renderHook, cleanup, fireEvent } from '@testing-library/react';
 
-import { useHotkey } from './useHotkey';
+import { ACTIVATABLE_CONTROLS, RESET_CAMERA, UNDO, useHotkey } from './useHotkey';
 
 afterEach(() => {
   cleanup();
+  document.body.replaceChildren();
 });
 
 const pressF = () => fireEvent.keyDown(document.body, { key: 'f', keyCode: 70 });
@@ -93,5 +94,69 @@ describe('when a hotkey binds several keys at once', () => {
     fireEvent.keyDown(document.body, { key: 'g', keyCode: 71 });
 
     expect(onKey).not.toHaveBeenCalled();
+  });
+});
+
+describe('when the reset-camera hotkey ignores activatable controls', () => {
+  const press = (target: Element, init: KeyboardEventInit & { keyCode: number }) => {
+    const notPrevented = fireEvent.keyDown(target, init);
+    fireEvent.keyUp(target, init);
+    return notPrevented;
+  };
+  const pressSpace = (target: Element) => press(target, { key: ' ', keyCode: 32 });
+  const mount = (html: string) => {
+    document.body.insertAdjacentHTML('beforeend', html);
+    return document.body.lastElementChild!;
+  };
+
+  describe.each([
+    ['a button', '<button type="button">Video Screens</button>'],
+    ['a checkbox', '<input type="checkbox" aria-label="Enable Video Screens" />'],
+    ['a role=button element', '<div role="button" tabindex="0">Open</div>'],
+    ['a role=checkbox element', '<div role="checkbox" tabindex="0" aria-checked="false"></div>'],
+    ['a radio', '<input type="radio" name="layout" aria-label="Main" />'],
+    ['a role=radio element', '<div role="radio" tabindex="0" aria-checked="false"></div>'],
+  ])('and Space is pressed on %s', (_, html) => {
+    it('should neither reset the camera nor cancel the key', () => {
+      const onReset = vi.fn();
+      renderHook(() =>
+        useHotkey([RESET_CAMERA], onReset, document.body, { ignoreTargets: ACTIVATABLE_CONTROLS }),
+      );
+
+      const notPrevented = pressSpace(mount(html));
+
+      expect(onReset).not.toHaveBeenCalled();
+      expect(notPrevented).toBe(true);
+    });
+  });
+
+  describe('and Space is pressed on the body', () => {
+    it('should reset the camera', () => {
+      const onReset = vi.fn();
+      renderHook(() =>
+        useHotkey([RESET_CAMERA], onReset, document.body, { ignoreTargets: ACTIVATABLE_CONTROLS }),
+      );
+
+      pressSpace(document.body);
+
+      expect(onReset).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('and another hotkey is pressed on a button', () => {
+    it('should still run that hotkey', () => {
+      const onUndo = vi.fn();
+      renderHook(() =>
+        useHotkey([RESET_CAMERA], vi.fn(), document.body, { ignoreTargets: ACTIVATABLE_CONTROLS }),
+      );
+      renderHook(() => useHotkey([UNDO], onUndo, document.body));
+
+      const button = mount('<button type="button">Video Screens</button>');
+      fireEvent.keyDown(button, { key: 'Control', keyCode: 17, ctrlKey: true });
+      press(button, { key: 'z', keyCode: 90, ctrlKey: true });
+      fireEvent.keyUp(button, { key: 'Control', keyCode: 17 });
+
+      expect(onUndo).toHaveBeenCalledTimes(1);
+    });
   });
 });

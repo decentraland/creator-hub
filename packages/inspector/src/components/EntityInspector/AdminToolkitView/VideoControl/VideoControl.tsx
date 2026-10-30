@@ -56,7 +56,7 @@ const VideoControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
       </CheckboxGroup>
       <Label
         className="Title"
-        text="Screen Steup"
+        text="Screen Setup"
       />
       <div className="ScreenSetup">
         <InfoIcon size={16} />

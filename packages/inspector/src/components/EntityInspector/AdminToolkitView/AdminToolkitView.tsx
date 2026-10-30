@@ -36,7 +36,7 @@ const AdminToolkitView = withSdk<Props>(({ sdk, entity, initialOpen = true }) =>
       }
     >
       <Accordion
-        label="VIDEO SCREENS"
+        label="Video Screens"
         className="PanelSection"
         enabled={!!adminComponent.videoControl.isEnabled}
         onToggleEnabled={enabled => handleToggleEnabled('videoControl', enabled)}
@@ -45,7 +45,7 @@ const AdminToolkitView = withSdk<Props>(({ sdk, entity, initialOpen = true }) =>
       </Accordion>
 
       <Accordion
-        label="TEXT ANNOUNCEMENTS"
+        label="Text Announcements"
         className="PanelSection"
         enabled={!!adminComponent.textAnnouncementControl.isEnabled}
         onToggleEnabled={enabled => handleToggleEnabled('textAnnouncementControl', enabled)}
@@ -54,7 +54,7 @@ const AdminToolkitView = withSdk<Props>(({ sdk, entity, initialOpen = true }) =>
       </Accordion>
 
       <Accordion
-        label="SMART ITEM ACTIONS"
+        label="Smart Item Actions"
         className="PanelSection"
         enabled={!!adminComponent.smartItemsControl.isEnabled}
         onToggleEnabled={enabled => handleToggleEnabled('smartItemsControl', enabled)}

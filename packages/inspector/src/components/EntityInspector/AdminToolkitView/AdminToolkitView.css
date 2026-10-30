@@ -2,17 +2,7 @@
   width: 100%;
 }
 
-.AdminToolkitViewInspector > .title .CheckboxField {
-  margin: 0;
-  padding: 0;
-}
-
-.AdminToolkitViewInspector > .title .CheckboxField label {
-  display: none;
-}
-
-.AdminToolkitViewInspector .content {
+.AdminToolkitViewInspector > .content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }

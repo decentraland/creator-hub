@@ -41,9 +41,15 @@ export const EXTEND_DOWN = `${SHIFT}+down`;
 export const FOCUS_SELECTED = 'f';
 export const TOGGLE_FREE_CAMERA = '`';
 
+/** Controls that Space activates natively. */
+export const ACTIVATABLE_CONTROLS =
+  'button, input[type="checkbox"], input[type="radio"], [role="button"], [role="checkbox"], [role="radio"]';
+
 interface UseHotkeyOptions {
   /** Skip registration entirely while false (default true). */
   enabled?: boolean;
+  /** Selector of key targets the hotkey leaves alone: no callback, no preventDefault. */
+  ignoreTargets?: string;
 }
 
 /**
@@ -60,7 +66,7 @@ export const useHotkey = (
   node: any = undefined,
   options: UseHotkeyOptions = {},
 ) => {
-  const { enabled = true } = options;
+  const { enabled = true, ignoreTargets } = options;
   const callbackRef = useRef(callback);
   useLayoutEffect(() => {
     callbackRef.current = callback;
@@ -69,10 +75,10 @@ export const useHotkey = (
   const formattedKeys = Array.isArray(keys) ? keys.join(',') : keys;
 
   useEffect(() => {
-    // Uses document when the node is undefined
     const targetDocument = node !== undefined ? node : document;
     if (!targetDocument || !enabled) return;
     const handler: KeyHandler = (event, hotkeysEvent) => {
+      if (ignoreTargets && (event.target as Element | null)?.matches?.(ignoreTargets)) return;
       event.preventDefault();
       callbackRef.current(event, hotkeysEvent);
     };
@@ -80,5 +86,5 @@ export const useHotkey = (
     return () => {
       hotkeys.unbind(formattedKeys, handler);
     };
-  }, [node, formattedKeys, enabled]);
+  }, [node, formattedKeys, enabled, ignoreTargets]);
 };
