@@ -1,21 +1,28 @@
-import { Typography } from 'decentraland-ui2';
+import BackChevronIcon from '@mui/icons-material/ArrowBackIosNewRounded';
+
+import { t } from '/@/modules/store/translation/utils';
 
 import type { Props } from './types';
+import { BackButton, Heading, Root } from './component.styled';
 
-import './styles.css';
-
-export function Title({ value, onBack }: Props) {
+export function Title({ id, value, onBack }: Props) {
   return (
-    <Typography
-      variant="h3"
-      className="Title"
-    >
-      <div
-        className="header"
-        onClick={onBack}
+    <Root className="Title">
+      {onBack && (
+        <BackButton
+          aria-label={t('title.back')}
+          onClick={onBack}
+        >
+          <BackChevronIcon />
+        </BackButton>
+      )}
+      <Heading
+        id={id}
+        variant="h3"
+        component="h1"
       >
-        <i className="back" /> <span className="title">{value}</span>
-      </div>
-    </Typography>
+        {value}
+      </Heading>
+    </Root>
   );
 }

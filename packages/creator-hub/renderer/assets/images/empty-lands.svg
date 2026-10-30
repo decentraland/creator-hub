@@ -1,0 +1,24 @@
+<svg width="80" height="80" viewBox="0 0 80 83" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11.6831 55.4792V68.4214C11.6828 68.7114 11.7373 68.9986 11.8436 69.2666C11.9499 69.5346 12.1059 69.7781 12.3026 69.9833C12.4993 70.1885 12.733 70.3512 12.9901 70.4623C13.2473 70.5733 13.5229 70.6305 13.8013 70.6305H21.2682C21.6758 70.6305 22.0801 70.7067 22.4619 70.8553L38.983 77.2841C39.6166 77.5307 40.2916 77.6411 40.9672 77.6089C41.6429 77.5766 42.3053 77.4022 42.9146 77.0963L66.095 65.4557C67.2059 64.8981 68.0669 63.9147 68.4981 62.7113C68.9293 61.5078 68.8972 60.1773 68.4087 58.9978V58.9978C67.9421 57.8723 67.0932 56.9657 66.0247 56.4517C64.9562 55.9376 63.7432 55.8523 62.618 56.212L43.0238 62.49L35.1251 54.585C34.2851 53.7383 33.1625 53.2641 31.9936 53.2622H13.7911C13.513 53.2636 13.2378 53.322 12.9813 53.4342C12.7248 53.5464 12.4921 53.7101 12.2963 53.9159C12.1006 54.1218 11.9457 54.3658 11.8405 54.634C11.7353 54.9023 11.6818 55.1895 11.6831 55.4792Z" stroke-width="4" stroke-miterlimit="10" stroke="url(#empty-lands-g0_linear-empty-lands)"/>
+<path d="M30.5322 62.0994L36.6967 68.0018C37.4228 68.6561 38.3563 69.006 39.3161 68.9837C40.2759 68.9615 41.1935 68.5686 41.8909 67.8813C42.2707 67.5058 42.5736 67.054 42.7811 66.5532C42.9886 66.0524 43.0965 65.513 43.0983 64.9675C43.1 64.422 42.9956 63.8819 42.7914 63.3796C42.5871 62.8773 42.2872 62.4234 41.9098 62.0453L35.1881 55.2058" stroke-width="4" stroke-miterlimit="10" stroke-linecap="round" stroke="url(#empty-lands-g1_linear-empty-lands)"/>
+<path d="M55.1537 18.7686C55.1537 27.3813 46.0774 37.8415 41.8356 42.2598C40.6533 43.4912 38.743 43.4912 37.5608 42.2598C33.319 37.8415 24.2427 27.3813 24.2427 18.7686C24.2427 10.0598 31.1623 3 39.6982 3C48.234 3 55.1537 10.0598 55.1537 18.7686Z" stroke-width="6" stroke="url(#empty-lands-g2_linear-empty-lands)"/>
+<path d="M40.0847 25.1972C43.3335 25.1972 45.9672 22.5102 45.9672 19.1955C45.9672 15.8809 43.3335 13.1938 40.0847 13.1938C36.8358 13.1938 34.2021 15.8809 34.2021 19.1955C34.2021 22.5102 36.8358 25.1972 40.0847 25.1972Z" fill-rule="evenodd" clip-rule="evenodd" fill="url(#empty-lands-g3_linear-empty-lands)"/>
+<defs>
+<linearGradient id="empty-lands-g0_linear-empty-lands" x1="40.2414" y1="53.2622" x2="40.2414" y2="77.6143" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF2D55"/>
+<stop offset="1" stop-color="#C640CD"/>
+</linearGradient>
+<linearGradient id="empty-lands-g1_linear-empty-lands" x1="36.8153" y1="55.2058" x2="36.8153" y2="68.9847" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF2D55"/>
+<stop offset="1" stop-color="#C640CD"/>
+</linearGradient>
+<linearGradient id="empty-lands-g2_linear-empty-lands" x1="39.6982" y1="3" x2="39.6982" y2="44.3925" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF2D55"/>
+<stop offset="1" stop-color="#C640CD"/>
+</linearGradient>
+<linearGradient id="empty-lands-g3_linear-empty-lands" x1="40.0847" y1="13.1938" x2="40.0847" y2="25.1972" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF2D55"/>
+<stop offset="1" stop-color="#C640CD"/>
+</linearGradient>
+</defs>
+</svg>

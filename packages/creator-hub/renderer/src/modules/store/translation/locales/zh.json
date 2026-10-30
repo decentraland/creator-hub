@@ -906,7 +906,8 @@
       "title": "关于",
       "app_name": "Decentraland Creator Hub",
       "action": "确定"
-    }
+    },
+    "close": "关闭"
   },
   "popup": {
     "copied_to_clipboard": "已复制！"
@@ -1073,23 +1074,23 @@
   },
   "manage": {
     "header": {
-      "title": "管理世界"
+      "title": "管理"
     },
-    "items": "{count} {count, plural, one {项目} other {项目}}",
     "load_more": "加载更多",
     "search": "搜索",
     "sort_by": "排序方式",
     "sort": {
-      "latest": "最后发布",
-      "name": "域名"
+      "latest": "最近更新",
+      "name": "名称"
     },
-    "filter_by": "筛选",
     "filters": {
+      "all": "全部",
       "published": "已发布",
       "unpublished": "未发布"
     },
     "sign_in": {
-      "title": "登录以管理您的世界",
+      "title": "你好！",
+      "description": "登录以开始管理您的世界和 LAND。",
       "action": "登录"
     },
     "empty_list": {
@@ -1105,60 +1106,240 @@
         "title": "没有地点可显示",
         "description": "铸造一个NAME或成为协作者以查看更多结果。"
       },
-      "all": {
-        "title": "没有地点可显示",
-        "description": "铸造一个NAME或成为协作者以添加您的第一个地点。"
+      "worlds": {
+        "title": "还没有可管理的世界",
+        "description": "铸造一个新的 Decentraland <name>NAME</name> 或认领一个 <ens>ENS 域名</ens>，以创建您的世界并开始发布场景。",
+        "info": "Decentraland 世界是您专属的个人 3D 空间，可以聚会、举办活动和建造——您只需要一个 Decentraland NAME。",
+        "info_label": "什么是世界？"
+      },
+      "lands": {
+        "title": "还没有可管理的 LAND",
+        "description": "租用或购买 LAND 来发布您的场景。",
+        "info": "LAND 是一种非同质化代币，包含其坐标、所有者的记录，以及对内容描述文件或地块清单的引用，该文件描述并编码所有者希望在其 LAND 上提供的内容。",
+        "info_label": "什么是 LAND？"
       }
     },
     "actions": {
       "view_scenes": "查看场景",
-      "mint_name": "铸造新NAME"
+      "mint_name": "铸造新NAME",
+      "rent_or_buy_land": "租用或购买 LAND"
     },
     "worlds_storage": {
       "used": "已使用空间",
-      "for_names": "用于 Decentraland NAMEs",
       "description": "总存储空间根据 MANA、LAND 和 NAME 持有量计算。",
-      "link": "查看详情"
+      "link": "查看详情 →",
+      "usage": "<b>{used}</b> / {max} MB",
+      "info_label": "关于已使用空间"
     },
     "cards": {
-      "published_scene": "已发布的场景",
       "roles": {
         "owner": "所有者",
         "collaborator": "协作者",
-        "operator": "租户",
-        "tenant": "出租人"
+        "tenant": "租户"
       },
       "menu": {
         "jump_in": "进入",
         "copy_url": "复制URL",
         "edit_name": "编辑名称",
         "permissions": "权限",
-        "parcel": "地块",
         "view_storage": "查看存储",
-        "unpublish": "取消发布"
+        "unpublish": "取消发布",
+        "create_event": "创建活动",
+        "transfer": "转让"
       },
       "no_scene": {
         "title": "未发布场景",
         "view_scenes": "查看场景"
       },
       "worlds": {
-        "world": "世界",
-        "multi-scene": "多场景",
-        "scenes_count": "{count} {count, plural, one {场景} other {场景}}",
-        "scene_settings": "场景设置",
         "world_settings": "设置",
         "layout": "布局",
         "published_world": "已发布的世界"
       },
       "land": {
-        "land": "土地",
-        "land_settings": "土地设置",
-        "parcels_count": "{count} {count, plural, one {地块} other {地块}}",
-        "land_coords": "{coordX}, {coordY}"
-      }
+        "lands_count": "{count, plural, other {# 块 LAND}}",
+        "parcel_name": "地块 {coords}",
+        "estate_name": "Estate {id}"
+      },
+      "scenes_count": "{count, plural, other {# 个场景}}"
     },
     "unpublish_world_confirmation": {
       "title": "取消发布 <b>{worldName}</b>？"
+    },
+    "view": "查看",
+    "tabs": {
+      "worlds": "世界",
+      "lands": "LANDs"
+    },
+    "read_more": "了解更多 →",
+    "errors": {
+      "fetch": {
+        "title": "出了点问题。",
+        "description": "请重试。",
+        "retry": "重试"
+      }
+    }
+  },
+  "menu": {
+    "options_for": "{name} 的选项"
+  },
+  "recipient": {
+    "label": "钱包地址或 NAME",
+    "placeholder": "0x… 或 name.dcl.eth",
+    "errors": {
+      "invalid": "请输入钱包地址或 NAME。",
+      "not_found": "此 NAME 不存在。",
+      "self_transfer": "你不能转让给自己。",
+      "self_add": "你不能添加自己。"
+    }
+  },
+  "tx": {
+    "waiting_signature": "请在浏览器中确认此交易。",
+    "pending": "交易已发送。正在等待确认…",
+    "view_explorer": "在 Etherscan 上查看",
+    "not_confirmed": "尚未确认。可能需要几分钟，请稍后再查看。",
+    "rejected": "你在浏览器中拒绝了该请求。",
+    "expired": "请求在签名前已过期。",
+    "failed": "交易失败。",
+    "try_again": "重试",
+    "continue": "继续",
+    "step": "第 {n} 步，共 {total} 步",
+    "done": {
+      "transfer": "LAND 已转让。",
+      "details": "详情已保存。",
+      "domain_set": "域名已设置。",
+      "domain_removed": "域名已移除。",
+      "collaborator_added": "协作者已添加。",
+      "collaborator_replaced": "协作者已替换。",
+      "collaborator_removed": "协作者已移除。",
+      "collaborators_removed": "协作者已移除。",
+      "parcels_updated": "地块已更新。",
+      "manager_added": "管理者已添加。",
+      "manager_removed": "管理者已移除。"
+    }
+  },
+  "land_transfer": {
+    "title": "转让 LAND",
+    "body": "你即将转让 <b>{name}</b>。此操作不可撤销，请仔细检查地址。",
+    "confirm": "转让 LAND"
+  },
+  "unpublish_scene": {
+    "title": "取消发布场景",
+    "title_many": "取消发布场景",
+    "body": "确定要从 {land} 取消发布 <b>{scene}</b> 吗？",
+    "body_many": "确定要从 {land} 取消发布 {count} 个场景吗？",
+    "confirm": "取消发布",
+    "confirm_many": "取消发布 {count} 个场景",
+    "progress": "正在取消发布 {done}/{count}…",
+    "error": "无法取消发布 {scene}。请重试。",
+    "done": "场景已取消发布。",
+    "done_many": "已取消发布 {count} 个场景。"
+  },
+  "title": {
+    "back": "返回"
+  },
+  "land_detail": {
+    "title": "管理 - {name}",
+    "role": "角色",
+    "owner": "所有者",
+    "tabs": {
+      "details": "详情",
+      "scenes": "场景",
+      "collaborators": "协作者",
+      "managers": "管理者"
+    },
+    "not_found": "此 LAND 已不在你的列表中。",
+    "back_to_manage": "返回管理",
+    "save": "保存",
+    "discard": "放弃",
+    "details": {
+      "name": "LAND 名称",
+      "name_placeholder": "在此输入",
+      "description": "描述",
+      "description_placeholder": "在此写一些关于你的 LAND 的内容",
+      "name_required": "请输入名称。",
+      "counter": "{count}/{max}",
+      "too_long": "请使用不超过 {max} 个字符。",
+      "save_title": "保存详情",
+      "save_body": "将新名称和描述保存到区块链？",
+      "domain": "域名",
+      "domain_help": "你可以使用 Decentraland NAME 为你的 LAND 创建自定义链接。",
+      "domain_placeholder": "选择一个 NAME",
+      "claim_name": "获取 NAME",
+      "domain_used": "已被 {target} 使用",
+      "domain_change": "更改域名",
+      "domain_remove": "移除链接",
+      "domain_set_title": "设置域名",
+      "domain_set_body": "将 <b>{name}</b> 链接到 {land}？",
+      "domain_remove_title": "移除域名",
+      "domain_remove_body": "取消 <b>{name}</b> 与 {land} 的链接？"
+    },
+    "scenes": {
+      "columns": {
+        "name": "名称",
+        "parcels": "地块",
+        "location": "位置",
+        "last_updated": "最后更新",
+        "published_by": "发布者"
+      },
+      "select_all": "选择所有场景",
+      "select": "选择 {scene}",
+      "selected": "已选择 {count} 个",
+      "unpublish_selected": "取消发布所选",
+      "download": "下载 {scene}",
+      "unpublish": "取消发布 {scene}",
+      "empty": "此 LAND 上没有已发布的场景。"
+    },
+    "download": {
+      "title": "下载 {scene}？",
+      "body": "你将获得一个可在 Creator Hub 中打开的项目。已发布场景中的自定义代码不一定能恢复；请查看文件夹中的 RECOVERY.md。",
+      "confirm": "下载",
+      "progress": "正在下载… {done}/{total}",
+      "done_self_contained": "场景已下载。",
+      "done_partial": "场景已下载。部分代码无法恢复；请查看 RECOVERY.md。",
+      "done_none": "场景已下载，但不含源代码；请查看 RECOVERY.md。",
+      "error": "无法下载 {scene}。请重试。",
+      "cancel": "取消下载 {scene}"
+    },
+    "collaborators": {
+      "description": "协作者可以在此 LAND 上发布场景。",
+      "count": "协作者：{count}",
+      "add": "添加",
+      "all_parcels": "所有地块",
+      "permissions_column": "部署权限范围",
+      "n_parcels": "{count, plural, other {# 个地块}}",
+      "custom_parcels": "自定义地块…",
+      "select_all": "选择所有协作者",
+      "select": "选择 {name}",
+      "remove_label": "移除 {name}",
+      "parcels_label": "{name} 的地块",
+      "selected": "已选择 {count} 个",
+      "remove_selected": "移除所选",
+      "add_title": "添加协作者",
+      "add_body": "<b>{name}</b> 将可以在 {land} 上发布场景。",
+      "replace_title": "替换协作者",
+      "replace_body": "<b>{new}</b> 将替换 <b>{current}</b> 成为此 LAND 的协作者。",
+      "replace_confirm": "替换",
+      "remove_title": "移除 {name}？",
+      "remove_body": "对方将无法再在此 LAND 上发布。",
+      "remove_confirm": "移除",
+      "remove_many_title": "移除 {count} 个协作者？",
+      "parcels_title": "更新地块",
+      "parcels_body": "<b>{name}</b> 将在 {count} 个地块上发布。",
+      "empty": "还没有协作者"
+    },
+    "managers": {
+      "description": "管理者可以在你所有的 LAND 上发布场景并添加或移除协作者，不仅限于此 LAND。",
+      "count": "管理者：{count}",
+      "empty": "还没有管理者",
+      "add_title": "添加管理者",
+      "add_body": "<b>{name}</b> 将可以在你所有的 LAND 上发布场景并管理协作者。",
+      "remove_title": "移除 {name}？",
+      "remove_body": "对方将不再管理你的 LAND。",
+      "step_land": "LAND",
+      "step_estates": "Estates",
+      "land_only": "只能管理你的 LAND。重新添加以包含你的 Estates。",
+      "estate_only": "只能管理你的 Estates。重新添加以包含你的 LAND。"
     }
   },
   "analytics": {

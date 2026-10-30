@@ -1,8 +1,10 @@
-import type { ManagedProject } from '/shared/types/manage';
-import { ManagedProjectType } from '/shared/types/manage';
+import type { LandPlace, ManagedProject } from '/shared/types/manage';
+import { FilterBy, ManagedProjectType, SortBy } from '/shared/types/manage';
 import { retry } from '/shared/utils';
 
-import { parseCoords } from '/@/lib/land';
+import type { Authorization, Land, LandDeployment } from '/@/lib/land';
+import { coordsToId, LandType, ownedCoords, parseCoords } from '/@/lib/land';
+import { t } from '/@/modules/store/translation/utils';
 import type { WorldData, WorldScene, Worlds } from '/@/lib/worlds';
 import { WorldRoleType } from '/@/lib/worlds';
 
@@ -180,6 +182,168 @@ export const getThumbnailUrlFromDeployment = (
   if (thumbnailContent) return getContentSrcUrl(thumbnailContent.hash);
   return '';
 };
+
+const parcelIds = (land: Land) => ownedCoords([land]).map(([x, y]) => coordsToId(x, y));
+
+/** Each LAND's deployments, keyed by LAND id; a LAND with none is left out. */
+export function groupLandDeployments(
+  lands: Land[],
+  deployments: LandDeployment[],
+): Record<string, LandDeployment[]> {
+  const landIdsByParcel = new Map<string, string[]>();
+  for (const land of lands) {
+    for (const parcel of parcelIds(land)) {
+      landIdsByParcel.set(parcel, [...(landIdsByParcel.get(parcel) ?? []), land.id]);
+    }
+  }
+
+  const grouped: Record<string, LandDeployment[]> = {};
+  for (const deployment of deployments) {
+    const landIds = new Set(deployment.pointers.flatMap(id => landIdsByParcel.get(id) ?? []));
+    for (const landId of landIds) {
+      grouped[landId] = [...(grouped[landId] ?? []), deployment];
+    }
+  }
+  return grouped;
+}
+
+function landPlace(land: Land): LandPlace {
+  if (land.type === LandType.PARCEL) return { kind: 'parcel', x: land.x ?? 0, y: land.y ?? 0 };
+  const [x, y] = ownedCoords([land]).sort((a, b) => a[0] - b[0] || a[1] - b[1])[0] ?? [0, 0];
+  return { kind: 'estate', size: land.parcels?.length ?? land.size ?? 0, base: { x, y } };
+}
+
+/** The name a LAND card shows: its on-chain name, else "Parcel x,y" or "Estate id". */
+export function getLandName(project: ManagedProject): string {
+  if (project.displayName) return project.displayName;
+  return project.place?.kind === 'parcel'
+    ? t('manage.cards.land.parcel_name', { coords: coordsToId(project.place.x, project.place.y) })
+    : t('manage.cards.land.estate_name', { id: project.id });
+}
+
+/** A LAND as a managed project, summarising its most recent deployment. */
+export function toLandProject(
+  land: Land,
+  deployments: LandDeployment[],
+  getContentSrcUrl: (hash: string) => string,
+): ManagedProject {
+  const latest = deployments.reduce<LandDeployment | undefined>(
+    (newest, deployment) =>
+      !newest || deployment.timestamp > newest.timestamp ? deployment : newest,
+    undefined,
+  );
+
+  return {
+    id: land.id,
+    displayName: land.name,
+    type: ManagedProjectType.LAND,
+    role: land.role,
+    deployment: latest && {
+      title: latest.metadata.display?.title || land.name,
+      description: latest.metadata.display?.description || '',
+      thumbnail: getThumbnailUrlFromDeployment(latest, getContentSrcUrl),
+      lastPublishedAt: latest.timestamp,
+      scenesCount: deployments.length,
+    },
+    scenes: deployments
+      .map(deployment => parseCoords(deployment.metadata.scene?.base ?? ''))
+      .filter(coords => coords !== null),
+    place: landPlace(land),
+  };
+}
+
+/** The Worlds list: published worlds in server order, then the empty worlds narrowed by search and sorted. */
+export function selectWorldProjects(
+  published: ManagedProject[],
+  empty: ManagedProject[],
+  filters: { sortBy: SortBy; searchQuery: string },
+): ManagedProject[] {
+  const query = filters.searchQuery.trim().toLowerCase();
+  const byName = (a: ManagedProject, b: ManagedProject) =>
+    a.displayName.localeCompare(b.displayName);
+  const matches = empty.filter(project => project.displayName.toLowerCase().includes(query));
+
+  return filters.sortBy === SortBy.NAME
+    ? [...published, ...matches].sort(byName)
+    : [...published, ...matches.sort(byName)];
+}
+
+/** A scene deployed on a LAND, as the Scenes tab lists it. */
+export type LandScene = {
+  id: string;
+  title: string;
+  base: string;
+  parcels: string[];
+  timestamp: number;
+  thumbnail: string;
+};
+
+/** The LAND's deployments as Scenes-tab rows. */
+export function toLandScenes(
+  deployments: LandDeployment[],
+  getContentSrcUrl: (hash: string) => string,
+): LandScene[] {
+  return deployments.map(deployment => ({
+    id: deployment.id,
+    title: deployment.metadata.display?.title || deployment.metadata.scene?.base || deployment.id,
+    base: deployment.metadata.scene?.base ?? deployment.pointers[0] ?? '',
+    parcels: deployment.metadata.scene?.parcels ?? deployment.pointers,
+    timestamp: deployment.timestamp,
+    thumbnail: getThumbnailUrlFromDeployment(deployment, getContentSrcUrl),
+  }));
+}
+
+export type ManagerState = 'full' | 'land-only' | 'estate-only';
+
+/** The account's UpdateManagers, one per address; `land-only` or `estate-only` when only that registry approved it. */
+export function getManagers(
+  authorizations: Authorization[],
+): Array<{ address: string; state: ManagerState }> {
+  const types = new Map<string, Set<LandType>>();
+  for (const { address, type } of authorizations) {
+    types.set(address, (types.get(address) ?? new Set()).add(type));
+  }
+  return [...types].map(([address, registries]) => ({
+    address,
+    state:
+      registries.has(LandType.PARCEL) && registries.has(LandType.ESTATE)
+        ? 'full'
+        : registries.has(LandType.ESTATE)
+          ? 'estate-only'
+          : 'land-only',
+  }));
+}
+
+/** LAND projects narrowed by the publish filter and search (name or `x,y`), then sorted. */
+export function selectLandProjects(
+  projects: ManagedProject[],
+  lands: Land[],
+  filters: { publishFilter?: FilterBy; sortBy: SortBy; searchQuery: string },
+): ManagedProject[] {
+  const landsById = new Map(lands.map(land => [land.id, land]));
+  const name = filters.searchQuery.trim().toLowerCase();
+  const coords = name.replace(/\s/g, '');
+
+  const matchesSearch = (project: ManagedProject) => {
+    const land = landsById.get(project.id);
+    return (
+      getLandName(project).toLowerCase().includes(name) ||
+      (!!land && parcelIds(land).some(id => id.includes(coords)))
+    );
+  };
+  const matchesFilter = (project: ManagedProject) =>
+    filters.publishFilter === undefined ||
+    (filters.publishFilter === FilterBy.PUBLISHED) === !!project.deployment;
+
+  const byName = (a: ManagedProject, b: ManagedProject) =>
+    getLandName(a).localeCompare(getLandName(b));
+  const byLatest = (a: ManagedProject, b: ManagedProject) =>
+    (b.deployment?.lastPublishedAt ?? 0) - (a.deployment?.lastPublishedAt ?? 0);
+
+  return projects
+    .filter(project => matchesFilter(project) && matchesSearch(project))
+    .sort(filters.sortBy === SortBy.NAME ? byName : byLatest);
+}
 
 export const getWorldSettingsInitialState = (): WorldSettingsState => ({
   worldName: '',

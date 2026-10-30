@@ -906,7 +906,8 @@
       "title": "Acerca de",
       "app_name": "Decentraland Creator Hub",
       "action": "Aceptar"
-    }
+    },
+    "close": "Cerrar"
   },
   "popup": {
     "copied_to_clipboard": "¡Copiado!"
@@ -1073,23 +1074,23 @@
   },
   "manage": {
     "header": {
-      "title": "Gestionar Mundos"
+      "title": "Gestionar"
     },
-    "items": "{count} {count, plural, one {elemento} other {elementos}}",
     "load_more": "Cargar más",
     "search": "Buscar",
     "sort_by": "Ordenar por",
     "sort": {
-      "latest": "Última publicación",
-      "name": "Nombre de dominio"
+      "latest": "Última actualización",
+      "name": "Nombre"
     },
-    "filter_by": "Filtrar por",
     "filters": {
+      "all": "Todos",
       "published": "Publicado",
       "unpublished": "No publicado"
     },
     "sign_in": {
-      "title": "Inicia sesión para gestionar tus mundos",
+      "title": "¡Hola!",
+      "description": "Inicia sesión para empezar a gestionar tus Mundos y LANDs.",
       "action": "Iniciar sesión"
     },
     "empty_list": {
@@ -1105,60 +1106,240 @@
         "title": "No hay lugares para mostrar",
         "description": "Consigue un NAME o conviértete en colaborador para ver más resultados."
       },
-      "all": {
-        "title": "No hay lugares para mostrar",
-        "description": "Consigue un NAME o conviértete en colaborador para agregar tu primer Lugar."
+      "worlds": {
+        "title": "Aún no tienes Mundos para gestionar",
+        "description": "Consigue un nuevo <name>NAME</name> de Decentraland o reclama un <ens>dominio ENS</ens> para crear tu Mundo y empezar a publicar tus escenas.",
+        "info": "Los Mundos de Decentraland son tu propio espacio 3D personal para pasar el rato, organizar eventos y construir: solo necesitas un NAME de Decentraland.",
+        "info_label": "¿Qué es un Mundo?"
+      },
+      "lands": {
+        "title": "Aún no tienes LANDs para gestionar",
+        "description": "Alquila o compra LAND para publicar tus escenas.",
+        "info": "LAND es un token no fungible que incluye un registro de sus coordenadas, su propietario y una referencia a un archivo de descripción de contenido o manifiesto de parcela que describe y codifica el contenido que el propietario desea mostrar en su LAND.",
+        "info_label": "¿Qué es LAND?"
       }
     },
     "actions": {
       "view_scenes": "Ver Escenas",
-      "mint_name": "Conseguir un nuevo NAME"
+      "mint_name": "Conseguir nuevo NAME",
+      "rent_or_buy_land": "Alquilar o comprar LAND"
     },
     "worlds_storage": {
       "used": "Espacio usado",
-      "for_names": "para Nombres de Decentraland",
       "description": "El almacenamiento total se calcula en base a las tenencias de MANA, LAND y NAME.",
-      "link": "Ver detalles"
+      "link": "Ver detalles →",
+      "usage": "<b>{used}</b> / {max} MB",
+      "info_label": "Acerca del espacio usado"
     },
     "cards": {
-      "published_scene": "Escena Publicada",
       "roles": {
         "owner": "Propietario",
         "collaborator": "Colaborador",
-        "operator": "Inquilino",
-        "tenant": "Arrendador"
+        "tenant": "Inquilino"
       },
       "menu": {
         "jump_in": "Entrar",
         "copy_url": "Copiar URL",
         "edit_name": "Editar Nombre",
         "permissions": "Permisos",
-        "parcel": "Parcela",
         "view_storage": "Ver Almacenamiento",
-        "unpublish": "Despublicar"
+        "unpublish": "Despublicar",
+        "create_event": "Crear evento",
+        "transfer": "Transferir"
       },
       "no_scene": {
         "title": "No hay escena publicada",
-        "view_scenes": "VER ESCENAS"
+        "view_scenes": "Ver escenas"
       },
       "worlds": {
-        "world": "Mundo",
-        "multi-scene": "Multi-escena",
-        "scenes_count": "{count} {count, plural, one {escena} other {escenas}}",
-        "scene_settings": "Configuración de Escena",
         "world_settings": "Configuración",
         "layout": "Diseño",
         "published_world": "Mundo Publicado"
       },
       "land": {
-        "land": "Tierra",
-        "land_settings": "Configuración de Tierra",
-        "parcels_count": "{count} {count, plural, one {parcela} other {parcelas}}",
-        "land_coords": "{coordX}, {coordY}"
-      }
+        "lands_count": "{count, plural, one {# LAND} other {# LANDs}}",
+        "parcel_name": "Parcela {coords}",
+        "estate_name": "Estate {id}"
+      },
+      "scenes_count": "{count, plural, one {# Escena} other {# Escenas}}"
     },
     "unpublish_world_confirmation": {
       "title": "¿Despublicar <b>{worldName}</b>?"
+    },
+    "view": "Ver",
+    "tabs": {
+      "worlds": "Mundos",
+      "lands": "LANDs"
+    },
+    "read_more": "Leer más →",
+    "errors": {
+      "fetch": {
+        "title": "Algo salió mal.",
+        "description": "Por favor, inténtalo de nuevo.",
+        "retry": "Reintentar"
+      }
+    }
+  },
+  "menu": {
+    "options_for": "Opciones de {name}"
+  },
+  "recipient": {
+    "label": "Dirección de billetera o NAME",
+    "placeholder": "0x… o nombre.dcl.eth",
+    "errors": {
+      "invalid": "Ingresa una dirección de billetera o un NAME.",
+      "not_found": "Este NAME no existe.",
+      "self_transfer": "No puedes transferirte a ti mismo.",
+      "self_add": "No puedes agregarte a ti mismo."
+    }
+  },
+  "tx": {
+    "waiting_signature": "Confirma esta transacción en tu navegador.",
+    "pending": "Transacción enviada. Esperando confirmación…",
+    "view_explorer": "Ver en Etherscan",
+    "not_confirmed": "Aún no se confirmó. Puede tardar unos minutos; vuelve a revisar más tarde.",
+    "rejected": "Rechazaste la solicitud en tu navegador.",
+    "expired": "La solicitud expiró antes de ser firmada.",
+    "failed": "La transacción falló.",
+    "try_again": "Reintentar",
+    "continue": "Continuar",
+    "step": "Paso {n} de {total}",
+    "done": {
+      "transfer": "LAND transferida.",
+      "details": "Detalles guardados.",
+      "domain_set": "Nombre de dominio configurado.",
+      "domain_removed": "Nombre de dominio eliminado.",
+      "collaborator_added": "Colaborador agregado.",
+      "collaborator_replaced": "Colaborador reemplazado.",
+      "collaborator_removed": "Colaborador eliminado.",
+      "collaborators_removed": "Colaboradores eliminados.",
+      "parcels_updated": "Parcelas actualizadas.",
+      "manager_added": "Gestor agregado.",
+      "manager_removed": "Gestor eliminado."
+    }
+  },
+  "land_transfer": {
+    "title": "Transferir LAND",
+    "body": "Estás por transferir <b>{name}</b>. Es una operación irreversible, así que revisa la dirección con cuidado.",
+    "confirm": "Transferir LAND"
+  },
+  "unpublish_scene": {
+    "title": "Despublicar escena",
+    "title_many": "Despublicar escenas",
+    "body": "¿Seguro que quieres despublicar <b>{scene}</b> de {land}?",
+    "body_many": "¿Seguro que quieres despublicar {count} escenas de {land}?",
+    "confirm": "Despublicar",
+    "confirm_many": "Despublicar {count} escenas",
+    "progress": "Despublicando {done} de {count}…",
+    "error": "No se pudo despublicar {scene}. Inténtalo de nuevo.",
+    "done": "Escena despublicada.",
+    "done_many": "{count} escenas despublicadas."
+  },
+  "title": {
+    "back": "Volver"
+  },
+  "land_detail": {
+    "title": "Gestionar - {name}",
+    "role": "Rol",
+    "owner": "Propietario",
+    "tabs": {
+      "details": "Detalles",
+      "scenes": "Escenas",
+      "collaborators": "Colaboradores",
+      "managers": "Gestores"
+    },
+    "not_found": "Esta LAND ya no está en tu lista.",
+    "back_to_manage": "Volver a Gestionar",
+    "save": "Guardar",
+    "discard": "Descartar",
+    "details": {
+      "name": "Nombre de la LAND",
+      "name_placeholder": "Escribe aquí",
+      "description": "Descripción",
+      "description_placeholder": "Escribe algo sobre tu LAND aquí",
+      "name_required": "Ingresa un nombre.",
+      "counter": "{count}/{max}",
+      "too_long": "Usa {max} caracteres o menos.",
+      "save_title": "Guardar detalles",
+      "save_body": "¿Guardar el nuevo nombre y la descripción en la blockchain?",
+      "domain": "Nombre de dominio",
+      "domain_help": "Puedes usar un NAME de Decentraland para crear un enlace personalizado para tu LAND.",
+      "domain_placeholder": "Elige un NAME",
+      "claim_name": "Consigue un NAME",
+      "domain_used": "Usado por {target}",
+      "domain_change": "Cambiar nombre de dominio",
+      "domain_remove": "Quitar enlace",
+      "domain_set_title": "Configurar nombre de dominio",
+      "domain_set_body": "¿Enlazar <b>{name}</b> a {land}?",
+      "domain_remove_title": "Eliminar nombre de dominio",
+      "domain_remove_body": "¿Desenlazar <b>{name}</b> de {land}?"
+    },
+    "scenes": {
+      "columns": {
+        "name": "Nombre",
+        "parcels": "Parcelas",
+        "location": "Ubicación",
+        "last_updated": "Última actualización",
+        "published_by": "Publicado por"
+      },
+      "select_all": "Seleccionar todas las escenas",
+      "select": "Seleccionar {scene}",
+      "selected": "{count} seleccionadas",
+      "unpublish_selected": "Despublicar seleccionadas",
+      "download": "Descargar {scene}",
+      "unpublish": "Despublicar {scene}",
+      "empty": "No hay escenas publicadas en esta LAND."
+    },
+    "download": {
+      "title": "¿Descargar {scene}?",
+      "body": "Obtendrás un proyecto que puedes abrir en Creator Hub. El código personalizado no siempre se puede recuperar de una escena publicada; revisa RECOVERY.md en la carpeta.",
+      "confirm": "Descargar",
+      "progress": "Descargando… {done}/{total}",
+      "done_self_contained": "Escena descargada.",
+      "done_partial": "Escena descargada. Parte del código no se pudo recuperar; consulta RECOVERY.md.",
+      "done_none": "Escena descargada sin su código fuente; consulta RECOVERY.md.",
+      "error": "No se pudo descargar {scene}. Inténtalo de nuevo.",
+      "cancel": "Cancelar la descarga de {scene}"
+    },
+    "collaborators": {
+      "description": "Los colaboradores pueden publicar escenas en esta LAND.",
+      "count": "Colaboradores: {count}",
+      "add": "Agregar",
+      "all_parcels": "Todas las parcelas",
+      "permissions_column": "Permisos de publicación en",
+      "n_parcels": "{count, plural, one {# parcela} other {# parcelas}}",
+      "custom_parcels": "Parcelas personalizadas…",
+      "select_all": "Seleccionar todos los colaboradores",
+      "select": "Seleccionar {name}",
+      "remove_label": "Eliminar a {name}",
+      "parcels_label": "Parcelas de {name}",
+      "selected": "{count} seleccionados",
+      "remove_selected": "Eliminar seleccionados",
+      "add_title": "Agregar colaborador",
+      "add_body": "<b>{name}</b> podrá publicar escenas en {land}.",
+      "replace_title": "Reemplazar colaborador",
+      "replace_body": "<b>{new}</b> reemplazará a <b>{current}</b> como colaborador de esta LAND.",
+      "replace_confirm": "Reemplazar",
+      "remove_title": "¿Eliminar a {name}?",
+      "remove_body": "Ya no podrá publicar en esta LAND.",
+      "remove_confirm": "Eliminar",
+      "remove_many_title": "¿Eliminar {count} colaboradores?",
+      "parcels_title": "Actualizar parcelas",
+      "parcels_body": "<b>{name}</b> publicará en {count, plural, one {# parcela} other {# parcelas}}.",
+      "empty": "Aún no hay colaboradores"
+    },
+    "managers": {
+      "description": "Los gestores pueden publicar escenas y agregar o quitar colaboradores en todas tus LAND, no solo en esta.",
+      "count": "Gestores: {count}",
+      "empty": "Aún no hay gestores",
+      "add_title": "Agregar gestor",
+      "add_body": "<b>{name}</b> podrá publicar escenas y gestionar colaboradores en todas tus LAND.",
+      "remove_title": "¿Eliminar a {name}?",
+      "remove_body": "Ya no gestionará tus LAND.",
+      "step_land": "LAND",
+      "step_estates": "Estates",
+      "land_only": "Solo puede gestionar tus LANDs. Vuelve a añadirlo para incluir tus Estates.",
+      "estate_only": "Solo puede gestionar tus Estates. Vuelve a añadirlo para incluir tus LANDs."
     }
   },
   "analytics": {

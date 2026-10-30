@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import cx from 'classnames';
 import SearchIcon from '@mui/icons-material/Search';
 import { OutlinedInput } from 'decentraland-ui2';
 import type { OutlinedInputProps } from 'decentraland-ui2';
@@ -21,10 +22,10 @@ const Search: React.FC<Props> = React.memo(({ onChange, ...props }) => {
 
   return (
     <OutlinedInput
-      {...props}
       endAdornment={<SearchIcon />}
+      {...props}
       onChange={onChangeDebounced}
-      className="SearchInput"
+      className={cx('SearchInput', props.className)}
     />
   );
 });

@@ -3,8 +3,8 @@ import { ManagedProjectType } from '/shared/types/manage';
 
 import { t } from '/@/modules/store/translation/utils';
 
-import type { Coords, Land } from './land';
-import { Lands, coordsToId, parseCoords } from './land';
+import type { Land } from './land';
+import { Lands, coordsToId, ownedCoords, parseCoords } from './land';
 import type { MetricLocation } from './metricsApi';
 
 /**
@@ -80,17 +80,6 @@ function worldPlaces(projects: ManagedProject[], fallbackThumbnail: string): Ana
         };
       }),
     );
-}
-
-/** Every parcel the wallet holds, estates expanded into their parcels. */
-function ownedCoords(lands: Land[]): Coords[] {
-  return lands.flatMap(land =>
-    land.parcels?.length
-      ? land.parcels.map(({ x, y }): Coords => [x, y])
-      : land.x !== undefined && land.y !== undefined
-        ? [[land.x, land.y] as Coords]
-        : [],
-  );
 }
 
 /**
