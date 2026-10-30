@@ -44,6 +44,7 @@ import {
   setSceneMcpProject,
   writeSceneMcpConfigFile,
 } from './scene-mcp';
+import { ensureGitignored, upsertMcpServer } from './project-config-files';
 import { ensureSkillsLinked } from './skills';
 
 // GUI-launched Electron gets a sparse PATH (no shell profile), so the CLIs — and their
@@ -1164,86 +1165,32 @@ function writeCursorRules(projectDir: string): void {
 // bypasses per-tool confirmations (matches --yolo). Merge into any existing settings so the user's
 // own config/servers are preserved. Best-effort — a write failure just means no scene tools.
 function writeGeminiMcpConfig(projectDir: string, mcp: SceneMcpInfo): void {
-  const dir = path.join(projectDir, '.gemini');
-  const file = path.join(dir, 'settings.json');
-  let config: Record<string, unknown> = {};
-  try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
-      config = parsed as Record<string, unknown>;
-  } catch {
-    /* no file yet, or invalid JSON — start fresh (below) */
-  }
-  const servers =
-    config.mcpServers !== null && typeof config.mcpServers === 'object'
-      ? (config.mcpServers as Record<string, unknown>)
-      : {};
-  config.mcpServers = {
-    ...servers,
-    'creator-hub': {
-      httpUrl: mcp.url,
-      headers: { Authorization: `Bearer $${MCP_TOKEN_ENV}` },
-      trust: true,
-    },
-  };
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+  upsertMcpServer(path.join(projectDir, '.gemini', 'settings.json'), 'creator-hub', {
+    httpUrl: mcp.url,
+    headers: { Authorization: `Bearer $${MCP_TOKEN_ENV}` },
+    trust: true,
+  });
 }
 
 // Cursor reads MCP servers from `<project>/.cursor/mcp.json` (merged with a global one). Unlike
 // claude (--mcp-config <tmp file>), codex (bearer_token_env_var) and gemini ($VAR expansion),
 // cursor's config has NO token indirection and no arbitrary-path flag — the bearer token has to
 // sit literally in that project file. So write it 0600 and add the file to the scene's .gitignore
-// (see ensureCursorMcpGitignored) so a rotating localhost token can't be committed. A `url` server
+// (gitignored first) so a rotating localhost token can't be committed. A `url` server
 // is loaded over HTTP; cursor's own approval prompt is interactive-only, so headless `-p` uses it
 // without prompting. Merge to preserve the user's own servers. Best-effort.
 function writeCursorMcpConfig(projectDir: string, mcp: SceneMcpInfo): void {
-  const dir = path.join(projectDir, '.cursor');
-  const file = path.join(dir, 'mcp.json');
-  let config: Record<string, unknown> = {};
-  try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
-      config = parsed as Record<string, unknown>;
-  } catch {
-    /* no file yet, or invalid JSON — start fresh (below) */
-  }
-  const servers =
-    config.mcpServers !== null && typeof config.mcpServers === 'object'
-      ? (config.mcpServers as Record<string, unknown>)
-      : {};
-  config.mcpServers = {
-    ...servers,
-    'creator-hub': { url: mcp.url, headers: { Authorization: `Bearer ${mcp.token}` } },
-  };
-  fs.mkdirSync(dir, { recursive: true });
   // Put the ignore rule in place BEFORE the token file exists, so there's no window where a
   // secret-bearing file is tracked.
-  ensureCursorMcpGitignored(projectDir);
-  // mode:0600 applies only when creating the file; an existing user file keeps its own perms.
-  fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
-}
-
-// Keep the token-bearing `.cursor/mcp.json` out of version control. Idempotent: appends the entry
-// only when nothing already ignores it. Best-effort — the token file is still 0600 regardless.
-function ensureCursorMcpGitignored(projectDir: string): void {
-  const gitignore = path.join(projectDir, '.gitignore');
-  const entry = '.cursor/mcp.json';
-  let content = '';
-  try {
-    content = fs.readFileSync(gitignore, 'utf8');
-  } catch {
-    /* no .gitignore yet — created below */
-  }
-  const ignores = content
-    .split(/\r?\n/)
-    .map(l => l.trim())
-    .some(l => l === entry || l === '.cursor' || l === '.cursor/' || l === '/.cursor/mcp.json');
-  if (ignores) return;
-  const prefix = content === '' || content.endsWith('\n') ? content : `${content}\n`;
-  fs.writeFileSync(
-    gitignore,
-    `${prefix}\n# Creator Hub AI assistant — holds a local MCP token, do not commit\n${entry}\n`,
+  ensureGitignored(projectDir, '.cursor/mcp.json', {
+    coveredBy: ['.cursor', '.cursor/'],
+    comment: 'Creator Hub AI assistant — holds a local MCP token, do not commit',
+  });
+  upsertMcpServer(
+    path.join(projectDir, '.cursor', 'mcp.json'),
+    'creator-hub',
+    { url: mcp.url, headers: { Authorization: `Bearer ${mcp.token}` } },
+    { mode: 0o600 },
   );
 }
 

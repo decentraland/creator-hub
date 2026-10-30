@@ -9,6 +9,7 @@ import type {
   AiProvider,
 } from '/shared/types/ai';
 import { assetMentionKey } from '/shared/types/ai';
+import type { AiRevertResult } from '/shared/types/ipc';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -310,15 +311,23 @@ export const persistConversation = createAsyncThunk(
 // Mark reverted BEFORE awaiting: the detached window's mirror lags a hop, so a fast
 // double-click can fire two reverts — the second would undo the user's own edits off the
 // shared stack. Marking synchronously makes the second dispatch a no-op.
-export const revertTurn = createAsyncThunk<void, { id: string; count: number }>(
-  'ai/revertTurn',
-  async ({ id, count }, { getState, dispatch }) => {
-    const msg = getState().ai.messages.find(m => m.id === id);
-    if (msg === undefined || msg.reverted) return;
-    dispatch(actions.markReverted(id));
-    await ai.revertTurn(count);
-  },
-);
+export const revertTurn = createAsyncThunk<
+  void,
+  { id: string; count: number },
+  { rejectValue: AiRevertResult }
+>('ai/revertTurn', async ({ id, count }, { getState, dispatch, rejectWithValue }) => {
+  const msg = getState().ai.messages.find(m => m.id === id);
+  if (msg === undefined || msg.reverted) return;
+  dispatch(actions.markReverted(id));
+  // Any other failure leaves it marked: some steps may have been undone, and a retry could
+  // then undo the user's own edits.
+  if ((await ai.revertTurn(count)) === 'blocked') {
+    // An outside agent edited the scene since the turn started, so the turn's undo steps are
+    // no longer on top. Nothing was undone (the snackbar says why).
+    dispatch(actions.unmarkReverted(id));
+    return rejectWithValue('blocked');
+  }
+});
 
 const slice = createSlice({
   name: 'ai',
@@ -492,6 +501,10 @@ const slice = createSlice({
     markReverted: (state, { payload }: PayloadAction<string>) => {
       const msg = state.messages.find(m => m.id === payload);
       if (msg !== undefined) msg.reverted = true;
+    },
+    unmarkReverted: (state, { payload }: PayloadAction<string>) => {
+      const msg = state.messages.find(m => m.id === payload);
+      if (msg !== undefined) msg.reverted = false;
     },
     // An `ask_user` question arrived (over AI_ASK_REQUEST) — append it as the next part of the
     // in-flight turn so it renders inline, in order; anything the turn streams after the answer

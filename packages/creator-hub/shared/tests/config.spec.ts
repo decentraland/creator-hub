@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { dropGuiEditorSetting, promoteAiAssistantSetting } from '../types/config';
+import { DEFAULT_CONFIG, dropGuiEditorSetting, promoteAiAssistantSetting } from '../types/config';
 import type { AppSettings } from '../types/settings';
 
 type LegacySettings = Partial<AppSettings> & { guiEditor?: boolean };
@@ -123,5 +123,11 @@ describe('promoteAiAssistantSetting', () => {
     it('should not throw', () => {
       expect(() => promoteAiAssistantSetting(undefined)).not.toThrow();
     });
+  });
+});
+
+describe('DEFAULT_CONFIG', () => {
+  it('should keep AI agents outside Creator Hub opt-in', () => {
+    expect(DEFAULT_CONFIG.settings.exposeMcpServer).toBe(false);
   });
 });

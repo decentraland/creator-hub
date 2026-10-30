@@ -28,6 +28,7 @@ import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { useBevyBuildForwarding } from '/@/hooks/useBevyBuildForwarding';
 import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
+import { useSceneMcpDiscovery } from '/@/hooks/useSceneMcpDiscovery';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
@@ -254,6 +255,7 @@ export function EditorPage() {
   useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path, inspectorReadyNonce);
   useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
   useProjectAssetWatch(iframeRef, project?.path);
+  useSceneMcpDiscovery(project?.path);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {

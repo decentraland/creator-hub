@@ -128,6 +128,8 @@
       },
       "retry": "Reintentar",
       "revert": "Deshacer los cambios de la IA",
+      "revert_blocked": "No se pudo deshacer: otra app de IA cambió la escena después, y deshacer ahora también quitaría sus cambios. Usa Deshacer en el editor.",
+      "revert_failed": "No se pudieron deshacer los cambios de la IA. Usa Deshacer en el editor.",
       "selection": "Selección: {names}",
       "selection_clear": "Limpiar",
       "asset_mention": "Recurso: {name}",
@@ -157,6 +159,7 @@
         "alt_copy": "Copiar configuración",
         "alt_copied": "Copiado",
         "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia.",
+        "alt_access_off": "Para conectar una, activa “Permitir que otras apps de IA editen tus escenas” en Ajustes → IA.",
         "install_guide": "Si no funciona, sigue la guía de instalación de {provider}",
         "desktop_detected": "Claude Desktop está instalado, pero el asistente necesita Claude Code, la herramienta de terminal de Anthropic. El inicio de sesión de Desktop no se comparte con ella, así que instala Claude Code e inicia sesión una vez:",
         "gemini_plan_note": "Gemini CLI ahora solo funciona con una clave de API de Gemini de pago o una licencia de Gemini Code Assist Standard/Enterprise.",
@@ -594,11 +597,11 @@
           "help": "Ejecuta tu CLI de Claude, Codex, Cursor o Gemini instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
         },
         "mcp_server": {
-          "label": "Exponer el servidor MCP del asistente de IA",
-          "help": "Permite que un agente de IA externo a Creator Hub controle la escena abierta. Pega esto en la configuración MCP del agente.",
+          "label": "Permitir que otras apps de IA editen tus escenas",
+          "help": "Permite que las apps de IA que usas en esta computadora, como Claude Code o Codex, vean y cambien la escena que tienes abierta. Claude Code se conecta solo si lo abres en la carpeta de tu escena. Al desactivarlo se desconectan al instante. El Asistente de IA de arriba no lo necesita.",
           "copy": "Copiar configuración",
           "copied": "¡Copiado!",
-          "note": "Solo localhost. La URL y el token cambian cada vez que se reinicia Creator Hub."
+          "note": "Solo pueden conectarse apps de esta computadora. Estos datos cambian cada vez que Creator Hub se reinicia o se desactiva esta opción."
         },
         "ai_api_key": {
           "label": "Facturar a una clave de API en su lugar",
@@ -949,6 +952,13 @@
       "actions": {
         "view": "Ver",
         "discard_all": "Descartar todas"
+      }
+    },
+    "external_agent_access": {
+      "title": "Una app de IA de esta computadora quiere ver y cambiar tu escena abierta.",
+      "actions": {
+        "allow": "Permitir",
+        "deny": "No permitir"
       }
     },
     "new_dependency_version": {

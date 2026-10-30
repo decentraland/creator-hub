@@ -9,6 +9,7 @@ import {
   persistConversation,
   recheckAfterTurn,
   reducer,
+  revertTurn,
   selectionContext,
   send,
 } from './slice';
@@ -17,6 +18,7 @@ const preloadAi = vi.hoisted(() => ({
   isBusy: vi.fn(),
   send: vi.fn(),
   detectProviders: vi.fn(),
+  revertTurn: vi.fn(),
 }));
 
 vi.mock('#preload', async importOriginal => ({
@@ -388,5 +390,71 @@ describe('when a turn ends', () => {
     const store = await storeWith(claude());
     await store.dispatch(recheckAfterTurn(true));
     expect(preloadAi.detectProviders).not.toHaveBeenCalled();
+  });
+});
+
+describe('when main refuses to revert a turn', () => {
+  let dispatched: { type: string; payload?: unknown }[];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.revertTurn.mockResolvedValue('blocked');
+    dispatched = [];
+    const ai = {
+      ...reducer(undefined, { type: 'init' }),
+      messages: [{ id: 'a-1', role: 'assistant' as const, parts: [], done: true }],
+    };
+    const dispatch = vi.fn((action: { type: string; payload?: unknown }) => {
+      dispatched.push(action);
+      return action;
+    });
+    await revertTurn({ id: 'a-1', count: 2 })(
+      dispatch as never,
+      (() => ({ ai })) as never,
+      undefined,
+    );
+  });
+
+  it('should mark the turn as not reverted again, so the button stays honest', () => {
+    expect(dispatched).toContainEqual(actions.unmarkReverted('a-1'));
+  });
+
+  it('should report the turn as blocked so the snackbar can say why', () => {
+    expect(dispatched).toContainEqual(
+      expect.objectContaining({ type: revertTurn.rejected.type, payload: 'blocked' }),
+    );
+  });
+});
+
+describe('when reverting a turn fails for another reason', () => {
+  let dispatched: { type: string; payload?: unknown }[];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.revertTurn.mockRejectedValue(new Error('editor went away'));
+    dispatched = [];
+    const ai = {
+      ...reducer(undefined, { type: 'init' }),
+      messages: [{ id: 'a-1', role: 'assistant' as const, parts: [], done: true }],
+    };
+    const dispatch = vi.fn((action: { type: string; payload?: unknown }) => {
+      dispatched.push(action);
+      return action;
+    });
+    await revertTurn({ id: 'a-1', count: 2 })(
+      dispatch as never,
+      (() => ({ ai })) as never,
+      undefined,
+    );
+  });
+
+  it('should keep the turn marked, so a retry can’t undo the user’s own edits', () => {
+    expect(dispatched).not.toContainEqual(actions.unmarkReverted('a-1'));
+  });
+
+  it('should report the turn as failed without the blocked reason', () => {
+    const rejected = dispatched.find(a => a.type === revertTurn.rejected.type);
+    expect(rejected).toBeDefined();
+    expect(rejected?.payload).toBeUndefined();
   });
 });

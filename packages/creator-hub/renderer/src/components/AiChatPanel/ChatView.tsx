@@ -451,6 +451,8 @@ export function ChatView(props: ChatViewProps) {
     });
   }, [draftPrompt?.nonce]);
   const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
+  // Outside access is opt-in: with it off there are no details to show, only how to turn it on.
+  const [mcpAccessOff, setMcpAccessOff] = useState(false);
   const [mcpCopied, setMcpCopied] = useState(false);
   // Anchor for the "New Chat" dropdown (new chat + recent sessions), replacing the old
   // full-panel history view.
@@ -497,9 +499,9 @@ export function ChatView(props: ChatViewProps) {
   }, [messages, busy]);
 
   // No CLI installed? Reveal the scene's MCP server so a tool the user already has (Claude
-  // Desktop, the VS Code extension, …) can connect to this scene instead (#1502). Fetch it
-  // only once detection has concluded the CLI is missing — asking for the info starts the
-  // server, which we shouldn't do when the CLI path works.
+  // Desktop, the VS Code extension, …) can connect to this scene instead (#1502), provided
+  // outside access is on. Fetch it only once detection has concluded the CLI is missing —
+  // asking for the info starts the server, which we shouldn't do when the CLI path works.
   useEffect(() => {
     if (detecting || available) {
       setMcpInfo(null);
@@ -507,7 +509,11 @@ export function ChatView(props: ChatViewProps) {
     }
     let cancelled = false;
     void aiPreload.getMcpServerInfo().then(
-      info => !cancelled && setMcpInfo(info),
+      info => {
+        if (cancelled) return;
+        setMcpInfo(info);
+        setMcpAccessOff(info === null);
+      },
       () => !cancelled && setMcpInfo(null),
     );
     return () => {
@@ -696,7 +702,9 @@ export function ChatView(props: ChatViewProps) {
         <SetupAlt>
           <strong>{t('editor.ai.setup.alt_title')}</strong>
           <span>{t('editor.ai.setup.alt_description')}</span>
-          {mcpConfigSnippet === null ? (
+          {mcpAccessOff ? (
+            <span>{t('editor.ai.setup.alt_access_off')}</span>
+          ) : mcpConfigSnippet === null ? (
             <CircularProgress size={16} />
           ) : (
             <>

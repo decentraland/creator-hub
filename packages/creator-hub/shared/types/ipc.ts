@@ -92,6 +92,16 @@ export const AI_ASK_REQUEST = 'ai.askRequest';
 // question was dismissed). The renderer closes that prompt so it can't take an answer that
 // nothing is waiting for any more.
 export const AI_ASK_EXPIRED = 'ai.askExpired';
+// Main granted or revoked access to the MCP server for agents outside the Hub
+// (mcp-discovery.ts): Settings refetches the connection details.
+export const AI_EXTERNAL_ACCESS_CHANGED = 'ai.externalAccessChanged';
+// An agent outside the Hub asked for access (mcp-discovery.ts). The renderer calls
+// `ai.takeExternalAccessRequest` and, if it's still pending, asks the creator to allow it.
+export const AI_EXTERNAL_ACCESS_REQUESTED = 'ai.externalAccessRequested';
+
+// What `ai.revertTurn` did: 'blocked' means an outside agent edited the scene after the turn
+// started, so nothing was undone (undoing would have removed the agent's edits instead).
+export type AiRevertResult = 'reverted' | 'blocked';
 
 export type AiAskExpired = { id: string };
 
@@ -230,8 +240,17 @@ export interface Ipc {
   'ai.isBusy': () => Promise<boolean>;
   // Revert the scene-graph changes an AI turn made, by undoing `count` steps (the value
   // the `done` event reported as `mutations`).
-  'ai.revertTurn': (count: number) => Promise<void>;
-  'ai.getMcpServerInfo': () => Promise<{ url: string; token: string }>;
+  'ai.revertTurn': (count: number) => Promise<AiRevertResult>;
+  // Connection details for agents outside the Hub; null while `exposeMcpServer` is off.
+  'ai.getMcpServerInfo': () => Promise<{ url: string; token: string } | null>;
+  // The editor window's open scene: points the MCP server at it and, while `exposeMcpServer` is
+  // on, writes its connection into the scene (`.mcp.json`) for Claude Code. sceneClosed detaches
+  // the server and removes that file.
+  'ai.sceneOpened': (path: string) => Promise<void>;
+  'ai.sceneClosed': (path: string) => Promise<void>;
+  // True once while an outside agent's access request awaits the creator's answer (see
+  // AI_EXTERNAL_ACCESS_REQUESTED).
+  'ai.takeExternalAccessRequest': () => Promise<boolean>;
   // AI sign-in without a CLI (#1531). signInCli installs the official CLI (if needed) and
   // drives its subscription login, streaming steps over AI_CLI_LOGIN_EVENTS; signOutCli
   // clears the managed sign-in; getCliState reports install/sign-in status per provider.

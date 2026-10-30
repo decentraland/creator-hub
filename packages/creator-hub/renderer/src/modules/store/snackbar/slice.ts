@@ -4,6 +4,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { isProjectError } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 
+import { actions as aiActions } from '../ai';
 import { actions as deploymentActions } from '../deployment';
 import { actions as editorActions } from '../editor';
 import { actions as ensActions } from '../ens';
@@ -55,6 +56,13 @@ export const slice = createSlice({
         );
       })
 
+      .addCase(aiActions.revertTurn.rejected, (state, action) => {
+        const message =
+          action.payload === 'blocked'
+            ? t('editor.ai.revert_blocked')
+            : t('editor.ai.revert_failed');
+        state.notifications.push(createGenericNotification('error', message));
+      })
       .addCase(workspaceActions.getAvailable.rejected, (state, payload) => {
         const isPathError = isProjectError(payload.payload, 'INVALID_PATH');
         const translatedError = isPathError
