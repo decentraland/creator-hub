@@ -1,24 +1,24 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { Entity } from '@dcl/ecs';
-import { Action } from '@dcl/asset-packs';
-import { VscTrash as RemoveIcon } from 'react-icons/vsc';
-import { withSdk, WithSdkProps } from '../../../../hoc/withSdk';
-import { getComponentValue, useComponentValue } from '../../../../hooks/sdk/useComponentValue';
+import React, { useEffect } from 'react';
+import type { Entity } from '@dcl/ecs';
+import { withSdk, type WithSdkProps } from '../../../../hoc/withSdk';
 import { useEntitiesWith } from '../../../../hooks/sdk/useEntitiesWith';
+import type { Component, EditorComponentsTypes } from '../../../../lib/sdk/components';
+import { addSyncComponentsToEntities } from '../../../../lib/sdk/operations/entitySyncUtils';
 
 import { TextField, Dropdown, EntityField } from '../../../ui';
-import { Button } from '../../../Button';
 import { AddButton } from '../../AddButton';
-import MoreOptionsMenu from '../../MoreOptionsMenu';
-import { Component } from '../../../../lib/sdk/components';
-import { addSyncComponentsToEntities } from '../../../../lib/sdk/operations/entitySyncUtils';
-import { Block } from '../../../Block';
+import { AdminListRow } from '../AdminListRow';
+import { useAdminTools } from '../useAdminTools';
 
 import './SmartItemControl.css';
 
 type Props = {
   entity: Entity;
 };
+
+type SmartItems = NonNullable<
+  EditorComponentsTypes['AdminTools']['smartItemsControl']['smartItems']
+>;
 
 const SmartItemControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
   const {
@@ -32,198 +32,80 @@ const SmartItemControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
     AudioSource,
     AudioStream,
   } = sdk.components;
-  const [adminComponent, setAdminComponent] = useComponentValue(entity, AdminTools);
+  const [adminComponent, updateControl] = useAdminTools(entity, AdminTools);
   const entitiesWithAction: Entity[] = useEntitiesWith(components => components.Actions);
 
-  const componentIdsToSync = [
-    AudioSource.componentId,
-    AudioStream.componentId,
-    Animator.componentId,
-    Transform.componentId,
-    Tween.componentId,
-    VideoPlayer.componentId,
-    VisibilityComponent.componentId,
-  ];
-
-  const availableActions: Map<number, { actions: Action[] }> = useMemo(() => {
-    const actions = new Map<number, { actions: Action[] }>();
-    for (const entityWithAction of entitiesWithAction) {
-      const actionsComponentValue = getComponentValue(entityWithAction, Actions);
-      if (actionsComponentValue.value.length > 0) {
-        actions.set(entityWithAction, { actions: actionsComponentValue.value as Action[] });
-      }
-    }
-    return actions;
-  }, [entitiesWithAction]);
+  const smartItems = adminComponent?.smartItemsControl.smartItems ?? [];
+  const pickedEntities = smartItems.map(smartItem => smartItem.entity as Entity);
 
   useEffect(() => {
-    if (!adminComponent?.smartItemsControl.smartItems?.length) return;
-
-    const validSmartItems = adminComponent.smartItemsControl.smartItems.filter(
-      item => item.entity === 0 || availableActions.has(item.entity),
-    );
-
-    if (validSmartItems.length !== adminComponent.smartItemsControl.smartItems.length) {
-      setAdminComponent({
-        ...adminComponent,
-        smartItemsControl: {
-          ...adminComponent.smartItemsControl,
-          smartItems: validSmartItems,
-        },
-      });
-    }
-
-    addSyncComponentsToEntities(
-      sdk,
-      validSmartItems.map(item => item.entity as Entity),
-      componentIdsToSync,
-    );
-  }, [availableActions, adminComponent, setAdminComponent]);
-
-  const handleAddSmartItemAction = useCallback(() => {
-    if (!adminComponent) return;
-
-    setAdminComponent({
-      ...adminComponent,
-      smartItemsControl: {
-        ...adminComponent.smartItemsControl,
-        smartItems: [
-          ...(adminComponent.smartItemsControl.smartItems || []),
-          { entity: 0, defaultAction: '', customName: '' },
-        ],
-      },
-    });
-  }, [adminComponent, setAdminComponent]);
-
-  const handleRemoveSmartItemAction = useCallback(
-    (_: React.MouseEvent, idx: number) => {
-      if (!adminComponent) return;
-      const updatedSmartItems =
-        adminComponent.smartItemsControl.smartItems?.filter((_, index) => index !== idx) || [];
-
-      setAdminComponent({
-        ...adminComponent,
-        smartItemsControl: {
-          ...adminComponent.smartItemsControl,
-          smartItems: updatedSmartItems,
-        },
-      });
-    },
-    [adminComponent, setAdminComponent],
-  );
-
-  const handleChangeSmartItemActionsEntity = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>, idx: number) => {
-      if (!adminComponent) return;
-      const updatedSmartItems =
-        adminComponent.smartItemsControl.smartItems?.map((item, index) =>
-          index === idx ? { ...item, entity: Number(e.target.value) } : item,
-        ) || [];
-
-      setAdminComponent({
-        ...adminComponent,
-        smartItemsControl: {
-          ...adminComponent.smartItemsControl,
-          smartItems: updatedSmartItems,
-        },
-      });
-    },
-    [adminComponent, setAdminComponent],
-  );
-
-  const handleChangeSmartItemActionsAction = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>, idx: number) => {
-      if (!adminComponent) return;
-      const updatedSmartItems =
-        adminComponent.smartItemsControl.smartItems?.map((item, index) =>
-          index === idx ? { ...item, defaultAction: e.target.value } : item,
-        ) || [];
-
-      setAdminComponent({
-        ...adminComponent,
-        smartItemsControl: {
-          ...adminComponent.smartItemsControl,
-          smartItems: updatedSmartItems,
-        },
-      });
-    },
-    [adminComponent, setAdminComponent],
-  );
-
-  const handleChangeSmartItemActionsCustomName = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
-      if (!adminComponent) return;
-      const updatedSmartItems =
-        adminComponent.smartItemsControl.smartItems?.map((item, index) =>
-          index === idx ? { ...item, customName: e.target.value } : item,
-        ) || [];
-      setAdminComponent({
-        ...adminComponent,
-        smartItemsControl: { ...adminComponent.smartItemsControl, smartItems: updatedSmartItems },
-      });
-    },
-    [adminComponent, setAdminComponent],
-  );
+    addSyncComponentsToEntities(sdk, pickedEntities, [
+      AudioSource.componentId,
+      AudioStream.componentId,
+      Animator.componentId,
+      Transform.componentId,
+      Tween.componentId,
+      VideoPlayer.componentId,
+      VisibilityComponent.componentId,
+    ]);
+  }, [pickedEntities.join(), entitiesWithAction]);
 
   if (!adminComponent) return null;
 
+  const setSmartItems = (next: SmartItems) =>
+    updateControl('smartItemsControl', { smartItems: next });
+
+  const isRemoved = (smartItemEntity: number) =>
+    smartItemEntity !== 0 && !Actions.has(smartItemEntity as Entity);
+
+  const actionOptions = (smartItemEntity: number) =>
+    (Actions.getOrNull(smartItemEntity as Entity)?.value ?? []).map(({ name }) => ({
+      value: name,
+      label: name,
+    }));
+
   return (
     <div className="SmartItemControl">
-      {adminComponent.smartItemsControl.smartItems?.map((smartItem, idx) => {
-        const actions = smartItem.entity
-          ? (availableActions.get(smartItem.entity)?.actions ?? []).map(({ name }) => ({
-              value: name,
-              label: name,
-            }))
-          : [];
-
-        return (
-          <Block
-            key={smartItem.entity + idx}
-            className="SmartItemRow"
-          >
-            <div className="LeftColumn">
-              <span>{idx + 1}</span>
-            </div>
-            <div className="FieldsContainer">
-              <EntityField
-                label="Smart Item"
-                components={[sdk.components.Actions] as Component[]}
-                value={smartItem.entity}
-                onChange={e => handleChangeSmartItemActionsEntity(e, idx)}
-              />
-              <TextField
-                label="Custom Name"
-                value={smartItem.customName}
-                onChange={e => handleChangeSmartItemActionsCustomName(e, idx)}
-              />
-              <Dropdown
-                label="Default Action"
-                placeholder="Default Action"
-                disabled={!smartItem.entity}
-                options={actions}
-                value={smartItem.defaultAction}
-                onChange={e => handleChangeSmartItemActionsAction(e, idx)}
-              />
-            </div>
-            <div className="RightMenu">
-              <MoreOptionsMenu>
-                <Button
-                  className="RemoveButton"
-                  onClick={e => handleRemoveSmartItemAction(e, idx)}
-                >
-                  <RemoveIcon /> Remove
-                </Button>
-              </MoreOptionsMenu>
-            </div>
-          </Block>
-        );
-      })}
+      {smartItems.map((smartItem, idx) => (
+        <AdminListRow
+          key={idx}
+          index={idx}
+          onRemove={() => setSmartItems(smartItems.toSpliced(idx, 1))}
+        >
+          <EntityField
+            label="Smart Item"
+            components={[Actions] as Component[]}
+            value={smartItem.entity}
+            error={isRemoved(smartItem.entity) && 'Smart item was removed'}
+            onChange={e =>
+              setSmartItems(smartItems.with(idx, { ...smartItem, entity: Number(e.target.value) }))
+            }
+          />
+          <TextField
+            label="Custom Name"
+            value={smartItem.customName}
+            onChange={e =>
+              setSmartItems(smartItems.with(idx, { ...smartItem, customName: e.target.value }))
+            }
+          />
+          <Dropdown
+            label="Default Action"
+            placeholder="Default Action"
+            disabled={!smartItem.entity}
+            options={actionOptions(smartItem.entity)}
+            value={smartItem.defaultAction}
+            onChange={e =>
+              setSmartItems(smartItems.with(idx, { ...smartItem, defaultAction: e.target.value }))
+            }
+          />
+        </AdminListRow>
+      ))}
       <AddButton
-        onClick={handleAddSmartItemAction}
+        onClick={() =>
+          setSmartItems([...smartItems, { entity: 0, defaultAction: '', customName: '' }])
+        }
         disabled={
-          entitiesWithAction.length === 0 ||
-          entitiesWithAction.length === adminComponent.smartItemsControl.smartItems?.length
+          entitiesWithAction.length === 0 || entitiesWithAction.length === smartItems.length
         }
       >
         Add Smart Item

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 const child_process = require('child_process');
-const { builtinModules } = require('module');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
@@ -8,13 +7,11 @@ const { future } = require('fp-future');
 const esbuild = require('esbuild');
 const dotenv = require('dotenv');
 const { ABOUT_FILE_PARTS, ABOUT_URL_PATH, rewriteAboutOrigin } = require('./bevy-agent-realm.js');
+const { getNotBundledModules } = require('./build-externals.js');
 
 const WATCH_MODE = process.argv.includes('--watch');
 const PRODUCTION = process.argv.includes('--production');
 
-// the following modules will not be embedded in the NodeJs bundle.
-// we create a bundle because many dependencies are exported as ESM and Node
-// is not ready yet to support them OOTB
 const externalModulesArray = getNotBundledModules();
 
 async function main() {
@@ -229,41 +226,6 @@ function runTypeChecker() {
   }
 
   return typeCheckerFuture;
-}
-
-function getNotBundledModules() {
-  // || true is added because `npm ls` fails installing a package from S3.
-  // stderr is muted so harmless transitive-dependency warnings don't pollute
-  // the dev server output; stdout stays piped for JSON.parse below.
-  const child = child_process.execSync('npm ls --all --json || true', {
-    stdio: ['ignore', 'pipe', 'ignore'],
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  const ret = JSON.parse(child.toString());
-
-  const externalModules = new Set();
-  function traverseDependencies(obj) {
-    if (obj.dependencies)
-      for (let depName in obj.dependencies) {
-        const dep = obj.dependencies[depName];
-        externalModules.add(depName);
-        traverseDependencies(dep);
-      }
-  }
-  traverseDependencies(ret);
-
-  // now remove the ESM dependencies
-  const esmModulesToBundle = [
-    '@dcl/sdk',
-    '@dcl/ecs',
-    '@dcl/mini-rpc',
-    '@dcl/asset-packs',
-    '@dcl-sdk/utils',
-    '@dcl/gltf-validator-ts',
-  ];
-  return Array.from(externalModules)
-    .concat(builtinModules)
-    .filter($ => !esmModulesToBundle.includes($));
 }
 
 function getEnvVars() {
