@@ -814,8 +814,9 @@ describe('when probing an AI CLI version', () => {
 describe('when resolving which AI CLI binary to use', () => {
   const managedBin = path.join('/tmp/creator-hub-test', 'ai-cli', 'node_modules', '.bin');
 
-  it('should ignore a leftover managed claude install, since its in-app sign-in never worked', () => {
-    expect(usableBin(path.join(managedBin, 'claude'), 'claude')).toBeNull();
+  it('should keep a managed claude install, which the app signs in to', () => {
+    const bin = path.join(managedBin, 'claude');
+    expect(usableBin(bin, 'claude')).toBe(bin);
   });
 
   it('should ignore a managed cursor-agent install, since that npm package is not Cursor’s', () => {

@@ -257,12 +257,15 @@ export function getCliVersion(bin: string): string | undefined {
 const signedOutCache = new Map<string, boolean>();
 const STATUS_TIMEOUT_MS = 5000;
 
-/** Whether the CLI at `bin` reports itself signed out. Only a clear "not logged in" counts, so a
- *  probe that times out, or an older CLI without the subcommand, leaves the agent usable. Async,
- *  unlike the version probe, so a slow credential store can't freeze the main process. */
-export async function cliReportsSignedOut(bin: string, statusArgs: string[]): Promise<boolean> {
+/** Whether `provider`'s CLI at `bin` reports itself signed out. Only a clear signed-out answer
+ *  counts, so a probe that times out, or an older CLI without the subcommand, leaves the agent
+ *  usable. Async, unlike the version probe, so a slow credential store can't freeze the main
+ *  process. */
+export async function cliReportsSignedOut(bin: string, provider: AiProvider): Promise<boolean> {
   const cached = signedOutCache.get(bin);
   if (cached !== undefined) return cached;
+  const { statusArgs, signedOutPattern } = CLI_SPECS[provider];
+  if (statusArgs === undefined || signedOutPattern === undefined) return false;
   const signedOut = await new Promise<boolean>(resolve => {
     let out = '';
     let child: ChildProcess;
@@ -285,7 +288,7 @@ export async function cliReportsSignedOut(bin: string, statusArgs: string[]): Pr
     });
     child.on('close', code => {
       clearTimeout(timeout);
-      resolve(code !== 0 && /not logged in/i.test(out));
+      resolve(code !== 0 && signedOutPattern.test(out));
     });
   });
   signedOutCache.set(bin, signedOut);
@@ -303,10 +306,9 @@ function billsToApiKey(provider: AiProvider, apiKeyFromEnv: boolean): boolean {
   return names.some(name => (process.env[name] ?? fromShell[name] ?? '') !== '');
 }
 
-function statusChecked(provider: AiProvider, apiKeyFromEnv: boolean): string[] | undefined {
-  const { statusArgs } = CLI_SPECS[provider];
+function statusChecked(provider: AiProvider, apiKeyFromEnv: boolean): boolean {
   // A signed-out CLI can still run turns billed to an API key, so don't block on it then.
-  return billsToApiKey(provider, apiKeyFromEnv) ? undefined : statusArgs;
+  return CLI_SPECS[provider].statusArgs !== undefined && !billsToApiKey(provider, apiKeyFromEnv);
 }
 
 /** Signed in per the CLI's own status command where it has one (probed beforehand by
@@ -318,7 +320,7 @@ function isCliSignedIn(
   managed: boolean,
   apiKeyFromEnv: boolean,
 ): boolean {
-  if (statusChecked(provider, apiKeyFromEnv) !== undefined) {
+  if (statusChecked(provider, apiKeyFromEnv)) {
     return signedOutCache.get(bin) !== true;
   }
   return managed ? isManagedSignedIn(provider) : true;
@@ -1038,9 +1040,8 @@ export function isClaudeDesktopInstalled(appDataDir: string): boolean {
 async function probeSignIn(apiKeyFromEnv: boolean): Promise<void> {
   await Promise.all(
     (Object.keys(PROVIDERS) as AiProvider[]).map(async id => {
-      const statusArgs = statusChecked(id, apiKeyFromEnv);
       const bin = usableBin(findExecutable(PROVIDERS[id].binNames), id);
-      if (statusArgs !== undefined && bin !== null) await cliReportsSignedOut(bin, statusArgs);
+      if (statusChecked(id, apiKeyFromEnv) && bin !== null) await cliReportsSignedOut(bin, id);
     }),
   );
 }

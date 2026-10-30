@@ -44,7 +44,7 @@ import { EventEmitter } from 'events';
 import { PassThrough } from 'stream';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { aiSend, detectProviders } from '../src/modules/ai';
+import { detectProviders } from '../src/modules/ai';
 import { getManagedBinDir } from '../src/modules/ai-cli-paths';
 
 function writeBin(dir: string, name: string): string {
@@ -57,7 +57,6 @@ function writeBin(dir: string, name: string): string {
 
 mocks.userData = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-ai-detect-'));
 const binDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-ai-bin-'));
-const project = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-ai-project-'));
 const originalPath = process.env.PATH;
 const originalShell = process.env.SHELL;
 
@@ -70,7 +69,7 @@ beforeEach(() => {
 afterAll(() => {
   process.env.PATH = originalPath;
   process.env.SHELL = originalShell;
-  for (const dir of [binDir, project, mocks.userData]) {
+  for (const dir of [binDir, mocks.userData]) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
@@ -93,17 +92,6 @@ describe('when Claude Desktop is installed', () => {
     writeBin(binDir, 'claude');
     const claude = (await detectProviders()).find(p => p.id === 'claude');
     expect(claude).toMatchObject({ available: true, desktopInstalled: undefined });
-  });
-});
-
-describe('when only a leftover app-managed Claude is installed', () => {
-  it('should refuse the turn instead of running it', async () => {
-    writeBin(getManagedBinDir(), 'claude');
-    const claude = (await detectProviders()).find(p => p.id === 'claude');
-    expect(claude?.available).toBe(false);
-    await expect(aiSend({ provider: 'claude', text: 'hi' }, project, () => {})).rejects.toThrow(
-      'Claude CLI not found',
-    );
   });
 });
 
@@ -231,5 +219,75 @@ describe('when Codex is installed', () => {
     statusReplies(1, 'Not logged in\n');
     const codex = (await detectProviders()).find(p => p.id === 'codex');
     expect(codex).toMatchObject({ available: false });
+  });
+});
+
+const claudeStatus = (loggedIn: boolean) =>
+  `{\n  "loggedIn": ${loggedIn},\n  "authMethod": "${loggedIn ? 'claude.ai' : 'none'}"\n}\n`;
+
+describe('when Claude Code is installed', () => {
+  const originalKey = process.env.ANTHROPIC_API_KEY;
+
+  beforeEach(() => {
+    delete process.env.ANTHROPIC_API_KEY;
+    writeBin(binDir, 'claude');
+  });
+
+  afterEach(() => {
+    if (originalKey === undefined) delete process.env.ANTHROPIC_API_KEY;
+    else process.env.ANTHROPIC_API_KEY = originalKey;
+    fs.rmSync(path.join(binDir, 'claude'), { force: true });
+    fs.rmSync(getManagedBinDir(), { recursive: true, force: true });
+  });
+
+  it('should ask Claude Code for its sign-in state', async () => {
+    statusReplies(0, claudeStatus(true));
+    await detectProviders();
+    expect(mocks.spawn).toHaveBeenCalledWith(
+      path.join(binDir, 'claude'),
+      ['auth', 'status'],
+      expect.anything(),
+    );
+  });
+
+  it('should not be available while Claude Code reports loggedIn false', async () => {
+    statusReplies(1, claudeStatus(false));
+    const claude = (await detectProviders()).find(p => p.id === 'claude');
+    expect(claude).toMatchObject({ available: false });
+  });
+
+  it('should be available once Claude Code reports loggedIn true', async () => {
+    statusReplies(0, claudeStatus(true));
+    const claude = (await detectProviders()).find(p => p.id === 'claude');
+    expect(claude).toMatchObject({ available: true });
+  });
+
+  it('should stay available when an older Claude Code has no auth command', async () => {
+    statusReplies(1, "error: unknown command 'auth'\n");
+    const claude = (await detectProviders()).find(p => p.id === 'claude');
+    expect(claude).toMatchObject({ available: true });
+  });
+
+  it('should stay available when signed out but turns bill to ANTHROPIC_API_KEY', async () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-example123';
+    statusReplies(1, claudeStatus(false));
+    const claude = (await detectProviders(true)).find(p => p.id === 'claude');
+    expect(claude).toMatchObject({ available: true });
+  });
+
+  it('should offer in-app sign-in for an app-installed Claude Code that is signed out', async () => {
+    fs.rmSync(path.join(binDir, 'claude'), { force: true });
+    writeBin(getManagedBinDir(), 'claude');
+    statusReplies(1, claudeStatus(false));
+    const claude = (await detectProviders()).find(p => p.id === 'claude');
+    expect(claude).toMatchObject({ available: false, managedSignIn: true });
+  });
+
+  it('should treat an app-installed Claude Code as signed in when it says so', async () => {
+    fs.rmSync(path.join(binDir, 'claude'), { force: true });
+    writeBin(getManagedBinDir(), 'claude');
+    statusReplies(0, claudeStatus(true));
+    const claude = (await detectProviders()).find(p => p.id === 'claude');
+    expect(claude).toMatchObject({ available: true, managedSignIn: true });
   });
 });
