@@ -126,13 +126,13 @@ Under happy-dom the whole subtree reports "There are no accessible roles", and
   `preventDefault()`. A test can't prove "clicking this icon inside a label
   doesn't toggle the checkbox" from the checkbox state; assert the click was
   cancelled (`fireEvent.click(el)` returns `false`) and prove the toggle in a
-  browser (`CheckboxField.spec.tsx`).
+  browser (`CheckboxField.spec.tsx`; lands with #1707).
 - Importing through the `components/ui` barrel pulls in Babylon GUI-editor
   stylesheets, and happy-dom then computes `display: none` up to `<html>`. Role
   queries need `{ hidden: true }`. A `description` filter still works, but a
   name that comes from a `<label>` computes as empty, because hidden label text
   is dropped — assert the association with `findByLabelText` instead and prove
-  the name in a browser (`CreateScriptModal.spec.tsx`).
+  the name in a browser (`CreateScriptModal.spec.tsx`; lands with #1707).
 - jest-dom isn't installed. Assert accessible names and descriptions through
   `getByRole(role, { name })` and `{ description }`.
 
