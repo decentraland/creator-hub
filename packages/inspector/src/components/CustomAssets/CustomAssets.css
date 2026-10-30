@@ -30,6 +30,15 @@
   background: var(--list-item-hover-bg-color);
 }
 
+.custom-asset-item:focus-visible {
+  outline: none;
+}
+
+.custom-asset-item:focus-visible .custom-asset-item-box {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
 .custom-asset-item-box img {
   width: 100%;
   height: 100%;

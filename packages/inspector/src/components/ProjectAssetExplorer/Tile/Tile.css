@@ -93,11 +93,7 @@
   filter: brightness(1.35);
 }
 
-.ProjectView .contexify .contexify_itemContent {
-  gap: 8px;
-}
-
-.ProjectView .contexify .contexify_itemContent svg {
-  margin-right: 0;
-  flex-shrink: 0;
+.Tile:focus-visible {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: -1px;
 }

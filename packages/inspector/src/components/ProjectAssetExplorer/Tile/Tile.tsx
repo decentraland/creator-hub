@@ -4,7 +4,7 @@ import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
 import { MdContentCopy as CopyNameIcon, MdOutlineEmojiPeople as EmoteIcon } from 'react-icons/md';
-import { Item as MenuItem } from 'react-contexify';
+import { Item as MenuItem, Separator } from 'react-contexify';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import { useDrag, useDrop } from 'react-dnd';
 import cx from 'classnames';
@@ -262,7 +262,7 @@ export const Tile = withContextMenu<Props>(
             onClick={handleAction(() => copyBuiltInEmoteName(builtInEmote.name))}
           >
             <CopyNameIcon size={16} />
-            Copy name
+            Copy Name
           </MenuItem>
         );
       }
@@ -278,13 +278,23 @@ export const Tile = withContextMenu<Props>(
             </MenuItem>
           )}
           {!readOnly && (
-            <MenuItem
-              id="duplicate"
-              onClick={handleAction(handleDuplicate)}
-            >
-              <DuplicateIcon />
-              {isMultiple ? `Duplicate ${actionCount} items` : 'Duplicate'}
-            </MenuItem>
+            <>
+              <MenuItem
+                id="duplicate"
+                onClick={handleAction(handleDuplicate)}
+              >
+                <DuplicateIcon />
+                {isMultiple ? `Duplicate ${actionCount} Items` : 'Duplicate'}
+              </MenuItem>
+              <MenuItem
+                id="delete"
+                onClick={handleAction(handleRemove)}
+              >
+                <DeleteIcon />
+                {isMultiple ? `Delete ${actionCount} Items` : 'Delete'}
+              </MenuItem>
+              <Separator />
+            </>
           )}
           <MenuItem
             id="copy-relative-path"
@@ -298,27 +308,24 @@ export const Tile = withContextMenu<Props>(
             onClick={handleAction(handleCopyName)}
           >
             <CopyNameIcon size={16} />
-            {isMultiple ? 'Copy file names' : 'Copy file name'}
+            {isMultiple ? 'Copy File Names' : 'Copy File Name'}
           </MenuItem>
-          {!readOnly && (
-            <MenuItem
-              id="delete"
-              onClick={handleAction(handleRemove)}
-            >
-              <DeleteIcon />
-              {isMultiple ? `Delete ${actionCount} items` : 'Delete'}
-            </MenuItem>
-          )}
         </>
       );
     };
 
     return (
       <>
-        <Menu id={contextMenuId}>{renderMenu()}</Menu>
+        <Menu
+          id={contextMenuId}
+          label="Asset Options"
+        >
+          {renderMenu()}
+        </Menu>
         <div
           ref={setCardRef}
           className={cx('Tile', { selected, 'drop-target': isDropTarget })}
+          tabIndex={-1}
           key={value.name}
           onClick={onClick}
           onDoubleClick={onSelect}

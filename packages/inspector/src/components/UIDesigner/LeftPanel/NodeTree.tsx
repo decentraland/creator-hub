@@ -302,6 +302,7 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
     <div className="ui-designer-nodetree">
       <NodeTreeComponent
         value={tree}
+        contextMenuLabel="Node Options"
         getId={getId}
         getChildren={getChildren}
         getLabel={getLabel}

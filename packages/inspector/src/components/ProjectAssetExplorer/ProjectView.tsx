@@ -634,7 +634,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             onClick={handleAction(() => copyBuiltInEmoteName(emote.name))}
           >
             <CopyNameIcon size={16} />
-            Copy name
+            Copy Name
           </MenuItem>
         );
       }
@@ -653,7 +653,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             onClick={handleAction(() => copyFileNames(val))}
           >
             <CopyNameIcon size={16} />
-            {isMultiple ? 'Copy file names' : 'Copy file name'}
+            {isMultiple ? 'Copy File Names' : 'Copy File Name'}
           </MenuItem>
         </>
       );
@@ -890,9 +890,10 @@ function ProjectView({ folders, thumbnails }: Props) {
             canDrag={canDragNode}
             canDuplicate={canDuplicateNode}
             canAddChild={canAddChild}
-            addChildLabel="New folder"
+            addChildLabel="New Folder"
             addChildIcon={<NewFolderIcon />}
             getExtraContextMenu={getExtraContextMenu}
+            contextMenuLabel="Asset Options"
             getIcon={val => <NodeIcon value={tree.get(val)} />}
             getDragContext={handleDragContext}
             getDragItem={handleDragItem}
