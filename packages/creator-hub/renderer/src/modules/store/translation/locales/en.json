@@ -923,6 +923,9 @@
       "delete_scene": "Deleting scene...",
       "delete_scene_failed": "Failed deleting scene",
       "dependencies_updated": "Scene dependencies were updated",
+      "updating_sdk_skills": "Installing the latest AI skills...",
+      "sdk_skills_updated": "AI skills are up to date",
+      "sdk_skills_update_failed": "Could not install the AI skills",
       "installing_dependencies": "Installing dependencies...",
       "installing_dependencies_failed": "Failed installing dependencies",
       "invalid_scenes_folder": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
@@ -958,6 +961,16 @@
       "title": "New dependencies version detected",
       "actions": {
         "update": "Update"
+      }
+    },
+    "sdk_skills": {
+      "outdated": {
+        "title": "AI skills update available for this scene",
+        "action": "Update"
+      },
+      "missing": {
+        "title": "This scene doesn't have the Decentraland AI skills",
+        "action": "Install"
       }
     },
     "deploy": {

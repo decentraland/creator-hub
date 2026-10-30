@@ -51,6 +51,10 @@ export const useEditor = () => {
     }
   }, [project, editorActions.killPreviewScene]);
 
+  const leaveProject = useCallback(() => {
+    dispatch(editorActions.leaveProject());
+  }, [editorActions.leaveProject]);
+
   const openCode = useCallback(() => {
     if (project) {
       editorApi.openCode(project.path);
@@ -135,6 +139,7 @@ export const useEditor = () => {
     publishScene,
     openPreview,
     killPreview,
+    leaveProject,
     openCode,
     updateScene,
     saveAndGetThumbnail,

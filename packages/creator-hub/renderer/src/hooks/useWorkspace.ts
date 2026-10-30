@@ -67,6 +67,10 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.updatePackages(project));
   }, []);
 
+  const updateSdkSkills = useCallback((project: Project) => {
+    dispatch(workspaceActions.updateSdkSkills(project));
+  }, []);
+
   const updateProject = useCallback((project: Project) => {
     dispatch(workspaceActions.updateProject(project));
   }, []);
@@ -123,6 +127,7 @@ export const useWorkspace = () => {
     unlistProjects,
     openFolder,
     updatePackages,
+    updateSdkSkills,
     updateProject,
     updateSceneJson,
     validateProjectPath,
