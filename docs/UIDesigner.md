@@ -49,10 +49,10 @@ Icons shown in a labeled row — the widget palette, the add-widget picker, and 
 
 The 2D toolbar is a dedicated component, not the shared 3D one. `App` swaps it in by mode: `isUIDesigner ? <UIDesignerToolbar/> : <Toolbar/>`. This mirrors how the left, right, and bottom panels already swap per mode, and keeps 2D-specific wiring out of the shared `Toolbar`.
 
-- Both bars follow Figma's Viewport Toolbar board and share one rule set: `ToolbarButton`, the `.Toolbar` CSS, the glyphs in `Toolbar/icons.tsx`, and the ⋮ menu (`Toolbar/MoreOptions`). The tool group (`Tools.tsx`) is the 3D gizmo group, with rotation disabled.
-- The right side is **Edit Scene**, which leaves 2D and selects the scene root, then a ⋮ holding **Scene Info** only. The ⋮ is absent when the scene has no scene info.
-- **No Save.** The code store writes every splice to disk immediately (`code/store.ts`, "writes are immediate"), so there's never anything to save.
-- **No snap control.** Figma draws none on the 2D bar. Snapping still works; see "Grid snap" below.
+- Both bars follow Figma's Viewport Toolbar board and share one rule set: `ToolbarButton`, the `.Toolbar` CSS, the glyphs in `Toolbar/icons.tsx`, and the ⋮ menu (`Toolbar/MoreOptions`). The tool group (`Tools.tsx`) is the 3D gizmo group, with rotation disabled (lands with #1714).
+- The right side is **Edit Scene**, which leaves 2D and selects the scene root, then a ⋮ holding **Scene Info** only. The ⋮ is absent when the scene has no scene info (lands with #1714).
+- **No Save.** The code store writes every splice to disk immediately (`code/store.ts`, "writes are immediate"), so there's never anything to save (lands with #1714).
+- **No snap control.** Figma draws none on the 2D bar. Snapping still works; see "Grid snap" below (lands with #1714).
 
 ### Tool modes
 
@@ -65,11 +65,11 @@ The Free / Move / Resize tools are a session-only Redux value, `uiDesignerTool` 
 
 ### Grid snap
 
-Canvas drag and resize snap to `DRAG_SNAP_GRID` (10 logical px). The canvas gates the snap on `uiDesignerSnapEnabled` (`redux/ui`, on by default; the toolbar has no control for it) and `!e.shiftKey`, so holding **Shift** frees a single drag.
+Canvas drag and resize snap to `DRAG_SNAP_GRID` (10 logical px). The canvas gates the snap on `uiDesignerSnapEnabled` (`redux/ui`, on by default; the toolbar has no control for it (lands with #1714), and until then the 2D toolbar's Snap control in `Tools.tsx` toggles it) and `!e.shiftKey`, so holding **Shift** frees a single drag.
 
 ## Scene-run controls and mode sync
 
-Both toolbars carry Figma's RuntimeControls, only under Bevy (`sdk.renderer.sceneRun`): [Play][Pause, disabled] when stopped, [Stop][Pause, highlighted] while running, and [Stop][Resume] while paused. Pause is not a toggle: its `running` class draws the highlight, and its name flips between "Pause scene" and "Resume scene". Each slot is one element in a fixed position, so keyboard focus stays put when slot 1 swaps between Play and Stop. The two bars read the same in every state.
+Both toolbars carry Figma's RuntimeControls, only under Bevy (`sdk.renderer.sceneRun`): [Play][Pause, disabled] when stopped, [Stop][Pause, highlighted] while running, and [Stop][Resume] while paused. Pause is not a toggle: its `running` class draws the highlight, and its name flips between "Pause scene" and "Resume scene". Each slot is one element in a fixed position, so keyboard focus stays put when slot 1 swaps between Play and Stop. The two bars read the same in every state (lands with #1714).
 
 - 3D reads "running" from `sceneRun.isRunning()`; 2D reads it from `sceneRunIntent`, because the scene is always frozen in 2D.
 - In 2D, Play and resuming a paused scene both leave 2D first, then run. Pause and Stop stay in 2D.
@@ -77,7 +77,7 @@ Both toolbars carry Figma's RuntimeControls, only under Bevy (`sdk.renderer.scen
 The subtlety is **run intent**. `sceneRun` exposes only a boolean `isRunning()`, which can't distinguish "paused for editing but was running" from "stopped." So a separate `sceneRunIntent` (`redux/ui`) records what the user wants:
 
 - Both toolbars set `sceneRunIntent` on Play, Pause, and Stop.
-- `sceneRunStarted` (`redux/ui`) is the bit the 3D model adds: "has the scene run since the last Stop". Play sets it, Pause leaves it, and Stop clears it through `setSceneRunIntent({ running: false, reset: true })`, which both Stop buttons dispatch. It lives in Redux because each bar unmounts while the other mode is open. A scene runtime error freezes the scene without a Stop, so 3D then shows paused.
+- `sceneRunStarted` (`redux/ui`) is the bit the 3D model adds: "has the scene run since the last Stop". Play sets it, Pause leaves it, and Stop clears it through `setSceneRunIntent({ running: false, reset: true })`, which both Stop buttons dispatch. It lives in Redux because each bar unmounts while the other mode is open. A scene runtime error freezes the scene without a Stop, so 3D then shows paused (lands with #1714).
 - `useSyncSceneRunWithMode` freezes the scene when 2D opens (editing needs a static viewport, because the renderer is only CSS-hidden in 2D) and resumes it when 3D returns, but only if the intent was to run.
 - The 2D toolbar displays the intent, so switching to 2D while a scene runs shows it as running (Stop, Pause highlighted), not stopped.
 
