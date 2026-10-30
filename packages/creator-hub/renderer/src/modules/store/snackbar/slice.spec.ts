@@ -9,6 +9,7 @@ import { actions as editorActions } from '../editor';
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
 import { DeploymentError } from '../../../lib/deploy';
+import { actions as snackbarActions } from './slice';
 
 const projectWithOutdatedDeps = {
   path: '/tmp/scene',
@@ -69,7 +70,7 @@ describe('snackbar slice', () => {
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
       expect(skillsToasts(store)).toEqual([
-        expect.objectContaining({ project: projectWithOutdatedDeps }),
+        expect.objectContaining({ project: projectWithOutdatedDeps, installed: true }),
       ]);
     });
 
@@ -91,21 +92,33 @@ describe('snackbar slice', () => {
     });
   });
 
-  describe('when the scene has no AI skills of its own', () => {
+  describe('when the scene has no AI skills', () => {
     beforeEach(() => {
       vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: false, outdated: false });
     });
 
-    it('should leave the scene alone', async () => {
+    it('should offer to install them', async () => {
       const store = createTestStore();
       openScene(store, projectWithOutdatedDeps);
 
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
-      expect(skillsToasts(store)).toEqual([]);
+      expect(skillsToasts(store)).toEqual([expect.objectContaining({ installed: false })]);
     });
 
-    it('should not install them under "Auto-update all my scenes"', async () => {
+    it('should offer again every time the scene opens, even after a dismissal', async () => {
+      const store = createTestStore();
+      openScene(store, projectWithOutdatedDeps);
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+      store.dispatch(snackbarActions.removeSnackbar(skillsToasts(store)[0].id));
+
+      openScene(store, projectWithOutdatedDeps);
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      expect(skillsToasts(store)).toEqual([expect.objectContaining({ installed: false })]);
+    });
+
+    it('should still ask, not install, under "Auto-update all my scenes"', async () => {
       const store = createTestStore();
       await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE);
       openScene(store, projectWithOutdatedDeps);
@@ -113,7 +126,7 @@ describe('snackbar slice', () => {
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
       expect(skills.updateProject).not.toHaveBeenCalled();
-      expect(skillsToasts(store)).toEqual([]);
+      expect(skillsToasts(store)).toEqual([expect.objectContaining({ installed: false })]);
     });
   });
 
@@ -241,7 +254,7 @@ describe('snackbar slice', () => {
 
       const { notifications } = store.getState().snackbar;
       expect(notifications).toContainEqual(
-        expect.objectContaining({ severity: 'error', message: 'Could not update the AI skills' }),
+        expect.objectContaining({ severity: 'error', message: 'Could not install the AI skills' }),
       );
       expect(notifications.some($ => $.type === 'generic' && $.severity === 'loading')).toBe(false);
     });

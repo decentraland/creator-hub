@@ -130,26 +130,29 @@ export const updateSdkSkills = createAsyncThunk(
     }
   },
 );
-// Only for scenes whose creator installed the AI skills themselves (`npx skills add`): a scene
-// without them is left alone, since the built-in assistant brings its own. Follows the
-// dependency update strategy: the skills are as much a part of keeping a scene current as its
-// packages.
+// What to offer for the scene's AI skills: installing them, updating them, or nothing.
+export type SdkSkillsOffer = 'install' | 'update' | null;
+// Follows the dependency update strategy: the skills are as much a part of keeping a scene
+// current as its packages. A scene without them is asked on every open, on purpose: creators'
+// own AI tools work far better with them.
 export const checkSdkSkillsUpdate = createAsyncThunk(
   'workspace/checkSdkSkillsUpdate',
   async (project: Project, { dispatch, getState }) => {
-    const nothing = { project, offerUpdate: false };
+    const nothing = { project, offer: null as SdkSkillsOffer };
     const strategy = getState().workspace.settings.dependencyUpdateStrategy;
     if (strategy === DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING) return nothing;
 
     const { installed, outdated } = await skills.getProjectStatus(project.path);
     // The creator may have left or opened another scene meanwhile; this is for this one only.
     if (getState().editor.openingProjectPath !== project.path) return nothing;
-    if (!installed || !outdated) return nothing;
+    // Asked even under Auto-update: installing adds new folders and a lock to the scene.
+    if (!installed) return { project, offer: 'install' as SdkSkillsOffer };
+    if (!outdated) return nothing;
     if (strategy === DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE) {
       await dispatch(updateSdkSkills(project)).unwrap();
       return nothing;
     }
-    return { project, offerUpdate: true };
+    return { project, offer: 'update' as SdkSkillsOffer };
   },
 );
 export const runProject = createAsyncThunk(

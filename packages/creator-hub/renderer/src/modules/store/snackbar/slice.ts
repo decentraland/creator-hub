@@ -239,14 +239,14 @@ export const slice = createSlice({
       })
       .addCase(
         workspaceActions.checkSdkSkillsUpdate.fulfilled,
-        (state, { meta, payload: { project, offerUpdate } }) => {
+        (state, { meta, payload: { project, offer } }) => {
           state.notifications = state.notifications.filter(
             $ => !isSdkSkillsToastFor($, project.path),
           );
-          if (offerUpdate) {
+          if (offer) {
             state.notifications.push(
               createCustomNotification(
-                { type: 'sdk-skills', project },
+                { type: 'sdk-skills', project, installed: offer === 'update' },
                 { duration: 0, requestId: meta.requestId },
               ),
             );

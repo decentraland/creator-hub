@@ -7,7 +7,15 @@ import type { Project } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
-export function SdkSkills({ project, onClose }: { project: Project; onClose: () => void }) {
+export function SdkSkills({
+  project,
+  installed,
+  onClose,
+}: {
+  project: Project;
+  installed: boolean;
+  onClose: () => void;
+}) {
   const { updateSdkSkills } = useWorkspace();
 
   const handleClickAction = useCallback(() => {
@@ -25,7 +33,9 @@ export function SdkSkills({ project, onClose }: { project: Project; onClose: () 
             variant="text"
             onClick={handleClickAction}
           >
-            {t('snackbar.sdk_skills.action')}
+            {installed
+              ? t('snackbar.sdk_skills.outdated.action')
+              : t('snackbar.sdk_skills.missing.action')}
           </Button>
           <IconButton onClick={onClose}>
             <CloseIcon color="secondary" />
@@ -34,7 +44,7 @@ export function SdkSkills({ project, onClose }: { project: Project; onClose: () 
       }
       sx={{ alignItems: 'center' }}
     >
-      {t('snackbar.sdk_skills.title')}
+      {installed ? t('snackbar.sdk_skills.outdated.title') : t('snackbar.sdk_skills.missing.title')}
     </Alert>
   );
 }

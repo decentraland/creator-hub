@@ -663,7 +663,7 @@ async function addSkillsToProject(projectDir: string, logger: Logger): Promise<v
   logger(`installed the latest skills in ${projectDir}`);
 }
 
-// Updates the scene's own copy of the skills. A second call for the same scene while one runs
+// Installs or updates the scene's own copy of the skills. A second call for the same scene while one runs
 // joins it instead of running `skills add` in the same folder twice.
 export function updateProjectSkills(projectDir: string, logger: Logger = defaultLog) {
   const key = path.resolve(projectDir);
