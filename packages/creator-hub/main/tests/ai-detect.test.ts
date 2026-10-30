@@ -1,11 +1,11 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   userData: '',
   spawnSync: vi.fn(() => ({ stdout: '', stderr: '' })),
+  spawn: vi.fn(),
 }));
 
 vi.mock('os', async importOriginal => {
@@ -23,7 +23,7 @@ vi.mock('../src/modules/node-runtime', () => ({
   getChildEnv: () => ({ PATH: process.env.PATH }),
 }));
 vi.mock('cross-spawn', () => ({
-  default: Object.assign(vi.fn(), { sync: mocks.spawnSync }),
+  default: Object.assign(mocks.spawn, { sync: mocks.spawnSync }),
 }));
 vi.mock('../src/modules/electron', () => ({
   getUserDataPath: () => mocks.userData,
@@ -39,6 +39,10 @@ vi.mock('../src/modules/explorer-gateway', () => ({
   stopExplorerGateway: vi.fn(),
   stopPreview: vi.fn(),
 }));
+
+import { EventEmitter } from 'events';
+import { PassThrough } from 'stream';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { aiSend, detectProviders } from '../src/modules/ai';
 import { getManagedBinDir } from '../src/modules/ai-cli-paths';
@@ -135,25 +139,40 @@ describe('when an agent was just installed with its Windows installer', () => {
   );
 });
 
-describe('when Codex is installed', () => {
-  const originalOpenAiKey = process.env.OPENAI_API_KEY;
+/** Make every spawned status command exit with `code` after printing `stdout`. */
+function statusReplies(code: number, stdout: string) {
+  mocks.spawn.mockImplementation(() => {
+    const child = Object.assign(new EventEmitter(), {
+      stdout: new PassThrough(),
+      stderr: new PassThrough(),
+      kill: vi.fn(),
+    });
+    setTimeout(() => {
+      child.stdout.end(stdout);
+      child.emit('close', code);
+    }, 0);
+    return child;
+  });
+}
 
-  function statusReplies(status: number, stdout: string) {
-    mocks.spawnSync.mockImplementation(((_bin: string, args: string[]) =>
-      args[0] === 'login'
-        ? { status, stdout, stderr: '' }
-        : { status: 0, stdout: 'codex-cli 0.166.0', stderr: '' }) as never);
-  }
+beforeEach(() => {
+  statusReplies(0, 'Logged in using ChatGPT\n');
+});
+
+describe('when Codex is installed', () => {
+  const apiKeyNames = ['OPENAI_API_KEY', 'CODEX_API_KEY'] as const;
+  const originalKeys = apiKeyNames.map(name => process.env[name]);
 
   beforeEach(() => {
-    delete process.env.OPENAI_API_KEY;
+    for (const name of apiKeyNames) delete process.env[name];
     writeBin(binDir, 'codex');
   });
 
   afterEach(() => {
-    process.env.OPENAI_API_KEY = originalOpenAiKey;
-    mocks.spawnSync.mockReset();
-    mocks.spawnSync.mockImplementation(() => ({ stdout: '', stderr: '' }));
+    apiKeyNames.forEach((name, i) => {
+      if (originalKeys[i] === undefined) delete process.env[name];
+      else process.env[name] = originalKeys[i];
+    });
     fs.rmSync(path.join(binDir, 'codex'), { force: true });
     fs.rmSync(getManagedBinDir(), { recursive: true, force: true });
   });
@@ -176,11 +195,26 @@ describe('when Codex is installed', () => {
     expect(codex).toMatchObject({ available: true });
   });
 
-  it('should stay available when signed out but an API key can pay for turns', async () => {
-    process.env.OPENAI_API_KEY = 'sk-example123';
-    statusReplies(1, 'Not logged in\n');
+  it('should stay available when the status check cannot start', async () => {
+    mocks.spawn.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
     const codex = (await detectProviders()).find(p => p.id === 'codex');
     expect(codex).toMatchObject({ available: true });
+  });
+
+  it.each(apiKeyNames)('should stay available when signed out but turns bill to %s', async name => {
+    process.env[name] = 'sk-example123';
+    statusReplies(1, 'Not logged in\n');
+    const codex = (await detectProviders(true)).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: true });
+  });
+
+  it('should not be available when an API key is set but turns bill to the subscription', async () => {
+    process.env.OPENAI_API_KEY = 'sk-example123';
+    statusReplies(1, 'Not logged in\n');
+    const codex = (await detectProviders(false)).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: false });
   });
 
   it('should treat an app-installed Codex as signed in when Codex says so, without the marker', async () => {

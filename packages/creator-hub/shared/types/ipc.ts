@@ -224,7 +224,7 @@ export interface Ipc {
 
   // AI scene assistant. `ai.send` streams its result over AI_STREAM_EVENT (payload
   // AiEvent) to the calling WebContents; the returned turnId correlates the stream.
-  'ai.detectProviders': () => Promise<AiProviderInfo[]>;
+  'ai.detectProviders': (apiKeyFromEnv?: boolean) => Promise<AiProviderInfo[]>;
   'ai.send': (path: string, params: AiSendParams) => Promise<{ turnId: string }>;
   'ai.stop': () => Promise<void>;
   'ai.reset': (path?: string) => Promise<void>;

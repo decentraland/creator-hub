@@ -43,65 +43,106 @@ export { getCliState } from './ai-cli-paths';
 
 // --- install --------------------------------------------------------------------------
 
+// Every npm run in the managed folder goes through this chain: two at once in the same folder
+// trip over each other, and a turn or a recheck waits on it (see whenManagedCliIdle).
+let npmQueue: Promise<void> = Promise.resolve();
+
+function enqueueNpm(work: () => Promise<void>): Promise<void> {
+  const run = npmQueue.then(work);
+  npmQueue = run.catch(() => {});
+  return run;
+}
+
+/** Resolves once no npm run is touching the managed CLIs. npm removes the old binary before it
+ *  links the new one, so a turn or a scan started mid-update finds no CLI. */
+export function whenManagedCliIdle(): Promise<void> {
+  return npmQueue;
+}
+
+// Install scripts are off: the official CLIs ship their native binary as an optional
+// dependency and run nothing at install, so a script appearing in a release is not ours to run.
+const NPM_OPTIONS = { ignoreScripts: true };
+
 // An install that is never updated falls behind the user's shared ~/.codex/config.toml, which a
 // newer Codex (desktop app, IDE extension, terminal install) may point at a model the old CLI
 // can't use — every turn then fails while the agent shows as connected.
-async function ensureLatest(
-  provider: AiProvider,
-  onProgress: (message: string) => void,
-): Promise<void> {
-  if (!isInstalled(provider)) {
-    await install(provider, onProgress);
-    return;
-  }
-  const { pkg } = CLI_SPECS[provider];
-  onProgress(`Updating ${pkg}…`);
-  try {
-    await npmInstall(getManagedCliDir(), [`${pkg}@latest`]);
-  } catch (error) {
-    // Offline, or Windows holding the binary open: the installed copy still works.
-    log.warn(`[AI-CLI] could not update ${pkg}, keeping the installed version:`, error);
-  }
-}
+const updatedThisRun = new Set<AiProvider>();
 
-let backgroundUpdate: Promise<void> | null = null;
+function update(provider: AiProvider, onProgress: (message: string) => void): Promise<void> {
+  updatedThisRun.add(provider);
+  return enqueueNpm(async () => {
+    const { pkg } = CLI_SPECS[provider];
+    onProgress(`Updating ${pkg}…`);
+    try {
+      await npmInstall(getManagedCliDir(), [`${pkg}@latest`], NPM_OPTIONS);
+    } catch (error) {
+      // Offline, or Windows holding the binary open: the installed copy still works.
+      log.warn(`[AI-CLI] could not update ${pkg}, keeping the installed version:`, error);
+    }
+  });
+}
 
 /** Update every app-installed CLI once per app run, so a long-lived install keeps up. */
-export function updateManagedClis(): Promise<void> {
-  if (backgroundUpdate === null && !activeLogin) {
-    backgroundUpdate = (async () => {
-      for (const provider of Object.keys(CLI_SPECS) as AiProvider[]) {
-        if (!CLI_SPECS[provider].managedSignIn || !isInstalled(provider)) continue;
-        await ensureLatest(provider, message => log.info(`[AI-CLI] ${message}`));
-      }
-    })();
+export async function updateManagedClis(): Promise<void> {
+  for (const provider of Object.keys(CLI_SPECS) as AiProvider[]) {
+    if (!CLI_SPECS[provider].managedSignIn || !isInstalled(provider)) continue;
+    if (updatedThisRun.has(provider)) continue;
+    await update(provider, message => log.info(`[AI-CLI] ${message}`));
   }
-  return backgroundUpdate ?? Promise.resolve();
 }
 
-async function install(provider: AiProvider, onProgress: (message: string) => void) {
-  const dir = getManagedCliDir();
-  await fsp.mkdir(dir, { recursive: true });
-  // Seed a private package.json so npm treats this as its own project (it won't walk up
-  // into the Creator Hub workspace) and won't warn about a missing manifest.
-  const manifest = path.join(dir, 'package.json');
+let turnsStarting = 0;
+
+/** Start a turn once no npm run is replacing a CLI, and keep updates from starting meanwhile. */
+export async function startTurnWhenIdle<T>(startTurn: () => Promise<T>): Promise<T> {
+  turnsStarting++;
   try {
-    await fsp.access(manifest);
-  } catch {
-    await fsp.writeFile(
-      manifest,
-      `${JSON.stringify({ name: 'creator-hub-ai-cli', private: true, version: '1.0.0' }, null, 2)}\n`,
-    );
+    await whenManagedCliIdle();
+    return await startTurn();
+  } finally {
+    turnsStarting--;
   }
-  const { pkg, bin } = CLI_SPECS[provider];
-  onProgress(`Installing ${pkg}…`);
-  log.info(`[AI-CLI] installing ${pkg} into ${dir}`);
-  // The shared npm helper runs the bundled npm/Node with --save-exact in cwd=dir.
-  await npmInstall(dir, [`${pkg}@latest`]);
-  if (!isInstalled(provider)) {
-    throw new Error(`Install of ${pkg} did not produce a "${bin}" binary`);
-  }
-  onProgress('Installed.');
+}
+
+/** Scan once any running update is done, then update in the background unless a turn is
+ *  starting or running. Scanning first keeps the update from hiding the binary mid-scan. */
+export async function detectThenUpdate<T>(
+  detect: () => Promise<T>,
+  turnRunning: () => boolean,
+): Promise<T> {
+  await whenManagedCliIdle();
+  const result = await detect();
+  if (turnsStarting === 0 && !turnRunning()) void updateManagedClis();
+  return result;
+}
+
+function install(provider: AiProvider, onProgress: (message: string) => void): Promise<void> {
+  updatedThisRun.add(provider);
+  return enqueueNpm(async () => {
+    if (isInstalled(provider)) return;
+    const dir = getManagedCliDir();
+    await fsp.mkdir(dir, { recursive: true });
+    // Seed a private package.json so npm treats this as its own project (it won't walk up
+    // into the Creator Hub workspace) and won't warn about a missing manifest.
+    const manifest = path.join(dir, 'package.json');
+    try {
+      await fsp.access(manifest);
+    } catch {
+      await fsp.writeFile(
+        manifest,
+        `${JSON.stringify({ name: 'creator-hub-ai-cli', private: true, version: '1.0.0' }, null, 2)}\n`,
+      );
+    }
+    const { pkg, bin } = CLI_SPECS[provider];
+    onProgress(`Installing ${pkg}…`);
+    log.info(`[AI-CLI] installing ${pkg} into ${dir}`);
+    // The shared npm helper runs the bundled npm/Node with --save-exact in cwd=dir.
+    await npmInstall(dir, [`${pkg}@latest`], NPM_OPTIONS);
+    if (!isInstalled(provider)) {
+      throw new Error(`Install of ${pkg} did not produce a "${bin}" binary`);
+    }
+    onProgress('Installed.');
+  });
 }
 
 // --- login ----------------------------------------------------------------------------
@@ -148,6 +189,7 @@ function extractAuthUrl(text: string): string | null {
 }
 
 let activeLogin: pty.IPty | null = null;
+let signInCancelled = false;
 
 // Auto-kill a sign-in that never completes, so a hung login (provider OAuth failing, user
 // walked away) can't wedge activeLogin. Generous enough for an unhurried browser SSO; codex's
@@ -284,9 +326,13 @@ export async function signInCli(provider: AiProvider): Promise<void> {
     );
   }
   const onProgress = (message: string) => sendLoginEvent({ type: 'progress', message });
-  // Two npm runs in the same folder would trip over each other.
-  await backgroundUpdate;
-  await ensureLatest(provider, onProgress);
+  signInCancelled = false;
+  // Skip the update when this run already did one: a second npm run only delays the browser.
+  if (!isInstalled(provider)) await install(provider, onProgress);
+  else if (!updatedThisRun.has(provider)) await update(provider, onProgress);
+  else await whenManagedCliIdle();
+  // Cancel can't stop npm (there is no login to kill yet), so honour it before the login starts.
+  if (signInCancelled) throw new Error('Sign-in cancelled');
   await login(provider, onProgress);
   setSignedIn(provider, true);
   log.info(`[AI-CLI] signed in to ${provider} (managed CLI)`);
@@ -314,11 +360,34 @@ function killLogin(child: pty.IPty): void {
 }
 
 export async function cancelSignInCli(): Promise<void> {
+  signInCancelled = true;
   const child = activeLogin;
   if (!child) return;
   activeLogin = null;
   log.info('[AI-CLI] cancelling sign-in');
   killLogin(child);
+}
+
+const LOGOUT_TIMEOUT_MS = 15_000;
+
+function runLogout(provider: AiProvider, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = crossSpawn(managedBinPath(provider), args, { env: loginEnv(), stdio: 'ignore' });
+    // A logout that waits on input it can never get (e.g. a keychain prompt) would hang sign-out.
+    const timeout = setTimeout(() => {
+      child.kill('SIGKILL');
+      reject(new Error(`${provider} sign-out timed out`));
+    }, LOGOUT_TIMEOUT_MS);
+    child.on('error', error => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on('exit', code => {
+      clearTimeout(timeout);
+      if (code === 0) resolve();
+      else reject(new Error(`${provider} sign-out failed (exit code ${code})`));
+    });
+  });
 }
 
 // The CLI keeps its sign-in in the user's shared config folder (~/.codex), so this also signs
@@ -327,17 +396,13 @@ export async function cancelSignInCli(): Promise<void> {
 export async function signOutCli(provider: AiProvider): Promise<void> {
   const { logoutArgs } = CLI_SPECS[provider];
   if (logoutArgs !== undefined && isInstalled(provider)) {
-    await new Promise<void>(resolve => {
-      const child = crossSpawn(managedBinPath(provider), logoutArgs, {
-        env: loginEnv(),
-        stdio: 'ignore',
-      });
-      child.on('error', error => {
-        log.warn(`[AI-CLI] ${provider} logout failed:`, error);
-        resolve();
-      });
-      child.on('exit', () => resolve());
-    });
+    await whenManagedCliIdle();
+    try {
+      await runLogout(provider, logoutArgs);
+    } catch (error) {
+      log.warn(`[AI-CLI] ${provider} sign-out failed:`, error);
+      throw error;
+    }
   }
   setSignedIn(provider, false);
   log.info(`[AI-CLI] signed out of ${provider} (managed CLI)`);

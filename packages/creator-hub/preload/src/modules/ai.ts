@@ -40,8 +40,8 @@ export type {
 export type { AiMirrorState, AiRemoteCommand, AiWindowState };
 export type { AiCliLoginEvent, AiCliState };
 
-export async function detectProviders(): Promise<AiProviderInfo[]> {
-  return invoke('ai.detectProviders');
+export async function detectProviders(apiKeyFromEnv?: boolean): Promise<AiProviderInfo[]> {
+  return invoke('ai.detectProviders', apiKeyFromEnv);
 }
 
 // Resolve a dropped/picked File to its absolute path on disk. Electron 32+ removed File.path
