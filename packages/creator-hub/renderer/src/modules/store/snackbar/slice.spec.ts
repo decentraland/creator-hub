@@ -118,15 +118,19 @@ describe('snackbar slice', () => {
       expect(skillsToasts(store)).toEqual([expect.objectContaining({ installed: false })]);
     });
 
-    it('should still ask, not install, under "Auto-update all my scenes"', async () => {
+    it('should install them without asking under "Auto-update all my scenes"', async () => {
+      vi.mocked(skills.updateProject).mockResolvedValue();
       const store = createTestStore();
       await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE);
       openScene(store, projectWithOutdatedDeps);
 
       await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
 
-      expect(skills.updateProject).not.toHaveBeenCalled();
-      expect(skillsToasts(store)).toEqual([expect.objectContaining({ installed: false })]);
+      expect(skills.updateProject).toHaveBeenCalledWith(projectWithOutdatedDeps.path);
+      expect(skillsToasts(store)).toEqual([]);
+      expect(store.getState().snackbar.notifications).toContainEqual(
+        expect.objectContaining({ severity: 'success', message: 'AI skills are up to date' }),
+      );
     });
   });
 
