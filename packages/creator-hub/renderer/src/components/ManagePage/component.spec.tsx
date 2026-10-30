@@ -1,3 +1,4 @@
+import type { ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -22,6 +23,24 @@ import { createTestStore } from '../../../tests/utils/testStore';
 import { ManagePage } from '.';
 
 vi.mock('../Navbar', () => ({ Navbar: () => null, NavbarItem: { MANAGE: 'manage' } }));
+vi.mock('../Button', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  Button: ({
+    variant: _variant,
+    color: _color,
+    startIcon: _startIcon,
+    ...props
+  }: ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: string;
+    color?: string;
+    startIcon?: unknown;
+  }) => (
+    <button
+      type="button"
+      {...props}
+    />
+  ),
+}));
 vi.mock('/@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('/@/lib/auth', () => ({ AuthServerProvider: { getAccount: vi.fn(() => null) } }));
 vi.mock('../Modals/TransferLandModal', () => ({
