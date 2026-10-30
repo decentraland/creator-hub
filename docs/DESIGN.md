@@ -294,7 +294,7 @@ The three gradients are image fills whose variables carry no stops. Each stop ta
 | Brand/Amin (Lavender to Purple) | `#C640CD` → `#691FA9` | — | `--gradient-amin` | `--gradient-amin` · ui2 `gradient.amin` 135° | match |
 | — | `#060d2b` → `#132d7d` 52% → `#9763c1` | — | — | `--metaverse-gradient` | not in Figma |
 
-Everything in `vars.css` that these tables and [Inspector role tokens](#inspector-role-tokens) don't list is VS Code-derived (`--vscode-*` passthroughs, `--dropdown-*`, `--list-item-*`) or a Smart Item colour (`--list-smart-item-*`, `--ground-icon-bg-color`) with no Figma counterpart. Value changes and new tokens arising from these tables go to the user first (names are theirs), ship with before/after screenshots of every consumer, and land in the same commit as their row here.
+Everything in `vars.css` that these tables and [Inspector role tokens](#inspector-role-tokens) don't list is VS Code-derived (`--vscode-*` passthroughs, `--dropdown-*`, `--list-item-*`) or a Smart Item colour (`--list-smart-item-*`, `--ground-icon-bg-color`) with no Figma counterpart. Value changes and new tokens arising from these tables go to the user first (names are theirs). New tokens and aliases go in the hub PR with their row here; a value change to an existing token goes in a spoke PR with its Before | After of every consumer.
 
 ### ⚠️ The neutral ramp runs LIGHT → DARK
 
@@ -357,8 +357,8 @@ Inspector tokens that name a role rather than a Figma variable: surfaces, foregr
 | `--ui-designer-checkbox-border` | `--palette-whiteTransparent-blurry` `rgba(255,255,255,.4)` | White 40 | Checkbox border |
 | `--ui-designer-hairline` | `rgba(255,255,255,.07)` | not a Figma step (**✱ deviation**) | Subtle dividers |
 | `--ui-designer-control-empty-bg` | `rgba(255,255,255,.05)` | not a Figma step (**✱ deviation**) | Placeholder or unbound field fill |
-| `--focus-ring` | `--ui-designer-text` `#fcfcfc` (Snow) | Neutrals/Snow | Keyboard focus on the shared controls: the `:focus-visible` ring of `Button`, the `Dropdown` trigger, `CheckboxField`, `ModeSwitcher` and the `RangeField` thumb, and the focus border of `TextField` and `TextArea`. 17.73:1 on `#161518`, 15.45 on `#242129`, 12.13 on Onix, 9.88 on `--gray-0`. A ring on a light surface takes `--text-primary` instead: the `Pill` remove button sits on the `--base-02` `#f0f0f0` pill, where Snow is 1.11:1 and `--text-primary` about 15:1. That ring draws inside the 11px button (`outline-offset: -2px`), because any outer offset covers the end of the pill's label. UI Designer panels keep `--ui-designer-control-accent` |
-| `--menu-shadow` | `0 4px 8px rgba(0,0,0,.4)` | Menu `20749:386` drop shadow (0 / 4 / 8, Black 40, no Figma variable) | Every menu surface — react-contexify through `--contexify-menu-shadow`, the `Dropdown` `OptionList`, `MoreOptionsMenu`, and the snap card after #1714 (G30) |
+| `--focus-ring` | `--ui-designer-text` `#fcfcfc` (Snow) | Neutrals/Snow | Defined with no consumer yet (lands with #1707): keyboard focus on the shared controls, the `:focus-visible` ring of `Button`, the `Dropdown` trigger, `CheckboxField`, `ModeSwitcher` and the `RangeField` thumb, and the focus border of `TextField` and `TextArea`. 17.73:1 on `#161518`, 15.45 on `#242129`, 12.13 on Onix, 9.88 on `--gray-0`. A ring on a light surface takes `--text-primary` instead: the `Pill` remove button sits on the `--base-02` `#f0f0f0` pill, where Snow is 1.11:1 and `--text-primary` about 15:1. That ring draws inside the 11px button (`outline-offset: -2px`), because any outer offset covers the end of the pill's label. UI Designer panels keep `--ui-designer-control-accent` |
+| `--menu-shadow` | `0 4px 8px rgba(0,0,0,.4)` | Menu `20749:386` drop shadow (0 / 4 / 8, Black 40, no Figma variable) | Defined with no consumer yet (lands with #1721): every menu surface, react-contexify through `--contexify-menu-shadow`, the `Dropdown` `OptionList`, `MoreOptionsMenu`, and the snap card (lands with #1714) (G30) |
 | `--border-focused` | `#127fd4` | not in Figma (VS Code blue; **✱ deviation**) | `Tree` drop indicators and older UI Designer rules. Not a focus ring: 2.97:1 on Onix, 2.42 on `--gray-0`. The `Tree` drop indicators move to `--palette-info-light` in layer 3b unit 3 (NodeTypeHierarchy, ✱ drop target); `--border-focused` keeps its value for its other consumers (`Tile.css`, `--vscode-blue`) |
 | `--ui-designer-accent` | `rgb(80,200,255)` | none (**✱ deviation**: the canvas cyan, see the accent note) | **Canvas** selection cyan |
 | `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | none | Canvas hover/selection fills, drop targets |
@@ -542,9 +542,9 @@ Every corner radius Figma draws, with its token:
 | 16px | Cards | `--shape-borderRadiusXLarge` `16px` · Creator Hub `--shape-borderRadiusXLarge` `16px` | match |
 | 24px | Modals | `--shape-borderRadiusXXLarge` `24px` · Creator Hub `--shape-borderRadiusXXLarge` `24px` | match |
 | 64px | The icon boards and the Typography sheet (page chrome) | — | not a component value |
-| 100px | Figma's 100px pill: the Scrollbar handle, and the thin scrollbar's thumb on the `Dropdown` `OptionList` and small components (user decision); the other pills listed under Figma values take it as they are re-themed | `--shape-borderRadiusPill` `100px` | match (ui2 theme-path name) |
+| 100px | Figma's 100px pill: the Scrollbar handle, and the thin scrollbar's thumb on the `Dropdown` `OptionList` and small components (user decision); the other pills listed under Figma values take it as they are re-themed | `--shape-borderRadiusPill` `100px` | match in the inspector (`vars.css`, ui2 theme-path name); missing in Creator Hub (`theme.css`) |
 
-Corners in the UI Designer come from two tokens, `--ui-designer-radius-field` (6px — inputs, dropdowns, segmented cells, the anchor preview) and `--ui-designer-radius-menu` (12px — option lists and popovers), which alias `--shape-borderRadius` and `--shape-borderRadiusLarge`. The shared `TextField`, `Dropdown` and `TextArea` take 6px by default, so the panel needs no radius override for them; the shared `CheckboxField` and the small `Button` still hardcode their own (5px and 4px).
+Corners in the UI Designer come from two tokens, `--ui-designer-radius-field` (6px — inputs, dropdowns, segmented cells, the anchor preview) and `--ui-designer-radius-menu` (12px — option lists and popovers), which alias `--shape-borderRadius` and `--shape-borderRadiusLarge`. The shared `TextField`, `Dropdown` and `TextArea` hardcode `4px` (`TextField.css`, `Dropdown.css`, `TextArea.css`); they take `--shape-borderRadius` (6px), so the panel needs no radius override for them (lands with #1707); the shared `CheckboxField` and the small `Button` still hardcode their own (5px and 4px).
 
 Every shadow Figma draws, with its token:
 
@@ -554,7 +554,7 @@ Every shadow Figma draws, with its token:
 | `0 2px 3px rgba(0,0,0,.25)` | Tooltip | `--shadow-tooltip`, both worlds | match |
 | `0 4px 4px rgba(0,0,0,.1)` | The Toast tooltip of rounded-button-contained, IconContainedToggle and TextureContainedRoundedButton | `--shadow-toast`, both worlds | match |
 | `0 4px 10px rgba(0,0,0,.25)` | `ColourPanel` | `--shadow-popover` (inspector) | match; kept apart from `--menu-shadow`, as Figma draws it |
-| `2px 2px 10px rgba(0,0,0,.5)` | none (react-contexify default) | `--contexify-menu-shadow` | menus read `--menu-shadow` through it |
+| `2px 2px 10px rgba(0,0,0,.5)` | none (react-contexify default) | `--contexify-menu-shadow` | the react-contexify menus' shadow; it points at `--menu-shadow` (lands with #1721) |
 
 ### Icons
 
@@ -572,6 +572,8 @@ Read on October 28, 2026 from the Icons page ([`20450:15495`](https://www.figma.
 | Component Icons | 3 — smat-item (sic), Credits, JumpIn | smart-item 16 × 16; Credits 24 box; JumpIn 24 × 24 | smart-item: a 16 × 16 Lavender rounded square (5px radius) under a White `Union` bolt 8.4 × 12 (0.59 stroke); Credits: `#6141A6 → #6C84FF` coin at 80% with a white drop shadow and a `#5600FF` 50% inner shadow (an illustration); JumpIn: a 20 × 20 Primary `#FF2D55` tile at 2 / 2 (6px radius) under a Snow arrow 13.19 × 12 | Lavender → `--lavender`, `--smart-item-icon-bg-color` / missing; Snow → `--ui-designer-text` / ui2 `neutral.softWhite` | product nouns | — | Lavender tile vs `#161518` 4.34:1, vs `#242129` 3.79:1 (≥ 3:1); White glyph on Lavender 4.19:1 (≥ 3:1 non-text) |
 
 #### The icon library (code)
+
+**Lands with #1733.** This section, "Adding an icon" and the Library and Creator Hub binding decisions below describe that PR's code: `@dcl/inspector/icons`, `createIconSet`, the `Icons/figma` modules and `npm run generate:icons` are not on `main` until it merges.
 
 One library, exported from `@dcl/inspector` (`packages/inspector/src/components/Icons/figma/`, entry `src/icons.ts`); The package exports a builder, `createIconSet(createSvgIcon)` (`@dcl/inspector/icons`); each world binds it with its own factory in its own module, and call sites import from that module: `packages/inspector/src/components/Icons/figma` in the inspector, `/@/components/Icons/figma` (`packages/creator-hub/renderer/src/components/Icons/figma/`) in Creator Hub. It follows MUI's icon API, with Figma's values. It lands with the library spoke `feat/design-icons` (merging right after #1720); until each surface's swap spoke lands, that surface still uses `react-icons` or `@mui/icons-material`.
 
@@ -613,11 +615,11 @@ One library, exported from `@dcl/inspector` (`packages/inspector/src/components/
 | Off-step box | `fontSize` picks the drawing, and CSS `font-size` resizes the box, MUI's own way. The Viewport Toolbar's kebab is `<Kebab fontSize="inherit" />` at 16; AddVariant's is `<Variable fontSize="small" />` in a 12px box. |
 | Eye and lock | ✱ Named by the drawing, not by Figma: `Visibility` (Figma `Hide` / `hide`, open eye), `VisibilityOff` (Figma `Show` / `show`), `Lock` (Figma `Unlock`, closed padlock), `LockOpen` (Figma `Lock`). Figma's names are flagged to design (user decision). |
 | No Figma glyph | The call site keeps its current icon and the glyph is listed as a gap for design; `react-icons` stays until design draws them (user decision). |
-| Library | Exported from `@dcl/inspector` as `@dcl/inspector/icons`, with one comment at the export saying it moves to a monorepo package `ui` that follows the MUI theme structure (user decision). |
-| Creator Hub binding | `@dcl/inspector/icons` exports the set as a builder, `createIconSet(createSvgIcon)`. Creator Hub binds it with its own factory around ui2's `SvgIcon` in `renderer/src/components/Icons/figma/`, and its call sites import from there; the inspector binds it the same way with its hand-written factory (user decision). |
+| Library | Exported from `@dcl/inspector` as `@dcl/inspector/icons`, with one comment at the export saying it moves to a monorepo package `ui` that follows the MUI theme structure (user decision) (lands with #1733). |
+| Creator Hub binding | `@dcl/inspector/icons` exports the set as a builder, `createIconSet(createSvgIcon)`. Creator Hub binds it with its own factory around ui2's `SvgIcon` in `renderer/src/components/Icons/figma/`, and its call sites import from there; the inspector binds it the same way with its hand-written factory (user decision) (lands with #1733). |
 | `color` roles | Each world follows its own drawn rule: inspector `action` = Silver, `disabled` = White 20, `secondary` = `--white`; Creator Hub keeps ui2's theme. |
 | Scope | Every icon on the page ships: 144 components carrying 157 of the 158 Figma drawings. |
-| Swap order | Both worlds, small to big; each inspector swap spoke stacks on the open spokes it overlaps (user decision). Each surface's swap spoke replaces its local Figma-glyph module (`Toolbar/icons.tsx`, `Icons/ArrowRight`, `UIDesigner/icons.tsx`, `Canvas/toolbar-icons.tsx`, `Icons/Caret`) with the library. |
+| Swap order | Both worlds, small to big; each inspector swap spoke stacks on the open spokes it overlaps (user decision). Each surface's swap spoke replaces its local Figma-glyph module (`Toolbar/icons.tsx` (lands with #1714), `Icons/ArrowRight` (lands with #1723), `UIDesigner/icons.tsx` (lands with #1707), `Canvas/toolbar-icons.tsx`, `Icons/Caret` (lands with #1729)) with the library. |
 | Delivery | The library spoke (`feat/design-icons`, from `feat/design-system-docs`) merges right after #1720, depends on no spoke and paints nothing (user decision); swap spokes are `feat/design-icons-<surface>`. |
 
 Figma-side defects for design: `code` / `Code`, `Hide` / `hide`, `Show` / `show`, `Link` / `link` differ only by case; `Hide` draws an open eye, `Show` an eye-off, `Lock` an open padlock, `Unlock` a closed one; `FolderOpen` draws a closed folder and `LocalAssets` the open one; Editor `move` is the select pointer and `translation` the move arrows; Editor `link` is `LinkAlt`'s symbol under `Link`'s name; `Layers` / `Scenes`, `Cube` / `AssetsFilters Models`, `Fill/Paint` / `paint-outline` are one symbol each under two names, and `layout-outline` / `layout-outline_small` / `AssetsFilters All` one symbol drawn three times; Editor `Mobile` (a phone) and `NodeType/Mobile` (a framed screen with a +) are different symbols that the library ships as one icon; typos `smat-outline`, `smat-item`, `pain`, `Synch`; `Cut` is a plain frame, not a component; the `NewChat` main component `21201:31180` is drawn upside down (its tail at the top), and the General board's instance is flipped vertically to show it the right way up (the y 216 in the page metadata is 192 + 24 under `scaleY(-1)`); the library ships the board's glyph, a speech bubble with a plus, by flipping the export, so the component should be redrawn the right way up.
@@ -892,7 +894,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Modals
 | 34px pill (scene status chip) | — | missing | missing |
 | 5px radius (16px checkbox) | — | missing | missing |
 | 6px radius (attach button, location row) | — | `--shape-borderRadius` (aliased by `--ui-designer-radius-field`) | `--mui-shape-borderRadius` |
-| `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | `--menu-shadow` (`--contexify-menu-shadow` holds `2px 2px 10px rgba(0,0,0,.5)` until the Menu-Entry spoke points it there) | `--menu-shadow` (ui2 `MuiPaper` elevation paints the menus) |
+| `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | `--menu-shadow` (`--contexify-menu-shadow` holds `2px 2px 10px rgba(0,0,0,.5)`; it points at `--menu-shadow` (lands with #1721)) | `--menu-shadow` (ui2 `MuiPaper` elevation paints the menus) |
 | `0 4px 4px rgba(0,0,0,.1)` title-bar toast shadow | — | `--shadow-toast` | `--shadow-toast` (ui2 `Tooltip` paints it) |
 | `#181225` modal fill | — (a raw hex on every modal, not a variable) | `--modal-content-bg-color` `#181225` (ships in #1731) | `--modal` `#181225` (ships in #1731); ui2's `Modal` paper does not read `--modal` |
 | `#000000` title-bar fill | Neutrals/Black | `--black`, `--base-21` | `--bg-inspector` |
@@ -1645,7 +1647,7 @@ Set [`21005:3408`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 Code: inspector `Toolbar/ToolbarButton`, one look for both bars (user decisions).
 
 - **Box:** 26 × 26, 1px `--palette-neutral-onyx` border, 6px radius, `--tree-bg-color` (Shadow) fill, `--palette-neutral-gray4` glyph.
-- **Glyphs:** Figma's own artwork as `currentColor` svgs at their 24px frame (`Toolbar/icons.tsx`).
+- **Glyphs:** Figma's own artwork as `currentColor` svgs at their 24px frame (`Toolbar/icons.tsx`) (lands with #1714).
 - **State hook:** `aria-pressed` on toggles.
   - A selected cell inside a joined group (the gizmos, the Snap split) keeps the group's Onix edge.
   - A standalone selected button (Interact) takes its fill colour as its border.
@@ -2661,7 +2663,7 @@ The pinned edge is System/Blue `#2196F3`; the rest White, White 40 and White 20,
 
 ### UI Editor Buttons (Buttons)
 
-Section [`21671:45251`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21671-45251) on the Buttons page `20705:10837`, 9 sets, 33 variants (4 + 5 + 4 + 4 + 2 + 4 + 6 + 2 + 2): a copy of the `UI Editor Buttons` board `21028:16485` (UI Editor page), identical in every value, and the reference the design review points to. Read October 27, 2026 on both copies. Copy ids: ScaleToggle `21671:45252`, WrapToggle `45277`, ToggleTab `45288`, ViewModeToggle `45297`, AddVariant `45306`, VisibilityToggle `45311`, LockLayerToggle `45320`, HelpCTA `45333`, DeleteCTA `45338`. Several sets are single flattened SVGs per variant (WrapToggle, HelpCTA, the LockLayerToggle `Parent = Yes` cells), so their radius and glyph geometry come from the panel read, not from layers. Code: every icon control in `components/UIDesigner`, the 2D toolbar included, through three shared rules (see "Icon buttons and toggles" in Tokens); the Figma glyphs live in `components/UIDesigner/icons.tsx` (trash, eye, eye-off, lock, unlock, monitor) and in the existing mask assets (aspect lock, wrap, flow Free, bind).
+Section [`21671:45251`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21671-45251) on the Buttons page `20705:10837`, 9 sets, 33 variants (4 + 5 + 4 + 4 + 2 + 4 + 6 + 2 + 2): a copy of the `UI Editor Buttons` board `21028:16485` (UI Editor page), identical in every value, and the reference the design review points to. Read October 27, 2026 on both copies. Copy ids: ScaleToggle `21671:45252`, WrapToggle `45277`, ToggleTab `45288`, ViewModeToggle `45297`, AddVariant `45306`, VisibilityToggle `45311`, LockLayerToggle `45320`, HelpCTA `45333`, DeleteCTA `45338`. Several sets are single flattened SVGs per variant (WrapToggle, HelpCTA, the LockLayerToggle `Parent = Yes` cells), so their radius and glyph geometry come from the panel read, not from layers. Code: every icon control in `components/UIDesigner`, the 2D toolbar included, through three shared rules (see "Icon buttons and toggles" in Tokens); the Figma glyphs live in `components/UIDesigner/icons.tsx` (trash, eye, eye-off, lock, unlock, monitor; lands with #1707) and in the existing mask assets (aspect lock, wrap, flow Free, bind).
 
 | Kind | Sets (and code) | Rest | Hover | Selected | Selected + hover | Focus | Disabled |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -3025,7 +3027,7 @@ The brand pink matches the inspector's `--primary-main`, but it's defined separa
 
 Derived from the Vercel Web Interface Guidelines (`web-design-guidelines` skill) and applied throughout the inspector:
 
-- **Focus:** every interactive element has a visible `:focus-visible` ring — `--focus-ring` (Snow) on the shared controls, `--ui-designer-control-accent` in UI Designer panels, `--ui-designer-accent` on the canvas. Text fields show focus as a `--focus-ring` border instead of a ring. Prefer `:focus-visible` over `:focus`. **Never** `outline: none` without a replacement ring.
+- **Focus:** every interactive element has a visible `:focus-visible` ring — `--focus-ring` (Snow) on the shared controls (lands with #1707), `--ui-designer-control-accent` in UI Designer panels, `--ui-designer-accent` on the canvas. Text fields show focus as a `--focus-ring` border instead of a ring. Prefer `:focus-visible` over `:focus`. **Never** `outline: none` without a replacement ring.
 - **Contrast (WCAG AA):** text ≥ **4.5:1**, non-text/UI (borders, focus rings, canvas markers, icons) ≥ **3:1** against their background.
 - **ARIA/semantics:** icon-only buttons need `aria-label`; use `<button>` for actions and `<a>`/`<Link>` for navigation (never `<div onClick>`); tie every input to a `<label>` or `aria-label`; async updates use `aria-live="polite"`.
 - **Motion:** honor `prefers-reduced-motion` (reduced/none variant); animate only `transform`/`opacity`; **never** `transition: all` — list properties.
