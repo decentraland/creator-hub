@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """UserPromptSubmit hook: when a prompt references Figma, inject a reminder to
-load the project's figma skill first — and, if the leaf skills it delegates to
-are not installed, the command to install them. Reads the hook payload as JSON on
+load the project's figma skill first — and, if the third-party skills it and the
+design agents use are not installed, the command to install them. Reads the hook payload as JSON on
 stdin; prints only on a Figma match; always exits 0 so it never blocks a prompt.
 """
 import json
@@ -11,7 +11,12 @@ import sys
 
 TRIGGER = re.compile(r"\bfigma\b", re.IGNORECASE)
 
-LEAVES = ("figma-implement-design", "figma-create-design-system-rules")
+LEAVES = (
+    "figma-implement-design",
+    "figma-create-design-system-rules",
+    "vercel-composition-patterns",
+    "web-design-guidelines",
+)
 INSTALL = "make install-skills"
 
 REMINDER = (
@@ -24,7 +29,7 @@ REMINDER = (
 
 
 def missing_leaves(project_dir):
-    """Leaf skills not found in the project or the user's global skills dir."""
+    """Installed skills not found in the project or the user's global skills dir."""
     roots = [
         os.path.join(project_dir, ".claude", "skills"),
         os.path.join(os.path.expanduser("~"), ".claude", "skills"),
@@ -46,7 +51,7 @@ def main() -> int:
         print(
             f"\nYou don't have the {', '.join(missing)} skill(s) installed. Run:\n"
             f"  {INSTALL}\n"
-            "to install them, then `/reload-skills` to properly use this figma skill."
+            "to install them, then `/reload-skills` to use them."
         )
     return 0
 
