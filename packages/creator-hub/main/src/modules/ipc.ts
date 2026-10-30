@@ -143,12 +143,18 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
 
   // ai assistant — `ai.send` streams AiEvents back to the calling WebContents over
   // AI_STREAM_EVENT; the returned turnId lets the renderer correlate the stream.
-  handle('ai.detectProviders', () => ai.detectProviders());
+  // Scans and turns wait out a running update of an app-installed CLI (npm removes the binary
+  // before linking the new one); see detectThenUpdate / startTurnWhenIdle.
+  handle('ai.detectProviders', (_event, apiKeyFromEnv) =>
+    aiCli.detectThenUpdate(() => ai.detectProviders(apiKeyFromEnv), ai.aiBusy),
+  );
   handle('ai.send', async (event, path, params) => {
     const sender = event.sender;
-    return ai.aiSend(params, path, e => {
-      if (!sender.isDestroyed()) sender.send(AI_STREAM_EVENT, e);
-    });
+    return aiCli.startTurnWhenIdle(() =>
+      ai.aiSend(params, path, e => {
+        if (!sender.isDestroyed()) sender.send(AI_STREAM_EVENT, e);
+      }),
+    );
   });
   handle('ai.stop', async () => ai.aiStop());
   handle('ai.reset', async (_event, path) => ai.aiReset(path));
@@ -161,6 +167,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.signInCli', (_event, provider) =>
     aiCli.signInCli(provider).then(() => ai.clearNeedsLogin(provider)),
   );
+  handle('ai.submitSignInCode', (_event, code) => aiCli.submitSignInCode(code));
   handle('ai.cancelSignInCli', () => aiCli.cancelSignInCli());
   handle('ai.signOutCli', (_event, provider) => aiCli.signOutCli(provider));
   handle('ai.getCliState', async () => aiCli.getCliState());

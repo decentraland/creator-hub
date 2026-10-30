@@ -19,6 +19,7 @@ import { ai, misc } from '#preload';
 import { cliSetup, type AiProviderInfo } from '/shared/types/ai';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
+import { SignInCodeField } from '/@/components/SignInCodeField';
 import type { BaseTabProps } from '../../types';
 
 import './styles.css';
@@ -103,15 +104,22 @@ function AgentConnect({
     void work.finally(() => setPending(false));
   }, []);
   const recheck = useCallback(() => track(onRecheck()), [track, onRecheck]);
-  const { signIn, start, cancel } = useCliSignIn(info.id, recheck);
+  const { signIn, start, cancel, submitCode } = useCliSignIn(info.id, recheck);
   const reloginInTerminal = info.needsLogin === true && !info.managedSignIn;
   const [terminalOpen, setTerminalOpen] = useState(
-    reloginInTerminal || info.desktopInstalled === true,
+    reloginInTerminal || (info.desktopInstalled === true && !info.managedSignIn),
   );
   const cmds = cliSetup(info.id, navigator.userAgent.includes('Windows'));
 
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const handleSignOut = useCallback(() => {
-    track(ai.signOutCli(info.id).then(onRecheck));
+    setSignOutError(null);
+    track(
+      ai
+        .signOutCli(info.id)
+        .catch(e => setSignOutError(e instanceof Error ? e.message : String(e)))
+        .then(onRecheck),
+    );
   }, [track, info.id, onRecheck]);
   const spinner = (signIn.busy || pending) && (
     <CircularProgress
@@ -143,6 +151,9 @@ function AgentConnect({
               className="AgentSignLink"
               disabled={pending}
               onClick={handleSignOut}
+              title={t('modal.app_settings.fields.ai_connect.sign_out_shared', {
+                agent: info.label,
+              })}
             >
               {spinner}
               {t('modal.app_settings.fields.ai_connect.sign_out')}
@@ -178,6 +189,17 @@ function AgentConnect({
         </Typography>
       )}
       {signIn.url !== null && <CommandField value={signIn.url} />}
+      {signIn.busy && signIn.url !== null && signIn.acceptsCode && (
+        <SignInCodeField onSubmit={submitCode} />
+      )}
+      {signOutError !== null && (
+        <Typography
+          variant="caption"
+          color="error"
+        >
+          {signOutError}
+        </Typography>
+      )}
       {signIn.error !== null && (
         <Typography
           variant="caption"
@@ -283,11 +305,11 @@ const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
   const [connectOpen, setConnectOpen] = useState(true);
   const recheckProviders = useCallback(
     () =>
-      ai.detectProviders().then(
+      ai.detectProviders(settings.useApiKeyFromEnv).then(
         list => setProviders(list),
         () => setProviders([]),
       ),
-    [],
+    [settings.useApiKeyFromEnv],
   );
   useEffect(() => {
     if (settings.aiAssistant) void recheckProviders();

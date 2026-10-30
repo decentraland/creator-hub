@@ -40,8 +40,8 @@ export type {
 export type { AiMirrorState, AiRemoteCommand, AiWindowState };
 export type { AiCliLoginEvent, AiCliState };
 
-export async function detectProviders(): Promise<AiProviderInfo[]> {
-  return invoke('ai.detectProviders');
+export async function detectProviders(apiKeyFromEnv?: boolean): Promise<AiProviderInfo[]> {
+  return invoke('ai.detectProviders', apiKeyFromEnv);
 }
 
 // Resolve a dropped/picked File to its absolute path on disk. Electron 32+ removed File.path
@@ -104,6 +104,10 @@ export async function signInCli(
   } finally {
     ipcRenderer.off(AI_CLI_LOGIN_EVENTS, handler);
   }
+}
+
+export async function submitSignInCode(code: string): Promise<void> {
+  return invoke('ai.submitSignInCode', code);
 }
 
 export async function cancelSignInCli(): Promise<void> {
