@@ -1,3 +1,4 @@
+import type { ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { flatten } from 'flat';
@@ -11,6 +12,25 @@ import { setCurrentLocale } from '/@/modules/store/translation/utils';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { CollaboratorsTab } from '.';
+
+vi.mock('../../Button', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  Button: ({
+    variant: _variant,
+    color: _color,
+    startIcon: _startIcon,
+    ...props
+  }: ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: string;
+    color?: string;
+    startIcon?: unknown;
+  }) => (
+    <button
+      type="button"
+      {...props}
+    />
+  ),
+}));
 
 const OWNER = '0x00000000000000000000000000000000000000a1';
 const ANA = '0x00000000000000000000000000000000000000b2';

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -11,6 +11,25 @@ import { setCurrentLocale } from '/@/modules/store/translation/utils';
 
 import { createTestStore } from '../../../tests/utils/testStore';
 import { DetailShell, useDraft } from '.';
+
+vi.mock('../Button', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  Button: ({
+    variant: _variant,
+    color: _color,
+    startIcon: _startIcon,
+    ...props
+  }: ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: string;
+    color?: string;
+    startIcon?: unknown;
+  }) => (
+    <button
+      type="button"
+      {...props}
+    />
+  ),
+}));
 
 const onSave = vi.fn();
 const onCancel = vi.fn();

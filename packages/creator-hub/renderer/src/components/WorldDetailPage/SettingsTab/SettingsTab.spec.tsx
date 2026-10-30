@@ -1,3 +1,4 @@
+import type { ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -14,6 +15,25 @@ import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { DetailShell } from '../../DetailShell';
 import { SettingsTab } from '.';
+
+vi.mock('../../Button', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  Button: ({
+    variant: _variant,
+    color: _color,
+    startIcon: _startIcon,
+    ...props
+  }: ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: string;
+    color?: string;
+    startIcon?: unknown;
+  }) => (
+    <button
+      type="button"
+      {...props}
+    />
+  ),
+}));
 
 const OWNER = '0x00000000000000000000000000000000000000a1';
 
