@@ -1,0 +1,6 @@
+{
+  "main": "../dist/icons.mjs",
+  "module": "../dist/icons.mjs",
+  "types": "../dist/icons.d.ts",
+  "sideEffects": false
+}

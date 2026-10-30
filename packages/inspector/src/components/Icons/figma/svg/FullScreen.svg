@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="NodeType/FullScreen" clip-path="url(#clip0_0_128)">
+<g id="Vector">
+<path d="M0 1.33333C0 0.596954 0.623392 0 1.39239 0H4.64128V0.888889H1.39239C1.13605 0.888889 0.928257 1.08787 0.928257 1.33333V4.44444H0V1.33333Z" fill="white"/>
+<path d="M0 14.6667C0 15.403 0.623392 16 1.39239 16H4.64128V15.1111H1.39239C1.13605 15.1111 0.928257 14.9121 0.928257 14.6667V11.5556H0V14.6667Z" fill="white"/>
+<path d="M16 1.33333C16 0.596954 15.3766 0 14.6076 0H11.3587V0.888889H14.6076C14.8639 0.888889 15.0717 1.08787 15.0717 1.33333V4.44444H16V1.33333Z" fill="white"/>
+<path d="M16 14.6667C16 15.403 15.3766 16 14.6076 16H11.3587V15.1111H14.6076C14.8639 15.1111 15.0717 14.9121 15.0717 14.6667V11.5556H16V14.6667Z" fill="white"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_128">
+<rect width="16" height="16" fill="white"/>
+</clipPath>
+</defs>
+</svg>
