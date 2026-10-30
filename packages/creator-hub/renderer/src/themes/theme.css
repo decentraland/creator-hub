@@ -11,11 +11,14 @@
   --bg: #16141a;
   --bg-inspector: #000;
   --metaverse-gradient: linear-gradient(to bottom, #060d2b, #132d7d 52%, #9763c1);
+  --gradient-flare: linear-gradient(135deg, #ff2d55, #ffbc5b);
+  --gradient-cerise: linear-gradient(135deg, #ff2d55, #c640cd);
+  --gradient-amin: linear-gradient(135deg, #c640cd, #691fa9);
   --purple-banner: #691ea9;
+  --lavender: #c640cd;
   --purplish-grey-raw: 115, 110, 125;
   --white: #ffffff;
   --black: #161518;
-
 
   --light-gray: #5e5b67;
   --dark-gray: #43404a;
@@ -42,11 +45,130 @@
   --transparent-gray-dark: rgba(255, 255, 255, 0.05);
   --transparent-gray-light: rgba(255, 255, 255, 0.23);
 
+  --palette-whiteTransparent-faint: rgba(255, 255, 255, 0.05);
+  --palette-whiteTransparent-subtle: rgba(255, 255, 255, 0.1);
+  --palette-whiteTransparent-hover: rgba(255, 255, 255, 0.15);
+  --palette-whiteTransparent-soft: rgba(255, 255, 255, 0.2);
+  --palette-whiteTransparent-blurry: rgba(255, 255, 255, 0.4);
+  --palette-whiteTransparent-backdrop: rgba(255, 255, 255, 0.6);
+  --palette-blackTransparent-subtle: rgba(0, 0, 0, 0.1);
+  --palette-blackTransparent-soft: rgba(0, 0, 0, 0.2);
+  --palette-blackTransparent-blurry: rgba(0, 0, 0, 0.4);
+  --palette-success-dark2: #00a146;
+  --palette-success-light2: #c1eecf;
+  --palette-warning-dark2: #ec7122;
+  --palette-warning-light2: #ffcd88;
+  --palette-error-dark2: #cc1d2c;
+  --palette-error-light2: #ffcdd4;
+  --palette-info-light2: #bbdefb;
+  --palette-rarity-common: #73d3d3;
+  --palette-rarity-common-light: #acf8f8;
+  --palette-rarity-uncommon: #ff8362;
+  --palette-rarity-uncommon-light: #ffe0b2;
+  --palette-rarity-rare: #34ce76;
+  --palette-rarity-rare-light: #73ffaf;
+  --palette-rarity-epic: #438fff;
+  --palette-rarity-epic-light: #81e1ff;
+  --palette-rarity-legendary: #a14bf3;
+  --palette-rarity-legendary-light: #e8b9ff;
+  --palette-rarity-mythic: #ff4bed;
+  --palette-rarity-mythic-light: #f6c1ff;
+  --palette-rarity-exotic: #caff73;
+  --palette-rarity-exotic-light: #e4ffb8;
+  --palette-rarity-unique: #fea217;
+  --palette-rarity-unique-light: #fff280;
+
+  --menu-bg: #35333b;
+  --menu-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --scrollbar-thumb: var(--palette-blackTransparent-blurry);
+  --scrollbar-thumb-border: var(--palette-whiteTransparent-backdrop);
+
   /* fonts */
   --font-family:
     "Inter", system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-monospace:
     "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+
+  --type-display-semi-size: 48px;
+  --type-display-semi-weight: 600;
+  --type-display-semi-line-height: normal;
+  --type-display-semi-letter-spacing: 0;
+  --type-display-regular-size: 48px;
+  --type-display-regular-weight: 400;
+  --type-display-regular-line-height: normal;
+  --type-display-regular-letter-spacing: 0;
+  --type-h1-semi-size: 30px;
+  --type-h1-semi-weight: 600;
+  --type-h1-semi-line-height: 100%;
+  --type-h1-semi-letter-spacing: 0;
+  --type-h2-semi-size: 24px;
+  --type-h2-semi-weight: 600;
+  --type-h2-semi-line-height: 100%;
+  --type-h2-semi-letter-spacing: 0;
+  --type-h3-semi-size: 22px;
+  --type-h3-semi-weight: 600;
+  --type-h3-semi-line-height: 100%;
+  --type-h3-semi-letter-spacing: 0;
+  --type-h4-semi-size: 20px;
+  --type-h4-semi-weight: 600;
+  --type-h4-semi-line-height: 100%;
+  --type-h4-semi-letter-spacing: 0;
+  --type-h5-semi-size: 18px;
+  --type-h5-semi-weight: 600;
+  --type-h5-semi-line-height: 100%;
+  --type-h5-semi-letter-spacing: 0;
+  --type-h5-regular-size: 18px;
+  --type-h5-regular-weight: 400;
+  --type-h5-regular-line-height: 100%;
+  --type-h5-regular-letter-spacing: 0;
+  --type-h6-semi-caps-size: 16px;
+  --type-h6-semi-caps-weight: 600;
+  --type-h6-semi-caps-line-height: 100%;
+  --type-h6-semi-caps-letter-spacing: 0;
+  --type-h6-semi-size: 16px;
+  --type-h6-semi-weight: 600;
+  --type-h6-semi-line-height: 100%;
+  --type-h6-semi-letter-spacing: 0;
+  --type-h6-regular-size: 16px;
+  --type-h6-regular-weight: 400;
+  --type-h6-regular-line-height: 100%;
+  --type-h6-regular-letter-spacing: 0;
+  --type-h7-bold-caps-size: 14px;
+  --type-h7-bold-caps-weight: 700;
+  --type-h7-bold-caps-line-height: 100%;
+  --type-h7-bold-caps-letter-spacing: 0;
+  --type-h7-semi-caps-size: 14px;
+  --type-h7-semi-caps-weight: 600;
+  --type-h7-semi-caps-line-height: 100%;
+  --type-h7-semi-caps-letter-spacing: 0;
+  --type-h7-semi-size: 14px;
+  --type-h7-semi-weight: 600;
+  --type-h7-semi-line-height: 100%;
+  --type-h7-semi-letter-spacing: 0;
+  --type-h7-regular-size: 14px;
+  --type-h7-regular-weight: 400;
+  --type-h7-regular-line-height: 100%;
+  --type-h7-regular-letter-spacing: 0;
+  --type-h8-semi-size: 12px;
+  --type-h8-semi-weight: 600;
+  --type-h8-semi-line-height: 100%;
+  --type-h8-semi-letter-spacing: 0;
+  --type-h8-regular-size: 12px;
+  --type-h8-regular-weight: 400;
+  --type-h8-regular-line-height: 100%;
+  --type-h8-regular-letter-spacing: 0;
+  --type-body14-size: 14px;
+  --type-body14-weight: 400;
+  --type-body14-line-height: 1.43;
+  --type-body14-letter-spacing: 0.17px;
+  --type-overline-size: 12px;
+  --type-overline-weight: 400;
+  --type-overline-line-height: 2.66;
+  --type-overline-letter-spacing: 1px;
+  --type-button-small-size: 13px;
+  --type-button-small-weight: 600;
+  --type-button-small-line-height: 24px;
+  --type-button-small-letter-spacing: 0.46px;
 
   --background: #18141a;
   --danger: #ffa900;
@@ -77,6 +199,12 @@
   --text-area-border: #676370;
   --clear-divider: #a09ba8;
   --brightness: brightness(100);
+
+  --shape-borderRadiusMedium: 8px;
+  --shape-borderRadiusXLarge: 16px;
+  --shape-borderRadiusXXLarge: 24px;
+  --shadow-tooltip: 0 2px 3px rgba(0, 0, 0, 0.25);
+  --shadow-toast: 0 4px 4px rgba(0, 0, 0, 0.1);
 
   /* Buttons */
   /* TODO: Fix styles in the ui2 library */
