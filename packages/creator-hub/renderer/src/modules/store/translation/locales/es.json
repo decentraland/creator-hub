@@ -53,8 +53,6 @@
         "code": "Código",
         "optimize": "Optimizar",
         "play": "Jugar",
-        "optimizing": "Optimizando",
-        "cancel_optimizing": "Cancelar la optimización",
         "publish": "Publicar",
         "refresh": "Recargar escena desde disco",
         "preview_options": {
@@ -67,11 +65,10 @@
           "skip_auth_screen": "Omitir la pantalla de autenticación",
           "open_new_instance": "Abrir multiples clientes",
           "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica",
+          "load_raw_gltfs": "Cargar GLTFs sin procesar",
           "landscape_terrain_disabled_by_scene": "El terreno panorámico está oculto por la configuración de esta escena",
           "multi_instance": "Vista previa multi-instancia",
           "mcp": "Habilitar servidor MCP",
-          "optimized_assets": "Comprimir Assets",
-          "optimized_assets_tooltip": "Previsualiza la escena con los assets comprimidos igual que en producción",
           "mobile_preview": "Mostrar código QR para móvil"
         },
         "publish_options": {

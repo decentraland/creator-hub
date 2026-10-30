@@ -43,10 +43,9 @@ export const DEFAULT_CONFIG: Config = {
       multiInstance: false,
       mcp: false,
       showWarnings: true,
-      optimizedAssets: false,
+      loadRawGltfs: false,
       client: DEFAULT_PREVIEW_CLIENT,
     },
-    optimizedAssetsByPath: {},
     experimental: false,
     renderer: DEFAULT_RENDERER,
     aiAssistant: true,
@@ -71,6 +70,15 @@ export function mergeConfig(target: Partial<Config>, source: Config): Config {
 export function dropGuiEditorSetting(settings: Partial<AppSettings> | undefined): void {
   if (settings) {
     delete (settings as Record<string, unknown>).guiEditor;
+  }
+}
+
+/** Removes the retired "Compress Assets" keys that stored configs still carry, in place. */
+export function dropCompressAssetsSettings(settings: Partial<AppSettings> | undefined): void {
+  if (!settings) return;
+  delete (settings as Record<string, unknown>).optimizedAssetsByPath;
+  if (settings.previewOptions) {
+    delete (settings.previewOptions as Record<string, unknown>).optimizedAssets;
   }
 }
 
