@@ -134,3 +134,68 @@ describe('when an agent was just installed with its Windows installer', () => {
     },
   );
 });
+
+describe('when Codex is installed', () => {
+  const originalOpenAiKey = process.env.OPENAI_API_KEY;
+
+  function statusReplies(status: number, stdout: string) {
+    mocks.spawnSync.mockImplementation(((_bin: string, args: string[]) =>
+      args[0] === 'login'
+        ? { status, stdout, stderr: '' }
+        : { status: 0, stdout: 'codex-cli 0.166.0', stderr: '' }) as never);
+  }
+
+  beforeEach(() => {
+    delete process.env.OPENAI_API_KEY;
+    writeBin(binDir, 'codex');
+  });
+
+  afterEach(() => {
+    process.env.OPENAI_API_KEY = originalOpenAiKey;
+    mocks.spawnSync.mockReset();
+    mocks.spawnSync.mockImplementation(() => ({ stdout: '', stderr: '' }));
+    fs.rmSync(path.join(binDir, 'codex'), { force: true });
+    fs.rmSync(getManagedBinDir(), { recursive: true, force: true });
+  });
+
+  it('should not be available while Codex says it is not logged in', async () => {
+    statusReplies(1, 'Not logged in\n');
+    const codex = (await detectProviders()).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: false });
+  });
+
+  it('should be available once Codex says it is logged in', async () => {
+    statusReplies(0, 'Logged in using ChatGPT\n');
+    const codex = (await detectProviders()).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: true });
+  });
+
+  it('should stay available when the status check gives no clear answer', async () => {
+    statusReplies(2, "error: unrecognized subcommand 'status'\n");
+    const codex = (await detectProviders()).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: true });
+  });
+
+  it('should stay available when signed out but an API key can pay for turns', async () => {
+    process.env.OPENAI_API_KEY = 'sk-example123';
+    statusReplies(1, 'Not logged in\n');
+    const codex = (await detectProviders()).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: true });
+  });
+
+  it('should treat an app-installed Codex as signed in when Codex says so, without the marker', async () => {
+    fs.rmSync(path.join(binDir, 'codex'), { force: true });
+    writeBin(getManagedBinDir(), 'codex');
+    statusReplies(0, 'Logged in using ChatGPT\n');
+    const codex = (await detectProviders()).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: true, managedSignIn: true });
+  });
+
+  it('should re-ask Codex on every check', async () => {
+    statusReplies(0, 'Logged in using ChatGPT\n');
+    await detectProviders();
+    statusReplies(1, 'Not logged in\n');
+    const codex = (await detectProviders()).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: false });
+  });
+});

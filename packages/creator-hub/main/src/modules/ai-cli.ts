@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import * as pty from 'node-pty';
+import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
 
 import { AI_CLI_COMMANDS, apiKeyAlternative, type AiProvider } from '/shared/types/ai';
@@ -42,11 +43,43 @@ export { getCliState } from './ai-cli-paths';
 
 // --- install --------------------------------------------------------------------------
 
-async function ensureInstalled(
+// An install that is never updated falls behind the user's shared ~/.codex/config.toml, which a
+// newer Codex (desktop app, IDE extension, terminal install) may point at a model the old CLI
+// can't use — every turn then fails while the agent shows as connected.
+async function ensureLatest(
   provider: AiProvider,
   onProgress: (message: string) => void,
 ): Promise<void> {
-  if (isInstalled(provider)) return;
+  if (!isInstalled(provider)) {
+    await install(provider, onProgress);
+    return;
+  }
+  const { pkg } = CLI_SPECS[provider];
+  onProgress(`Updating ${pkg}…`);
+  try {
+    await npmInstall(getManagedCliDir(), [`${pkg}@latest`]);
+  } catch (error) {
+    // Offline, or Windows holding the binary open: the installed copy still works.
+    log.warn(`[AI-CLI] could not update ${pkg}, keeping the installed version:`, error);
+  }
+}
+
+let backgroundUpdate: Promise<void> | null = null;
+
+/** Update every app-installed CLI once per app run, so a long-lived install keeps up. */
+export function updateManagedClis(): Promise<void> {
+  if (backgroundUpdate === null && !activeLogin) {
+    backgroundUpdate = (async () => {
+      for (const provider of Object.keys(CLI_SPECS) as AiProvider[]) {
+        if (!CLI_SPECS[provider].managedSignIn || !isInstalled(provider)) continue;
+        await ensureLatest(provider, message => log.info(`[AI-CLI] ${message}`));
+      }
+    })();
+  }
+  return backgroundUpdate ?? Promise.resolve();
+}
+
+async function install(provider: AiProvider, onProgress: (message: string) => void) {
   const dir = getManagedCliDir();
   await fsp.mkdir(dir, { recursive: true });
   // Seed a private package.json so npm treats this as its own project (it won't walk up
@@ -251,7 +284,9 @@ export async function signInCli(provider: AiProvider): Promise<void> {
     );
   }
   const onProgress = (message: string) => sendLoginEvent({ type: 'progress', message });
-  await ensureInstalled(provider, onProgress);
+  // Two npm runs in the same folder would trip over each other.
+  await backgroundUpdate;
+  await ensureLatest(provider, onProgress);
   await login(provider, onProgress);
   setSignedIn(provider, true);
   log.info(`[AI-CLI] signed in to ${provider} (managed CLI)`);
@@ -286,7 +321,24 @@ export async function cancelSignInCli(): Promise<void> {
   killLogin(child);
 }
 
+// The CLI keeps its sign-in in the user's shared config folder (~/.codex), so this also signs
+// out any other copy of the same CLI on the machine. It has to: with a status check deciding
+// "connected", clearing only our marker would leave the agent connected.
 export async function signOutCli(provider: AiProvider): Promise<void> {
+  const { logoutArgs } = CLI_SPECS[provider];
+  if (logoutArgs !== undefined && isInstalled(provider)) {
+    await new Promise<void>(resolve => {
+      const child = crossSpawn(managedBinPath(provider), logoutArgs, {
+        env: loginEnv(),
+        stdio: 'ignore',
+      });
+      child.on('error', error => {
+        log.warn(`[AI-CLI] ${provider} logout failed:`, error);
+        resolve();
+      });
+      child.on('exit', () => resolve());
+    });
+  }
   setSignedIn(provider, false);
   log.info(`[AI-CLI] signed out of ${provider} (managed CLI)`);
 }

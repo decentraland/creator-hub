@@ -24,6 +24,13 @@ export type CliSpec = {
   /** Whether the app installs this CLI on demand and drives its login (#1531). When false,
    *  the UI shows terminal install and sign-in steps instead, and a managed binary is ignored. */
   managedSignIn: boolean;
+  /** args that make the CLI report its own sign-in state, exiting non-zero when signed out.
+   *  When set, this — not the app's marker — decides whether the agent is signed in, so an
+   *  expired or revoked sign-in stops reading as connected. */
+  statusArgs?: string[];
+  /** args that remove the CLI's stored sign-in; needed wherever `statusArgs` is set, since
+   *  clearing only the marker would leave the CLI reporting itself signed in. */
+  logoutArgs?: string[];
 };
 
 export const CLI_SPECS: Record<AiProvider, CliSpec> = {
@@ -33,7 +40,14 @@ export const CLI_SPECS: Record<AiProvider, CliSpec> = {
     loginArgs: ['setup-token'],
     managedSignIn: false,
   },
-  codex: { pkg: '@openai/codex', bin: 'codex', loginArgs: ['login'], managedSignIn: true },
+  codex: {
+    pkg: '@openai/codex',
+    bin: 'codex',
+    loginArgs: ['login'],
+    managedSignIn: true,
+    statusArgs: ['login', 'status'],
+    logoutArgs: ['logout'],
+  },
   cursor: { pkg: 'cursor-agent', bin: 'cursor-agent', loginArgs: ['login'], managedSignIn: false },
   gemini: { pkg: '@google/gemini-cli', bin: 'gemini', loginArgs: [], managedSignIn: false },
 };
