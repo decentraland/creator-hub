@@ -508,13 +508,16 @@ function registerTools(server: McpServer, caller: McpCaller): void {
       description:
         'Every component value for one entity, resolved by its numeric id or its Name (case-insensitive). Use after scene_state when you need the full component data for a specific entity.',
       inputSchema: {
-        entity: z.string().describe('The entity id (e.g. "512") or its Name (e.g. "Front Door")'),
+        // A number too: create_entity returns the id as a number, and agents pass it straight on.
+        entity: z
+          .union([z.number(), z.string()])
+          .describe('The entity id (e.g. 512) or its Name (e.g. "Front Door")'),
       },
     },
     async ({ entity }) => {
       if (currentProjectDir === null) return fail('No scene is open.');
       try {
-        const detail = entityDetail(await readComposite(currentProjectDir), entity);
+        const detail = entityDetail(await readComposite(currentProjectDir), String(entity));
         if (detail === null) return fail(`No entity found matching "${entity}".`);
         return ok(detail);
       } catch (e) {

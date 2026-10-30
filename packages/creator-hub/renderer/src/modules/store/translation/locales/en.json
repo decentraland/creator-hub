@@ -599,7 +599,7 @@
         },
         "mcp_server": {
           "label": "Allow other AI apps to edit your scenes",
-          "help": "Lets AI apps you use on this computer, like Claude Code or Codex, see and change the scene you have open. Turning this off disconnects them right away. The AI Assistant above doesn't need this.",
+          "help": "Lets AI apps you use on this computer, like Claude Code or Codex, see and change the scene you have open. Claude Code started in your scene's folder connects on its own. Turning this off disconnects them right away. The AI Assistant above doesn't need this.",
           "copy": "Copy configuration",
           "copied": "Copied!",
           "note": "Only apps on this computer can connect. These details change each time Creator Hub restarts or this is turned off."

@@ -159,6 +159,20 @@ describe('scene-mcp server', () => {
     await client.close();
   });
 
+  it('resolves entity_detail by a numeric id, as create_entity returns it', async () => {
+    const client = await open(info.token);
+    const res = (await client.callTool({
+      name: 'entity_detail',
+      arguments: { entity: 512 },
+    })) as {
+      content: { type: string; text: string }[];
+      isError?: boolean;
+    };
+    expect(res.isError).toBeFalsy();
+    expect(JSON.parse(res.content[0].text).id).toBe(512);
+    await client.close();
+  });
+
   // Regression guard for the session-routing fix: a second independent client must be able
   // to `initialize` too. The original bug shared ONE transport across requests, so the
   // second initialize was rejected with "Server already initialized"; per-session transports

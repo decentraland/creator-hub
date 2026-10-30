@@ -41,10 +41,13 @@ vi.mock('../src/modules/scene-mcp', () => ({
 
 import type * as McpDiscoveryModule from '../src/modules/mcp-discovery';
 import {
+  CLAUDE_MCP_CONFIG_FILE,
   MCP_DISCOVERY_FILE,
   accessRequestFilePath,
   discoveryFilePath,
+  removeClaudeMcpConfig,
   removeMcpDiscoveryFile,
+  writeClaudeMcpConfig,
   writeMcpDiscoveryFile,
 } from '../src/modules/mcp-discovery';
 
@@ -73,6 +76,73 @@ beforeEach(() => {
 });
 afterEach(() => {
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+describe('the scene .mcp.json', () => {
+  const file = () => path.join(dir, CLAUDE_MCP_CONFIG_FILE);
+  const read = () => JSON.parse(fs.readFileSync(file(), 'utf8'));
+  const USERS_OWN = JSON.stringify({ mcpServers: { mine: { command: 'x' } } });
+
+  describe('when the scene has none', () => {
+    it('should write our entry, owner-only, and gitignore it', () => {
+      expect(writeClaudeMcpConfig(dir, MCP)).toBe(true);
+
+      expect(read()).toEqual({
+        mcpServers: {
+          'creator-hub': {
+            type: 'http',
+            url: MCP.url,
+            headers: { Authorization: `Bearer ${MCP.token}` },
+          },
+        },
+      });
+      expect(fs.statSync(file()).mode & 0o777).toBe(0o600);
+      expect(fs.readFileSync(path.join(dir, '.gitignore'), 'utf8')).toContain(
+        `\n${CLAUDE_MCP_CONFIG_FILE}\n`,
+      );
+    });
+  });
+
+  describe('when it has the one we wrote last run', () => {
+    it('should replace it with the new connection', () => {
+      writeClaudeMcpConfig(dir, { ...MCP, token: 'old' });
+
+      writeClaudeMcpConfig(dir, MCP);
+
+      expect(read().mcpServers['creator-hub'].headers.Authorization).toBe(`Bearer ${MCP.token}`);
+    });
+  });
+
+  describe('when it has the creator’s own', () => {
+    it('should neither write into it nor touch .gitignore', () => {
+      fs.writeFileSync(file(), USERS_OWN);
+
+      expect(writeClaudeMcpConfig(dir, MCP)).toBe(false);
+
+      expect(fs.readFileSync(file(), 'utf8')).toBe(USERS_OWN);
+      expect(fs.existsSync(path.join(dir, '.gitignore'))).toBe(false);
+    });
+
+    it('should not remove it, even when it has a `creator-hub` entry of their own', () => {
+      const theirs = JSON.stringify({ mcpServers: { 'creator-hub': { command: 'bridge' } } });
+      fs.writeFileSync(file(), theirs);
+
+      removeClaudeMcpConfig(dir);
+
+      expect(fs.readFileSync(file(), 'utf8')).toBe(theirs);
+    });
+  });
+
+  describe('when removing ours', () => {
+    it('should delete the file and tolerate it being absent', () => {
+      writeClaudeMcpConfig(dir, MCP);
+
+      removeClaudeMcpConfig(dir);
+      removeClaudeMcpConfig(dir);
+
+      expect(fs.existsSync(file())).toBe(false);
+    });
+  });
 });
 
 describe('the discovery file', () => {
@@ -121,6 +191,7 @@ describe('outside access to the MCP server', () => {
   let m: McpDiscovery;
   let scene: string;
   const discoveryFile = () => discoveryFilePath(mocks.userData);
+  const sceneFile = () => path.join(scene, CLAUDE_MCP_CONFIG_FILE);
 
   beforeEach(async () => {
     // The module keeps the open scene and pending request; start each test clean.
@@ -154,31 +225,75 @@ describe('outside access to the MCP server', () => {
     });
   });
 
-  describe('when a scene is opened', () => {
-    it('should point the server at it and write nothing into it', async () => {
+  describe('when a scene is opened with access on', () => {
+    it('should point the server at it and write its .mcp.json', async () => {
       mocks.exposeMcpServer = true;
       await m.initMcpDiscovery();
 
-      m.sceneOpened(scene);
+      await m.sceneOpened(scene);
+
+      expect(mocks.setSceneMcpProject).toHaveBeenCalledWith(scene);
+      expect(fs.existsSync(sceneFile())).toBe(true);
+    });
+
+    it('should not write into it if another scene opened meanwhile', async () => {
+      mocks.exposeMcpServer = true;
+      await m.initMcpDiscovery();
+      const other = path.join(dir, 'other');
+      fs.mkdirSync(other);
+
+      const opening = m.sceneOpened(scene);
+      m.sceneClosed(scene);
+      await m.sceneOpened(other);
+      await opening;
+
+      expect(fs.existsSync(sceneFile())).toBe(false);
+      expect(fs.existsSync(path.join(other, CLAUDE_MCP_CONFIG_FILE))).toBe(true);
+    });
+  });
+
+  describe('when a scene is opened with access off', () => {
+    it('should still point the server at it but write nothing', async () => {
+      await m.initMcpDiscovery();
+
+      await m.sceneOpened(scene);
 
       expect(mocks.setSceneMcpProject).toHaveBeenCalledWith(scene);
       expect(fs.readdirSync(scene)).toEqual([]);
     });
+
+    it('should remove a file a crashed run left behind, but never the creator’s own', async () => {
+      writeClaudeMcpConfig(scene, MCP);
+      const other = path.join(dir, 'other');
+      fs.mkdirSync(other);
+      const theirs = JSON.stringify({ mcpServers: { mine: { command: 'x' } } });
+      fs.writeFileSync(path.join(other, CLAUDE_MCP_CONFIG_FILE), theirs);
+
+      await m.sceneOpened(scene);
+      await m.sceneOpened(other);
+
+      expect(fs.existsSync(sceneFile())).toBe(false);
+      expect(fs.readFileSync(path.join(other, CLAUDE_MCP_CONFIG_FILE), 'utf8')).toBe(theirs);
+    });
   });
 
   describe('when the scene closes', () => {
-    it('should detach the server', () => {
-      m.sceneOpened(scene);
+    it('should detach the server and remove its .mcp.json', async () => {
+      mocks.exposeMcpServer = true;
+      await m.initMcpDiscovery();
+      await m.sceneOpened(scene);
 
       m.sceneClosed(scene);
 
       expect(mocks.setSceneMcpProject).toHaveBeenLastCalledWith(null);
+      expect(fs.existsSync(sceneFile())).toBe(false);
+      expect(fs.existsSync(discoveryFile())).toBe(true);
     });
 
-    it('should ignore a close for a scene that is no longer the open one', () => {
+    it('should ignore a close for a scene that is no longer the open one', async () => {
       const other = path.join(dir, 'other');
-      m.sceneOpened(scene);
-      m.sceneOpened(other);
+      await m.sceneOpened(scene);
+      await m.sceneOpened(other);
 
       m.sceneClosed(scene);
 
@@ -198,44 +313,63 @@ describe('outside access to the MCP server', () => {
   });
 
   describe('when access is turned on', () => {
-    it('should grant it, write the discovery file and tell the renderer', async () => {
+    it('should grant it, write both files and tell the renderer', async () => {
+      await m.sceneOpened(scene);
+
       await m.syncExposeMcpServer(true);
 
       expect(mocks.setExternalMcpAccess).toHaveBeenCalledWith(true);
       expect(mocks.send).toHaveBeenCalledWith(AI_EXTERNAL_ACCESS_CHANGED);
       expect(fs.existsSync(discoveryFile())).toBe(true);
+      expect(fs.existsSync(sceneFile())).toBe(true);
+    });
+
+    it('should not write into a scene that was closed before', async () => {
+      await m.sceneOpened(scene);
+      m.sceneClosed(scene);
+
+      await m.syncExposeMcpServer(true);
+
+      expect(fs.existsSync(sceneFile())).toBe(false);
     });
   });
 
   describe('when access is turned off', () => {
-    it('should revoke it, remove the discovery file and tell the renderer', async () => {
+    it('should revoke it, remove both files and tell the renderer', async () => {
       mocks.exposeMcpServer = true;
       await m.initMcpDiscovery();
+      await m.sceneOpened(scene);
 
       await m.syncExposeMcpServer(false);
 
       expect(mocks.setExternalMcpAccess).toHaveBeenLastCalledWith(false);
       expect(mocks.send).toHaveBeenLastCalledWith(AI_EXTERNAL_ACCESS_CHANGED);
       expect(fs.existsSync(discoveryFile())).toBe(false);
+      expect(fs.existsSync(sceneFile())).toBe(false);
     });
 
     it('should not leave a file behind when it is turned off while the server starts', async () => {
+      await m.sceneOpened(scene);
+
       const turningOn = m.syncExposeMcpServer(true);
       await m.syncExposeMcpServer(false);
       await turningOn;
 
       expect(fs.existsSync(discoveryFile())).toBe(false);
+      expect(fs.existsSync(sceneFile())).toBe(false);
     });
   });
 
   describe('when the app quits', () => {
-    it('should remove the discovery file', async () => {
+    it('should remove the discovery file and the scene’s .mcp.json', async () => {
       mocks.exposeMcpServer = true;
       await m.initMcpDiscovery();
+      await m.sceneOpened(scene);
 
       m.clearMcpDiscovery();
 
       expect(fs.existsSync(discoveryFile())).toBe(false);
+      expect(fs.existsSync(sceneFile())).toBe(false);
     });
   });
 

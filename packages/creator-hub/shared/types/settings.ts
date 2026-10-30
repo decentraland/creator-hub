@@ -60,8 +60,8 @@ export type AppSettings = {
   aiAssistantPromoted?: boolean;
   // Opt-in: let AI agents running OUTSIDE the app (Claude Code in a terminal or VS Code,
   // Codex, Claude Desktop…) use the Creator Hub MCP server. While on, its URL + token are shown
-  // in settings and written to the app data folder as `mcp-server.json` (see
-  // main/src/modules/mcp-discovery.ts). An agent can ask for it, but only the creator can turn
+  // in settings and written to the app data folder as `mcp-server.json` and into the open scene
+  // as `.mcp.json` (see main/src/modules/mcp-discovery.ts). An agent can ask for it, but only the creator can turn
   // it on. Independent of `aiAssistant`: the in-app assistant has its own access either way.
   // Off by default.
   exposeMcpServer: boolean;

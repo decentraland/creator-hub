@@ -243,7 +243,9 @@ export interface Ipc {
   'ai.revertTurn': (count: number) => Promise<AiRevertResult>;
   // Connection details for agents outside the Hub; null while `exposeMcpServer` is off.
   'ai.getMcpServerInfo': () => Promise<{ url: string; token: string } | null>;
-  // The editor window's open scene: points the MCP server at it. sceneClosed detaches it.
+  // The editor window's open scene: points the MCP server at it and, while `exposeMcpServer` is
+  // on, writes its connection into the scene (`.mcp.json`) for Claude Code. sceneClosed detaches
+  // the server and removes that file.
   'ai.sceneOpened': (path: string) => Promise<void>;
   'ai.sceneClosed': (path: string) => Promise<void>;
   // True once while an outside agent's access request awaits the creator's answer (see

@@ -598,7 +598,7 @@
         },
         "mcp_server": {
           "label": "Permitir que otras apps de IA editen tus escenas",
-          "help": "Permite que las apps de IA que usas en esta computadora, como Claude Code o Codex, vean y cambien la escena que tienes abierta. Al desactivarlo se desconectan al instante. El Asistente de IA de arriba no lo necesita.",
+          "help": "Permite que las apps de IA que usas en esta computadora, como Claude Code o Codex, vean y cambien la escena que tienes abierta. Claude Code se conecta solo si lo abres en la carpeta de tu escena. Al desactivarlo se desconectan al instante. El Asistente de IA de arriba no lo necesita.",
           "copy": "Copiar configuración",
           "copied": "¡Copiado!",
           "note": "Solo pueden conectarse apps de esta computadora. Estos datos cambian cada vez que Creator Hub se reinicia o se desactiva esta opción."

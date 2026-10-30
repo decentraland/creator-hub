@@ -176,8 +176,9 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.revertTurn', (_event, count) => revertTurn(count));
   // The details an agent outside the Hub connects with; null while outside access is off.
   handle('ai.getMcpServerInfo', () => getExternalMcpInfo());
-  // The editor window reports which scene it has open, so the MCP server targets it.
-  handle('ai.sceneOpened', async (_event, path) => mcpDiscovery.sceneOpened(path));
+  // The editor window reports which scene it has open, so the MCP server targets it and,
+  // while outside access is on, Claude Code in that folder finds it (mcp-discovery).
+  handle('ai.sceneOpened', (_event, path) => mcpDiscovery.sceneOpened(path));
   handle('ai.sceneClosed', async (_event, path) => mcpDiscovery.sceneClosed(path));
   handle('ai.takeExternalAccessRequest', async () => mcpDiscovery.takeExternalAccessRequest());
   // Detached AI window (#1504): lifecycle + the mirror/command relay between the two
