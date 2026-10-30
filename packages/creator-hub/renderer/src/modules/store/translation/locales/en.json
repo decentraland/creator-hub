@@ -610,6 +610,7 @@
           "connected": "Connected",
           "sign_in": "Sign in",
           "sign_out": "Sign out",
+          "sign_out_shared": "Also signs you out of {agent} everywhere else on this computer (desktop app, editor extension, terminal).",
           "cancel": "Cancel",
           "via_terminal": "Via Terminal",
           "install": "Install",

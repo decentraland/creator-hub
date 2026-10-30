@@ -609,6 +609,7 @@
           "connected": "已连接",
           "sign_in": "登录",
           "sign_out": "退出登录",
+          "sign_out_shared": "这也会让你在这台电脑上的其他地方（桌面应用、编辑器扩展、终端）退出 {agent}。",
           "cancel": "取消",
           "via_terminal": "通过终端",
           "install": "安装",

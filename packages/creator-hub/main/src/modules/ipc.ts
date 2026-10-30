@@ -143,17 +143,18 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
 
   // ai assistant — `ai.send` streams AiEvents back to the calling WebContents over
   // AI_STREAM_EVENT; the returned turnId lets the renderer correlate the stream.
-  handle('ai.detectProviders', async () => {
-    const providers = await ai.detectProviders();
-    // After the scan, and not during a turn: npm briefly removes the binary while replacing it.
-    if (!ai.aiBusy()) void aiCli.updateManagedClis();
-    return providers;
-  });
+  // Scans and turns wait out a running update of an app-installed CLI (npm removes the binary
+  // before linking the new one); see detectThenUpdate / startTurnWhenIdle.
+  handle('ai.detectProviders', (_event, apiKeyFromEnv) =>
+    aiCli.detectThenUpdate(() => ai.detectProviders(apiKeyFromEnv), ai.aiBusy),
+  );
   handle('ai.send', async (event, path, params) => {
     const sender = event.sender;
-    return ai.aiSend(params, path, e => {
-      if (!sender.isDestroyed()) sender.send(AI_STREAM_EVENT, e);
-    });
+    return aiCli.startTurnWhenIdle(() =>
+      ai.aiSend(params, path, e => {
+        if (!sender.isDestroyed()) sender.send(AI_STREAM_EVENT, e);
+      }),
+    );
   });
   handle('ai.stop', async () => ai.aiStop());
   handle('ai.reset', async (_event, path) => ai.aiReset(path));

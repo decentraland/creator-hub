@@ -609,6 +609,7 @@
           "connected": "Conectado",
           "sign_in": "Iniciar sesión",
           "sign_out": "Cerrar sesión",
+          "sign_out_shared": "También cierra tu sesión de {agent} en el resto de esta computadora (app de escritorio, extensión del editor, terminal).",
           "cancel": "Cancelar",
           "via_terminal": "Desde la terminal",
           "install": "Instalar",

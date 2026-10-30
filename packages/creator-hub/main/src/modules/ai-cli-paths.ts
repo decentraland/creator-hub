@@ -25,8 +25,10 @@ export type CliSpec = {
    *  the UI shows terminal install and sign-in steps instead, and a managed binary is ignored. */
   managedSignIn: boolean;
   /** args that make the CLI report its own sign-in state, exiting non-zero when signed out.
-   *  When set, this — not the app's marker — decides whether the agent is signed in, so an
-   *  expired or revoked sign-in stops reading as connected. */
+   *  When set, this — not the app's marker — decides whether the agent is signed in, so missing
+   *  credentials (never signed in, signed out elsewhere) stop reading as connected. It reads only
+   *  the local credential store: an expired or revoked token still reports signed in, and is
+   *  caught when a turn fails with a 401 (`needsLogin`). */
   statusArgs?: string[];
   /** args that remove the CLI's stored sign-in; needed wherever `statusArgs` is set, since
    *  clearing only the marker would leave the CLI reporting itself signed in. */
