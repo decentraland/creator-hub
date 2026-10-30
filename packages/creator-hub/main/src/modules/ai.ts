@@ -254,6 +254,47 @@ export function getCliVersion(bin: string): string | undefined {
   return version;
 }
 
+const signedOutCache = new Map<string, boolean>();
+
+/** Whether the CLI at `bin` reports itself signed out. Only a clear "not logged in" counts, so a
+ *  probe that times out, or an older CLI without the subcommand, leaves the agent usable. */
+export function cliReportsSignedOut(bin: string, statusArgs: string[]): boolean {
+  const cached = signedOutCache.get(bin);
+  if (cached !== undefined) return cached;
+  let signedOut = false;
+  try {
+    // Same env as a subscription turn, so the probe reads the credentials the turn will use.
+    const res = crossSpawn.sync(bin, statusArgs, {
+      encoding: 'utf8',
+      timeout: 5000,
+      env: childEnv(false),
+    });
+    const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
+    signedOut = res.status !== 0 && /not logged in/i.test(out);
+  } catch {
+    signedOut = false;
+  }
+  signedOutCache.set(bin, signedOut);
+  return signedOut;
+}
+
+function hasApiKey(provider: AiProvider): boolean {
+  const name = AI_CLI_COMMANDS[provider].apiKeyEnv;
+  const fromShell = (shellApiKeys as Record<string, string | undefined>)[name];
+  return (process.env[name] ?? fromShell ?? '') !== '';
+}
+
+/** Signed in per the CLI's own status command where it has one; otherwise a PATH install is
+ *  trusted and an app-managed one needs the marker our sign-in flow wrote. */
+function isCliSignedIn(bin: string, provider: AiProvider, managed: boolean): boolean {
+  const { statusArgs } = CLI_SPECS[provider];
+  // A signed-out CLI can still run turns billed to an API key, so don't block on it then.
+  if (statusArgs !== undefined && !hasApiKey(provider)) {
+    return !cliReportsSignedOut(bin, statusArgs);
+  }
+  return managed ? isManagedSignedIn(provider) : true;
+}
+
 // The CLI relays an API 400 as a raw JSON blob when the installed version is too old for the
 // requested model (a Fable/newer model set as the user's own CLI default — the Creator Hub
 // never selects it, it only omits `--model` and lets the CLI use its default). Swap that blob
@@ -969,8 +1010,7 @@ const scan = (): AiProviderInfo[] =>
     const def = PROVIDERS[id];
     const bin = usableBin(findExecutable(def.binNames), id);
     const managed = bin !== null && bin.startsWith(getManagedBinDir());
-    const signedIn = managed ? isManagedSignedIn(id) : true;
-    const available = bin !== null && signedIn;
+    const available = bin !== null && isCliSignedIn(bin, id, managed);
     return {
       id: def.id,
       label: def.label,
@@ -997,6 +1037,7 @@ const scan = (): AiProviderInfo[] =>
 export async function detectProviders(): Promise<AiProviderInfo[]> {
   cachedDirs = null; // an explicit check re-reads the disk: they may have just installed
   cliVersionCache.clear(); // ...and may have just updated the CLI — re-probe its version
+  signedOutCache.clear(); // ...or signed in or out since the last check
   const first = scan();
   if (first.every(p => p.available)) return first;
   await loadShellDirs();
