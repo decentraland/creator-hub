@@ -145,7 +145,7 @@ export const checkSdkSkillsUpdate = createAsyncThunk(
     const { installed, outdated } = await skills.getProjectStatus(project.path);
     // The creator may have left or opened another scene meanwhile; this is for this one only.
     if (getState().editor.openingProjectPath !== project.path) return nothing;
-    if (installed && !outdated) return nothing;
+    if (!outdated) return nothing;
     if (strategy === DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE) {
       await dispatch(updateSdkSkills(project)).unwrap();
       return nothing;

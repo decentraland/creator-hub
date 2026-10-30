@@ -574,36 +574,36 @@ async function getUpstreamSkillHashes(): Promise<SkillHashes | null> {
 // that hashes differently, say) isn't offered or auto-updated again until the app restarts.
 const updatedThisRun = new Set<string>();
 
-// Whether the scene has its own copy of the skills and whether it is behind upstream main.
-// Never throws: offline or a GitHub error reads as "up to date" so the check can't block
-// opening a scene.
+// Whether the scene has its own copy of the skills, and whether an install or update is due
+// and can run now. Never throws: offline or a GitHub error reads as "nothing to do", for a
+// scene without the skills too, so the check can't block opening a scene and Auto-update
+// can't fail on every open.
 export async function getProjectSkillsStatus(
   projectDir: string,
   logger: Logger = defaultLog,
 ): Promise<SkillsUpdateStatus> {
-  const installed = readSdkSkillsLock(projectDir);
-  if (installed === null) return { installed: false, outdated: false };
+  const lock = readSdkSkillsLock(projectDir);
+  const installed = lock !== null;
 
   try {
     const upstream = await getUpstreamSkillHashes();
     if (upstream === null) {
       logger(`could not read the latest skills to check ${projectDir}`);
-      return { installed: true, outdated: false };
+      return { installed, outdated: false };
     }
     const cacheSkillsDir = path.join(getCacheDir(), 'skills');
     const outdated =
-      !hasOwnSkillFiles(projectDir, [...installed.keys()], cacheSkillsDir) ||
-      wantedSkills(upstream, installed).some(
-        name => !upstream[name].includes(installed.get(name) ?? ''),
-      );
+      lock === null ||
+      !hasOwnSkillFiles(projectDir, [...lock.keys()], cacheSkillsDir) ||
+      wantedSkills(upstream, lock).some(name => !upstream[name].includes(lock.get(name) ?? ''));
     if (outdated && updatedThisRun.has(path.resolve(projectDir))) {
       logger(`${projectDir} still differs from upstream after its update; not offering another`);
-      return { installed: true, outdated: false };
+      return { installed, outdated: false };
     }
-    return { installed: true, outdated };
+    return { installed, outdated };
   } catch (e) {
     logger(`could not check ${projectDir} for a skills update: ${String(e)}`);
-    return { installed: true, outdated: false };
+    return { installed, outdated: false };
   }
 }
 

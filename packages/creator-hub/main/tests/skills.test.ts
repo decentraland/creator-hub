@@ -150,14 +150,40 @@ function stubLatestSha(latestSha: string) {
 describe('getProjectSkillsStatus', () => {
   afterEach(() => fs.rmSync(path.join(userData, 'sdk-skills'), { recursive: true, force: true }));
 
-  it('reports nothing installed when the scene has no skills lock', async () => {
+  it('reports an install due when the scene has no skills lock', async () => {
     const { project } = setup();
-    const fetchMock = stubLatestSha('abc');
+    seedCache('head', { 'skill-a': ['h-a'] });
+    stubLatestSha('head');
+    expect(await getProjectSkillsStatus(project, noop)).toEqual({
+      installed: false,
+      outdated: true,
+    });
+  });
+
+  it("reports nothing to do for a scene without skills when GitHub can't be reached", async () => {
+    const { project } = setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    );
     expect(await getProjectSkillsStatus(project, noop)).toEqual({
       installed: false,
       outdated: false,
     });
-    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("stops offering an install that already ran and didn't leave a lock", async () => {
+    const { project } = setup();
+    seedCache('head', { 'skill-a': ['h-a'] });
+    stubLatestSha('head');
+    vi.mocked(run).mockReturnValue({
+      wait: async () => Buffer.from(''),
+    } as unknown as ReturnType<typeof run>);
+    await updateProjectSkills(project, noop); // the stub writes no lock
+    vi.mocked(run).mockReset();
+    expect((await getProjectSkillsStatus(project, noop)).outdated).toBe(false);
   });
 
   it('ignores a lock that only lists skills from other repos', async () => {

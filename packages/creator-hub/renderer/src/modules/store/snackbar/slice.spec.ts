@@ -94,7 +94,7 @@ describe('snackbar slice', () => {
 
   describe('when the scene has no AI skills', () => {
     beforeEach(() => {
-      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: false, outdated: false });
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: false, outdated: true });
     });
 
     it('should offer to install them', async () => {
@@ -131,6 +131,18 @@ describe('snackbar slice', () => {
       expect(store.getState().snackbar.notifications).toContainEqual(
         expect.objectContaining({ severity: 'success', message: 'AI skills are up to date' }),
       );
+    });
+
+    it("should do nothing, not fail, under Auto-update when GitHub can't be reached", async () => {
+      vi.mocked(skills.getProjectStatus).mockResolvedValue({ installed: false, outdated: false });
+      const store = createTestStore();
+      await setDependencyUpdateStrategy(store, DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE);
+      openScene(store, projectWithOutdatedDeps);
+
+      await store.dispatch(workspaceActions.checkSdkSkillsUpdate(projectWithOutdatedDeps));
+
+      expect(skills.updateProject).not.toHaveBeenCalled();
+      expect(store.getState().snackbar.notifications).toEqual([]);
     });
   });
 
