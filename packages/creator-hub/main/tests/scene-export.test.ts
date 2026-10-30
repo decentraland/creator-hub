@@ -107,6 +107,7 @@ describe('exportScene', () => {
 
   beforeEach(async () => {
     mocks.fetch.mockReset();
+    mocks.showSaveDialog.mockReset();
     dir = await fs.mkdtemp(path.join(os.tmpdir(), 'scene-export-test-'));
     outputPath = path.join(dir, 'out.zip');
   });
@@ -493,6 +494,38 @@ describe('exportScene', () => {
     });
   });
 
+  describe('when the scene lives on a Worlds content server', () => {
+    const WORLDS = 'https://worlds.example.org';
+
+    beforeEach(() => {
+      mocks.fetch.mockImplementation(async (url: string) => {
+        if (url === `${WORLDS}/contents/${ENTITY_ID}`) {
+          return new Response(
+            JSON.stringify({
+              id: ENTITY_ID,
+              type: 'scene',
+              pointers: ['0,0'],
+              metadata: { display: { title: 'World Scene' } },
+              content: [{ file: 'scene.json', hash: 'hscene' }],
+            }),
+          );
+        }
+        if (url === `${WORLDS}/contents/hscene`) return new Response(sceneJson);
+        return new Response('not found', { status: 404 });
+      });
+    });
+
+    it("should read the entity and its files from that server's contents", async () => {
+      await exportScene({ entityId: ENTITY_ID, contentUrl: WORLDS, outputPath });
+
+      const entries = await readZip(outputPath);
+      expect(text(entries, 'world-scene/scene.json')).toBe(sceneJson);
+      expect(mocks.fetch.mock.calls.map(([url]) => url)).toContain(
+        `${WORLDS}/contents/${ENTITY_ID}`,
+      );
+    });
+  });
+
   describe('when entity file names are case or dot variants of reserved paths', () => {
     let entries: Map<string, ZipEntry>;
 
@@ -633,7 +666,7 @@ describe('exportScene', () => {
 
       beforeEach(async () => {
         mocks.showSaveDialog.mockResolvedValue(outputPath);
-        result = await saveScene(ENTITY_ID, 'My Cool Scene!');
+        result = await saveScene(ENTITY_ID, 'My Cool Scene!', 'land');
       });
 
       it('should suggest a file named after the scene', () => {
@@ -654,8 +687,39 @@ describe('exportScene', () => {
     describe('and the user cancels the dialog', () => {
       it('should resolve null without fetching', async () => {
         mocks.showSaveDialog.mockResolvedValue(null);
-        await expect(saveScene(ENTITY_ID, 'x')).resolves.toBeNull();
+        await expect(saveScene(ENTITY_ID, 'x', 'land')).resolves.toBeNull();
         expect(mocks.fetch).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('and the scene lives in a World', () => {
+      it("should export from the Worlds content server of the app's environment", async () => {
+        const worlds = 'https://worlds-content-server.decentraland.org/contents/';
+        mocks.fetch.mockImplementation(async (url: string) => {
+          if (url === `${worlds}${ENTITY_ID}`) {
+            return new Response(
+              JSON.stringify({
+                id: ENTITY_ID,
+                pointers: ['0,0'],
+                content: [{ file: 'scene.json', hash: 'hscene' }],
+              }),
+            );
+          }
+          if (url === `${worlds}hscene`) return new Response(sceneJson);
+          return new Response('not found', { status: 404 });
+        });
+        mocks.showSaveDialog.mockResolvedValue(outputPath);
+
+        await saveScene(ENTITY_ID, 'x', 'world');
+
+        expect(mocks.fetch).toHaveBeenCalledWith(`${worlds}${ENTITY_ID}`, expect.anything());
+      });
+    });
+
+    describe('and the source is not a known one', () => {
+      it('should reject before asking where to save', async () => {
+        await expect(saveScene(ENTITY_ID, 'x', 'https://evil.example.org')).rejects.toThrow();
+        expect(mocks.showSaveDialog).not.toHaveBeenCalled();
       });
     });
   });

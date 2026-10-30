@@ -23,8 +23,8 @@ vi.mock('/@/modules/store/ens/names', async importOriginal => ({
   ...(await importOriginal<object>()),
   resolveNameOwner: vi.fn(),
 }));
-vi.mock('../WorldPermissionsModal/WorldPermissionsAvatarWithInfo', () => ({
-  WorldPermissionsAvatarWithInfo: () => null,
+vi.mock('../../AvatarWithInfo', () => ({
+  AvatarWithInfo: () => null,
 }));
 
 const SELF = '0x1234567890123456789012345678901234567890';

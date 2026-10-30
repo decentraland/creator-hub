@@ -29,19 +29,20 @@ const Fill = styled('span')({
 const Label = styled('span')(({ theme }) => ({
   color: neutral.softWhite,
   fontSize: theme.typography.pxToRem(18),
-  lineHeight: 1,
+  lineHeight: theme.typography.pxToRem(22),
 }));
 
 const LabelRow = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
+  height: 22,
 }));
 
 const Root = styled('div')(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.spacing(0.75),
+  gap: theme.spacing(1.25),
 }));
 
 const Track = styled('div')({
@@ -69,6 +70,7 @@ const ValueRow = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(2.5),
+  height: 24,
 }));
 
 export { DetailsButton, Fill, Label, LabelRow, Root, Track, Value, ValueRow };

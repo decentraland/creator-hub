@@ -386,7 +386,6 @@
             "title": "多場景世界（高級）",
             "description": "允許你的世界包含超過1個場景。總世界大小將取決於你發布的世界佈局。",
             "current_world": "當前世界",
-            "settings_button": "設定",
             "scenes_count": "{count} {count, plural, one {场景} other {场景}}"
           },
           "location": {
@@ -511,7 +510,8 @@
           "url": "跳转到您的 {target} 的URL是：",
           "world": "世界",
           "land": "土地",
-          "jump_in": "跳转"
+          "jump_in": "跳转",
+          "world_settings": "世界设置"
         }
       }
     },
@@ -659,215 +659,6 @@
       "names_buy": "购买 NAME",
       "proposal": "这些存储规则经过治理 DAO 提案的投票并获得通过。",
       "learn_more": "了解更多"
-    },
-    "world_settings": {
-      "title": "世界设置 - {worldName}",
-      "tabs": {
-        "details": {
-          "label": "详情"
-        },
-        "layout": {
-          "label": "布局"
-        },
-        "general": {
-          "label": "其他"
-        }
-      },
-      "discard_confirmation": "您有未保存的更改。离开前保存？",
-      "actions": {
-        "save": "保存更改",
-        "discard": "放弃"
-      },
-      "general": {
-        "world_spawn_coordinate": "世界生成坐标",
-        "position": "位置",
-        "world_skybox": "世界天空盒",
-        "auto_skybox": "自动（Decentraland 时间）",
-        "max_offset": "最大偏移",
-        "general": "常规",
-        "single_player": "单人游戏",
-        "show_in_places": "在 Places 中显示",
-        "single_player_streaming_note": "单人模式下不支持直播。"
-      },
-      "details": {
-        "world_title": "世界标题",
-        "description": "描述",
-        "age_rating": "内容分级",
-        "categories": "类别",
-        "author": "作者（可选）",
-        "email": "电子邮件（可选）",
-        "thumbnail": "缩略图",
-        "replace_image": "替换图片",
-        "set_image": "选择图片",
-        "no_image": "未设置图片",
-        "age_rating_options": {
-          "adult": "A（成人，PG 18+）"
-        },
-        "categories_options": {
-          "art": "🎨 艺术",
-          "game": "🕹️ 游戏",
-          "casino": "🃏 赌场",
-          "social": "👥 社交",
-          "music": "🎶 音乐",
-          "fashion": "👠 时尚",
-          "crypto": "🪙 加密货币",
-          "education": "📚 教育",
-          "shop": "🛍️ 商店",
-          "business": "🏢 商务",
-          "sports": "🏅 体育"
-        }
-      },
-      "layout": {
-        "world_layout": {
-          "title": "世界布局",
-          "world_size": "世界大小：{size}"
-        },
-        "multi_scene_title": "多场景世界",
-        "multi_scene_description": "允许您的世界包含多个场景。\n总的世界大小将取决于您发布的世界布局。",
-        "empty_world": {
-          "title": "此世界中未发布场景。",
-          "description": "您可以通过在此域中发布任何场景来添加它。",
-          "view_scenes": "查看场景"
-        },
-        "current_world": "当前世界",
-        "title_placeholder": "世界标题",
-        "scene_title_placeholder": "场景标题",
-        "scenes_count": "{count} 个{count, plural, one {场景} other {场景}}",
-        "parcels_count": "{count} 个{count, plural, one {地块} other {地块}}",
-        "world_map": "世界地图",
-        "scenes_title": "场景",
-        "actions": {
-          "edit_scene": "编辑场景",
-          "unpublish": "从世界中移除",
-          "confirm": "确认",
-          "cancel": "取消"
-        },
-        "unpublish_confirmation": {
-          "title": "从这个世界中移除 <b>{name}</b>？",
-          "warning_title": "您的世界将自动重新发布以应用这些更改。"
-        }
-      }
-    },
-    "world_permissions": {
-      "tabs": {
-        "access": {
-          "label": "访问"
-        },
-        "collaborators": {
-          "label": "协作者"
-        }
-      },
-      "title": "权限 - {worldName}",
-      "invalid_address": "无效地址",
-      "done": "完成",
-      "access": {
-        "title": "管理谁可以访问您的世界",
-        "description": "通过在<span>\"私有\"</span>和<span>\"公开\"</span>之间切换\n来管理谁可以访问您的世界。",
-        "subtitle": "在<span>私有模式</span>下，您可以授予最多 100 个地址（Decentraland 用户）访问权限。请注意，如果您恢复到<span>公开模式</span>，您的已批准地址列表将被清除。",
-        "type": {
-          "public": "公开",
-          "invitation_only": "仅限邀请",
-          "password_protected": "密码保护",
-          "public_description": "任何人都可以访问这个世界",
-          "invitation_only_description": "只有已批准的地址才能访问这个世界",
-          "password_protected_description": "只有知道访问密码的用户才能加入"
-        },
-        "warning": {
-          "title": "警告",
-          "description": "如果您恢复到公开模式，您的已批准地址列表将被清除。"
-        },
-        "empty_list": "您还没有批准任何地址",
-        "public": "公开",
-        "private": "私有",
-        "approved_addresses": "已批准地址: {number}",
-        "approved_addresses_tooltip": "同一时间最多只能有100名用户加入",
-        "add_address": "添加地址",
-        "new_invite": "新邀请",
-        "clear_list": "清除列表",
-        "clear_list_title": "清除列表？",
-        "clear_list_warning": "如果您继续，您的已批准地址列表将被清除。",
-        "change_access_type_title": "更改访问类型？",
-        "change_access_type_warning": "如果您切换访问类型，您的已批准地址列表将被清除。",
-        "go_back": "返回",
-        "continue": "继续",
-        "confirm": "确认",
-        "cancel": "取消",
-        "wrong_address_format": "地址格式错误",
-        "community_search_placeholder": "搜索社区...",
-        "community_searching": "搜索中...",
-        "community_no_results": "未找到社区",
-        "community_members": "{count} {count, plural, one {成员} other {成员}}",
-        "community_privacy_public": "公开社区",
-        "community_privacy_private": "私密社区",
-        "invite_tabs": {
-          "wallet_address": "钱包地址",
-          "community": "社区",
-          "import_csv": "导入CSV"
-        },
-        "csv_drop_text": "将CSV文件拖放到此处或",
-        "csv_browse": "浏览您的设备文件",
-        "csv_addresses_count": "{count} 个地址",
-        "csv_communities_count": "{count} 个社区",
-        "csv_invalid_count": "{count} 个无效地址",
-        "csv_replace": "替换",
-        "actions": {
-          "remove": "移除"
-        }
-      },
-      "password": {
-        "change_password": "更改密码",
-        "create_new_password": "创建新密码",
-        "empty_state": "此世界的密码尚未设置。",
-        "has_password": "此世界受密码保护。",
-        "dialog": {
-          "create_title": "创建新密码",
-          "change_title": "更改密码",
-          "type_password": "输入您的密码",
-          "repeat_password": "重复您的密码",
-          "info": "请务必记下您的密码，以免丢失！"
-        },
-        "error": {
-          "empty": "密码不能为空",
-          "too_short": "密码必须至少 {min} 个字符",
-          "mismatch": "密码不匹配",
-          "requirements_header": "密码必须包含：",
-          "min_length": "最少长度：{min} 个字符",
-          "min_numbers": "至少 {min} 个数字"
-        }
-      },
-      "collaborators": {
-        "description": "<span>添加最多 100 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
-        "empty_list": "您还没有添加任何协作者",
-        "add_collaborator": "添加协作者",
-        "add": "添加",
-        "column_name_label": "协作者：{number}",
-        "all_parcels": "所有地块",
-        "clear_list_title": "清空列表？",
-        "clear_list_warning": "如果继续，您的协作者列表将被清除。",
-        "deployment": {
-          "world_wide": "所有地块",
-          "parcels": "自定义坐标",
-          "none": "无"
-        },
-        "parcels_count": "{count} 个地块",
-        "actions": {
-          "remove": "移除",
-          "clear_list": "清空列表"
-        },
-        "dialog": {
-          "title": "添加协作者",
-          "label": "输入钱包地址或 ENS"
-        }
-      },
-      "parcels": {
-        "title": "自定义坐标",
-        "description": "点击单个瓷砖以将它们包含/排除在布局中。",
-        "parcels_count": "正在选择 {count} 个{count, plural, one {地块} other {地块}}",
-        "actions": {
-          "discard": "丢弃",
-          "confirm": "确认"
-        }
-      }
     },
     "create_project": {
       "title": "創建場景",
@@ -1133,7 +924,6 @@
     },
     "cards": {
       "roles": {
-        "owner": "所有者",
         "collaborator": "协作者",
         "tenant": "租户"
       },
@@ -1150,11 +940,6 @@
       "no_scene": {
         "title": "未发布场景",
         "view_scenes": "查看场景"
-      },
-      "worlds": {
-        "world_settings": "设置",
-        "layout": "布局",
-        "published_world": "已发布的世界"
       },
       "land": {
         "lands_count": "{count, plural, other {# 块 LAND}}",
@@ -1251,7 +1036,6 @@
     "not_found": "此 LAND 已不在你的列表中。",
     "back_to_manage": "返回管理",
     "save": "保存",
-    "discard": "放弃",
     "details": {
       "name": "LAND 名称",
       "name_placeholder": "在此输入",
@@ -1324,7 +1108,6 @@
       "remove_body": "对方将无法再在此 LAND 上发布。",
       "remove_confirm": "移除",
       "remove_many_title": "移除 {count} 个协作者？",
-      "parcels_title": "更新地块",
       "parcels_body": "<b>{name}</b> 将在 {count} 个地块上发布。",
       "empty": "还没有协作者"
     },
@@ -1341,6 +1124,130 @@
       "land_only": "只能管理你的 LAND。重新添加以包含你的 Estates。",
       "estate_only": "只能管理你的 Estates。重新添加以包含你的 LAND。"
     }
+  },
+  "world_detail": {
+    "tabs": {
+      "details": "详情",
+      "scenes": "场景",
+      "settings": "设置",
+      "collaborators": "协作者"
+    },
+    "owner_you": "{name}（你）",
+    "not_found": "此世界已不在你的列表中。",
+    "details": {
+      "name": "世界名称",
+      "description_placeholder": "在此写一些关于你的世界的内容",
+      "thumbnail_hint": "PNG 或 JPG | 1920x1080 (16:9)",
+      "change_thumbnail": "更换缩略图",
+      "saved": "更改已保存",
+      "categories": "类别",
+      "description": "描述",
+      "no_image": "未设置图片",
+      "thumbnail": "缩略图",
+      "categories_options": {
+        "art": "🎨 艺术",
+        "game": "🕹️ 游戏",
+        "casino": "🃏 赌场",
+        "social": "👥 社交",
+        "music": "🎶 音乐",
+        "fashion": "👠 时尚",
+        "crypto": "🪙 加密货币",
+        "education": "📚 教育",
+        "shop": "🛍️ 商店",
+        "business": "🏢 商务",
+        "sports": "🏅 体育"
+      }
+    },
+    "scenes": {
+      "parcels_shape": "{w}×{h} 地块",
+      "used": "已使用 {size}",
+      "manage_storage": "管理存储空间",
+      "last_scene": "这是 {world} 中的最后一个场景。取消发布后，该世界将下线，其标题、描述、缩略图和设置都会被删除。",
+      "empty": "此世界中尚未发布场景。",
+      "empty_filtered": "你的地块上还没有场景。",
+      "multi_scene_info": "关于多场景世界",
+      "multi_scene_description": "允许您的世界包含多个场景。\n总的世界大小将取决于您发布的世界布局。",
+      "multi_scene_title": "多场景世界",
+      "world_map": "世界地图"
+    },
+    "settings": {
+      "spawn": "出生点坐标",
+      "skybox": "昼夜时间（天空盒）",
+      "skybox_auto": "自动（Decentraland 时间）",
+      "skybox_slider": "昼夜时间",
+      "discoverable": "可在 Places 中发现",
+      "access": {
+        "invitation_only": "仅限邀请",
+        "password_protected": "密码保护",
+        "invitation_only_description": "白名单中的用户和社区可以加入",
+        "password_protected_description": "任何拥有密码的人都可以加入",
+        "tab_user": "添加用户钱包",
+        "tab_community": "添加社区",
+        "search": "搜索",
+        "csv_browse": "浏览你的设备文件。",
+        "invited": "已邀请",
+        "invited_empty": "你还没有邀请任何人。",
+        "select_all": "全选已邀请",
+        "select": "选择 {name}",
+        "remove": "移除 {name}",
+        "remove_body": "他们将无法再加入这个世界。",
+        "remove_many_title": "移除 {count} 个邀请？",
+        "label": "访问",
+        "public": "公开",
+        "public_description": "任何人都可以访问这个世界",
+        "change_type_title": "更改访问类型？",
+        "change_type_warning": "如果您切换访问类型，您的已批准地址列表将被清除。",
+        "continue": "继续",
+        "tab_csv": "导入CSV",
+        "csv_drop_text": "将CSV文件拖放到此处或",
+        "csv_invalid_count": "{count} 个无效地址",
+        "csv_replace": "替换"
+      },
+      "password": {
+        "requirements": "你的密码必须包含",
+        "min_length": "至少 8 个字符",
+        "min_numbers": "至少 2 个数字",
+        "mismatch": "密码不匹配",
+        "show": "显示密码",
+        "hide": "隐藏密码",
+        "change_password": "更改密码",
+        "create_title": "创建新密码",
+        "change_title": "更改密码",
+        "type_password": "输入您的密码",
+        "repeat_password": "重复您的密码",
+        "info": "请务必记下您的密码，以免丢失！"
+      },
+      "general": "常规",
+      "single_player": "单人游戏",
+      "single_player_streaming_note": "单人模式下不支持直播。"
+    },
+    "collaborators": {
+      "description": "添加最多 100 个协作者，并管理他们在你的世界中部署或流媒体的权限。",
+      "count": "协作者：{count}/100",
+      "stream": "流媒体",
+      "stream_label": "{name} 的流媒体权限",
+      "remove_one_title": "确定要将“{name}”从协作者中移除吗？",
+      "remove_several_title": "确定要移除所有这些协作者吗？",
+      "remove_all_title": "确定要移除所有协作者吗？",
+      "full": "你已达到 100 个协作者的上限。",
+      "none": "无",
+      "stream_open": "此世界的流媒体对所有人开放。",
+      "remove_body": "他们将无法再在这个世界中部署或流媒体。"
+    }
+  },
+  "detail_shell": {
+    "unsaved": "您有未保存的更改。离开前保存？",
+    "discard": "放弃"
+  },
+  "parcel_picker": {
+    "title": "更新地块",
+    "description": "点击单个瓷砖以将它们包含/排除在布局中。",
+    "count": "正在选择 {count} 个{count, plural, one {地块} other {地块}}",
+    "map_label": "{name} 的地块",
+    "map_instructions": "使用方向键在地块之间移动，按空格键或回车键选择或取消选择地块。",
+    "map_role": "地块地图",
+    "cursor_selected": "地块 {x},{y}，已选择",
+    "cursor_not_selected": "地块 {x},{y}，未选择"
   },
   "analytics": {
     "header": {
@@ -1561,5 +1468,8 @@
       "NO_INTERNET_CONNECTION": "无可用的互联网连接",
       "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
     }
+  },
+  "world_atlas": {
+    "world_size": "世界大小：{size}"
   }
 }

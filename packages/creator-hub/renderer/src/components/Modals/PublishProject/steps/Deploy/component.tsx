@@ -37,6 +37,7 @@ import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
 import { parseCoords } from '/@/components/Modals/PublishProject/utils';
 
+import { SettingsLink } from './Deploy.styled';
 import { DeployProgress, type DeployCancel } from './DeployProgress';
 
 import './styles.css';
@@ -355,7 +356,11 @@ export function Deploy(props: Props) {
                   <Success
                     info={deployment.info}
                     url={shareUrl}
+                    worldName={
+                      deployment.info.isWorld ? project.worldConfiguration?.name : undefined
+                    }
                     onClick={handleJumpIn}
+                    onClose={props.onClose}
                   />
                 )}
               </>
@@ -526,10 +531,13 @@ function Error({
 type SuccessProps = {
   info: Info;
   url: string;
+  worldName?: string;
   onClick: () => void;
+  onClose: () => void;
 };
 
-function Success({ info, url, onClick }: SuccessProps) {
+/** The publish result: the share URL, Jump In and, for a World, a link to its Settings tab. */
+export function Success({ info, url, worldName, onClick, onClose }: SuccessProps) {
   return (
     <div className="Success">
       <div className="content">
@@ -539,6 +547,14 @@ function Success({ info, url, onClick }: SuccessProps) {
           info={info}
           url={url}
         />
+        {worldName && (
+          <SettingsLink
+            to={`/manage/world/${encodeURIComponent(worldName)}/settings`}
+            onClick={onClose}
+          >
+            {t('modal.publish_project.deploy.success.world_settings')}
+          </SettingsLink>
+        )}
       </div>
       <div className="actions">
         <Button

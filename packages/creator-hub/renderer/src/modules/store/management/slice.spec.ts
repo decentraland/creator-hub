@@ -28,6 +28,7 @@ import {
   removeParcelsPermission,
   fetchWorlds,
   fetchEmptyWorlds,
+  fetchStreamOnlyWorlds,
   updateWorldSettings,
   fetchLandDeployers,
   fetchLandProjects,
@@ -1125,7 +1126,7 @@ describe('management slice', () => {
       expect(state.projects).toHaveLength(1);
       expect(state.projects[0].id).toBe('test-world.dcl.eth');
       expect(state.projects[0].displayName).toBe('test-world.dcl.eth');
-      expect(state.projects[0].deployment?.title).toBe('Test World');
+      expect(state.projects[0].title).toBe('Test World');
       expect(state.projects[0].deployment?.scenesCount).toBe(3);
       expect(state.total).toBe(1);
     });
@@ -1227,6 +1228,31 @@ describe('management slice', () => {
 
       const state = store.getState().management;
       expect(state.projects[0].role).toBe('collaborator');
+    });
+  });
+
+  describe('fetchStreamOnlyWorlds', () => {
+    beforeEach(() => {
+      store.dispatch({
+        type: 'ens/fetchContributableNames/fulfilled',
+        payload: { names: [], streamOnly: ['live.dcl.eth', 'broken.dcl.eth'] },
+        meta: { arg: { address: TEST_ADDRESS } },
+      });
+      mockWorldsAPI.fetchWorldSettings.mockResolvedValue({});
+      mockWorldsAPI.fetchWorldScenes.mockImplementation(async (name: string) => {
+        if (name === 'broken.dcl.eth') throw new Error('boom');
+        return { scenes: [], total: 1 };
+      });
+    });
+
+    it('should list every stream-only World, showing one it could not read as unpublished', async () => {
+      await store.dispatch(fetchStreamOnlyWorlds({ address: TEST_ADDRESS }));
+
+      const projects = store.getState().management.streamOnlyProjects;
+      expect(projects.map(project => [project.id, project.access, !!project.deployment])).toEqual([
+        ['live.dcl.eth', 'stream', true],
+        ['broken.dcl.eth', 'stream', false],
+      ]);
     });
   });
 
@@ -1359,6 +1385,7 @@ describe('management slice', () => {
 
       const collabWorld = result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth');
       expect(collabWorld?.role).toBe('collaborator');
+      expect(collabWorld?.owner).toBe('0xotheraddress');
     });
 
     it('should set deployment to undefined for unpublished worlds', async () => {

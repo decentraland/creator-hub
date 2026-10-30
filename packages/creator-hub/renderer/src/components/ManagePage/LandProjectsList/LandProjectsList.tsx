@@ -3,10 +3,10 @@ import { getLandName } from '/@/modules/store/management/utils';
 import { t } from '/@/modules/store/translation/utils';
 import type { ManagedProject } from '/shared/types/manage';
 
+import { Grid } from '../Grid.styled';
 import { PlaceCard } from '../PlaceCard';
 import { getRoleTag } from '../RoleTag';
 import { getLandMenuOptions } from './landMenu';
-import { Grid } from './LandProjectsList.styled';
 
 type Props = {
   projects: ManagedProject[];

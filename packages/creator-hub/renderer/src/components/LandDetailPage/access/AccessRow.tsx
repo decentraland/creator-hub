@@ -4,7 +4,7 @@ import { IconButton } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 
 import { DeleteIcon } from '../../Icons';
-import { WorldPermissionsAvatarWithInfo } from '../../Modals/WorldPermissionsModal/WorldPermissionsAvatarWithInfo';
+import { AvatarWithInfo } from '../../AvatarWithInfo';
 import { Row } from './access.styled';
 import { useDisplayName } from './useDisplayName';
 
@@ -24,7 +24,7 @@ export function AccessRow({ address, select, scope, note, onRemove }: Props) {
       <span className="Lead">
         {select}
         <span className="Who">
-          <WorldPermissionsAvatarWithInfo value={address} />
+          <AvatarWithInfo value={address} />
         </span>
       </span>
       {scope && <span className="Scope">{scope}</span>}

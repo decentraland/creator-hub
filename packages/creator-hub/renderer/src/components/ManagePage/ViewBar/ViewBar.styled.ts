@@ -92,7 +92,7 @@ const ViewSelect = styled(Select)(({ theme }) => ({
     backgroundColor: whiteTransparent.subtle,
   },
   '&&:has(.MuiSelect-select:focus-visible)': {
-    outline: `2px solid ${theme.palette.info.light}`,
+    boxShadow: `inset 0 0 0 1px ${neutral.softWhite}`,
   },
   '&&& .MuiSelect-select': {
     minHeight: 0,

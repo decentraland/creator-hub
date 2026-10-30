@@ -6,10 +6,15 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { Button } from '../../Button';
 import { RecipientField, type Recipient } from '../../ManagePage/RecipientField';
-import { AddButton, AddRow } from './access.styled';
+import { AddButton, AddRow, Notice } from './access.styled';
 
-/** The add row: a wallet address or NAME field with an inline Add button. */
-export function AddRecipient({ onAdd }: { onAdd: (recipient: Recipient) => void }) {
+type Props = {
+  onAdd: (recipient: Recipient) => void;
+  notice?: string;
+};
+
+/** The add row: a wallet address or NAME field with an inline Add button; a `notice` blocks Add and says why. */
+export function AddRecipient({ onAdd, notice }: Props) {
   const { wallet = '' } = useAuth();
   const [recipient, setRecipient] = useState<Recipient | null>(null);
   const [round, setRound] = useState(0);
@@ -28,7 +33,7 @@ export function AddRecipient({ onAdd }: { onAdd: (recipient: Recipient) => void 
               color="primary"
               size="small"
               startIcon={<AddIcon />}
-              disabled={!recipient}
+              disabled={!recipient || !!notice}
               onClick={() => {
                 if (!recipient) return;
                 onAdd(recipient);
@@ -40,6 +45,7 @@ export function AddRecipient({ onAdd }: { onAdd: (recipient: Recipient) => void 
           </AddButton>
         }
       />
+      {notice && <Notice role="status">{notice}</Notice>}
     </AddRow>
   );
 }
