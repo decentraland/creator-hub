@@ -19,6 +19,7 @@ import { ai, misc } from '#preload';
 import { cliSetup, type AiProviderInfo } from '/shared/types/ai';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
+import { SignInCodeField } from '/@/components/SignInCodeField';
 import type { BaseTabProps } from '../../types';
 
 import './styles.css';
@@ -103,10 +104,10 @@ function AgentConnect({
     void work.finally(() => setPending(false));
   }, []);
   const recheck = useCallback(() => track(onRecheck()), [track, onRecheck]);
-  const { signIn, start, cancel } = useCliSignIn(info.id, recheck);
+  const { signIn, start, cancel, submitCode } = useCliSignIn(info.id, recheck);
   const reloginInTerminal = info.needsLogin === true && !info.managedSignIn;
   const [terminalOpen, setTerminalOpen] = useState(
-    reloginInTerminal || info.desktopInstalled === true,
+    reloginInTerminal || (info.desktopInstalled === true && !info.managedSignIn),
   );
   const cmds = cliSetup(info.id, navigator.userAgent.includes('Windows'));
 
@@ -188,6 +189,9 @@ function AgentConnect({
         </Typography>
       )}
       {signIn.url !== null && <CommandField value={signIn.url} />}
+      {signIn.busy && signIn.url !== null && signIn.acceptsCode && (
+        <SignInCodeField onSubmit={submitCode} />
+      )}
       {signOutError !== null && (
         <Typography
           variant="caption"

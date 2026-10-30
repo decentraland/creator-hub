@@ -106,6 +106,10 @@ export async function signInCli(
   }
 }
 
+export async function submitSignInCode(code: string): Promise<void> {
+  return invoke('ai.submitSignInCode', code);
+}
+
 export async function cancelSignInCli(): Promise<void> {
   return invoke('ai.cancelSignInCli');
 }

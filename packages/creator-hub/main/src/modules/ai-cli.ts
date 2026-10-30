@@ -60,8 +60,40 @@ export function whenManagedCliIdle(): Promise<void> {
 }
 
 // Install scripts are off: the official CLIs ship their native binary as an optional
-// dependency and run nothing at install, so a script appearing in a release is not ours to run.
+// dependency, so a script appearing in a release is not ours to run. The one exception is a
+// CLI's own known setup step (`setupScript`), run by name after npm finishes.
 const NPM_OPTIONS = { ignoreScripts: true };
+
+const SETUP_TIMEOUT_MS = 60_000;
+
+/** Run the package's own postinstall with the bundled Node, e.g. Claude's, which puts the native
+ *  binary (already downloaded as an optional dependency) in place of the placeholder npm links. */
+function runSetupScript(provider: AiProvider): Promise<void> {
+  const { pkg, setupScript } = CLI_SPECS[provider];
+  if (setupScript === undefined) return Promise.resolve();
+  const pkgDir = path.join(getManagedCliDir(), 'node_modules', pkg);
+  const runtime = resolveNodeRuntime();
+  return new Promise((resolve, reject) => {
+    const child = crossSpawn(runtime.node, [path.join(pkgDir, setupScript)], {
+      cwd: pkgDir,
+      env: getChildEnv(runtime),
+      stdio: 'ignore',
+    });
+    const timeout = setTimeout(() => {
+      child.kill('SIGKILL');
+      reject(new Error(`${pkg} setup timed out`));
+    }, SETUP_TIMEOUT_MS);
+    child.on('error', error => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on('exit', code => {
+      clearTimeout(timeout);
+      if (code === 0) resolve();
+      else reject(new Error(`${pkg} setup failed (exit code ${code})`));
+    });
+  });
+}
 
 // An install that is never updated falls behind the user's shared ~/.codex/config.toml, which a
 // newer Codex (desktop app, IDE extension, terminal install) may point at a model the old CLI
@@ -78,6 +110,12 @@ function update(provider: AiProvider, onProgress: (message: string) => void): Pr
     } catch (error) {
       // Offline, or Windows holding the binary open: the installed copy still works.
       log.warn(`[AI-CLI] could not update ${pkg}, keeping the installed version:`, error);
+    }
+    // Also after a failed npm run, which may have left the placeholder in place.
+    try {
+      await runSetupScript(provider);
+    } catch (error) {
+      log.warn(`[AI-CLI] could not set up ${pkg} after updating:`, error);
     }
   });
 }
@@ -138,6 +176,7 @@ function install(provider: AiProvider, onProgress: (message: string) => void): P
     log.info(`[AI-CLI] installing ${pkg} into ${dir}`);
     // The shared npm helper runs the bundled npm/Node with --save-exact in cwd=dir.
     await npmInstall(dir, [`${pkg}@latest`], NPM_OPTIONS);
+    await runSetupScript(provider);
     if (!isInstalled(provider)) {
       throw new Error(`Install of ${pkg} did not produce a "${bin}" binary`);
     }
@@ -161,9 +200,11 @@ function loginEnv(): Record<string, string> {
 }
 
 // Strip ANSI escape/control sequences from PTY output so URL detection and the progress
-// text we surface aren't polluted by cursor moves and colors.
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\u001b\[[0-9;?]*[A-Za-z]|\u009b[0-9;?]*[A-Za-z]/g;
+// text we surface aren't polluted by cursor moves, colors, and terminal hyperlinks (claude wraps
+// its sign-in URL in one, which otherwise glues the link target onto the visible URL).
+const ANSI_RE =
+  // eslint-disable-next-line no-control-regex
+  /\u001b\[[0-9;?]*[A-Za-z]|\u009b[0-9;?]*[A-Za-z]|\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g;
 const URL_RE = /(https?:\/\/[^\s'"]+)/g;
 
 // Pull the *sign-in* URL out of a CLI line — the remote page the user must open. Two traps:
@@ -228,7 +269,7 @@ function ensureSpawnHelperExecutable(): void {
   }
 }
 
-// The official CLIs' subscription login (`claude setup-token` / `codex login`) is
+// The official CLIs' subscription login (`claude auth login` / `codex login`) is
 // terminal-interactive — it does nothing over a plain pipe — so we run it in a real PTY
 // (node-pty). The CLI opens its OWN browser tab and completes via a localhost OAuth callback,
 // storing credentials where a later `-p` turn reads them via the inherited HOME. We surface
@@ -236,9 +277,8 @@ function ensureSpawnHelperExecutable(): void {
 // do not open the browser ourselves — a second tab double-redeems the one-time code and fails
 // the login. A clean exit is treated as success.
 //
-// NOTE (needs live verification with a real subscription — no test account here): if a
-// flow turns out to prompt for a pasted code instead of a pure browser-callback, we'd wire
-// that prompt to `activeLogin.write(...)`; the PTY makes that possible without more infra.
+// Claude's fallback URL is a different flow: it redirects to Anthropic's own page, which shows
+// a code the user pastes back at the CLI's prompt (`acceptsPastedCode`, see submitSignInCode).
 async function login(provider: AiProvider, onProgress: (message: string) => void): Promise<void> {
   if (activeLogin) throw new Error('Another sign-in is already in progress');
   const spec = CLI_SPECS[provider];
@@ -248,7 +288,7 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
 
   // On Windows `bin` is a `.cmd` shim, which ConPTY can't launch directly (CreateProcess only
   // runs a real PE) — run it through the command interpreter. The login args are fixed tokens
-  // (`setup-token` / `login`), so there's no argument-escaping concern here.
+  // (`auth login --claudeai` / `login`), so there's no argument-escaping concern here.
   const [file, args]: [string, string[]] =
     process.platform === 'win32'
       ? [process.env.ComSpec ?? 'cmd.exe', ['/c', bin, ...spec.loginArgs]]
@@ -300,9 +340,16 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
         // duplicate redeem fails the whole login (codex: "token_exchange_failed"). The panel
         // shows the URL as the manual fallback for when the CLI's own open doesn't fire.
         const url = authUrlSent ? null : extractAuthUrl(text);
+        const failure = spec.loginFailedPattern?.exec(text);
         if (url !== null) {
           authUrlSent = true;
-          sendLoginEvent({ type: 'auth', url });
+          sendLoginEvent({ type: 'auth', url, acceptsCode: spec.acceptsPastedCode === true });
+        } else if (failure != null) {
+          clearTimeout(timeout);
+          activeLogin = null;
+          killLogin(child);
+          reject(new Error(failure[0]));
+          return;
         } else {
           sendLoginEvent({ type: 'progress', message: text });
         }
@@ -359,6 +406,15 @@ function killLogin(child: pty.IPty): void {
   child.onExit(() => clearTimeout(escalate));
 }
 
+/** Type the code the provider's page showed at the running login's prompt. */
+export async function submitSignInCode(code: string): Promise<void> {
+  if (!activeLogin) throw new Error('No sign-in is in progress');
+  // The code has no spaces; a newline or control key inside the paste would act on the prompt.
+  const line = code.replace(/[\s\p{Cc}]+/gu, '');
+  if (line === '') return;
+  activeLogin.write(`${line}\r`);
+}
+
 export async function cancelSignInCli(): Promise<void> {
   signInCancelled = true;
   const child = activeLogin;
@@ -390,9 +446,9 @@ function runLogout(provider: AiProvider, args: string[]): Promise<void> {
   });
 }
 
-// The CLI keeps its sign-in in the user's shared config folder (~/.codex), so this also signs
-// out any other copy of the same CLI on the machine. It has to: with a status check deciding
-// "connected", clearing only our marker would leave the agent connected.
+// The CLI keeps its sign-in in the user's shared config (~/.codex, Claude's keychain entry), so
+// this also signs out any other copy of the same CLI on the machine. It has to: with a status
+// check deciding "connected", clearing only our marker would leave the agent connected.
 export async function signOutCli(provider: AiProvider): Promise<void> {
   const { logoutArgs } = CLI_SPECS[provider];
   if (logoutArgs !== undefined && isInstalled(provider)) {

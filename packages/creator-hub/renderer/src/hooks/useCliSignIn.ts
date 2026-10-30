@@ -9,10 +9,18 @@ export interface CliSignInState {
   busy: boolean;
   message: string;
   url: string | null;
+  /** Whether the login also takes the code shown by `url`'s page. */
+  acceptsCode: boolean;
   error: string | null;
 }
 
-const IDLE: CliSignInState = { busy: false, message: '', url: null, error: null };
+const IDLE: CliSignInState = {
+  busy: false,
+  message: '',
+  url: null,
+  acceptsCode: false,
+  error: null,
+};
 
 // Drives a provider CLI login: it streams the auth URL/status while `<provider> login` runs, and
 // resets cleanly when the user cancels (the kill rejects the promise, so an expected cancel must
@@ -24,17 +32,17 @@ export function useCliSignIn(provider: AiProvider, onSignedIn?: () => void) {
 
   const start = useCallback(async () => {
     cancelled.current = false;
-    setSignIn({
-      busy: true,
-      message: t('editor.ai.setup.signin_starting'),
-      url: null,
-      error: null,
-    });
+    setSignIn({ ...IDLE, busy: true, message: t('editor.ai.setup.signin_starting') });
     try {
       await aiPreload.signInCli(provider, event => {
         setSignIn(s =>
           event.type === 'auth'
-            ? { ...s, url: event.url, message: t('editor.ai.setup.signin_browser') }
+            ? {
+                ...s,
+                url: event.url,
+                acceptsCode: event.acceptsCode,
+                message: t('editor.ai.setup.signin_browser'),
+              }
             : { ...s, message: event.message },
         );
       });
@@ -42,9 +50,7 @@ export function useCliSignIn(provider: AiProvider, onSignedIn?: () => void) {
       onSignedIn?.();
     } catch (e) {
       setSignIn({
-        busy: false,
-        message: '',
-        url: null,
+        ...IDLE,
         error: cancelled.current ? null : e instanceof Error ? e.message : String(e),
       });
     }
@@ -56,5 +62,9 @@ export function useCliSignIn(provider: AiProvider, onSignedIn?: () => void) {
     setSignIn(IDLE);
   }, []);
 
-  return { signIn, start, cancel };
+  const submitCode = useCallback((code: string) => {
+    void aiPreload.submitSignInCode(code);
+  }, []);
+
+  return { signIn, start, cancel, submitCode };
 }

@@ -132,11 +132,14 @@ export type ConsoleMirrorState = { previewRunning: boolean };
 // AI sign-in without a pre-installed CLI (#1531). Users with a Claude/ChatGPT subscription
 // who never installed a CLI can sign in from the setup panel: main installs the official CLI
 // into an app-managed dir (using the bundled Node) and drives its own subscription login
-// (`claude setup-token` / `codex login`). `ai.signInCli` runs install-if-needed + login,
+// (`claude auth login` / `codex login`). `ai.signInCli` runs install-if-needed + login,
 // streaming its steps — progress messages and the browser URL to open — over this channel.
+// `acceptsCode` means the login also takes the code that URL's page shows (`ai.submitSignInCode`).
 export const AI_CLI_LOGIN_EVENTS = 'ai.cliLogin';
 
-export type AiCliLoginEvent = { type: 'progress'; message: string } | { type: 'auth'; url: string };
+export type AiCliLoginEvent =
+  | { type: 'progress'; message: string }
+  | { type: 'auth'; url: string; acceptsCode: boolean };
 
 // Per-provider setup state for the managed (app-installed) CLIs.
 export type AiCliState = Record<AiProvider, { installed: boolean; signedIn: boolean }>;
@@ -239,6 +242,7 @@ export interface Ipc {
   // drives its subscription login, streaming steps over AI_CLI_LOGIN_EVENTS; signOutCli
   // clears the managed sign-in; getCliState reports install/sign-in status per provider.
   'ai.signInCli': (provider: AiProvider) => Promise<void>;
+  'ai.submitSignInCode': (code: string) => Promise<void>;
   'ai.cancelSignInCli': () => Promise<void>;
   'ai.signOutCli': (provider: AiProvider) => Promise<void>;
   'ai.getCliState': () => Promise<AiCliState>;

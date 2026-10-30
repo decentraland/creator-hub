@@ -167,6 +167,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.signInCli', (_event, provider) =>
     aiCli.signInCli(provider).then(() => ai.clearNeedsLogin(provider)),
   );
+  handle('ai.submitSignInCode', (_event, code) => aiCli.submitSignInCode(code));
   handle('ai.cancelSignInCli', () => aiCli.cancelSignInCli());
   handle('ai.signOutCli', (_event, provider) => aiCli.signOutCli(provider));
   handle('ai.getCliState', async () => aiCli.getCliState());
