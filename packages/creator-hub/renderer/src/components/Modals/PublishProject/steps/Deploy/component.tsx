@@ -81,14 +81,17 @@ export function Deploy(props: Props) {
       worldScenes.length > 0 &&
       worldScenes.some(scene => scene.parcels.every(parcel => !projectParcelsSet.has(parcel)))
     );
-  }, [isWorld, deploymentMetadata?.isMultiScene, worldScenes]);
+  }, [isWorld, deploymentMetadata?.isMultiScene, worldScenes, project.scene.parcels]);
+
+  /** Publishing empties the world first: the same condition `handlePublish` undeploys on. */
+  const willEmptyWorld = needsUndeploy && !!wallet && !!project.worldConfiguration?.name;
 
   const { limit: sceneSizeLimit, isLoading: isSceneSizeLimitLoading } = useSceneSizeLimit(
     deployment && {
       isWorld,
       worldName: project.worldConfiguration?.name,
       parcels: deployment.info.parcels,
-      replacesWorld: needsUndeploy,
+      replacesWorld: willEmptyWorld,
       deploymentId: deployment.id,
     },
   );
@@ -105,7 +108,7 @@ export function Deploy(props: Props) {
     setShowWarning(false);
     updateProjectInfo(project.path, { skipPublishWarning: skipWarning }); // write skip warning flag
 
-    if (needsUndeploy && wallet && project.worldConfiguration?.name) {
+    if (willEmptyWorld && wallet && project.worldConfiguration?.name) {
       setUndeployStatus('pending');
       try {
         await dispatch(
@@ -124,7 +127,7 @@ export function Deploy(props: Props) {
     }
 
     executeDeployment(project.path);
-  }, [skipWarning, project, needsUndeploy, wallet, executeDeployment, updateProjectInfo]);
+  }, [skipWarning, project, willEmptyWorld, wallet, executeDeployment, updateProjectInfo]);
 
   const handleBack = useCallback(() => {
     setShowWarning(false);

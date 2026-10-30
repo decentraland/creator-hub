@@ -13,6 +13,7 @@ const hooks = vi.hoisted(() => ({
   deployment: undefined as Deployment | undefined,
   dispatch: vi.fn(),
   worldScenes: [] as { parcels: string[] }[],
+  wallet: '0xabc' as string | undefined,
   fetchWorldSceneSizeLimit: vi.fn(async () => null),
 }));
 
@@ -20,7 +21,9 @@ vi.mock('#store', () => ({
   useDispatch: () => hooks.dispatch,
   useSelector: () => hooks.worldScenes,
 }));
-vi.mock('/@/hooks/useAuth', () => ({ useAuth: () => ({ signOut: vi.fn(), wallet: '0xabc' }) }));
+vi.mock('/@/hooks/useAuth', () => ({
+  useAuth: () => ({ signOut: vi.fn(), wallet: hooks.wallet }),
+}));
 vi.mock('/@/hooks/useWorkspace', () => ({
   useWorkspace: () => ({ updateProjectInfo: vi.fn() }),
 }));
@@ -99,6 +102,7 @@ describe('Deploy step', () => {
     cleanup();
     hooks.deployment = undefined;
     hooks.worldScenes = [];
+    hooks.wallet = '0xabc';
     hooks.fetchWorldSceneSizeLimit.mockClear();
   });
 
@@ -278,6 +282,31 @@ describe('Deploy step', () => {
     it('should ask for the limit of the whole world, as all of it is credited back', () => {
       expect(hooks.fetchWorldSceneSizeLimit).toHaveBeenCalledWith('name.dcl.eth', ['0,0'], {
         replacesWorld: true,
+      });
+    });
+  });
+
+  describe('when publishing to a single-scene world with other scenes but no wallet to remove them', () => {
+    beforeEach(() => {
+      hooks.wallet = undefined;
+      hooks.worldScenes = [{ parcels: ['5,5'] }];
+      hooks.deployment = createDeployment({
+        status: 'idle',
+        phase: undefined,
+        info: { isWorld: true, rootCID: 'bafy', parcels: ['0,0'] } as Deployment['info'],
+      });
+      props = {
+        ...props,
+        previousStep: 'publish-to-world',
+        project: { ...PROJECT, worldConfiguration: { name: 'name.dcl.eth' } } as typeof PROJECT,
+        deploymentMetadata: { isMultiScene: false } as Props['deploymentMetadata'],
+      };
+      mount();
+    });
+
+    it('should ask for the limit of the scene alone, as the world will not be emptied', () => {
+      expect(hooks.fetchWorldSceneSizeLimit).toHaveBeenCalledWith('name.dcl.eth', ['0,0'], {
+        replacesWorld: false,
       });
     });
   });
