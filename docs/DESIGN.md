@@ -58,6 +58,9 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-control-border` | `rgba(255,255,255,.1)` | Control borders (Figma White 10) |
 | `--ui-designer-hairline` | `rgba(255,255,255,.07)` | Subtle dividers |
 | `--border-focused` | `#127fd4` | Focus ring (VS Code blue) |
+| `--selected-item` | `--system-blue-dark-2` `#244b7d` | Active tool in the viewport toolbar, selected asset card, active filter chip (Figma System/Blue Dark 2). Snow on it 8.4:1. Was the pink `#731f30`. |
+| `--selected-row` | `--system-blue-dark-3` `#243852` | Selected row in the entity and folder trees (Figma System/Blue Dark 3) |
+| `--hover-row` | `rgba(255,255,255,.05)` | Tree row hover (Figma White 5) |
 | `--ui-designer-accent` | `rgb(80,200,255)` | **Canvas** selection cyan |
 | `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | Canvas hover/selection fills, drop targets |
 | `--ui-designer-control-accent` | `#63b4f6` | **Panel** focus rings, the Anchor pin, bind affordances, selected rows |

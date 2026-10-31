@@ -47,9 +47,13 @@ export function Filters({ filters, active, onClick }: PropTypes) {
             key={_filter.title}
             className={cx('filter', { active: $ === active })}
             onClick={handleClick($)}
+            title={_filter.title}
+            role="button"
+            aria-label={_filter.title}
+            aria-pressed={$ === active}
           >
             {<_filter.icon />}
-            {_filter.title}
+            <span className="label">{_filter.title}</span>
           </div>
         );
       })}

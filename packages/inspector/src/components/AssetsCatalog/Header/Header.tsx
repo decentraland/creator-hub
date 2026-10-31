@@ -1,72 +1,69 @@
-import React, { useCallback, useMemo } from 'react';
-import { AiOutlineSearch as SearchIcon } from 'react-icons/ai';
-import { VscChevronLeft as BackIcon } from 'react-icons/vsc';
+import React from 'react';
+import { MdChevronLeft as BackIcon, MdChevronRight as ChevronIcon } from 'react-icons/md';
 import cx from 'classnames';
-import { TextField } from '../../ui';
-import { Props } from './types';
+import { AssetSearchField } from '../../AssetSearchField';
+import type { Props } from './types';
 
 import './Header.css';
 
 const Header: React.FC<Props> = ({ selectedTheme, search, onChangeTheme, onSearch }) => {
-  const handleSearchAssets = useCallback(
-    ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
-      onSearch(value);
-    },
-    [onSearch],
-  );
+  const isMainHeader = !search && !selectedTheme;
+  const placeholder = selectedTheme ? `Search ${selectedTheme.name}` : 'Search Asset Packs';
 
-  const handleGoBack = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onSearch('');
-      onChangeTheme();
-    },
-    [onSearch, onChangeTheme],
-  );
+  const goToPacks = () => {
+    onSearch('');
+    onChangeTheme();
+  };
 
-  const renderHeaderTitle = useCallback(() => {
-    if (!!search) {
-      const category = selectedTheme ? ` in ${selectedTheme.name}` : '';
-      return `Search Results for '${search}'${category}`;
-    } else if (!!selectedTheme) {
-      return selectedTheme.name;
-    } else {
-      return 'Asset Packs';
-    }
-  }, [search, selectedTheme]);
+  const goToPack = () => onSearch('');
 
-  const isMainHeader = useMemo(() => !search && !selectedTheme, [search, selectedTheme]);
-
-  const backButton = useCallback(() => {
-    if (isMainHeader) return null;
-
-    return (
-      <BackIcon
-        className="back-button"
-        size={24}
-      />
-    );
-  }, [isMainHeader]);
-
-  const searchPlaceholder = selectedTheme ? `Search ${selectedTheme.name}` : 'Search Asset Packs';
+  const crumbs: { label: string; onClick?: () => void }[] = [
+    { label: 'Asset Packs', onClick: isMainHeader ? undefined : goToPacks },
+  ];
+  if (selectedTheme) {
+    crumbs.push({ label: selectedTheme.name, onClick: search ? goToPack : undefined });
+  }
+  if (search) crumbs.push({ label: `Results for "${search}"` });
 
   return (
     <div className="assets-catalog-header">
-      <h2
-        className={cx('assets-catalog-header-title', { clickable: !isMainHeader })}
-        onClick={handleGoBack}
-      >
-        {backButton()}
-        {renderHeaderTitle()}
-      </h2>
-      <div className="assets-catalog-header-search">
-        <TextField
+      <div className="Assets-toolbar">
+        {!isMainHeader && (
+          <button
+            className="Assets-iconButton"
+            onClick={search && selectedTheme ? goToPack : goToPacks}
+            title="Back"
+            aria-label="Back"
+          >
+            <BackIcon />
+          </button>
+        )}
+        <AssetSearchField
+          className="assets-catalog-header-search"
           value={search}
-          placeholder={searchPlaceholder}
-          leftIcon={<SearchIcon />}
-          onChange={handleSearchAssets}
-          debounceTime={500}
+          placeholder={placeholder}
+          onChange={onSearch}
+          debounceMs={300}
         />
+        {!isMainHeader && (
+          <nav
+            className="Assets-crumbs inline assets-catalog-header-title"
+            aria-label="Asset pack path"
+          >
+            {crumbs.map((crumb, index) => (
+              <React.Fragment key={crumb.label}>
+                {index > 0 && <ChevronIcon />}
+                <button
+                  className={cx({ current: index === crumbs.length - 1 })}
+                  onClick={crumb.onClick}
+                  disabled={!crumb.onClick}
+                >
+                  {crumb.label}
+                </button>
+              </React.Fragment>
+            ))}
+          </nav>
+        )}
       </div>
     </div>
   );

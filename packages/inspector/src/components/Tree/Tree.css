@@ -36,9 +36,12 @@
   justify-content: space-between;
 }
 
-.Tree .item:hover:not(:has(input)),
+.Tree .item:hover:not(:has(input)) {
+  background-color: var(--hover-row);
+}
+
 .Tree .selected:not(:has(input)) {
-  background-color: var(--selected-item);
+  background-color: var(--selected-row);
 }
 
 .Tree .item.hidden {

@@ -5,8 +5,14 @@ import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'reac
 import { FaFile as OtherIcon } from 'react-icons/fa';
 import { MdOutlineEmojiPeople as EmoteIcon } from 'react-icons/md';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
-import { MdContentCopy as CopyNameIcon } from 'react-icons/md';
+import {
+  MdContentCopy as CopyNameIcon,
+  MdChevronRight as ChevronIcon,
+  MdUnfoldLess as CollapseAllIcon,
+  MdUnfoldMore as ExpandAllIcon,
+} from 'react-icons/md';
 import { Item as MenuItem } from 'react-contexify';
+import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
@@ -15,9 +21,10 @@ import type { DropType } from '../Tree/utils';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
+import { PanelToggleIcon } from '../Icons/AssetsPanel';
 import { CopyPathIcon, NewFolderIcon } from '../Icons/ContextMenu';
-import Search from '../Search';
 import { getStorage } from '../../lib/data-layer/client/storage';
+import { AssetSearchField } from '../AssetSearchField';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { removeEmptyFolders } from '../../lib/data-layer/remove-assets';
 import { getSceneClient } from '../../lib/rpc/scene';
@@ -50,6 +57,7 @@ import {
 } from '../../hooks/useHotkey';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
+import { useAssetSelection } from '../AssetBrowserPreview';
 import {
   getFilterFromTree,
   getFullNodePath,
@@ -60,9 +68,11 @@ import {
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
 import {
+  countMatches,
   generateAssetTree,
-  getChildren as _getChildren,
   getEmptiedFolders,
+  isMatch,
+  getChildren as _getChildren,
   TreeNode,
   ROOT,
   getTiles,
@@ -113,6 +123,36 @@ function withVirtualFolders(tree: Map<string, TreeNode>, virtualFolders: string[
   return next;
 }
 
+const TREE_WIDTH_KEY = 'inspector:local-assets-tree-width';
+const DEFAULT_TREE_WIDTH = 220;
+const MIN_TREE_WIDTH = 130;
+const MAX_TREE_WIDTH = 420;
+
+function readTreeWidth(): number {
+  try {
+    const stored = Number(localStorage.getItem(TREE_WIDTH_KEY));
+    if (stored >= MIN_TREE_WIDTH && stored <= MAX_TREE_WIDTH) return stored;
+  } catch {
+    // fall through to the default
+  }
+  return DEFAULT_TREE_WIDTH;
+}
+
+// Search and type filters look through every folder, not just the one being browsed.
+function isFilteringBy(search: string, activeFilter: Filter): boolean {
+  return !!search || (activeFilter !== Filter.All && activeFilter !== Filter.Recents);
+}
+
+function getBreadcrumbs(path: string): { label: string; path: string }[] {
+  const crumbs = [{ label: 'Assets', path: ROOT }];
+  if (path === ROOT) return crumbs;
+  const parts = path.split('/');
+  parts.forEach((part, index) =>
+    crumbs.push({ label: part, path: parts.slice(0, index + 1).join('/') }),
+  );
+  return crumbs;
+}
+
 type Props = {
   folders: AssetNodeFolder[];
   thumbnails: { path: string; content: Uint8Array }[];
@@ -138,15 +178,16 @@ function ProjectView({ folders, thumbnails }: Props) {
   const thumbnailsLoaded = useAppSelector(selectThumbnailsLoaded);
   const { handleAction } = useContextMenu();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(new Set<string>());
+  const { select: selectPreview } = useAssetSelection();
+  const [showTree, setShowTree] = useState(true);
+  const [treeWidth, setTreeWidth] = useState(readTreeWidth);
+  const [open, setOpen] = useState(new Set<string>([ROOT]));
   const [modal, setModal] = useState<ModalState | undefined>(undefined);
   const [lastSelected, setLastSelected] = useState<string>(ROOT);
   const [selection, setSelection] = useState<string[]>([]);
   const [focusItem, setFocusItem] = useState<string>('');
   const [anchor, setAnchor] = useState<string>('');
   const [search, setSearch] = useState<string>('');
-  const [filteredTree, setTree] = useState<Map<string, TreeNode>>(new Map());
-  const [filters, setFilters] = useState<Filter[]>([]);
   const [activeFilter, setActiveFilter] = useState(Filter.All);
   const [virtualFolders, setVirtualFolders] = useState<string[]>([]);
   const [processedThumbnails, setProcessedThumbnails] = useState<Set<string>>(new Set());
@@ -158,27 +199,41 @@ function ProjectView({ folders, thumbnails }: Props) {
   const clipboard = useRef<{ paths: string[]; cut: boolean } | null>(null);
   const pendingDrop = useRef<{ items: string[]; target: string } | null>(null);
 
-  useEffect(() => {
-    const { tree, filters } = generateAssetTree(folders, open, search, activeFilter);
-    setTree(tree);
-    setFilters(getFilterFromTree(filters));
-  }, [folders, search, activeFilter]);
-
-  const tree = useMemo(
-    () =>
-      search || activeFilter !== Filter.All
-        ? filteredTree
-        : withVirtualFolders(filteredTree, virtualFolders),
-    [filteredTree, virtualFolders, search, activeFilter],
-  );
-  const realTree = useMemo(
-    () => generateAssetTree(folders, new Set(), '', Filter.All).tree,
-    [folders],
-  );
+  // The tree is a map of the whole project: searching and filtering never remove folders from
+  // it, they only decide which files the folder view lists.
+  const generated = useMemo(() => generateAssetTree(folders, new Set()), [folders]);
+  const realTree = generated.tree;
+  const filters = useMemo(() => getFilterFromTree(generated.filters), [generated]);
   const fullTree = useMemo(
     () => withVirtualFolders(realTree, virtualFolders),
     [realTree, virtualFolders],
   );
+  const tree = fullTree;
+
+  const isFiltering = isFilteringBy(search, activeFilter);
+  const matchCounts = useMemo(
+    () => (isFiltering ? countMatches(tree, search, activeFilter) : new Map<string, number>()),
+    [tree, search, activeFilter, isFiltering],
+  );
+
+  // Folders the user had open before a search or filter started opening them.
+  const openBeforeFiltering = useRef<Set<string>>();
+
+  // While filtering, open the folders that hold results so they are easy to find; the user's own
+  // open folders come back once the filter is cleared. A search or type filter starts out covering
+  // the whole project (picking a folder in the tree narrows it afterwards).
+  useEffect(() => {
+    if (isFiltering) {
+      if (!openBeforeFiltering.current) {
+        openBeforeFiltering.current = new Set(open);
+        setLastSelected(ROOT);
+      }
+      setOpen(new Set([ROOT, ...matchCounts.keys()]));
+    } else if (openBeforeFiltering.current) {
+      setOpen(openBeforeFiltering.current);
+      openBeforeFiltering.current = undefined;
+    }
+  }, [matchCounts, isFiltering]);
   const operations = useAssetOperations({ tree: fullTree, thumbnails, virtualFolders });
   const isVirtualFolder = useCallback(
     (path: string) => virtualFolders.includes(path) && !realTree.has(path),
@@ -226,6 +281,22 @@ function ProjectView({ folders, thumbnails }: Props) {
   );
 
   const clearSelection = useCallback(() => selectOnly(''), [selectOnly]);
+
+  // The preview pane follows the focused item: a file previews, a folder (or nothing) clears it.
+  useEffect(() => {
+    const node = tree.get(focusItem);
+    if (node?.type === 'asset') {
+      selectPreview({
+        source: 'local',
+        id: focusItem,
+        name: node.name,
+        path: focusItem,
+        builtInEmote: (node as AssetNodeItem).asset.builtInEmote,
+      });
+    } else {
+      selectPreview(undefined);
+    }
+  }, [focusItem, tree, selectPreview]);
 
   /**
    * Callbacks
@@ -405,13 +476,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const getSelectedItems = useCallback(() => selection, [selection]);
   const isOpen = useCallback((val: string) => open.has(val), [open]);
 
-  const getChildren = useCallback(
-    (val: string) => {
-      const childs = _getChildren(val, tree, search, activeFilter);
-      return childs;
-    },
-    [tree, search, activeFilter],
-  );
+  const getChildren = useCallback((val: string) => _getChildren(val, tree), [tree]);
 
   const getVisibleNodes = useCallback(() => {
     const nodes: string[] = [];
@@ -430,10 +495,11 @@ function ProjectView({ folders, thumbnails }: Props) {
       if (clickType === 'ctrl') return toggleSelected(value);
       if (clickType === 'shift') return selectRange(value, getVisibleNodes());
       open.add(value);
-      setLastSelected(value);
+      // keep the folder's cards on screen when a file is picked, so its neighbours stay visible
+      setLastSelected(tree.get(value)?.type === 'asset' ? getParentPath(value) || ROOT : value);
       selectOnly(value);
     },
-    [toggleSelected, selectRange, selectOnly, getVisibleNodes, open],
+    [toggleSelected, selectRange, selectOnly, getVisibleNodes, open, tree],
   );
 
   const getAnimatedThumbnail = useCallback(
@@ -824,6 +890,71 @@ function ProjectView({ folders, thumbnails }: Props) {
     setProcessedThumbnails(current => new Set(current).add(path));
   }, []);
 
+  /**
+   * Toolbar, breadcrumb and folder tree chrome
+   */
+
+  const resultCount = tiles.filter(node => node.type === 'asset').length;
+  const crumbs = getBreadcrumbs(lastSelected);
+
+  const handleClearFilters = useCallback(() => {
+    setSearch('');
+    setActiveFilter(Filter.All);
+  }, []);
+
+  const allFolderIds = useMemo(
+    () => [...tree.entries()].filter(([, node]) => node.type === 'folder').map(([id]) => id),
+    [tree],
+  );
+  const allExpanded = allFolderIds.every(id => open.has(id));
+
+  const handleToggleAll = useCallback(
+    () => setOpen(new Set(allExpanded ? [ROOT] : allFolderIds)),
+    [allExpanded, allFolderIds],
+  );
+
+  const handleResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const startX = event.clientX;
+      const startWidth = treeWidth;
+      let latest = startWidth;
+      const onMove = (move: PointerEvent) => {
+        latest = Math.min(
+          MAX_TREE_WIDTH,
+          Math.max(MIN_TREE_WIDTH, startWidth + move.clientX - startX),
+        );
+        setTreeWidth(latest);
+      };
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        try {
+          localStorage.setItem(TREE_WIDTH_KEY, String(latest));
+        } catch {
+          // the width just won't be remembered
+        }
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    },
+    [treeWidth],
+  );
+
+  // While filtering, folders show how many results they hold and nodes without any fade back.
+  const renderTreeDecoration = (val: string) => {
+    if (!isFiltering) return null;
+    const node = tree.get(val);
+    if (!node) return null;
+    const count = matchCounts.get(val);
+    const dim = node.type === 'folder' ? !count : !isMatch(node, search, activeFilter);
+    return (
+      <span className={cx('Tree-decoration', { 'is-dim': dim })}>
+        {node.type === 'folder' && !!count && <em className="Tree-count">{count}</em>}
+      </span>
+    );
+  };
+
   return (
     <>
       <Modal
@@ -855,18 +986,21 @@ function ProjectView({ folders, thumbnails }: Props) {
         className="ProjectView"
         ref={containerRef}
       >
-        <Filters
-          filters={filters}
-          active={activeFilter}
-          onClick={handleFilterClick}
-        />
-        <div className="Tree-View">
-          <Search
-            value={search}
-            onChange={setSearch}
-            placeholder="Search local assets"
-            onCancel={() => setSearch('')}
-          />
+        <div
+          className={cx('Tree-View', { collapsed: !showTree })}
+          style={{ width: treeWidth }}
+        >
+          <div className="Tree-View-header">
+            <span>Folders</span>
+            <button
+              className="Assets-iconButton small"
+              onClick={handleToggleAll}
+              title={allExpanded ? 'Collapse all folders' : 'Expand all folders'}
+              aria-label={allExpanded ? 'Collapse all folders' : 'Expand all folders'}
+            >
+              {allExpanded ? <CollapseAllIcon /> : <ExpandAllIcon />}
+            </button>
+          </div>
           <FilesTree
             className="editor-assets-tree"
             value={ROOT}
@@ -881,6 +1015,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             getId={(value: string) => value.toString()}
             getChildren={getChildren}
             getLabel={(val: string) => tree.get(val)?.name ?? val}
+            renderActionArea={renderTreeDecoration}
             getSelectedItems={getSelectedItems}
             isOpen={isOpen}
             isSelected={(val: string) => selectionSet.has(val)}
@@ -899,35 +1034,104 @@ function ProjectView({ folders, thumbnails }: Props) {
             dndType={DRAG_N_DROP_ASSET_KEY}
           />
         </div>
-        <div className="FolderView">
-          {tiles.map((node, index) => {
-            const valueId = tileIds[index];
-            const src = node.type === 'asset' ? (node as AssetNodeItem).asset.src : undefined;
-            return (
-              <Tile
-                key={valueId}
-                valueId={valueId}
-                value={node}
-                getDragContext={handleDragContext}
-                getDragItems={getDragItems}
-                onDropItems={handleMove}
-                onClick={handleTileClick(valueId)}
-                onSelect={handleOpenFolder(node)}
-                onRemove={handleRemove}
-                onRename={handleRename}
-                onDuplicate={handleDuplicate}
-                onCopyRelativePath={copyRelativePaths}
-                onCopyFileName={copyFileNames}
-                selected={selectionSet.has(valueId)}
-                readOnly={isReadOnlyPath(valueId)}
-                actionCount={getTargets(valueId).length}
-                thumbnail={src ? thumbnailMap?.get(src) : undefined}
-                thumbnailPending={!!src && thumbnailQueue.includes(src)}
-                getAnimatedThumbnail={getAnimatedThumbnail}
-                dndType={DRAG_N_DROP_ASSET_KEY}
-              />
-            );
-          })}
+        {showTree && (
+          <div
+            className="ProjectView-resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize folder tree"
+            onPointerDown={handleResizeStart}
+            onDoubleClick={() => setTreeWidth(DEFAULT_TREE_WIDTH)}
+          />
+        )}
+        <div className="ProjectView-main">
+          <div className="Assets-toolbar">
+            <button
+              className={cx('Assets-toggle', { active: showTree })}
+              onClick={() => setShowTree(value => !value)}
+              title={showTree ? 'Hide folder tree' : 'Show folder tree'}
+              aria-label={showTree ? 'Hide folder tree' : 'Show folder tree'}
+              aria-pressed={showTree}
+            >
+              <PanelToggleIcon mirrored={showTree} />
+            </button>
+            <AssetSearchField
+              value={search}
+              placeholder="Search local assets"
+              onChange={setSearch}
+            />
+            <Filters
+              filters={filters}
+              active={activeFilter}
+              onClick={handleFilterClick}
+            />
+          </div>
+          {/* The path only earns its row inside a subfolder; at the root it would be a dead pill. */}
+          {(lastSelected !== ROOT || isFiltering) && (
+            <nav
+              className="Assets-crumbs"
+              aria-label="Folder path"
+            >
+              {lastSelected !== ROOT &&
+                crumbs.map((crumb, index) => (
+                  <React.Fragment key={crumb.path}>
+                    {index > 0 && <ChevronIcon />}
+                    <button
+                      className={cx({ current: index === crumbs.length - 1 })}
+                      onClick={() => setLastSelected(crumb.path)}
+                    >
+                      {crumb.label}
+                    </button>
+                  </React.Fragment>
+                ))}
+              {isFiltering && (
+                <span className="Assets-crumbs-results">
+                  {resultCount} {resultCount === 1 ? 'Result' : 'Results'}
+                  {lastSelected !== ROOT && (
+                    <button onClick={() => setLastSelected(ROOT)}>Search all folders</button>
+                  )}
+                  <button onClick={handleClearFilters}>Clear</button>
+                </span>
+              )}
+            </nav>
+          )}
+          <div className="ProjectView-scroll">
+            {tiles.length === 0 && (
+              <div className="ProjectView-empty">
+                {isFiltering ? 'No assets match your search.' : 'This folder is empty.'}
+              </div>
+            )}
+            <div className="FolderView">
+              {tiles.map((node, index) => {
+                const valueId = tileIds[index];
+                const src = node.type === 'asset' ? (node as AssetNodeItem).asset.src : undefined;
+                return (
+                  <Tile
+                    key={valueId}
+                    valueId={valueId}
+                    value={node}
+                    getDragContext={handleDragContext}
+                    getDragItems={getDragItems}
+                    onDropItems={handleMove}
+                    onClick={handleTileClick(valueId)}
+                    onSelect={handleOpenFolder(node)}
+                    onRemove={handleRemove}
+                    onRename={handleRename}
+                    onDuplicate={handleDuplicate}
+                    onCopyRelativePath={copyRelativePaths}
+                    onCopyFileName={copyFileNames}
+                    selected={selectionSet.has(valueId)}
+                    readOnly={isReadOnlyPath(valueId)}
+                    actionCount={getTargets(valueId).length}
+                    thumbnail={src ? thumbnailMap?.get(src) : undefined}
+                    thumbnailPending={!!src && thumbnailQueue.includes(src)}
+                    getAnimatedThumbnail={getAnimatedThumbnail}
+                    dndType={DRAG_N_DROP_ASSET_KEY}
+                  />
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
       <ThumbnailGenerator
@@ -941,10 +1145,12 @@ function ProjectView({ folders, thumbnails }: Props) {
 function NodeIcon({ value }: { value?: TreeNode }) {
   if (!value) return null;
   if (value.type === 'folder') {
+    // Not a div: the tree clips every div inside a row (`overflow: hidden` for long names), and
+    // on some machines the line box is shorter than the icon, which cut its bottom edge.
     return (
-      <div style={{ marginRight: '4px', marginLeft: '2px', marginTop: '2px' }}>
+      <span className="ProjectView-nodeIcon">
         <FolderIcon />
-      </div>
+      </span>
     );
   } else {
     const Icon = useMemo(() => {
