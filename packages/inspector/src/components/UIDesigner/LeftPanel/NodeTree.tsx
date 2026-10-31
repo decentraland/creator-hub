@@ -1,16 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  IoEyeOutline as VisibleIcon,
-  IoEyeOffOutline as InvisibleIcon,
   IoAddOutline,
-  IoDesktopOutline,
   IoPhoneLandscapeOutline,
   IoSwapHorizontalOutline,
   IoWarningOutline,
   IoCubeOutline,
-  IoTrashOutline as RemoveIcon,
 } from 'react-icons/io5';
-import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
 import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
 
@@ -36,6 +31,7 @@ import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 import { useUINodeActions } from '../shared/useUINodeActions';
 import { useUINodeTree } from '../shared/useUINodeTree';
 import { WIDGET_ICONS } from '../shared/widget-catalog';
+import { DesktopIcon, EyeIcon, EyeOffIcon, LockIcon, TrashIcon, UnlockIcon } from '../icons';
 import { addPlatformBranch, spliceAddWidget, spliceMove, spliceRenameNode } from '../code/store';
 import { PLATFORMS } from '../code/platform-convention';
 import type { CodeUINode } from '../code/types';
@@ -55,7 +51,7 @@ const NODE_TREE_DND_TYPE = 'ui-designer-tree';
 const EXTERNAL_DND_TYPES = [UI_DESIGNER_DND_TYPE];
 
 const PLATFORM_ICONS = {
-  desktop: <IoDesktopOutline />,
+  desktop: <DesktopIcon />,
   mobile: <IoPhoneLandscapeOutline />,
 };
 
@@ -226,10 +222,10 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
         return (
           <div className="action-area">
             {missing.map(p => (
-              <div
+              <button
                 key={p}
-                className="action-button"
-                role="button"
+                type="button"
+                className="action-button ui-designer-icon-btn"
                 aria-label={`Add ${PLATFORM_LABELS[p]} variant`}
                 title={`Add a ${PLATFORM_LABELS[p]} variant`}
                 onClick={e => {
@@ -239,7 +235,7 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
               >
                 <IoAddOutline />
                 {PLATFORM_ICONS[p]}
-              </div>
+              </button>
             ))}
           </div>
         );
@@ -248,43 +244,41 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
       const isNodeHidden = !!hiddenNodes[id];
       return (
         <div className={cx('action-area', { 'is-hidden': isNodeHidden })}>
-          <div
-            className="action-button"
-            role="button"
+          <button
+            type="button"
+            className="action-button ui-designer-toggle ui-designer-compact"
             aria-label={isLocked ? 'Unlock node' : 'Lock node'}
+            aria-pressed={isLocked}
             onClick={e => {
               e.stopPropagation();
               dispatch(setNodeLocked({ entity: n.entity, locked: !isLocked }));
             }}
           >
-            {isLocked ? <LockIcon className="lock-icon" /> : <UnlockIcon className="unlock-icon" />}
-          </div>
-          <div
-            className="action-button"
-            role="button"
+            {isLocked ? <LockIcon /> : <UnlockIcon />}
+          </button>
+          <button
+            type="button"
+            className="action-button ui-designer-toggle ui-designer-compact"
             aria-label={isNodeHidden ? 'Show node' : 'Hide node'}
+            aria-pressed={isNodeHidden}
             onClick={e => {
               e.stopPropagation();
               dispatch(setNodeHidden({ entity: n.entity, hidden: !isNodeHidden }));
             }}
           >
-            {isNodeHidden ? (
-              <InvisibleIcon className="invisible-icon" />
-            ) : (
-              <VisibleIcon className="visible-icon" />
-            )}
-          </div>
-          <div
-            className="action-button"
-            role="button"
+            {isNodeHidden ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
+          <button
+            type="button"
+            className="action-button ui-designer-icon-btn ui-designer-compact"
             aria-label={`Delete ${nodeLabelText(n)}`}
             onClick={e => {
               e.stopPropagation();
               handleRemove(n);
             }}
           >
-            <RemoveIcon className="remove-icon" />
-          </div>
+            <TrashIcon />
+          </button>
         </div>
       );
     },

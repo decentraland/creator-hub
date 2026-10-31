@@ -40,30 +40,40 @@ export const Tools = () => {
       className="Gizmos"
       ref={ref}
     >
-      <ToolbarButton
-        className={cx('gizmo free', { active: tool === UIDesignerTool.FREE })}
-        onClick={() => select(UIDesignerTool.FREE)}
-        title="Free — move and resize"
-      />
-      <ToolbarButton
-        className={cx('gizmo position', { active: tool === UIDesignerTool.MOVE })}
-        onClick={() => select(UIDesignerTool.MOVE)}
-        title="Move"
-      />
-      <ToolbarButton
-        className="gizmo rotation"
-        disabled
-        title="Rotation is not available for UI layouts"
-      />
-      <ToolbarButton
-        className={cx('gizmo scale', { active: tool === UIDesignerTool.RESIZE })}
-        onClick={() => select(UIDesignerTool.RESIZE)}
-        title="Resize"
-      />
-      <BsCaretDown
-        className="open-panel"
+      <div className="ui-designer-gizmo-group ui-designer-segmented">
+        <ToolbarButton
+          className="gizmo free ui-designer-toggle"
+          aria-pressed={tool === UIDesignerTool.FREE}
+          onClick={() => select(UIDesignerTool.FREE)}
+          title="Free — move and resize"
+        />
+        <ToolbarButton
+          className="gizmo position ui-designer-toggle"
+          aria-pressed={tool === UIDesignerTool.MOVE}
+          onClick={() => select(UIDesignerTool.MOVE)}
+          title="Move"
+        />
+        <ToolbarButton
+          className="gizmo rotation ui-designer-toggle"
+          disabled
+          title="Rotation is not available for UI layouts"
+        />
+        <ToolbarButton
+          className="gizmo scale ui-designer-toggle"
+          aria-pressed={tool === UIDesignerTool.RESIZE}
+          onClick={() => select(UIDesignerTool.RESIZE)}
+          title="Resize"
+        />
+      </div>
+      <button
+        type="button"
+        className="open-panel ui-designer-icon-btn"
+        aria-label="Snap options"
+        aria-expanded={showPanel}
         onClick={handleTogglePanel}
-      />
+      >
+        <BsCaretDown />
+      </button>
       <div className={cx('panel', { visible: showPanel })}>
         <div className="title">
           <label>Snap</label>

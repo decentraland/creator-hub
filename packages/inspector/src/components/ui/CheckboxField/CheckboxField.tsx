@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useId, useMemo } from 'react';
 import cx from 'classnames';
 import { Message, MessageType } from '../Message';
 import { Label } from '../Label';
@@ -16,14 +16,16 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
     disabled,
     onChange,
     type = 'checkbox',
+    color = 'primary',
     value,
+    id: idProp,
     ...rest
   } = props;
+  const generatedId = useId();
+  const id = idProp ?? generatedId;
 
-  // Detect indeterminate state from mixed value
   const isIndeterminate = useMemo(() => isMixedValue(value), [value]);
 
-  // Set ref and indeterminate property in a single callback
   const setRef = useCallback(
     (node: HTMLInputElement | null) => {
       if (node) {
@@ -39,7 +41,7 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
   );
 
   return (
-    <div className={cx('Checkbox Field', className, { disabled: disabled })}>
+    <div className={cx('Checkbox Field', className, { disabled }, color !== 'primary' && color)}>
       <div
         className={cx('InputContainer', {
           disabled: disabled,
@@ -48,6 +50,7 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
         })}
       >
         <input
+          id={id}
           type={type}
           ref={setRef}
           checked={isIndeterminate ? false : !!checked}
@@ -55,7 +58,10 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
           disabled={disabled}
           {...rest}
         />
-        <Label text={label} />
+        <Label
+          text={label}
+          htmlFor={id}
+        />
       </div>
       <Message
         text={error}

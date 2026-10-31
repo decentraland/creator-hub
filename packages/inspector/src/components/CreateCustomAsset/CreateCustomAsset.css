@@ -67,8 +67,3 @@
   display: flex;
   gap: 8px;
 }
-
-.CreateCustomAsset .create {
-  background-color: var(--primary);
-  color: var(--text-on-primary);
-}

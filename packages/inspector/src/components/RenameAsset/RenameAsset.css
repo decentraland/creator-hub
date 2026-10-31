@@ -23,10 +23,6 @@
   gap: 8px;
 }
 
-.RenameAsset .Block {
-  width: 100%;
-}
-
 .RenameAsset .button-container {
   display: flex;
   gap: 8px;
@@ -41,9 +37,4 @@
   padding: 8px;
   border-radius: 8px;
   background: var(--list-item-bg-color);
-}
-
-.RenameAsset .rename {
-  background: var(--primary);
-  color: var(--primary-text);
 }

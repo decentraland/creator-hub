@@ -54,7 +54,7 @@ export const FlowField: React.FC<FlowFieldProps> = ({ value, onPatch, onFree }) 
   return (
     <div className="ui-designer-flow">
       <div
-        className="ui-designer-flow-group"
+        className="ui-designer-flow-group ui-designer-segmented"
         role="radiogroup"
         aria-label="Flow"
         onKeyDown={radioGroupKeyDown(CELL_VALUES, current, pick)}
@@ -67,7 +67,7 @@ export const FlowField: React.FC<FlowFieldProps> = ({ value, onPatch, onFree }) 
             aria-checked={cell.value === current}
             aria-label={cell.label}
             tabIndex={radioTabIndex(CELL_VALUES, current, index)}
-            className={`ui-designer-flow-cell${cell.value === current ? ' selected' : ''}`}
+            className="ui-designer-flow-cell ui-designer-toggle"
             title={cell.hint}
             data-flow={cell.value}
             onClick={() => pick(cell.value)}
@@ -78,7 +78,7 @@ export const FlowField: React.FC<FlowFieldProps> = ({ value, onPatch, onFree }) 
         type="button"
         aria-pressed={wrapping}
         aria-label="Wrap children"
-        className={`ui-designer-flow-cell wrap${wrapping ? ' selected' : ''}`}
+        className="ui-designer-flow-cell ui-designer-toggle wrap"
         title="Wrap — let children flow onto multiple lines when they do not fit on one"
         data-flow="wrap"
         onClick={() => onPatch(wrapPatch(!wrapping))}

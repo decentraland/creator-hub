@@ -22,7 +22,7 @@
   touch-action: manipulation;
 }
 
-.ui-designer-code-root-row svg {
+.ui-designer-code-root-row > svg {
   color: var(--ui-designer-glyph);
   flex-shrink: 0;
 }
@@ -40,10 +40,8 @@
   outline-offset: -2px;
 }
 
-/* A nested-only root renders nowhere on its own, so it reads grayed — the same
-   treatment a hidden node gets in the Nodes tree. */
 .ui-designer-code-root-row.is-hidden,
-.ui-designer-code-root-row.is-hidden svg {
+.ui-designer-code-root-row.is-hidden > svg {
   color: var(--ui-designer-text-muted);
 }
 
@@ -66,9 +64,6 @@
   font: inherit;
 }
 
-/* Both row actions appear on hover (or keyboard focus within the row). The eye
-   stays visible while it is OFF, so a grayed row explains itself without hover —
-   mirroring the Nodes tree, where the lock/eye "on" states also persist. */
 .ui-designer-code-root-actions {
   display: flex;
   align-items: center;
@@ -78,31 +73,8 @@
 
 .ui-designer-code-root-row:hover .ui-designer-code-root-actions,
 .ui-designer-code-root-row:focus-within .ui-designer-code-root-actions,
-.ui-designer-code-root-actions:has(.is-off) {
+.ui-designer-code-root-actions:has(.ui-designer-code-root-toplevel[aria-pressed="false"]) {
   visibility: visible;
-}
-
-.ui-designer-code-root-toplevel,
-.ui-designer-code-root-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.ui-designer-code-root-toplevel:hover svg,
-.ui-designer-code-root-remove:hover svg {
-  color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-code-root-toplevel:focus-visible,
-.ui-designer-code-root-remove:focus-visible {
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: -1px;
 }
 
 /* The MobileHUD entry sits as a fixed first row above the authored GUIs, set off

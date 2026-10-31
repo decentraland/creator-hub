@@ -140,6 +140,7 @@ export const FieldRow = React.memo(function FieldRow({
       const v = !!raw;
       return bindable(
         <CheckboxField
+          color="tertiary"
           checked={v}
           aria-label={field.label}
           onChange={e => onPatch({ [field.path]: e.target.checked })}
@@ -221,6 +222,7 @@ export const FieldRow = React.memo(function FieldRow({
       const flags = overflowFlags(componentValue);
       return bindable(
         <CheckboxField
+          color="tertiary"
           checked={flags[flag]}
           disabled={fieldDisabled || (flag === 'clip' && flags.clipLocked)}
           aria-label={field.label}
@@ -280,6 +282,7 @@ export const FieldRow = React.memo(function FieldRow({
     case 'text-wrap': {
       return bindable(
         <CheckboxField
+          color="tertiary"
           checked={((raw as number | undefined) ?? TW_WRAP) === TW_WRAP}
           aria-label={field.label}
           onChange={e => onPatch({ [field.path]: e.target.checked ? TW_WRAP : TW_NO_WRAP })}
@@ -320,6 +323,7 @@ export const FieldRow = React.memo(function FieldRow({
       const absolute = ((raw as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
       return bindable(
         <CheckboxField
+          color="tertiary"
           checked={absolute}
           aria-label={field.label}
           onChange={e =>

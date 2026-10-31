@@ -9,6 +9,8 @@ import type { Props } from './types';
 
 import './InfoTooltip.css';
 
+const preventLabelActivation = (event: React.MouseEvent) => event.preventDefault();
+
 // TODO: Fix tooltip re-opening each scroll with hideOnScroll={true}
 const InfoTooltip: React.FC<Props> = ({
   className,
@@ -51,7 +53,10 @@ const InfoTooltip: React.FC<Props> = ({
 
   const renderTrigger = useCallback(() => {
     return (
-      <span className={cx('InfoTooltipTrigger', { hovered: isHovered })}>
+      <span
+        className={cx('InfoTooltipTrigger', { hovered: isHovered })}
+        onClick={trigger ? undefined : preventLabelActivation}
+      >
         {trigger ?? renderIconTrigger()}
       </span>
     );

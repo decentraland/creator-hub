@@ -1,6 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { VscTrash } from 'react-icons/vsc';
 import type { Entity } from '@dcl/ecs';
 
 import { isValidIdentifier } from '../../../../../lib/sdk/operations/validators';
@@ -10,6 +9,7 @@ import { usePopoverPosition } from '../../../../ui/usePopoverPosition';
 import type { FieldConfig } from '../field-configs';
 import { isActionNameTaken } from '../../../code/bindings';
 import { addBindAction, bindAttribute, unbindAttribute, useCodeState } from '../../../code/store';
+import { TrashIcon } from '../../../icons';
 
 import './CallbackField.css';
 
@@ -71,12 +71,12 @@ export const CallbackField: React.FC<CallbackFieldProps> = ({ field, entity, bou
         {bound ? (
           <button
             type="button"
-            className="ui-designer-callback-clear"
+            className="ui-designer-callback-clear ui-designer-icon-btn ui-designer-compact"
             aria-label={`Clear ${label}`}
             title={`Clear ${label}`}
             onClick={() => void unbindAttribute(id, field.path)}
           >
-            <VscTrash aria-hidden />
+            <TrashIcon />
           </button>
         ) : null}
       </div>

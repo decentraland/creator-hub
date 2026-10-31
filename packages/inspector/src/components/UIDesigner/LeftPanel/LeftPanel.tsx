@@ -73,10 +73,14 @@ const LeftPanel: React.FC = () => {
           leftIcon={<SearchIcon />}
           rightIcon={
             search ? (
-              <ClearIcon
-                className="ClearSearch"
+              <button
+                type="button"
+                className="ClearSearch ui-designer-icon-btn"
+                aria-label="Clear search"
                 onClick={() => setSearch('')}
-              />
+              >
+                <ClearIcon aria-hidden />
+              </button>
             ) : undefined
           }
         />
@@ -99,7 +103,7 @@ const LeftPanel: React.FC = () => {
                   <span>GUIs</span>
                   <button
                     type="button"
-                    className="ui-designer-rail-add"
+                    className="ui-designer-rail-add ui-designer-icon-btn"
                     onClick={() => {
                       rippleGui();
                       void createRoot();
@@ -130,7 +134,7 @@ const LeftPanel: React.FC = () => {
                   <button
                     ref={addNodeRef}
                     type="button"
-                    className="ui-designer-rail-add"
+                    className="ui-designer-rail-add ui-designer-icon-btn"
                     onClick={() => {
                       rippleNode();
                       setPickerOpen(true);

@@ -13,10 +13,10 @@
   align-items: center;
   position: relative;
   width: 100%;
-  height: 24px;
+  height: var(--controlHeight-small);
   padding: 0px;
   background-color: var(--gray-0);
-  border-radius: 4px;
+  border-radius: var(--shape-borderRadius);
   border: 1px solid var(--gray-0);
   font-size: 13px;
 }
@@ -32,7 +32,7 @@
 }
 
 .Text.Field .InputContainer.focused {
-  border-color: var(--base-01);
+  border-color: var(--focus-ring);
 }
 
 .Text.Field .InputContainer.hovered:not(.focused):not(.error) {
@@ -54,7 +54,8 @@
   background-color: var(--transparent);
   outline: none;
   border: none;
-  padding: 4px 9px;
+  align-self: stretch;
+  padding: 0 var(--uid-space-2);
   font-size: 13px;
   font-family: var(--font-family);
   font-style: normal;
@@ -100,6 +101,56 @@
 .Text.Field .InputContainer .LeftContent .LeftIcon svg,
 .Text.Field .InputContainer .RightContent .RightIcon svg {
   margin: 0;
+}
+
+.Text.Field.large > .Label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.Text.Field.large .InputContainer {
+  height: var(--controlHeight-large);
+  padding: 0 var(--uid-space-4);
+  background-color: var(--transparent);
+  border-radius: var(--shape-borderRadiusLarge);
+  border-color: var(--palette-whiteTransparent-blurry);
+}
+
+.Text.Field.large .InputContainer .input {
+  padding: 0;
+  color: var(--ui-designer-text);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.Text.Field.large .InputContainer .input::placeholder {
+  color: var(--ui-designer-text-muted);
+}
+
+.Text.Field.large .InputContainer.filled,
+.Text.Field.large .InputContainer.hovered:not(.focused):not(.error) {
+  border-color: var(--palette-whiteTransparent-backdrop);
+}
+
+.Text.Field.large .InputContainer.focused {
+  border-color: var(--focus-ring);
+  box-shadow: inset 0 0 0 0.5px var(--focus-ring);
+}
+
+.Text.Field.large .InputContainer.error,
+.Text.Field.large .InputContainer.hovered.error,
+.Text.Field.large .InputContainer.focused.error {
+  border-color: var(--error-main);
+  box-shadow: inset 0 0 0 0.5px var(--error-main);
+}
+
+.Text.Field.large .InputContainer.disabled {
+  background-color: var(--transparent);
+  border-color: var(--palette-whiteTransparent-soft);
+}
+
+.Text.Field.large .InputContainer.disabled .input {
+  color: var(--ui-designer-text-muted);
 }
 
 .Text.Field.drop {

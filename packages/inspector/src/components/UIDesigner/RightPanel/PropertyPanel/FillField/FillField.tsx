@@ -203,7 +203,7 @@ const FillFieldComponent: React.FC<FillFieldProps> = ({
             aria-checked={m.value === mode}
             aria-label={m.label}
             tabIndex={radioTabIndex(MODE_VALUES, mode, index)}
-            className={`ui-designer-fill-mode${m.value === mode ? ' selected' : ''}`}
+            className="ui-designer-fill-mode ui-designer-toggle ui-designer-tab"
             title={m.hint}
             data-mode={m.value}
             onClick={() => handleModeChange(m.value)}
