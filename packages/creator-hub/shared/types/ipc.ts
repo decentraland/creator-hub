@@ -66,6 +66,10 @@ export type SceneBuildEvent = { kind: 'rebuild'; file: string } | { kind: 'bundl
 
 export type BevyRealmBuildEvent = SceneBuildEvent & { path: string };
 
+export const BEVY_REALM_EXIT_EVENT = 'bevyRealm.exit';
+
+export type BevyRealmExitEvent = { path: string; message: string };
+
 // Asset files added/changed/removed in a project's `assets/` tree from OUTSIDE the editor
 // (main → renderer → the inspector, which re-fetches its asset catalog). Lets the project
 // explorer auto-refresh when a user drops a file into the folder from Finder/Explorer,

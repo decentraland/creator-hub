@@ -27,6 +27,7 @@ import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { useBevyBuildForwarding } from '/@/hooks/useBevyBuildForwarding';
+import { useBevyRealmRestart } from '/@/hooks/useBevyRealmRestart';
 import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useConsoleSession } from '/@/hooks/useConsoleSession';
@@ -216,6 +217,8 @@ export function EditorPage() {
   // for the project and hold the URLs to thread into the iframe config below.
   const useBevy = settings.renderer === RENDERER.BEVY;
   const [bevyRealm, setBevyRealm] = useState<{ url: string; wsUrl: string } | null>(null);
+  const [realmRestarts, setRealmRestarts] = useState(0);
+  const realmRestartingRef = useRef(false);
   // A broken scene (e.g. a TS error) makes the Bevy realm's `sdk-commands start`
   // fail, or the scene never finishes loading — leaving the editor stuck on the
   // loader with no way out. Capture the failure (or a load timeout) so the loading
@@ -254,6 +257,22 @@ export function EditorPage() {
   );
   useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path, inspectorReadyNonce);
   useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
+  useBevyRealmRestart(useBevy ? project?.path : undefined, {
+    onRestart: () => {
+      dispatch(
+        snackbarActions.pushSnackbar(
+          createGenericNotification('warning', t('editor.realm_restarted')),
+        ),
+      );
+      realmRestartingRef.current = true;
+      setBevyRealm(null);
+      setRealmRestarts(n => n + 1);
+    },
+    onGiveUp: () => {
+      setBevyRealm(null);
+      setLoadError(t('editor.loading.failed.data_layer_crashed'));
+    },
+  });
   useProjectAssetWatch(iframeRef, project?.path);
 
   const handleIframeRef = useCallback(
@@ -454,6 +473,7 @@ export function EditorPage() {
   }, [aiDraftPrompt?.nonce, aiChatEnabled]);
 
   useEffect(() => {
+    realmRestartingRef.current = false;
     if (!projectPath || !useBevy) {
       setBevyRealm(null);
       return;
@@ -487,9 +507,16 @@ export function EditorPage() {
       });
     return () => {
       cancelled = true;
+      if (!realmRestartingRef.current) void killBevyRealm(projectPath);
+    };
+  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm, realmRestarts]);
+
+  useEffect(() => {
+    if (!projectPath || !useBevy) return;
+    return () => {
       void killBevyRealm(projectPath);
     };
-  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm]);
+  }, [projectPath, useBevy, killBevyRealm]);
 
   const isReady = !!project && inspectorPort > 0 && (!useBevy || bevyRealm !== null);
 

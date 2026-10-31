@@ -3,9 +3,11 @@ import { ipcRenderer, type IpcRendererEvent } from 'electron';
 import type { DeployOptions } from '/shared/types/deploy';
 import {
   BEVY_REALM_BUILD_EVENT,
+  BEVY_REALM_EXIT_EVENT,
   PREVIEW_PROGRESS_EVENT,
   PROJECT_ASSETS_CHANGED_EVENT,
   type BevyRealmBuildEvent,
+  type BevyRealmExitEvent,
   type PreviewProgress,
   type ProjectAssetsChangedEvent,
 } from '/shared/types/ipc';
@@ -55,6 +57,15 @@ export function onBevyRealmBuildEvent(callback: (event: BevyRealmBuildEvent) => 
   ipcRenderer.on(BEVY_REALM_BUILD_EVENT, handler);
   return () => {
     ipcRenderer.removeListener(BEVY_REALM_BUILD_EVENT, handler);
+  };
+}
+
+/** Subscribe to unexpected Bevy realm exits for every project; filter by `path`. */
+export function onBevyRealmExit(callback: (event: BevyRealmExitEvent) => void): () => void {
+  const handler = (_event: IpcRendererEvent, event: BevyRealmExitEvent) => callback(event);
+  ipcRenderer.on(BEVY_REALM_EXIT_EVENT, handler);
+  return () => {
+    ipcRenderer.removeListener(BEVY_REALM_EXIT_EVENT, handler);
   };
 }
 
