@@ -84,9 +84,10 @@ const SmartItemControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
           <TextField
             label="Custom Name"
             value={smartItem.customName}
-            onChange={e =>
-              setSmartItems(smartItems.with(idx, { ...smartItem, customName: e.target.value }))
-            }
+            onBlur={e => {
+              if (e.target.value === smartItem.customName) return;
+              setSmartItems(smartItems.with(idx, { ...smartItem, customName: e.target.value }));
+            }}
           />
           <Dropdown
             label="Default Action"
