@@ -73,6 +73,12 @@ export function withAssetDir(filePath: string = '') {
   return filePath ? `${DIRECTORY.ASSETS}/${filePath}` : DIRECTORY.ASSETS;
 }
 
+/** The folder holding `path`, or `''` when it has none. */
+export function getParentPath(path: string): string {
+  const idx = path.lastIndexOf('/');
+  return idx === -1 ? '' : path.slice(0, idx);
+}
+
 export function withAssetPacksDir(filePath: string) {
   return withAssetDir(`${DIRECTORY.ASSET_PACKS}/${filePath}`);
 }

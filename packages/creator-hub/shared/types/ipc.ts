@@ -2,13 +2,14 @@ import type { OpenDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
-import type { DeployOptions } from '/shared/types/deploy';
+import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
+import type { SkillsUpdateStatus } from './skills';
 import type {
   AiMirrorState,
   AiProvider,
@@ -208,7 +209,7 @@ export interface Ipc {
   'cli.start': (path: string, opts: PreviewOptions, mobile?: boolean) => Promise<string>;
   'cli.cancelPreview': (path: string) => Promise<void>;
   'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
-  'cli.deploy': (opts: DeployOptions) => Promise<number>;
+  'cli.deploy': (opts: DeployOptions) => Promise<DeployServer>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;
   'analytics.track': <T extends keyof Events>(event: T, data?: Events[T]) => void;
@@ -218,6 +219,8 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
+  'skills.getProjectStatus': (path: string) => Promise<SkillsUpdateStatus>;
+  'skills.updateProject': (path: string) => Promise<void>;
 
   // AI scene assistant. `ai.send` streams its result over AI_STREAM_EVENT (payload
   // AiEvent) to the calling WebContents; the returned turnId correlates the stream.

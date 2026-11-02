@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { join } from 'path';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
@@ -12,7 +13,7 @@ import {
   CLIENT_NOT_INSTALLED_ERROR,
   isClientNotInstalledError,
 } from '/shared/types/client';
-import type { DeployOptions } from '/shared/types/deploy';
+import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 import { dynamicImport } from '/shared/dynamic-import';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
@@ -639,6 +640,8 @@ export async function legacyDeploy({
   return port;
 }
 
+// ############################################################################################
+
 async function readDeployCommandFile(path: string) {
   return fs.readFile(
     join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
@@ -646,16 +649,32 @@ async function readDeployCommandFile(path: string) {
   );
 }
 
-async function shouldRunLegacyDeploy(path: string) {
-  const file = await readDeployCommandFile(path);
-  return !file.includes('--programmatic');
-}
+/** What the project's deploy command supports, read from its dist once per deploy. */
+export type DeployCommandSupport = {
+  /** Predates `--programmatic`, so it runs as a separate process. */
+  legacy: boolean;
+  multiScene: boolean;
+  /** Serves `/api/deploy`: `routes.js` beside the command, or `respond-async` in its help text. */
+  deployResource: boolean;
+  /** `arg` rejects unknown flags, so `--deploy-token` is only passed when declared. */
+  deployToken: boolean;
+};
 
-async function supportsMultiSceneDeploy(path: string) {
-  const file = await readDeployCommandFile(path);
-  return file.includes('--multi-scene');
+export async function getDeployCommandSupport(path: string): Promise<DeployCommandSupport> {
+  const index = await readDeployCommandFile(path);
+  const hasRoutes = await fs
+    .stat(join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/routes.js'))
+    .then(
+      () => true,
+      () => false,
+    );
+  return {
+    legacy: !index.includes('--programmatic'),
+    multiScene: index.includes('--multi-scene'),
+    deployResource: hasRoutes || index.includes('respond-async'),
+    deployToken: index.includes('--deploy-token'),
+  };
 }
-// ############################################################################################
 
 async function getComponents(path: string) {
   const filePath = join(path, 'node_modules', '@dcl/sdk-commands/dist/components/index.js');
@@ -671,26 +690,39 @@ async function runCommand(path: string, command: string, args: string[]) {
   return runSdkCommand(components, command, args);
 }
 
-export async function deploy({
+// The deploy start in flight. The next one waits for it, so it stops that CLI once it's tracked in
+// `deployServer` instead of leaving it running untracked.
+let deployStart: Promise<unknown> = Promise.resolve();
+
+export function deploy(options: DeployOptions): Promise<DeployServer> {
+  const start = deployStart.catch(() => undefined).then(() => startDeploy(options));
+  deployStart = start;
+  return start;
+}
+
+async function startDeploy({
   path,
   target,
   targetContent,
   language,
   chainId,
   wallet,
-}: DeployOptions): Promise<number> {
+}: DeployOptions): Promise<DeployServer> {
   if (deployServer) {
     await deployServer.stop();
   }
 
-  const isLegacyDeploy = await shouldRunLegacyDeploy(path);
-  if (isLegacyDeploy) {
+  const support = await getDeployCommandSupport(path);
+  if (support.legacy) {
     log.info('[CLI] Running legacy deploy');
-    return legacyDeploy({ path, target, targetContent, chainId, wallet });
+    return {
+      port: await legacyDeploy({ path, target, targetContent, chainId, wallet }),
+      supportsDeployResource: false,
+    };
   }
 
   const port = await getAvailablePort();
-  const multiScene = await supportsMultiSceneDeploy(path);
+  const deployToken = support.deployResource && support.deployToken ? randomUUID() : undefined;
 
   const { stop } = await runCommand(path, 'deploy', [
     '--dir',
@@ -702,11 +734,12 @@ export async function deploy({
     ...(targetContent ? ['--target-content', targetContent] : []),
     '--programmatic',
     '--yes',
-    ...(multiScene ? ['--multi-scene'] : []),
+    ...(support.multiScene ? ['--multi-scene'] : []),
     ...(language ? ['--language', language] : []),
+    ...(deployToken ? ['--deploy-token', deployToken] : []),
   ]);
 
   deployServer = { stop };
 
-  return port;
+  return { port, supportsDeployResource: support.deployResource, deployToken };
 }
