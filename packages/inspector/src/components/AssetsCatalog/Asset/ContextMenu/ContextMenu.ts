@@ -6,7 +6,7 @@ export const CATALOG_ASSET_CONTEXT_MENU_ID = 'catalog-asset-context-menu';
 
 export type CatalogAssetContextMenuProps = {
   asset: Asset;
-  onAddToFilesystem: (asset: Asset) => void;
+  onAddToFilesystem?: (asset: Asset) => void;
 };
 
 export function openCatalogAssetContextMenu(

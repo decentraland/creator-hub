@@ -14,6 +14,14 @@ import { shouldNotifyUpdates } from '../workspace/utils';
 import { createCustomNotification, createGenericNotification, sanitizePreviewError } from './utils';
 import type { Notification } from './types';
 
+function isSdkSkillsToastFor(notification: Notification, path: string) {
+  return notification.type === 'sdk-skills' && notification.project.path === path;
+}
+
+function sdkSkillsUpdateId(path: string) {
+  return `updateSdkSkills:${path}`;
+}
+
 // state
 export type SnackbarState = {
   notifications: Notification[];
@@ -192,6 +200,12 @@ export const slice = createSlice({
           );
         }
       })
+      .addCase(workspaceActions.updatePackages.pending, state => {
+        // Dismiss the "new dependencies version detected" toast the moment an update starts,
+        // regardless of which trigger fired it (toast button, Loading Failed screen, or the
+        // update_sdk RPC). Otherwise it lingers through install and past the success toast (#1474).
+        state.notifications = state.notifications.filter($ => $.type !== 'new-dependency-version');
+      })
       .addCase(workspaceActions.updatePackages.fulfilled, state => {
         state.notifications = state.notifications.filter($ => $.requestId !== 'updatePackages');
         state.notifications.push(
@@ -216,6 +230,60 @@ export const slice = createSlice({
           }
         },
       )
+      // An AI skills toast says "for this scene", so none may outlive the scene it was for.
+      .addCase(workspaceActions.runProject.pending, state => {
+        state.notifications = state.notifications.filter($ => $.type !== 'sdk-skills');
+      })
+      .addCase(editorActions.leaveProject, state => {
+        state.notifications = state.notifications.filter($ => $.type !== 'sdk-skills');
+      })
+      .addCase(
+        workspaceActions.checkSdkSkillsUpdate.fulfilled,
+        (state, { meta, payload: { project, offer } }) => {
+          state.notifications = state.notifications.filter(
+            $ => !isSdkSkillsToastFor($, project.path),
+          );
+          if (offer) {
+            state.notifications.push(
+              createCustomNotification(
+                { type: 'sdk-skills', project, installed: offer === 'update' },
+                { duration: 0, requestId: meta.requestId },
+              ),
+            );
+          }
+        },
+      )
+      .addCase(workspaceActions.updateSdkSkills.pending, (state, { meta }) => {
+        const requestId = sdkSkillsUpdateId(meta.arg.path);
+        state.notifications = state.notifications.filter(
+          $ => !isSdkSkillsToastFor($, meta.arg.path) && $.requestId !== requestId,
+        );
+        state.notifications.push(
+          createGenericNotification('loading', t('snackbar.generic.updating_sdk_skills'), {
+            duration: 0,
+            requestId,
+          }),
+        );
+      })
+      .addCase(workspaceActions.updateSdkSkills.fulfilled, (state, { meta }) => {
+        const requestId = sdkSkillsUpdateId(meta.arg.path);
+        state.notifications = state.notifications.filter($ => $.requestId !== requestId);
+        state.notifications.push(
+          createGenericNotification('success', t('snackbar.generic.sdk_skills_updated'), {
+            requestId,
+          }),
+        );
+      })
+      .addCase(workspaceActions.updateSdkSkills.rejected, (state, { meta }) => {
+        const requestId = sdkSkillsUpdateId(meta.arg.path);
+        state.notifications = state.notifications.filter($ => $.requestId !== requestId);
+        state.notifications.push(
+          createGenericNotification('error', t('snackbar.generic.sdk_skills_update_failed'), {
+            duration: 5000,
+            requestId,
+          }),
+        );
+      })
       .addCase(deploymentActions.executeDeployment.pending, (state, action) => {
         const path = action.meta.arg;
         state.notifications = state.notifications.filter($ => $.requestId !== path);
@@ -233,6 +301,7 @@ export const slice = createSlice({
       .addCase(deploymentActions.executeDeployment.rejected, (state, action) => {
         const path = action.meta.arg;
         state.notifications = state.notifications.filter($ => $.requestId !== path);
+        if (action.error.name === 'DEPLOYMENT_CANCELLED') return;
         state.notifications.push(
           createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
         );

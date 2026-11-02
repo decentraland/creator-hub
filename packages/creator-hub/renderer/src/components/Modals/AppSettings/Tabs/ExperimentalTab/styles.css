@@ -1,0 +1,16 @@
+.ExperimentalTab {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ExperimentalField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ExperimentalHint {
+  margin-left: 44px;
+  max-width: 480px;
+}

@@ -5,8 +5,6 @@ import type { useComponentInput } from '../../../../hooks/sdk/useComponentInput'
 import type { AssetCatalogResponse } from '../../../../lib/data-layer/remote-data-layer';
 import type { TextureType } from '../types';
 
-export type VideoTexture = Map<number, { name: string }>;
-
 export type Props = {
   label: string;
   texture: TextureType;
@@ -15,6 +13,7 @@ export type Props = {
 };
 
 export enum Texture {
+  TT_NONE = 'none',
   TT_TEXTURE = 'texture',
   TT_AVATAR_TEXTURE = 'avatarTexture',
   TT_VIDEO_TEXTURE = 'videoTexture',
@@ -68,6 +67,7 @@ export const FILTER_MODES = [
 ];
 
 export const TEXTURE_TYPES = mapSelectFieldOptions({
+  TT_NONE: 'none',
   TT_TEXTURE: 'texture',
   TT_VIDEO_TEXTURE: 'videoTexture',
 });

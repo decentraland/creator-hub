@@ -2,7 +2,7 @@ import { createAction, createSlice, isRejectedWithValue } from '@reduxjs/toolkit
 import { captureException } from '@sentry/electron/renderer';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { supportsMcp, supportsMultiInstance } from '/shared/flags';
+import { supportsMcp, supportsMultiInstance, supportsUiDesigner } from '/shared/flags';
 import type { DeployOptions } from '/shared/types/deploy';
 import type { PreviewProgress } from '/shared/types/ipc';
 import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
@@ -15,6 +15,7 @@ import { getActiveSceneClient } from '/@/modules/rpc/active-scene';
 import { t } from '/@/modules/store/translation/utils';
 
 import { actions as deploymentActions } from '../deployment';
+import { registerDeployServer } from '../deployment/deploy-api';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
@@ -73,11 +74,22 @@ export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
+    // Main stops the previous CLI, so a retry of the previous deployment must not start another.
+    dispatch(deploymentActions.markDeploymentReplaced({ path: opts.path }));
     await flushEditorToDisk();
-    const port = await editor.publishScene({ ...opts, language: translation.locale });
-    const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
-    await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
-    return port;
+    const server = await editor.publishScene({ ...opts, language: translation.locale });
+    const { supportsDeployResource, hasCancelToken } = registerDeployServer(server);
+    await dispatch(
+      deploymentActions.initializeDeployment({
+        path: opts.path,
+        port: server.port,
+        supportsDeployResource,
+        hasCancelToken,
+        chainId: opts.chainId,
+        wallet: opts.wallet,
+      }),
+    ).unwrap();
+    return server.port;
   },
 );
 export const killPreviewScene = createAsyncThunk(
@@ -89,17 +101,17 @@ export const openExternalURL = createAsyncThunk('editor/openExternalURL', editor
 
 export const getMobileQR = createAsyncThunk(
   'editor/getMobileQR',
-  async ({ path, opts }: { path: string; opts: PreviewOptions }, { dispatch, getState }) => {
-    const { editor: editorState } = getState();
+  async ({ path, opts }: { path: string; opts: PreviewOptions }, { dispatch }) => {
+    // `mobile: true` asks main for a server the phone can reach: it reuses whatever preview
+    // is already up (desktop client, Bevy tab) and otherwise starts one without opening any
+    // client. Always dispatched — main decides from the live process, whereas this store's
+    // isPreviewRunning only flips back on an explicit kill and can be stale.
+    await dispatch(runScene({ path, ...opts, mobile: true })).unwrap();
 
-    // Start preview if not running. `mobile: true` runs the preview server without
-    // opening the desktop client — the QR only needs the server for the phone to reach.
-    if (!editorState.isPreviewRunning) {
-      await dispatch(runScene({ path, ...opts, mobile: true })).unwrap();
-    }
-
-    // Fetch mobile QR data
     const data = await editor.getMobilePreview(path);
+    // null is main's "no usable server" (no LAN IP, preview gone): fail loudly so the
+    // caller's error path runs instead of the click silently doing nothing
+    if (!data) throw new Error('Mobile preview is unavailable for this scene');
     return data;
   },
 );
@@ -109,7 +121,10 @@ export type EditorState = {
   version: string | null;
   supportsMultiInstance: boolean;
   supportsMcp: boolean;
+  supportsUiDesigner: boolean;
   project?: Project;
+  // The scene last asked to open. Set as soon as it starts opening, unlike `project`.
+  openingProjectPath?: string;
   inspectorPort: number;
   publishPort: number;
   loadingPublish: boolean;
@@ -131,6 +146,7 @@ const initialState: EditorState = {
   version: null,
   supportsMultiInstance: false,
   supportsMcp: false,
+  supportsUiDesigner: false,
   inspectorPort: 0,
   publishPort: 0,
   loadingPublish: false,
@@ -152,20 +168,28 @@ const initialState: EditorState = {
 export const slice = createSlice({
   name: 'editor',
   initialState,
-  reducers: {},
+  reducers: {
+    // The editor was closed: a scene that was still opening no longer is.
+    leaveProject: state => {
+      state.openingProjectPath = undefined;
+    },
+  },
   extraReducers: builder => {
     builder.addCase(setPreviewProgress, (state, action) => {
       state.previewProgress = action.payload;
     });
-    builder.addCase(workspaceActions.runProject.pending, state => {
+    builder.addCase(workspaceActions.runProject.pending, (state, action) => {
       state.project = undefined;
+      state.openingProjectPath = action.meta.arg.path;
       state.supportsMultiInstance = false;
       state.supportsMcp = false;
+      state.supportsUiDesigner = false;
       state.error = null;
     });
     builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
       state.supportsMultiInstance = supportsMultiInstance(action.payload);
       state.supportsMcp = supportsMcp(action.payload);
+      state.supportsUiDesigner = supportsUiDesigner(action.payload);
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;
@@ -181,6 +205,7 @@ export const slice = createSlice({
         });
       }
       state.project = undefined;
+      state.openingProjectPath = undefined;
     });
     builder.addCase(startInspector.pending, state => {
       state.inspectorPort = 0;

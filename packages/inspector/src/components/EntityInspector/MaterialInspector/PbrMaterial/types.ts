@@ -11,6 +11,7 @@ export type PbrMaterialProps = {
   metallic: InputProps;
   roughness: InputProps;
   albedoColor: InputProps;
+  albedoColorAlpha?: InputProps;
   reflectivityColor: InputProps;
   specularIntensity: InputProps;
   directIntensity: InputProps;

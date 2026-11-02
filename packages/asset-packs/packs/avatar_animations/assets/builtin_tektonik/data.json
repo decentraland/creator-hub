@@ -1,0 +1,9 @@
+{
+  "id": "d99147ee-b8df-4b80-9af9-6f3d3022a53a",
+  "name": "Tektonik",
+  "category": "expressions",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "tektonik"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'tektonik' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "tektonik"
+}

@@ -1,6 +1,7 @@
 export interface Props {
   content: React.ReactNode;
+  /** Accessible name of the remove button — say what it removes, not just "Remove". */
+  removeLabel: string;
   className?: string;
-  onClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
-  onRemove?: (e: React.MouseEvent<SVGElement, MouseEvent>) => void;
+  onRemove: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
 }

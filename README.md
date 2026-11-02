@@ -125,6 +125,15 @@ Before starting, ensure you have the following installed:
      because it also installs + builds `packages/inspector/agents/bevy`, which is
      a separate SDK7 project with its own `node_modules`
 
+3. **(Optional, for AI agents) Install the third-party agent skills:**
+
+   ```bash
+   make install-skills
+   ```
+
+   This restores the skills pinned in `skills-lock.json` into `.agents/skills/`
+   and links them into `.claude/skills/`, where Claude Code loads them.
+
 ### Testing the Bevy renderer
 
 The inspector can render a scene with the **Bevy engine** as an alternative to
@@ -151,6 +160,29 @@ Notes for reviewers:
   so running the Creator Hub in watch mode (`cd packages/creator-hub && npm run
   start`) does not hot-reload inspector changes.
 
+  To get live reload instead, point the app at the inspector's own dev server by
+  setting the **same** `VITE_INSPECTOR_PORT` on both sides:
+
+  ```bash
+  # terminal 1 — inspector dev server, pinned to that port
+  cd packages/inspector && VITE_INSPECTOR_PORT=8123 npm run start
+  # terminal 2 — the app, pointing its iframe there
+  cd packages/creator-hub && VITE_INSPECTOR_PORT=8123 npm run start
+  ```
+
+  This works for Bevy as well as Babylon: the dev server fronts esbuild with a
+  proxy that adds the cross-origin isolation headers the engine's
+  SharedArrayBuffer needs, and rewrites the editor-agent realm manifest to its
+  own origin — the two things the app's own inspector server does. Leave
+  `VITE_INSPECTOR_PORT` unset and the port is random, which is why it has to be
+  pinned to be usable as an iframe target.
+
+  The Bevy **agent** is a separate SDK7 project, but you don't have to remember
+  that: the inspector's `copy-bevy-agent` step (part of both `start` and `build`)
+  rebuilds `agents/bevy` whenever its sources are newer than its bundle. Note a
+  running watch server does NOT re-run it — restart `npm run start` (or run `make
+  build-bevy-agent`) after an agent change.
+
 ## 📋 Makefile Commands
 
 The project uses a Makefile to manage common development tasks:
@@ -164,6 +196,7 @@ The project uses a Makefile to manage common development tasks:
 | `make init-submodules` | Initialize git submodules (devtools-frontend)                      |
 | `make protoc`          | Generate TypeScript definitions from `.proto` files                |
 | `make init`            | Complete project initialization (clean + install + protoc + build) |
+| `make install-skills`  | Install the agent skills pinned in `skills-lock.json`              |
 
 ### Build Commands
 

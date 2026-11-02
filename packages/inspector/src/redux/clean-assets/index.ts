@@ -37,11 +37,15 @@ export const cleanAssetsSlice = createSlice({
     clearRemovedFiles: state => {
       state.removedFiles = [];
     },
+    dropRestoredFiles: (state, { payload }: PayloadAction<string[]>) => {
+      const existing = new Set(payload);
+      state.removedFiles = state.removedFiles.filter(file => !existing.has(file.path));
+    },
   },
 });
 
 // Actions
-export const { setRemovedFiles, clearRemovedFiles } = cleanAssetsSlice.actions;
+export const { setRemovedFiles, clearRemovedFiles, dropRestoredFiles } = cleanAssetsSlice.actions;
 
 // Selectors
 export const selectRemovedFiles = (state: RootState): RemovedFile[] =>

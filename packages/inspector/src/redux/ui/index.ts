@@ -1,8 +1,8 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
-import type { PanelName } from './types';
-import { AssetsTab, SceneInspectorTab } from './types';
+import { PanelName } from './types';
+import { AssetsTab, SceneInspectorTab, UIDesignerTool } from './types';
 
 export interface UiState {
   hiddenComponents: Record<string, boolean>;
@@ -13,19 +13,29 @@ export interface UiState {
   selectedSceneInspectorTab: SceneInspectorTab;
   hiddenSceneInspectorTabs: Partial<Record<SceneInspectorTab, boolean>>;
   debugConsoleEnabled: boolean;
+  debugConsoleDetached: boolean;
   mobileDebugSessionEnabled: boolean;
+  uiDesignerTool: UIDesignerTool;
+  uiDesignerSnapEnabled: boolean;
+  sceneRunIntent: boolean;
+  assetExplorerActive: boolean;
 }
 
 export const initialState: UiState = {
   hiddenComponents: {},
-  hiddenPanels: {},
+  hiddenPanels: { [PanelName.UI_DESIGNER]: true },
   disableGizmos: false,
   disableGroundGrid: false,
   selectedAssetsTab: AssetsTab.AssetsPack,
   selectedSceneInspectorTab: SceneInspectorTab.DETAILS,
   hiddenSceneInspectorTabs: {},
   debugConsoleEnabled: false,
+  debugConsoleDetached: false,
   mobileDebugSessionEnabled: false,
+  uiDesignerTool: UIDesignerTool.FREE,
+  uiDesignerSnapEnabled: true,
+  sceneRunIntent: false,
+  assetExplorerActive: false,
 };
 
 export const appState = createSlice({
@@ -69,11 +79,25 @@ export const appState = createSlice({
     setDebugConsoleEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
       state.debugConsoleEnabled = payload.enabled;
     },
+    setDebugConsoleDetached: (state, { payload }: PayloadAction<{ detached: boolean }>) => {
+      state.debugConsoleDetached = payload.detached;
+    },
     setMobileDebugSessionEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
-      // Once enabled, stay enabled (freeze the tab). New sessions auto-activate it.
       if (payload.enabled) {
         state.mobileDebugSessionEnabled = true;
       }
+    },
+    setUIDesignerTool: (state, { payload }: PayloadAction<{ tool: UIDesignerTool }>) => {
+      state.uiDesignerTool = payload.tool;
+    },
+    setUIDesignerSnap: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
+      state.uiDesignerSnapEnabled = payload.enabled;
+    },
+    setSceneRunIntent: (state, { payload }: PayloadAction<{ running: boolean }>) => {
+      state.sceneRunIntent = payload.running;
+    },
+    setAssetExplorerActive: (state, { payload }: PayloadAction<{ active: boolean }>) => {
+      state.assetExplorerActive = payload.active;
     },
   },
 });
@@ -88,7 +112,12 @@ export const {
   selectSceneInspectorTab,
   toggleSceneInspectorTab,
   setDebugConsoleEnabled,
+  setDebugConsoleDetached,
   setMobileDebugSessionEnabled,
+  setUIDesignerTool,
+  setUIDesignerSnap,
+  setSceneRunIntent,
+  setAssetExplorerActive,
 } = appState.actions;
 
 // Selectors
@@ -103,8 +132,14 @@ export const getHiddenSceneInspectorTabs = (state: RootState) => state.ui.hidden
 export const areGizmosDisabled = (state: RootState) => state.ui.disableGizmos;
 export const isGroundGridDisabled = (state: RootState) => state.ui.disableGroundGrid;
 export const getDebugConsoleEnabled = (state: RootState) => state.ui.debugConsoleEnabled;
+export const getDebugConsoleDetached = (state: RootState) => state.ui.debugConsoleDetached;
 export const getMobileDebugSessionEnabled = (state: RootState) =>
   state.ui.mobileDebugSessionEnabled;
+export const getUIDesignerTool = (state: RootState): UIDesignerTool => state.ui.uiDesignerTool;
+export const getUIDesignerSnapEnabled = (state: RootState): boolean =>
+  state.ui.uiDesignerSnapEnabled;
+export const getSceneRunIntent = (state: RootState): boolean => state.ui.sceneRunIntent;
+export const isAssetExplorerActive = (state: RootState): boolean => state.ui.assetExplorerActive;
 
 // Reducer
 export default appState.reducer;
