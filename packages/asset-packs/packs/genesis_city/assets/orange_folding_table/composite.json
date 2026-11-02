@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/orange_folding_table/orange_folding_table.glb"
+          }
+        }
+      }
+    }
+  ]
+}

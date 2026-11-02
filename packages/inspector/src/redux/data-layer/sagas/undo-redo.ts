@@ -15,6 +15,8 @@ import {
 import type { UndoRedoResponse } from '../../../lib/data-layer/remote-data-layer';
 import { updateCanSave } from '../../app';
 
+const changesFiles = ({ type }: UndoRedoResponse) => type === 'file' || type === 'composite';
+
 function* updateUndoRedoAvailability(): Generator<any, void, any> {
   const dataLayer: IDataLayer = yield call(getDataLayerInterface);
   if (!dataLayer) return;
@@ -40,7 +42,7 @@ export function* undoSaga(): Generator<any, void, any> {
   try {
     const response: UndoRedoResponse = yield call(dataLayer.undo, {});
 
-    if (response.type === 'file') {
+    if (changesFiles(response)) {
       yield put(getAssetCatalog());
     }
 
@@ -58,7 +60,7 @@ export function* redoSaga(): Generator<any, void, any> {
   try {
     const response: UndoRedoResponse = yield call(dataLayer.redo, {});
 
-    if (response.type === 'file') {
+    if (changesFiles(response)) {
       yield put(getAssetCatalog());
     }
 

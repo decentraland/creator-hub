@@ -22,6 +22,10 @@ export function getUserDataPath() {
   return app.getPath('userData');
 }
 
+export function getAppDataPath() {
+  return app.getPath('appData');
+}
+
 export function getAppHomeLegacy() {
   return path.join(getHome(), '.decentraland');
 }

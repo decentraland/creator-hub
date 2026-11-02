@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '../types/ai';
+import { MIN_CLAUDE_CLI_VERSION, cliSetup, isCliVersionOutdated } from '../types/ai';
 
 describe('isCliVersionOutdated', () => {
   const MIN = MIN_CLAUDE_CLI_VERSION;
@@ -29,5 +29,33 @@ describe('isCliVersionOutdated', () => {
   it('tolerates trailing text around the semver (e.g. "2.1.260 (Claude Code)")', () => {
     expect(isCliVersionOutdated('2.1.39 (Claude Code)', MIN)).toBe(true);
     expect(isCliVersionOutdated('2.1.260 (Claude Code)', MIN)).toBe(false);
+  });
+});
+
+describe('when picking the terminal setup steps for an agent', () => {
+  it('should give Windows users the winget install and the Windows section of the guide', () => {
+    expect(cliSetup('claude', true)).toMatchObject({
+      install: 'winget install Anthropic.ClaudeCode',
+      signin: 'claude auth login',
+      guideUrl: 'https://code.claude.com/docs/en/terminal-guide#windows',
+    });
+  });
+
+  it('should give macOS and Linux users the install script and their section of the guide', () => {
+    expect(cliSetup('claude', false)).toMatchObject({
+      install: 'curl -fsSL https://claude.ai/install.sh | bash',
+      signin: 'claude auth login',
+      guideUrl: 'https://code.claude.com/docs/en/terminal-guide#macos-and-linux',
+    });
+  });
+
+  it('should use the same command and guide on every OS when the vendor has only one', () => {
+    expect(cliSetup('gemini', true)).toEqual(cliSetup('gemini', false));
+  });
+
+  it('should never point Cursor users at the unrelated cursor-agent npm package', () => {
+    for (const windows of [true, false]) {
+      expect(cliSetup('cursor', windows).install).not.toContain('npm');
+    }
   });
 });

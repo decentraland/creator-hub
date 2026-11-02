@@ -1,0 +1,21 @@
+{
+  "id": "cfea789a-7765-4dc8-9799-713e768a5b3d",
+  "name": "Fishing - Show Object",
+  "category": "actions",
+  "tags": [
+    "fishing",
+    "fish",
+    "fishing rod",
+    "rod",
+    "lake",
+    "river",
+    "show",
+    "object",
+    "item",
+    "emote",
+    "animation",
+    "avatar"
+  ],
+  "description": "Avatar holds up something in one hand to show it off.",
+  "author": "Decentraland Foundation"
+}

@@ -1,10 +1,18 @@
-# Inspector Design System
+# Creator Hub & Inspector Design System
 
-The visual language for the **`@dcl/inspector`** web UI (the Babylon.js scene inspector and its panels, including the UI Designer). It is the reference for every color, spacing, focus, and motion decision in inspector `.css`/`.tsx`.
+The visual language for the two UIs in this repo: the **`@dcl/inspector`** web UI (the Babylon.js scene inspector and its panels, including the UI Designer) and the **Creator Hub** Electron renderer around it. It's the reference for every color, spacing, focus, and motion decision in their `.css`/`.tsx`.
 
-**Scope.** This documents the _inspector_. The creator-hub Electron shell renders the inspector inside an `<iframe>` and uses `decentraland-ui2` (MUI) for its _own_ chrome — a separate system with its own theme that cannot cross the iframe boundary. Do not import ui2 tokens here, and do not apply this file to creator-hub renderer code.
+**Scope: two systems, one boundary.** Creator Hub renders the inspector inside an `<iframe>`, and no token crosses that boundary. Inspector code uses only the `vars.css` tokens documented in most of this file. Creator Hub renderer code uses only `decentraland-ui2` and `theme.css` ([Creator Hub (renderer)](#creator-hub-renderer)). Don't import ui2 tokens into the inspector, and don't apply `vars.css` to Creator Hub.
 
 **Not our brand kit.** Anthropic brand assets (Poppins/Lora, orange `#d97757`, etc.) and the `brand-guidelines` skill do **not** apply to this codebase. The inspector's brand is Decentraland: pink `--primary-main #ff2d55`, the cyan UI-Designer accent, and Inter.
+
+---
+
+## Figma source
+
+Both UIs are specified in one Figma file, **📗️ Design System | Creator Tools** (file key `5ecKgNHjChZEe05LUwKGku`). Its design-system page is [node `20420:50646`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20420-50646). Screens and component variants live on the other pages, so start from the frame URL for the surface you're changing.
+
+Read `.ai/skills/figma/SKILL.md` before pulling a frame. It covers the Figma MCP, the Claude-in-Chrome fallback when the MCP's call cap is hit, and syncing palette changes back into this file.
 
 ---
 
@@ -174,6 +182,37 @@ Derived from the Vercel Web Interface Guidelines (`web-design-guidelines` skill)
 - **Pickers and bound values.** Popover pickers (event, variable) are a raised `--ui-designer-control-bg` card at the 12px menu radius: rows highlight on `--ui-designer-control-accent-21`, the selected row carries a leading checkmark, and a diamond-plus `Add New …` row reveals a `Description` field and an auto-width `--primary-main` `ADD` confirm (dimmed to 40% until the name is valid). Event fields are horizontal — a left label and a full-width rounded pill: `--ui-designer-control-bg` when a handler is bound (with the name and an inline clear) and a fainter fill reading `Bind an event handler` in `--ui-designer-text-muted` when empty. The pill is neutral, not accent — an event is not a bound-variable field.
 
 Reviewing UI against these? Run the `web-design-guidelines` skill over the changed files.
+
+---
+
+## Creator Hub (renderer)
+
+Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals) is styled by MUI through `decentraland-ui2`, plus a small set of CSS variables. The focus, contrast, ARIA, and motion rules in [Component & CSS conventions](#component--css-conventions) apply here too. The tokens don't.
+
+### Creator Hub token sources
+
+- **Theme:** `ThemeProvider theme={dark}` from `decentraland-ui2/dist/theme`, set in `packages/creator-hub/renderer/src/index.tsx`. Inside styled components, read palette, spacing, typography, and breakpoints from `theme`.
+- **CSS variables:** `:root` in `packages/creator-hub/renderer/src/themes/theme.css`, for plain CSS and values the ui2 theme doesn't cover.
+
+### `theme.css` by role
+
+| Role | Tokens |
+| --- | --- |
+| Surfaces | `--bg` `#16141a`, `--background` `#18141a`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` |
+| Text | `--text` `#ffffff`, `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` |
+| Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff3d61`, `--dcl-hover` `#f70038`, `--dcl-dark` `#9c1c34` |
+| Status | `--success` `#34ce77`, `--danger` `#ffa900`, `--error` `#ff0000` |
+| Lines | `--divider` `#67637033`, `--text-area-border` `#676370`, `--clear-divider` `#a09ba8` |
+| AI assistant | `--ai-selected`, `--ai-menu-bg`, `--ai-input-bg`, `--ai-session-selected` and their `-hover` steps |
+| ui2 overrides | `--mui-shape-borderRadius` `6px`, `--mui-palette-action-disabled`, `--mui-palette-secondary-contrast` |
+
+The brand pink matches the inspector's `--primary-main`, but it's defined separately on each side of the iframe. Change both, or neither.
+
+### Conventions
+
+- Styled components follow CLAUDE.md → "Styled Components Conventions": import from `decentraland-ui2`, use object syntax, take values from the theme, and keep them in `Component.styled.ts`.
+- Reuse a component the renderer already imports, from `decentraland-ui2` or an existing `@mui/material` import, before you build one. Don't add an import of an MUI module the renderer doesn't use yet. Pulling a not-yet-bundled module into a running dev session retriggers Vite's dependency optimizer. When no imported component fits, hand-roll it, as the settings Accordion is.
+- ui2 pins secondary-text buttons to a grey `secondary.contrast` at high specificity. Overriding their color takes a repeated-`&` selector (see `Tabs/AiTab/component.tsx`), not `!important`.
 
 ---
 

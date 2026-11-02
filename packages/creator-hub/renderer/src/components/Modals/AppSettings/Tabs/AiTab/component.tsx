@@ -14,9 +14,9 @@ import {
   Typography,
 } from 'decentraland-ui2';
 
-import { ai } from '#preload';
+import { ai, misc } from '#preload';
 
-import { AI_CLI_COMMANDS, type AiProviderInfo } from '/shared/types/ai';
+import { cliSetup, type AiProviderInfo } from '/shared/types/ai';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
 import type { BaseTabProps } from '../../types';
@@ -57,7 +57,7 @@ function Accordion({
 function CommandField({ label, value }: { label?: string; value: string }) {
   const [copied, setCopied] = useState(false);
   const copy = useCallback(() => {
-    void navigator.clipboard.writeText(value).then(() => {
+    void misc.copyToClipboard(value).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -81,7 +81,7 @@ function CommandField({ label, value }: { label?: string; value: string }) {
         >
           <ContentCopyIcon
             fontSize="small"
-            color={copied ? 'success' : 'inherit'}
+            color={copied ? 'primary' : 'inherit'}
           />
         </IconButton>
       </Box>
@@ -90,47 +90,81 @@ function CommandField({ label, value }: { label?: string; value: string }) {
 }
 
 /** One agent in the Connect section: status, in-app sign in/out and a Via Terminal fallback. */
-function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: () => void }) {
-  const { signIn, start, cancel } = useCliSignIn(info.id, onRecheck);
-  const [terminalOpen, setTerminalOpen] = useState(false);
-  const cmds = AI_CLI_COMMANDS[info.id];
+function AgentConnect({
+  info,
+  onRecheck,
+}: {
+  info: AiProviderInfo;
+  onRecheck: () => Promise<void>;
+}) {
+  const [pending, setPending] = useState(false);
+  const track = useCallback((work: Promise<unknown>) => {
+    setPending(true);
+    void work.finally(() => setPending(false));
+  }, []);
+  const recheck = useCallback(() => track(onRecheck()), [track, onRecheck]);
+  const { signIn, start, cancel } = useCliSignIn(info.id, recheck);
+  const reloginInTerminal = info.needsLogin === true && !info.managedSignIn;
+  const [terminalOpen, setTerminalOpen] = useState(
+    reloginInTerminal || info.desktopInstalled === true,
+  );
+  const cmds = cliSetup(info.id, navigator.userAgent.includes('Windows'));
 
   const handleSignOut = useCallback(() => {
-    void ai.signOutCli(info.id).then(onRecheck);
-  }, [info.id, onRecheck]);
+    track(ai.signOutCli(info.id).then(onRecheck));
+  }, [track, info.id, onRecheck]);
+  const spinner = (signIn.busy || pending) && (
+    <CircularProgress
+      size={10}
+      color="inherit"
+    />
+  );
 
   return (
     <Box className="AgentConnect">
       <Box className="AgentConnectHeader">
         <span className="AgentName">{info.label}</span>
-        {info.available && (
+        {info.available && info.needsLogin === true && (
+          <span className="AgentStatus">
+            <span className="AgentStatusDot warning" />
+            {t('editor.ai.setup.needs_login_status')}
+          </span>
+        )}
+        {info.available && info.needsLogin !== true && (
           <span className="AgentStatus">
             <span className="AgentStatusDot" />
             {t('modal.app_settings.fields.ai_connect.connected')}
           </span>
         )}
         {info.available ? (
-          <button
-            type="button"
-            className="AgentSignLink"
-            onClick={handleSignOut}
-          >
-            {t('modal.app_settings.fields.ai_connect.sign_out')}
-          </button>
+          info.managedSignIn === true && (
+            <button
+              type="button"
+              className="AgentSignLink"
+              disabled={pending}
+              onClick={handleSignOut}
+            >
+              {spinner}
+              {t('modal.app_settings.fields.ai_connect.sign_out')}
+            </button>
+          )
         ) : signIn.busy ? (
           <button
             type="button"
             className="AgentSignLink"
             onClick={cancel}
           >
+            {spinner}
             {t('modal.app_settings.fields.ai_connect.cancel')}
           </button>
         ) : info.managedSignIn === true ? (
           <button
             type="button"
             className="AgentSignLink primary"
+            disabled={pending}
             onClick={() => void start()}
           >
+            {spinner}
             {t('modal.app_settings.fields.ai_connect.sign_in')}
           </button>
         ) : null}
@@ -152,6 +186,34 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
           {signIn.error}
         </Typography>
       )}
+      {info.needsLogin === true && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+        >
+          {t(
+            info.managedSignIn
+              ? 'editor.ai.setup.needs_login_managed_help'
+              : 'editor.ai.setup.needs_login_help',
+          )}
+        </Typography>
+      )}
+      {info.desktopInstalled === true && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+        >
+          {t('editor.ai.setup.desktop_detected')}
+        </Typography>
+      )}
+      {info.id === 'gemini' && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+        >
+          {t('editor.ai.setup.gemini_plan_note')}
+        </Typography>
+      )}
       <Accordion
         title={t('modal.app_settings.fields.ai_connect.via_terminal')}
         expanded={terminalOpen}
@@ -161,11 +223,32 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
           label={t('modal.app_settings.fields.ai_connect.install')}
           value={cmds.install}
         />
-        <CommandField
-          label={t('modal.app_settings.fields.ai_connect.sign_in_label')}
-          value={cmds.signin}
-        />
+        {(reloginInTerminal ? cmds.relogin : [cmds.signin]).map((cmd, i) => (
+          <CommandField
+            key={cmd}
+            label={i === 0 ? t('modal.app_settings.fields.ai_connect.sign_in_label') : undefined}
+            value={cmd}
+          />
+        ))}
+        <button
+          type="button"
+          className="AgentGuideLink"
+          onClick={() => void misc.openExternal(cmds.guideUrl)}
+        >
+          {t('editor.ai.setup.install_guide', { provider: info.label })}
+        </button>
       </Accordion>
+      {info.needsLogin === true && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+        >
+          {t('editor.ai.setup.api_key_alternative', {
+            envVar: cmds.apiKeyEnv,
+            setting: t('modal.app_settings.fields.ai_api_key.label'),
+          })}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -198,14 +281,16 @@ const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
 
   const [providers, setProviders] = useState<AiProviderInfo[]>([]);
   const [connectOpen, setConnectOpen] = useState(true);
-  const recheckProviders = useCallback(() => {
-    void ai.detectProviders().then(
-      list => setProviders(list),
-      () => setProviders([]),
-    );
-  }, []);
+  const recheckProviders = useCallback(
+    () =>
+      ai.detectProviders().then(
+        list => setProviders(list),
+        () => setProviders([]),
+      ),
+    [],
+  );
   useEffect(() => {
-    if (settings.aiAssistant) recheckProviders();
+    if (settings.aiAssistant) void recheckProviders();
     else setProviders([]);
   }, [settings.aiAssistant, recheckProviders]);
 
@@ -244,7 +329,7 @@ const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
 
   const handleCopyMcpConfig = useCallback(() => {
     if (mcpConfigSnippet === null || mcpConfigSnippet === undefined) return;
-    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+    void misc.copyToClipboard(mcpConfigSnippet).then(() => {
       setMcpCopied(true);
       setTimeout(() => setMcpCopied(false), 2000);
     });

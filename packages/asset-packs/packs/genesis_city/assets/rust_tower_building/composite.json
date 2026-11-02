@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/rust_tower_building/rust_tower_building.glb"
+          }
+        }
+      }
+    }
+  ]
+}

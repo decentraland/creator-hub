@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { getDataLayerInterface, importAsset } from '../../../redux/data-layer';
 import { selectAssetCatalog } from '../../../redux/app';
 import { retry } from '../../../lib/utils/retry';
+import { isMissingScriptFile } from '../../../lib/utils/script-files';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { Container } from '../../Container';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
@@ -123,6 +124,21 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const allScriptsInScene = useMemo(() => {
     return files?.assets.filter($ => isScriptFile($.path)) ?? [];
   }, [files]);
+
+  const sceneFiles = useMemo(
+    () => (files ? new Set(files.assets.map($ => $.path.toLowerCase())) : undefined),
+    [files],
+  );
+
+  const getMissingFileError = useCallback(
+    (scriptPath: string, param: ScriptParamUnion) =>
+      sceneFiles &&
+      param.type === 'string' &&
+      isMissingScriptFile(scriptPath, param.value, sceneFiles)
+        ? `"${param.value}" is missing`
+        : undefined,
+    [sceneFiles],
+  );
 
   const getDropdownOptions = useCallback(
     (currentScriptPath?: string) => {
@@ -416,6 +432,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 key={name}
                 name={name}
                 param={param}
+                error={getMissingFileError(scripts[index].path, param)}
                 onUpdate={value => handleUpdateDynamicField(index, name, value)}
               />
             ))}
@@ -423,7 +440,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         </Container>
       );
     },
-    [handleUpdateDynamicField],
+    [handleUpdateDynamicField, getMissingFileError, scripts],
   );
 
   // The union of reaction events declared by this entity's scripts (via `@event`). Non-empty =>

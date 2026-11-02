@@ -79,8 +79,11 @@ export class LocalFileSystem {
       throw new Error(`Invalid data in "${dataPath}"`);
     }
 
+    // Assets that are only files, with no entity to spawn (e.g. avatar animations), ship no composite.
     const compositePath = `${path}/composite.json`;
-    const composite = await readJson(compositePath);
+    const composite: AssetData['composite'] = (await exists(compositePath))
+      ? await readJson(compositePath)
+      : { version: 1, components: [] };
 
     const contents: Record<string, string> = {};
     const paths = await getFiles(path);

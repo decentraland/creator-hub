@@ -1,0 +1,9 @@
+{
+  "id": "ed5560e1-2ab0-43a0-b758-e9067387dfb0",
+  "name": "Sitting Chair 2",
+  "category": "sitting",
+  "tags": ["2", "animation", "avatar", "built-in", "chair", "default", "emote", "sitting"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'sittingChair2' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "sittingChair2"
+}

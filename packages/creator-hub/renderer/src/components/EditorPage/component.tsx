@@ -154,6 +154,7 @@ export function EditorPage() {
     loadingPublish,
     isInstallingProject,
     killPreview,
+    leaveProject,
     publishScene,
     getMobileQR,
     supportsMultiInstance,
@@ -386,6 +387,10 @@ export function EditorPage() {
   // chip, attached as context on send). Cheap read; only runs while the panel is visible.
   // Rejects harmlessly under the Bevy renderer (no selection RPC) — selection just stays empty.
   useEffect(() => {
+    dispatch(aiActions.setChatVisible(aiOpen || aiDetached));
+  }, [aiOpen, aiDetached, dispatch]);
+
+  useEffect(() => {
     // Poll while the chat is visible anywhere — inline or in the detached window (#1504).
     if (!aiOpen && !aiDetached) {
       dispatch(aiActions.setSelection([]));
@@ -557,8 +562,9 @@ export function EditorPage() {
       }
     }
     killPreview();
+    leaveProject();
     navigate('/scenes');
-  }, [navigate, refreshProject, killPreview]);
+  }, [navigate, refreshProject, killPreview, leaveProject]);
 
   // Recover from the outdated-deps load error (#1457): update the scene's packages.
   // installProject toggles isInstallingProject, which re-runs the realm-start effect

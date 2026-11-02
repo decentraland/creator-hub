@@ -10,6 +10,7 @@ import * as bin from './bin';
 import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
+import * as skills from './skills';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as oxc from './oxc';
@@ -135,6 +136,8 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
+  handle('skills.getProjectStatus', (_event, path) => skills.getProjectSkillsStatus(path));
+  handle('skills.updateProject', (_event, path) => skills.updateProjectSkills(path));
 
   handle('oxc.parse', (_event, filename, source) => oxc.parse(filename, source));
 
@@ -155,7 +158,9 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.isBusy', async () => ai.aiBusy());
   // AI sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login; steps stream over AI_CLI_LOGIN_EVENTS.
-  handle('ai.signInCli', (_event, provider) => aiCli.signInCli(provider));
+  handle('ai.signInCli', (_event, provider) =>
+    aiCli.signInCli(provider).then(() => ai.clearNeedsLogin(provider)),
+  );
   handle('ai.cancelSignInCli', () => aiCli.cancelSignInCli());
   handle('ai.signOutCli', (_event, provider) => aiCli.signOutCli(provider));
   handle('ai.getCliState', async () => aiCli.getCliState());

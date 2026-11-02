@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/lab_stair_platform.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/PistonPlatform.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"startState\":{\"type\":\"enum\",\"options\":[\"Down\",\"Up\",\"Stairs\"],\"optional\":true,\"tooltip\":\"Position when the scene loads: Down, Up or Stairs.\",\"value\":\"Up\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder, played on every move. Leave empty for no sound.\"}},\"actions\":[{\"methodName\":\"lower\",\"description\":\"Lowers every piston fully\",\"params\":{}},{\"methodName\":\"raise\",\"description\":\"Raises every piston fully\",\"params\":{}},{\"methodName\":\"makeStairs\",\"description\":\"Sets the pistons at stepped heights, forming a staircase\",\"params\":{}},{\"methodName\":\"cycle\",\"description\":\"Moves to the next position: Down, Up, Stairs, then back to Down\",\"params\":{}}],\"events\":[\"down\",\"up\",\"stairs\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "call_script_method",
+                "name": "Lower",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/PistonPlatform.ts\",\"methodName\":\"lower\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Raise",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/PistonPlatform.ts\",\"methodName\":\"raise\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Make Stairs",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/PistonPlatform.ts\",\"methodName\":\"makeStairs\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Next Position",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/PistonPlatform.ts\",\"methodName\":\"cycle\",\"params\":{}}",
+                "default": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": ["asset-packs::States"]
+          }
+        }
+      }
+    }
+  ]
+}
