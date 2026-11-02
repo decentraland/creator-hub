@@ -38,6 +38,7 @@ const EmptyThumbnail = styled('div')(({ theme }) => ({
   '& .MuiButton-root': {
     position: 'relative',
     zIndex: 1,
+    pointerEvents: 'auto',
   },
   '&::before': {
     content: '""',
@@ -123,6 +124,7 @@ const Thumbnail = styled('div')({
   minHeight: 0,
   borderRadius: 16,
   overflow: 'hidden',
+  pointerEvents: 'none',
   '& img': {
     width: '100%',
     height: '100%',
