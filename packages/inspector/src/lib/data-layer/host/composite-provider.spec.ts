@@ -1,168 +1,244 @@
-import type { OnChangeFunction } from '@dcl/ecs';
-import * as ecsComponents from '@dcl/ecs/dist/components';
-import { feededFileSystem } from '../client/feeded-local-fs';
-import { initRpcMethods } from './rpc-methods';
-import { getCurrentCompositePath } from './fs-utils';
-import { createEngineContext } from './utils/engine';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CrdtMessageType, type Entity, type IEngine } from '@dcl/ecs';
 
-async function mockedRpcInit() {
-  const callbackFunctions: OnChangeFunction[] = [];
-  const { fs } = await feededFileSystem();
-  const engineContext = createEngineContext({
-    onChangeFunction: (entity, operation, component, componentValue) => {
-      callbackFunctions.forEach(func => func(entity, operation, component, componentValue));
-    },
+import type { InspectorPreferences } from '../../logic/preferences/types';
+import type { FileSystemInterface } from '../types';
+import type * as EngineToComposite from './utils/engine-to-composite';
+import type { CompositeManager } from './utils/fs-composite-provider';
+import { type Operation, OperationType, type Transaction } from './state-manager';
+import { CompositeProvider } from './composite-provider';
+
+const mocks = vi.hoisted(() => ({
+  dumpEngineToComposite: vi.fn(),
+  generateEntityNamesType: vi.fn(async () => {}),
+}));
+
+vi.mock('./utils/engine-to-composite', async importOriginal => ({
+  ...(await importOriginal<typeof EngineToComposite>()),
+  dumpEngineToComposite: mocks.dumpEngineToComposite,
+  generateEntityNamesType: mocks.generateEntityNamesType,
+}));
+
+const COMPOSITE_PATH = 'assets/scene/main.composite';
+
+function deferred() {
+  let resolve = () => {};
+  let reject: (error: Error) => void = () => {};
+  const promise = new Promise<void>((res, rej) => {
+    resolve = res;
+    reject = rej;
   });
+  return { promise, resolve, reject };
+}
+const MIN_SAVE_INTERVAL = 100;
 
+function transaction(id: string): Transaction {
+  return { id, operations: [], source: 'engine', completed: false };
+}
+
+function compositeOperation(): Operation {
   return {
-    fs,
-    engine: engineContext.engine,
-    addEngineListener: (fn: OnChangeFunction) => {
-      callbackFunctions.push(fn);
-    },
-  };
-}
-
-async function readComposite(fs: Awaited<ReturnType<typeof feededFileSystem>>['fs']) {
-  const buffer = await fs.readFile(getCurrentCompositePath());
-  return JSON.parse(new TextDecoder().decode(buffer));
-}
-
-function positionOf(composite: any, entity: number) {
-  const transforms = composite.components.find((c: any) => c.name === 'core::Transform');
-  return transforms?.data?.[String(entity)]?.json?.position;
-}
-
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-/** Holds composite writes until `release()`, so a test can land an edit mid-write. */
-function holdCompositeWrites(fs: Awaited<ReturnType<typeof feededFileSystem>>['fs']) {
-  const original = fs.writeFile;
-  let held = true;
-  let started = false;
-  let release = () => {};
-  const gate = new Promise<void>(resolve => {
-    release = resolve;
-  });
-
-  fs.writeFile = async (path: string, content: Buffer) => {
-    if (held && path === getCurrentCompositePath()) {
-      started = true;
-      await gate;
-    }
-    return original(path, content);
-  };
-
-  return {
-    hasStarted: () => started,
-    release() {
-      held = false;
-      release();
-    },
-  };
-}
-
-/** Makes composite writes fail until `stop()` is called. */
-function breakCompositeWrites(fs: Awaited<ReturnType<typeof feededFileSystem>>['fs']) {
-  const original = fs.writeFile;
-  fs.writeFile = async (path: string, content: Buffer) => {
-    if (path === getCurrentCompositePath()) throw new Error('EBUSY: resource busy or locked');
-    return original(path, content);
-  };
-  return {
-    stop() {
-      fs.writeFile = original;
-    },
+    type: OperationType.COMPOSITE_UPDATE,
+    entity: 512 as Entity,
+    componentName: 'core::Transform',
+    operation: CrdtMessageType.PUT_COMPONENT,
+    timestamp: 0,
+    componentValue: {},
   };
 }
 
 describe('CompositeProvider', () => {
-  const originalError = console.error;
+  let save: ReturnType<typeof vi.fn>;
+  let provider: CompositeProvider;
+  let preferences: InspectorPreferences;
+
+  function savedCompositeVersions() {
+    return save.mock.calls.map(([arg]) => arg.composite.version);
+  }
+
+  async function completeTransaction(id: string) {
+    const tx = transaction(id);
+    await provider.processOperation(compositeOperation(), tx);
+    await provider.onTransactionComplete(tx);
+  }
+
   beforeEach(() => {
-    console.error = () => {};
+    vi.useFakeTimers();
+    preferences = { autosaveEnabled: true } as InspectorPreferences;
+    save = vi.fn(async () => {});
+    let version = 0;
+    mocks.dumpEngineToComposite.mockImplementation(() => ({ version: ++version, components: [] }));
+    provider = new CompositeProvider(
+      {} as FileSystemInterface,
+      {} as IEngine,
+      () => preferences,
+      COMPOSITE_PATH,
+    );
+    Object.assign(provider, {
+      compositeManager: { save } as unknown as CompositeManager,
+    });
   });
-  afterAll(() => {
-    console.error = originalError;
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
-  describe('when two edits land inside the autosave throttle window', () => {
-    // The second edit is throttled out of its own save, and nothing else is queued behind
-    // it. Only the trailing save gets it to disk; without one it stays in memory and a
-    // publish right after packages a composite without it.
-    it('should still persist the last edit of the burst', async () => {
-      const mocked = await mockedRpcInit();
-      await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+  describe('when a single transaction completes with autosave enabled', () => {
+    beforeEach(async () => {
+      await completeTransaction('tx-1');
+    });
 
-      const Transform = ecsComponents.Transform(mocked.engine);
-      const entity = mocked.engine.addEntity();
+    it('should save it immediately', () => {
+      expect(save).toHaveBeenCalledTimes(1);
+    });
+  });
 
-      Transform.createOrReplace(entity, { position: { x: 1, y: 0, z: 0 } });
-      await mocked.engine.update(1);
-      // Long enough for the state manager's setTimeout(0) batch to commit as its own
-      // transaction, short enough to stay inside the 100 ms throttle window.
-      await wait(5);
+  describe('when a second transaction completes inside the minimum save interval', () => {
+    beforeEach(async () => {
+      await completeTransaction('tx-1');
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL / 2);
+      await completeTransaction('tx-2');
+    });
 
-      Transform.createOrReplace(entity, { position: { x: 7, y: 0, z: 0 } });
-      await mocked.engine.update(1);
+    it('should not save it straight away', () => {
+      expect(save).toHaveBeenCalledTimes(1);
+    });
 
-      // Past the throttle window, so a trailing save has had its chance to run.
-      await wait(300);
+    it('should still be dirty while the save is pending', () => {
+      expect(provider.isDirty()).toBe(true);
+    });
 
-      expect(positionOf(await readComposite(mocked.fs), entity)).toMatchObject({ x: 7 });
+    it('should save once the interval has elapsed', async () => {
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL);
+
+      expect(save).toHaveBeenCalledTimes(2);
+    });
+
+    it('should save the latest state rather than replaying the first snapshot', async () => {
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL);
+
+      expect(savedCompositeVersions()).toEqual([1, 2]);
+    });
+
+    it('should be clean afterwards', async () => {
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL);
+
+      expect(provider.isDirty()).toBe(false);
+    });
+  });
+
+  describe('when several transactions complete inside the minimum save interval', () => {
+    beforeEach(async () => {
+      await completeTransaction('tx-1');
+      await completeTransaction('tx-2');
+      await completeTransaction('tx-3');
+      await completeTransaction('tx-4');
+    });
+
+    it('should collapse them into a single trailing save', async () => {
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL);
+
+      expect(save).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when autosave is disabled', () => {
+    beforeEach(async () => {
+      preferences = { autosaveEnabled: false } as InspectorPreferences;
+      await completeTransaction('tx-1');
+    });
+
+    it('should never save', async () => {
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL * 4);
+
+      expect(save).not.toHaveBeenCalled();
     });
   });
 
   describe('when an edit lands while the trailing save is still writing', () => {
-    // The trailing save does not hold the transaction queue, so the edit is processed while
-    // the write is in flight. Marking the provider clean when that write finishes would
-    // leave the edit in memory with nothing left to save it.
-    it('should still persist that edit', async () => {
-      const mocked = await mockedRpcInit();
-      await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+    let write: ReturnType<typeof deferred>;
 
-      const Transform = ecsComponents.Transform(mocked.engine);
-      const entity = mocked.engine.addEntity();
+    beforeEach(async () => {
+      await completeTransaction('tx-1');
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL / 2);
+      await completeTransaction('tx-2');
 
-      Transform.createOrReplace(entity, { position: { x: 1, y: 0, z: 0 } });
-      await mocked.engine.update(1);
-      await wait(5);
+      write = deferred();
+      save.mockImplementationOnce(() => write.promise);
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL / 2);
+      // The trailing save does not hold the transaction queue, so this edit is processed
+      // while its write is still in flight.
+      await completeTransaction('tx-3');
 
-      const hold = holdCompositeWrites(mocked.fs);
-      Transform.createOrReplace(entity, { position: { x: 2, y: 0, z: 0 } });
-      await mocked.engine.update(1);
+      write.resolve();
+      await vi.advanceTimersByTimeAsync(0);
+    });
 
-      await vi.waitFor(() => expect(hold.hasStarted()).toBe(true), { timeout: 1000 });
+    it('should stay dirty once that write finishes', () => {
+      expect(provider.isDirty()).toBe(true);
+    });
 
-      Transform.createOrReplace(entity, { position: { x: 3, y: 0, z: 0 } });
-      await mocked.engine.update(1);
-      await wait(5);
+    it('should save the edit on the next trailing save', async () => {
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL);
 
-      hold.release();
-      await wait(300);
-
-      expect(positionOf(await readComposite(mocked.fs), entity)).toMatchObject({ x: 3 });
+      expect(savedCompositeVersions()).toEqual([1, 2, 3]);
+      expect(provider.isDirty()).toBe(false);
     });
   });
 
-  describe('when the composite cannot be written', () => {
-    it('should reject save() and write the pending edit once the disk recovers', async () => {
-      const mocked = await mockedRpcInit();
-      const rpc = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+  describe('when the trailing save fails to write', () => {
+    const originalError = console.error;
 
-      const Transform = ecsComponents.Transform(mocked.engine);
-      const entity = mocked.engine.addEntity();
-      const broken = breakCompositeWrites(mocked.fs);
+    beforeEach(async () => {
+      console.error = () => {};
+      await completeTransaction('tx-1');
+      await completeTransaction('tx-2');
+      save.mockRejectedValueOnce(new Error('EBUSY: resource busy or locked'));
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL);
+    });
 
-      Transform.createOrReplace(entity, { position: { x: 5, y: 0, z: 0 } });
-      await mocked.engine.update(1);
-      await wait(300);
+    afterEach(() => {
+      console.error = originalError;
+    });
 
-      await expect(rpc.save({}, {} as any)).rejects.toThrow(/EBUSY/);
+    it('should stay dirty', () => {
+      expect(provider.isDirty()).toBe(true);
+    });
 
-      broken.stop();
-      await rpc.save({}, {} as any);
+    it('should let the next save write without rethrowing the old failure', async () => {
+      await provider.saveComposite(true);
 
-      expect(positionOf(await readComposite(mocked.fs), entity)).toMatchObject({ x: 5 });
+      expect(provider.isDirty()).toBe(false);
+    });
+  });
+
+  describe('when several callers save at once', () => {
+    let inFlight: number;
+    let maxInFlight: number;
+
+    beforeEach(async () => {
+      inFlight = 0;
+      maxInFlight = 0;
+      save.mockImplementation(async () => {
+        inFlight++;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise(resolve => setTimeout(resolve, 10));
+        inFlight--;
+      });
+
+      const saves = [
+        provider.saveComposite(true),
+        provider.saveComposite(true),
+        provider.saveComposite(true),
+      ];
+      await vi.advanceTimersByTimeAsync(50);
+      await Promise.all(saves);
+    });
+
+    it('should write one at a time', () => {
+      expect(save).toHaveBeenCalledTimes(3);
+      expect(maxInFlight).toBe(1);
     });
   });
 });
