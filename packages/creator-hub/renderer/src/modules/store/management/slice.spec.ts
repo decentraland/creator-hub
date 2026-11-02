@@ -467,6 +467,15 @@ describe('management slice', () => {
   });
 
   describe('fetchWorldSettings', () => {
+    it('should keep the cached settings when a refetch gets no answer', () => {
+      const arg = { worldName: TEST_WORLD_NAME };
+      store.dispatch(fetchWorldSettings.pending('r1', arg));
+      store.dispatch(fetchWorldSettings.fulfilled({ title: 'Plaza' }, 'r1', arg));
+      store.dispatch(fetchWorldSettings.fulfilled(null, 'r2', arg));
+
+      expect(store.getState().management.worldSettings.settings).toEqual({ title: 'Plaza' });
+    });
+
     it('should update settings and set status to succeeded when fetching succeeds', async () => {
       const mockSettings = {
         name: TEST_WORLD_NAME,

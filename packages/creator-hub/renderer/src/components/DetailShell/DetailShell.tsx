@@ -131,7 +131,8 @@ export function DetailShell({ title, basePath, people, menu, tabs, activeTab, ch
   useEffect(() => {
     if (!draft?.dirty) return;
     const guardLink = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey) return;
+      const modified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+      if (event.defaultPrevented || event.button !== 0 || modified) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
       const link = target.closest('a[href]');
@@ -142,16 +143,8 @@ export function DetailShell({ title, basePath, people, menu, tabs, activeTab, ch
       event.stopPropagation();
       setExit({ path: href, replace: false, saveRequested: false });
     };
-    const guardUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
     document.addEventListener('click', guardLink, true);
-    window.addEventListener('beforeunload', guardUnload);
-    return () => {
-      document.removeEventListener('click', guardLink, true);
-      window.removeEventListener('beforeunload', guardUnload);
-    };
+    return () => document.removeEventListener('click', guardLink, true);
   }, [draft?.dirty]);
 
   useEffect(() => {

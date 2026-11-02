@@ -225,6 +225,30 @@ describe('DetailShell', () => {
 
       expect(guard()).toBeTruthy();
       expect(location()).toBe('/manage/land/96%2C15/details');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+      expect(location()).toBe('/manage');
+    });
+
+    it('should leave a modified click to the browser', () => {
+      renderShell();
+      edit('Fixture Plaza');
+
+      for (const modifier of ['shiftKey', 'altKey', 'metaKey', 'ctrlKey'])
+        fireEvent.click(screen.getByRole('link', { name: 'Navbar link' }), { [modifier]: true });
+
+      expect(guard()).toBeNull();
+    });
+
+    it('should never block closing or reloading the window', () => {
+      renderShell();
+      edit('Fixture Plaza');
+
+      const unload = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(unload);
+
+      expect(unload.defaultPrevented).toBe(false);
     });
 
     it('should stay, keeping the changes, when the question is dismissed', async () => {

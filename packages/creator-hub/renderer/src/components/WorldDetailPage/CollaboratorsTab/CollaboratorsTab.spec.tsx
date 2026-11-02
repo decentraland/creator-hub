@@ -303,6 +303,23 @@ describe('World CollaboratorsTab', () => {
       expect(screen.getByRole('button', { name: 'Confirm' })).toHaveProperty('disabled', false);
     });
 
+    it('should retry from what the server kept after a partly failed save', async () => {
+      await renderTab();
+      api.fetchParcelsPermission.mockResolvedValue({ parcels: ['1,0'], total: 1 });
+      api.deleteParcelsPermission.mockResolvedValueOnce(false);
+
+      pick(CAL_NAME, 'Custom parcels…');
+      await screen.findByRole('dialog', { name: 'Update parcels' });
+      act(() => clickParcel(0, 0));
+      act(() => clickParcel(1, 0));
+      api.fetchParcelsPermission.mockResolvedValue({ parcels: ['0,0', '1,0'], total: 2 });
+      await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Confirm' })));
+      await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Confirm' })));
+
+      expect(api.postParcelsPermission).toHaveBeenCalledTimes(1);
+      expect(api.deleteParcelsPermission).toHaveBeenCalledTimes(2);
+    });
+
     it('should let a World with no scenes pick any parcel in its bounds', async () => {
       await renderTab({ ...MIXED, scenes: [] });
 

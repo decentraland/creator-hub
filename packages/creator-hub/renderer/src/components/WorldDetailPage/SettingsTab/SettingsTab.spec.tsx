@@ -209,12 +209,23 @@ describe('World SettingsTab', () => {
   });
 
   describe('when both spawn coordinates are cleared', () => {
-    it('should not offer to save an unsupported clear', async () => {
+    it('should offer CANCEL but block SAVE on an unsupported clear', async () => {
       await renderTab();
       fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '' } });
       fireEvent.change(screen.getByRole('textbox', { name: 'Y' }), { target: { value: '' } });
 
-      expect(save()).toBeNull();
+      expect(save()).toHaveProperty('disabled', true);
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+  });
+
+  describe('when one spawn coordinate is cleared', () => {
+    it('should offer CANCEL but block SAVE', async () => {
+      await renderTab();
+      fireEvent.change(screen.getByRole('textbox', { name: 'Y' }), { target: { value: '' } });
+
+      expect(save()).toHaveProperty('disabled', true);
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     });
   });
 
@@ -247,6 +258,41 @@ describe('World SettingsTab', () => {
 
       expect(screen.getByRole('textbox', { name: 'X' })).toHaveProperty('value', '5');
       expect(save()).toBeTruthy();
+    });
+
+    it('should keep a half-typed spawn when a refetch finishes', async () => {
+      const store = await renderTab({ ...saved, spawnCoordinates: undefined });
+      let resolve!: (value: WorldSettings) => void;
+      api.fetchWorldSettings.mockReturnValueOnce(
+        new Promise<WorldSettings>(done => (resolve = done)),
+      );
+      const request = store.dispatch(refetchWorldSettings({ worldName: 'plaza.dcl.eth' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '7' } });
+
+      await act(async () => {
+        resolve({ ...saved, spawnCoordinates: undefined });
+        await request;
+      });
+
+      expect(screen.getByRole('textbox', { name: 'X' })).toHaveProperty('value', '7');
+    });
+
+    it('should take a refetched value for a field left alone', async () => {
+      const store = await renderTab();
+      let resolve!: (value: WorldSettings) => void;
+      api.fetchWorldSettings.mockReturnValueOnce(
+        new Promise<WorldSettings>(done => (resolve = done)),
+      );
+      const request = store.dispatch(refetchWorldSettings({ worldName: 'plaza.dcl.eth' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '5' } });
+
+      await act(async () => {
+        resolve({ ...saved, spawnCoordinates: '3,9' });
+        await request;
+      });
+
+      expect(screen.getByRole('textbox', { name: 'X' })).toHaveProperty('value', '5');
+      expect(screen.getByRole('textbox', { name: 'Y' })).toHaveProperty('value', '9');
     });
   });
 

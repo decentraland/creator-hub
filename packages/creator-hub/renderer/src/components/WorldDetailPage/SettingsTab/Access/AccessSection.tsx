@@ -168,6 +168,7 @@ export function AccessSection({ worldName }: { worldName: string }) {
           <InvitedList
             wallets={invitedWallets}
             communities={invitedCommunities}
+            disabled={writing}
             onRemove={removed => write(() => actions.remove(removed))}
           />
         </>

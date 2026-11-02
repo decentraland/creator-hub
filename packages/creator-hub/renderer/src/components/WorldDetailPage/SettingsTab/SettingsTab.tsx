@@ -19,7 +19,7 @@ function SettingsForm({ worldName, saved }: { worldName: string; saved: WorldSet
     saved,
     toDraft: toSettingsDraft,
     changesOf: settingsChanges,
-    valid: settingsValid,
+    valid: current => settingsValid(current) && (!!current.x || !saved.spawnCoordinates),
   });
   const edit = (patch: Partial<typeof draft>) => setDraft(current => ({ ...current, ...patch }));
 

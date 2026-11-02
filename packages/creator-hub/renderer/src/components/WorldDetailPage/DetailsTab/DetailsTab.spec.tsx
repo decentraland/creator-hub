@@ -224,6 +224,55 @@ describe('World DetailsTab', () => {
       expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
     });
 
+    it('should settle once a new thumbnail is saved', async () => {
+      await renderTab();
+      const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+      fireEvent.change(input, {
+        target: { files: [new File(['png'], 'thumb.png', { type: 'image/png' })] },
+      });
+      await screen.findByRole('button', { name: 'Save' });
+      fetchWorldSettings.mockResolvedValue({
+        ...saved,
+        thumbnail: 'https://content.example/new.png',
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      });
+
+      expect(putWorldSettings).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    });
+
+    it('should settle when the server normalises a saved value', async () => {
+      await renderTab();
+      edit(nameField(), 'Fixture Plaza ');
+      fetchWorldSettings.mockResolvedValue({ ...saved, title: 'Fixture Plaza' });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      });
+
+      expect(nameField()).toHaveProperty('value', 'Fixture Plaza');
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    });
+
+    it('should keep what is typed while a save is in flight', async () => {
+      await renderTab();
+      let finish!: (value: { success: boolean }) => void;
+      putWorldSettings.mockReturnValueOnce(new Promise(done => (finish = done)));
+      edit(nameField(), 'Fixture Plaza');
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      edit(descriptionField(), 'A bigger square');
+      fetchWorldSettings.mockResolvedValue({ ...saved, title: 'Fixture Plaza' });
+
+      await act(async () => finish({ success: true }));
+
+      expect(nameField()).toHaveProperty('value', 'Fixture Plaza');
+      expect(descriptionField()).toHaveProperty('value', 'A bigger square');
+      expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+    });
+
     it('should block SAVE over a limit and say so', async () => {
       await renderTab();
       edit(descriptionField(), 'x'.repeat(141));

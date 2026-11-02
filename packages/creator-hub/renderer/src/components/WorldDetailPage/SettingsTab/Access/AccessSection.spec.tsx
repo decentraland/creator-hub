@@ -328,6 +328,10 @@ describe('AccessSection', () => {
       );
       fireEvent.click(screen.getByRole('button', { name: 'Add' }));
       expect(api.postPermissionType).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('button', { name: 'Remove 0x0000…00c3' })).toHaveProperty(
+        'disabled',
+        true,
+      );
 
       await act(async () => complete(true));
     });

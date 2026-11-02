@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
@@ -134,6 +134,8 @@ function renderPage(path: string) {
               element={<WorldDetailPage />}
             />
           </Routes>
+          <Link to="/manage/world/plaza.dcl.eth/details">Go to plaza</Link>
+          <Link to="/manage/world/deep.dcl.eth/details">Go to deep</Link>
         </ThemeProvider>
       </MemoryRouter>
     </Provider>,
@@ -259,6 +261,26 @@ describe('WorldDetailPage', () => {
 
       expect(
         await screen.findByRole('heading', { name: 'This World is no longer in your list.' }),
+      ).toBeTruthy();
+    });
+
+    it('should try resolving it again after visiting another World', async () => {
+      getContentSrcUrl.mockImplementationOnce(() => {
+        throw new Error('Unavailable');
+      });
+      fetchWorldSettings.mockResolvedValueOnce({
+        title: 'Deep World',
+        thumbnailHash: 'QmThumbnail',
+      } as never);
+      renderPage('/manage/world/deep.dcl.eth/details');
+      await screen.findByRole('heading', { name: 'This World is no longer in your list.' });
+
+      fireEvent.click(screen.getByRole('link', { name: 'Go to plaza' }));
+      await screen.findByRole('heading', { level: 1, name: 'Manage - Fixture Plaza' });
+      fireEvent.click(screen.getByRole('link', { name: 'Go to deep' }));
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Manage - Deep World' }),
       ).toBeTruthy();
     });
   });

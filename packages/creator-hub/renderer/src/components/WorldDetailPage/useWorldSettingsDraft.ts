@@ -8,7 +8,23 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { useDraft } from '../DetailShell';
 
-export function useWorldSettingsDraft<D>({
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+const keysOf = <D extends object>(...drafts: D[]) =>
+  [...new Set(drafts.flatMap(draft => Object.keys(draft)))] as (keyof D)[];
+
+const differs = <D extends object>(a: D, b: D) => keysOf(a, b).some(key => !same(a[key], b[key]));
+
+/** `next`, keeping every field of `draft` the user changed since `pristine`. */
+function rebase<D extends object>(draft: D, pristine: D, next: D): D {
+  const rebased = { ...next };
+  for (const key of keysOf(draft, pristine))
+    if (!same(draft[key], pristine[key])) rebased[key] = draft[key];
+  return rebased;
+}
+
+/** A World settings form's draft on the DetailShell's CANCEL/SAVE bar. */
+export function useWorldSettingsDraft<D extends object>({
   worldName,
   saved,
   toDraft,
@@ -25,24 +41,32 @@ export function useWorldSettingsDraft<D>({
   const { pushGeneric } = useSnackbar();
   const [base, setBase] = useState(saved);
   const [draft, setDraft] = useState(() => toDraft(saved));
+  const [pristine, setPristine] = useState(draft);
   const [saving, setSaving] = useState(false);
 
   if (saved !== base) {
+    const next = toDraft(saved);
     setBase(saved);
-    if (Object.keys(changesOf(draft, base)).length === 0) setDraft(toDraft(saved));
+    setPristine(next);
+    setDraft(rebase(draft, pristine, next));
   }
 
-  const changes = changesOf(draft, saved);
   useDraft({
-    dirty: Object.keys(changes).length > 0,
+    dirty: differs(draft, toDraft(saved)),
     valid: valid(draft) && !saving,
     onCancel: () => setDraft(toDraft(saved)),
     onSave: () => {
       setSaving(true);
-      dispatch(managementActions.updateWorldSettings({ worldName, worldSettings: changes }))
+      setPristine(draft);
+      dispatch(
+        managementActions.updateWorldSettings({
+          worldName,
+          worldSettings: changesOf(draft, saved),
+        }),
+      )
         .unwrap()
         .then(() => pushGeneric('success', t('world_detail.details.saved')))
-        .catch(() => undefined)
+        .catch(() => setPristine(toDraft(saved)))
         .finally(() => setSaving(false));
     },
   });

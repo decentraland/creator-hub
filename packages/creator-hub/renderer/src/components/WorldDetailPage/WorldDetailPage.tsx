@@ -44,6 +44,8 @@ export function WorldDetailPage() {
     if (listed) setResolved(listed);
   }, [listed]);
 
+  useEffect(() => setResolutionFailure(null), [name]);
+
   useEffect(() => {
     if (isSignedIn && wallet && status === 'idle')
       dispatch(managementActions.fetchAllManagedProjectsData({ address: wallet }));

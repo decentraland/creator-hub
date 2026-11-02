@@ -639,7 +639,7 @@ const slice = createSlice({
       })
       .addCase(fetchWorldScenes.pending, (state, action) => {
         if (state.worldSettings.worldName !== action.meta.arg.worldName) {
-          state.worldSettings.settings = {} as WorldSettings;
+          state.worldSettings.settings = {};
           state.worldSettings.scenes = [];
           state.worldSettings.status = 'loading';
         }
@@ -651,7 +651,7 @@ const slice = createSlice({
       })
       .addCase(fetchWorldSettings.pending, (state, action) => {
         if (state.worldSettings.worldName !== action.meta.arg.worldName) {
-          state.worldSettings.settings = {} as WorldSettings;
+          state.worldSettings.settings = {};
         }
         state.worldSettings.worldName = action.meta.arg.worldName;
         state.worldSettings.status = 'loading';
@@ -659,7 +659,7 @@ const slice = createSlice({
       })
       .addCase(fetchWorldSettings.fulfilled, (state, action) => {
         if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
-        state.worldSettings.settings = action.payload ?? {};
+        state.worldSettings.settings = action.payload ?? state.worldSettings.settings;
         state.worldSettings.status = 'succeeded';
         state.worldSettings.error = null;
       })
