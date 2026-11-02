@@ -245,7 +245,13 @@ export const fetchENSList = createAsyncThunk(
     const ensNames = await thunkApi.dispatch(fetchENS(payload)).unwrap();
     const contributableNames = await thunkApi.dispatch(fetchContributableNames(payload)).unwrap();
 
-    return [...dclNames, ...ensNames, ...contributableNames];
+    const owned = [...dclNames, ...ensNames];
+    const ownedSubdomains = new Set(owned.map(({ subdomain }) => subdomain));
+
+    return [
+      ...owned,
+      ...contributableNames.filter(({ subdomain }) => !ownedSubdomains.has(subdomain)),
+    ];
   },
 );
 

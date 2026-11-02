@@ -11,7 +11,8 @@ const name = (subdomain: string, content = '', owner = SELF): ENS =>
     subdomain,
     name: subdomain.split('.')[0],
     provider: ENSProvider.DCL,
-    nftOwnerAddress: owner,
+    nftOwnerAddress: SELF,
+    ensOwnerAddress: owner,
     content,
   }) as ENS;
 
@@ -80,6 +81,37 @@ describe('getDomainState', () => {
       expect(getDomainState([name('fixturethree.dcl.eth', '0xaaa')], context)).toEqual({
         kind: 'set',
         name: 'fixturethree.dcl.eth',
+        options: [{ subdomain: 'fixturethree.dcl.eth' }],
+      });
+    });
+  });
+
+  describe('when a NAME sits in the wallet but its ENS node was never reclaimed', () => {
+    it('should leave it out', () => {
+      expect(getDomainState([name('unclaimed.dcl.eth', '', '0xother')], context)).toEqual({
+        kind: 'empty',
+      });
+    });
+
+    describe('and it points at this LAND', () => {
+      it('should not show it as set', () => {
+        expect(
+          getDomainState(
+            [name('unclaimed.dcl.eth', '0xaaa', '0xother'), name('fixtureone.dcl.eth')],
+            context,
+          ),
+        ).toEqual({
+          kind: 'none',
+          options: [{ subdomain: 'fixtureone.dcl.eth', usedBy: 'fixtureone.dcl.eth' }],
+        });
+      });
+    });
+  });
+
+  describe('when the ENS node owner differs from the wallet only in letter case', () => {
+    it('should list the NAME', () => {
+      expect(getDomainState([name('fixturethree.dcl.eth', '', '0xME')], context)).toEqual({
+        kind: 'none',
         options: [{ subdomain: 'fixturethree.dcl.eth' }],
       });
     });
