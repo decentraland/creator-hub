@@ -63,38 +63,36 @@ export async function resolveContent(
       resolver: resolver.toLowerCase(),
     };
   } catch (error) {
-    const reverted =
-      error instanceof BaseError
-        ? error.walk(cause => cause instanceof ContractFunctionRevertedError)
-        : undefined;
-    if (
-      reverted instanceof ContractFunctionRevertedError &&
-      ['ResolverNotFound', 'ResolverNotContract', 'UnsupportedResolverProfile'].includes(
-        reverted.data?.errorName ?? '',
-      )
-    ) {
-      // No effective resolver was returned. The caller retains its direct registry fallback.
-      return { content: '' };
-    }
-    if (
-      reverted instanceof ContractFunctionRevertedError &&
-      reverted.data?.errorName === 'ResolverError'
-    ) {
-      try {
-        // An ancestor resolver can explicitly report that an unconfigured child is unreachable.
-        // Decode the full error: unrelated resolver failures and malformed payloads stay visible.
-        const inner = reverted.data.args?.[0];
-        if (
-          typeof inner === 'string' &&
-          decodeErrorResult({ abi: unreachableNameAbi, data: inner as `0x${string}` }).errorName ===
-            'UnreachableName'
-        ) {
-          return { content: '' };
-        }
-      } catch {
-        // Preserve the original resolver error if its inner payload is not UnreachableName.
-      }
-    }
+    // No effective resolver was returned. The caller retains its direct registry fallback.
+    if (isMissingENSRecordError(error)) return { content: '' };
     throw error;
+  }
+}
+
+/** Universal Resolver reverts that mean "no record", as opposed to resolver or gateway failures. */
+export function isMissingENSRecordError(error: unknown): boolean {
+  const reverted =
+    error instanceof BaseError
+      ? error.walk(cause => cause instanceof ContractFunctionRevertedError)
+      : undefined;
+  if (!(reverted instanceof ContractFunctionRevertedError)) return false;
+  const errorName = reverted.data?.errorName ?? '';
+  if (
+    ['ResolverNotFound', 'ResolverNotContract', 'UnsupportedResolverProfile'].includes(errorName)
+  ) {
+    return true;
+  }
+  if (errorName !== 'ResolverError') return false;
+  // An ancestor resolver can explicitly report that an unconfigured child is unreachable.
+  // Decode the full error: unrelated resolver failures and malformed payloads stay visible.
+  const inner = reverted.data?.args?.[0];
+  if (typeof inner !== 'string') return false;
+  try {
+    return (
+      decodeErrorResult({ abi: unreachableNameAbi, data: inner as `0x${string}` }).errorName ===
+      'UnreachableName'
+    );
+  } catch {
+    return false;
   }
 }

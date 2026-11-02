@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { zeroAddress } from 'viem';
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  encodeErrorResult,
+  parseAbi,
+  zeroAddress,
+} from 'viem';
 import { mainnet, sepolia } from 'viem/chains';
 import type * as Viem from 'viem';
 import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
@@ -9,9 +15,13 @@ import { createTestStore } from '../../../../tests/utils/testStore';
 import { ens as ensContract, dclRegistrar } from './contracts';
 import { actions, fetchDCLNames } from './slice';
 import { resolveContent } from './resolveContent';
+import type * as ResolveContent from './resolveContent';
 import { ENS_RECORD_TIMEOUT_MS } from './ccipRead';
 
-vi.mock('./resolveContent', () => ({ resolveContent: vi.fn() }));
+vi.mock('./resolveContent', async importOriginal => ({
+  ...(await importOriginal<typeof ResolveContent>()),
+  resolveContent: vi.fn(),
+}));
 
 const OWNER = '0x1111111111111111111111111111111111111111';
 const CURRENT_RESOLVER = '0x2222222222222222222222222222222222222222';
@@ -149,6 +159,38 @@ describe('when fetching DCL names', () => {
       'Failed to fetch ens address record',
       expect.any(Error),
     );
+  });
+
+  describe('when the name has no resolver of its own or on an ancestor', () => {
+    beforeEach(() => {
+      const abi = parseAbi(['error ResolverError(bytes errorData)']);
+      getEnsAddressMock.mockRejectedValue(
+        new BaseError('Contract call failed', {
+          cause: new ContractFunctionRevertedError({
+            abi,
+            data: encodeErrorResult({
+              abi,
+              errorName: 'ResolverError',
+              args: [
+                encodeErrorResult({
+                  abi: parseAbi(['error UnreachableName(bytes name)']),
+                  errorName: 'UnreachableName',
+                  args: ['0x046e616d650364636c0365746800'],
+                }),
+              ],
+            }),
+            functionName: 'resolveWithGateways',
+          }),
+        }),
+      );
+    });
+
+    it('should store an empty address record without logging a failure', async () => {
+      const [name] = await store.dispatch(fetchDCLNames({ address: OWNER })).unwrap();
+
+      expect(name.ensAddressRecord).toBe('');
+      expect(console.log).not.toHaveBeenCalled();
+    });
   });
 
   it('should read the content hash through the Universal Resolver', async () => {

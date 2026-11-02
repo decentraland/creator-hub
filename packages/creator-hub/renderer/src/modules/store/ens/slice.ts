@@ -13,7 +13,7 @@ import { createAsyncThunk } from '/@/modules/store/thunk';
 import { ENS as ensAbi, DCLRegistrar as dclRegistrarAbi } from './abis';
 import { ens as ensContract, ensUniversalResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
-import { resolveContent } from './resolveContent';
+import { isMissingENSRecordError, resolveContent } from './resolveContent';
 import { withENSRecordClient } from './ccipRead';
 import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
 
@@ -107,32 +107,33 @@ export const fetchDCLNames = createAsyncThunk(
         const tokenId = tokenIdRaw.toString().toLowerCase();
         let resolver = resolverAddress.toLowerCase();
 
-        try {
-          // Resolve through the name's current resolver (found by the ENS Universal Resolver,
-          // with CCIP-Read for offchain names), not a hardcoded one it may no longer use.
-          // `null` means the name has no address record.
-          const resolvedAddress = await withENSRecordClient(config.get('RPC_URL'), client =>
-            client.getEnsAddress({
-              name: subdomain,
-              universalResolverAddress,
-              strict: true,
-            }),
-          );
+        // Resolve through the name's current resolver (found by the ENS Universal Resolver,
+        // with CCIP-Read for offchain names), not a hardcoded one it may no longer use.
+        // Both lookups run at once so a stalled gateway costs one deadline per name, not two.
+        const [addressRecord, contentRecord] = await Promise.allSettled([
+          withENSRecordClient(config.get('RPC_URL'), client =>
+            client.getEnsAddress({ name: subdomain, universalResolverAddress, strict: true }),
+          ),
+          // An ancestor can resolve the name even without a direct registry resolver.
+          withENSRecordClient(config.get('RPC_URL'), client =>
+            resolveContent(client, subdomain, universalResolverAddress),
+          ),
+        ]);
+
+        if (addressRecord.status === 'fulfilled') {
+          const resolvedAddress = addressRecord.value;
           ensAddressRecord =
             resolvedAddress && resolvedAddress !== zeroAddress ? resolvedAddress : '';
-        } catch (error) {
-          console.log('Failed to fetch ens address record', error);
+        } else if (!isMissingENSRecordError(addressRecord.reason)) {
+          // Strict mode surfaces gateway/resolver outages; a name with no resolver is not one.
+          console.log('Failed to fetch ens address record', addressRecord.reason);
         }
 
-        try {
-          // An ancestor can resolve the name even without a direct registry resolver.
-          const record = await withENSRecordClient(config.get('RPC_URL'), client =>
-            resolveContent(client, subdomain, universalResolverAddress),
-          );
-          content = record.content;
-          resolver = record.resolver ?? resolver;
-        } catch (error) {
-          console.log('Failed to resolve ens content', error);
+        if (contentRecord.status === 'fulfilled') {
+          content = contentRecord.value.content;
+          resolver = contentRecord.value.resolver ?? resolver;
+        } else {
+          console.log('Failed to resolve ens content', contentRecord.reason);
         }
 
         return {

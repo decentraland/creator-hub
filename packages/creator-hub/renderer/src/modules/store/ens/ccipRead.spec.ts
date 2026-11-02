@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ENS_RECORD_TIMEOUT_MS, requestENSRecord, withENSRecordClient } from './ccipRead';
+import {
+  ENS_GATEWAY_MAX_RESPONSE_BYTES,
+  ENS_RECORD_TIMEOUT_MS,
+  requestENSRecord,
+  withENSRecordClient,
+} from './ccipRead';
 
 describe('when requesting an ENS gateway record', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -71,6 +76,28 @@ describe('when requesting an ENS gateway record', () => {
         ),
       ).rejects.toThrow('Unsupported ENS gateway URL');
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+  describe.each([
+    ['declares', { 'Content-Length': String(ENS_GATEWAY_MAX_RESPONSE_BYTES + 1) }],
+    ['streams without declaring', {}],
+  ])('and the gateway %s a body over the size cap', (_case, headers) => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(
+        new Response('0x' + '00'.repeat(ENS_GATEWAY_MAX_RESPONSE_BYTES), { headers }),
+      );
+    });
+    it('should reject without returning the body', async () => {
+      await expect(
+        requestENSRecord(
+          {
+            sender: '0x1111111111111111111111111111111111111111',
+            data: '0xabcd',
+            urls: ['https://gateway.example/{data}'],
+          },
+          controller.signal,
+        ),
+      ).rejects.toThrow('ENS gateway response too large');
     });
   });
   describe('and the first gateway fails', () => {

@@ -1,6 +1,8 @@
 import { createPublicClient, http, isHex, type Address, type Hex, type PublicClient } from 'viem';
 
 export const ENS_RECORD_TIMEOUT_MS = 15_000;
+/** Address and contenthash answers are a few hundred bytes; the cap stops a gateway streaming junk. */
+export const ENS_GATEWAY_MAX_RESPONSE_BYTES = 64 * 1024;
 
 type GatewayRequest = { data: Hex; sender: Address; urls: readonly string[] };
 
@@ -24,6 +26,35 @@ function gatewayUrl(template: string, sender: Address, data: Hex): URL {
   return url;
 }
 
+async function readBoundedText(response: Response): Promise<string> {
+  const tooLarge = () => new Error('ENS gateway response too large');
+  if (Number(response.headers.get('Content-Length')) > ENS_GATEWAY_MAX_RESPONSE_BYTES) {
+    await response.body?.cancel();
+    throw tooLarge();
+  }
+  if (!response.body) return '';
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > ENS_GATEWAY_MAX_RESPONSE_BYTES) {
+      await reader.cancel();
+      throw tooLarge();
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
 /** EIP-3668 GET/POST transport. viem still verifies sender and callback data onchain. */
 export async function requestENSRecord(
   { data, sender, urls }: GatewayRequest,
@@ -44,9 +75,10 @@ export async function requestENSRecord(
         headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
         body: method === 'POST' ? JSON.stringify({ data, sender }) : undefined,
       });
+      const body = await readBoundedText(response);
       const result = response.headers.get('Content-Type')?.startsWith('application/json')
-        ? (await response.json()).data
-        : await response.text();
+        ? JSON.parse(body)?.data
+        : body;
       if (!response.ok || typeof result !== 'string' || !isHex(result) || result.length % 2 !== 0) {
         throw new Error('Invalid ENS gateway response');
       }
