@@ -10,11 +10,9 @@ import {
 } from '/shared/types/projects';
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
-import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspace';
+import type { GetProjectsOpts, Workspace } from '/shared/types/workspace';
 import { FileSystemStorage } from '/shared/types/storage';
-import { fetch } from '/shared/fetch';
 import { isValidFolderName } from '/shared/utils';
-import { STUDIOS_ADMIN_URL } from '/shared/urls';
 
 import type { Services } from '../services';
 
@@ -273,37 +271,18 @@ export function initializeWorkspace(services: Services) {
   }
 
   /**
-   * Fetches a list of templates and filters them by scene type.
-   * @returns {Promise<Template[]>} A promise that resolves to an array of Template objects.
-   * @throws {Error} If the fetch request fails or if the response is not in the expected format.
-   */
-  async function getTemplates(): Promise<Template[]> {
-    try {
-      const response = await fetch(`${STUDIOS_ADMIN_URL}/items/resources?limit=-1`, {}, 5000);
-      const json = (await response.json()) as { data: Template[] };
-      const templates: Template[] = json.data;
-      return templates.filter($ => $.scene_type?.includes('Scene template'));
-    } catch (e) {
-      console.warn('[Preload] Could not get templates', e);
-      return [];
-    }
-  }
-
-  /**
    * Returns workspace info
    */
   async function getWorkspace(): Promise<Workspace> {
     const cfg = await config.getConfig();
-    const [[projects, missing], templates] = await Promise.all([
-      getProjects(cfg.workspace.paths, { omitOutdatedPackages: true }),
-      getTemplates(),
-    ]);
+    const [projects, missing] = await getProjects(cfg.workspace.paths, {
+      omitOutdatedPackages: true,
+    });
 
     return {
       sortBy: SortBy.NEWEST, // TODO: read from editor config file...
       projects,
       missing,
-      templates,
       settings: {
         ...cfg.settings,
         // TODO: implement migrations for config file...
@@ -629,7 +608,6 @@ export function initializeWorkspace(services: Services) {
     getSceneSourceFile,
     getPath,
     getProjects,
-    getTemplates,
     getWorkspace,
     getAvailable,
     createProject,
