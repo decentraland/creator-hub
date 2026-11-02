@@ -216,6 +216,20 @@ describe('World CollaboratorsTab', () => {
 
       expect(api.putPermissionType).toHaveBeenCalledWith(OWNER, WORLD, 'deployment', NEWCOMER);
     });
+
+    it('should not widen an existing parcel collaborator to every parcel, saying so', async () => {
+      const store = await renderTab();
+
+      fireEvent.change(screen.getByRole('textbox', { name: 'Wallet address or NAME' }), {
+        target: { value: BEN },
+      });
+      const add = screen.getByRole('button', { name: 'Add' });
+      await waitFor(() => expect(add).toHaveProperty('disabled', false), { timeout: 3000 });
+      await act(async () => fireEvent.click(add));
+
+      expect(api.putPermissionType).not.toHaveBeenCalled();
+      expect(notices(store)).toContain('info: This wallet is already a collaborator.');
+    });
   });
 
   describe('when a streamer is set to deploy nowhere', () => {
@@ -273,6 +287,20 @@ describe('World CollaboratorsTab', () => {
         '5,5',
       ]);
       expect(notices(store)).toContain('success: Parcels updated.');
+      expect(screen.queryByRole('dialog', { name: 'Update parcels' })).toBeNull();
+    });
+
+    it('should keep the picker and its selection when the save fails', async () => {
+      await renderTab();
+      api.postParcelsPermission.mockResolvedValue(false);
+
+      pick(CAL_NAME, 'Custom parcels…');
+      await screen.findByRole('dialog', { name: 'Update parcels' });
+      act(() => clickParcel(0, 0));
+      await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Confirm' })));
+
+      expect(screen.getByRole('dialog', { name: 'Update parcels' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Confirm' })).toHaveProperty('disabled', false);
     });
 
     it('should let a World with no scenes pick any parcel in its bounds', async () => {

@@ -195,6 +195,18 @@ describe('ParcelPickerModal', () => {
 
       expect(cursorAt(0, 0)).toBe(true);
     });
+
+    it('should block CONFIRM until the selection changes', () => {
+      renderModal(['0,0']);
+      const confirm = () => screen.getByRole('button', { name: 'Confirm' });
+      expect(confirm()).toHaveProperty('disabled', true);
+
+      act(() => map().focus());
+      press('ArrowRight');
+      press(' ');
+
+      expect(confirm()).toHaveProperty('disabled', false);
+    });
   });
 
   describe('when the choice is confirmed or cancelled', () => {

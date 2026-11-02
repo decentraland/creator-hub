@@ -95,7 +95,12 @@ export function useWorldCollaborators(worldName: string) {
     streamOpen: own && isStreamOpen(state.permissions),
     collaborators,
     scenes,
-    add: (address: string) => grant(Deployment, address.toLowerCase()),
+    add: (address: string) => {
+      const wallet = address.toLowerCase();
+      return collaborators.some(row => row.address.toLowerCase() === wallet)
+        ? Promise.resolve(false)
+        : grant(Deployment, wallet).then(() => true);
+    },
     deployEverywhere: (address: string) => grant(Deployment, address),
     deployNowhere: (address: string) => revoke(Deployment, address),
     setStream: (address: string, on: boolean) =>

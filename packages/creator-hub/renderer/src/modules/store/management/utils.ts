@@ -78,7 +78,8 @@ export async function fetchWorldSceneCoords(
   return toSceneCoords(await fetchWorldSceneList(worldsApi, worldName));
 }
 
-async function fetchWorldSceneList(
+/** Every scene of a World, read page by page; null when a page could not be read. */
+export async function fetchWorldSceneList(
   worldsApi: Worlds,
   worldName: string,
 ): Promise<WorldScene[] | null> {
@@ -177,14 +178,14 @@ export async function toStreamOnlyProject(
 /** A World resolved by its NAME, for a detail page whose World the loaded Manage lists miss. */
 export async function resolveWorldProject(
   worldsApi: Worlds,
-  ens: { subdomain: string; nftOwnerAddress: string },
+  ens: { subdomain: string; nftOwnerAddress?: string },
   address: string,
 ): Promise<ManagedProject> {
   const { access: _access, ...project } = await toStreamOnlyProject(worldsApi, ens.subdomain);
   return {
     ...project,
     role:
-      ens.nftOwnerAddress.toLowerCase() === address.toLowerCase()
+      ens.nftOwnerAddress?.toLowerCase() === address.toLowerCase()
         ? WorldRoleType.OWNER
         : WorldRoleType.COLLABORATOR,
     owner: ens.nftOwnerAddress,
@@ -439,7 +440,6 @@ export const getWorldPermissionsInitialState = (): WorldPermissionsState => ({
   permissions: null,
   summary: {},
   parcels: {},
-  loadingNewUser: false,
   status: 'idle',
   error: null,
 });

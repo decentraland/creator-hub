@@ -1,51 +1,27 @@
-import { useState } from 'react';
 import { InputAdornment } from 'decentraland-ui2';
 
-import { useDispatch } from '#store';
-import { useSnackbar } from '/@/hooks/useSnackbar';
 import type { WorldSettings } from '/@/lib/worlds';
-import { actions as managementActions } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
 
-import { useDraft } from '../../DetailShell';
 import { FieldTitle } from '../../LandDetailPage/DetailsTab/DetailsTab.styled';
 import { SelectCheckbox } from '../../LandDetailPage/SelectCheckbox';
 import { Loader } from '../../Loader';
 import { useWorldSettings } from '../useWorldSettings';
+import { useWorldSettingsDraft } from '../useWorldSettingsDraft';
 import { AccessSection } from './Access';
 import { settingsChanges, settingsValid, toSettingsDraft } from './settings';
 import { CheckRow, Note, Root, Row, SectionBlock, SmallInput } from './SettingsTab.styled';
 import { SkyboxField } from './SkyboxField';
 
 function SettingsForm({ worldName, saved }: { worldName: string; saved: WorldSettings }) {
-  const dispatch = useDispatch();
-  const { pushGeneric } = useSnackbar();
-  const [base, setBase] = useState(saved);
-  const [draft, setDraft] = useState(() => toSettingsDraft(saved));
-  const [saving, setSaving] = useState(false);
-
-  if (saved !== base) {
-    setBase(saved);
-    setDraft(toSettingsDraft(saved));
-  }
-
-  const changes = settingsChanges(draft, saved);
-  const edit = (patch: Partial<typeof draft>) => setDraft(current => ({ ...current, ...patch }));
-
-  const initial = toSettingsDraft(saved);
-  useDraft({
-    dirty: Object.keys(changes).length > 0 || draft.x !== initial.x || draft.y !== initial.y,
-    valid: settingsValid(draft) && !saving,
-    onCancel: () => setDraft(toSettingsDraft(saved)),
-    onSave: () => {
-      setSaving(true);
-      dispatch(managementActions.updateWorldSettings({ worldName, worldSettings: changes }))
-        .unwrap()
-        .then(() => pushGeneric('success', t('world_detail.details.saved')))
-        .catch(() => undefined)
-        .finally(() => setSaving(false));
-    },
+  const [draft, setDraft] = useWorldSettingsDraft({
+    worldName,
+    saved,
+    toDraft: toSettingsDraft,
+    changesOf: settingsChanges,
+    valid: settingsValid,
   });
+  const edit = (patch: Partial<typeof draft>) => setDraft(current => ({ ...current, ...patch }));
 
   const coordinate = (axis: 'x' | 'y') => (
     <SmallInput

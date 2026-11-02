@@ -20,7 +20,7 @@ type Removal = { wallets: string[]; communities: string[] };
 type Props = {
   wallets: string[];
   communities: string[];
-  onRemove: (removal: Removal) => Promise<unknown>;
+  onRemove: (removal: Removal) => Promise<boolean>;
 };
 
 const keyOf = (invite: Invite) => `${invite.kind}:${invite.id}`;
@@ -72,7 +72,7 @@ export function InvitedList({ wallets, communities, onRemove }: Props) {
     if (!removing) return;
     setBusy(true);
     try {
-      await onRemove(toRemoval(removing));
+      if (!(await onRemove(toRemoval(removing)))) return;
       setSelected(current => {
         const next = new Set(current);
         removing.forEach(invite => next.delete(keyOf(invite)));

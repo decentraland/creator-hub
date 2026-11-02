@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import { MenuItem } from 'decentraland-ui2';
 
@@ -58,6 +58,8 @@ export function AccessSection({ worldName }: { worldName: string }) {
   const permissions = useSelector(state => state.management.worldPermissions);
   const [pending, setPending] = useState<AccessType | null>(null);
   const [password, setPassword] = useState<'create' | 'change' | null>(null);
+  const [writing, setWriting] = useState(false);
+  const writingRef = useRef(false);
 
   useEffect(() => {
     void dispatch(fetchWorldPermissions({ worldName }));
@@ -67,6 +69,26 @@ export function AccessSection({ worldName }: { worldName: string }) {
   const access = loaded ? permissions.permissions?.access : undefined;
   const actions = useAccessActions(worldName, access);
   if (!access) return null;
+
+  const write = (action: () => Promise<unknown> | undefined): Promise<boolean> => {
+    if (writingRef.current) return Promise.resolve(false);
+    writingRef.current = true;
+    const result = action();
+    if (!result) {
+      writingRef.current = false;
+      return Promise.resolve(true);
+    }
+    setWriting(true);
+    return result
+      .then(
+        () => true,
+        () => false,
+      )
+      .finally(() => {
+        writingRef.current = false;
+        setWriting(false);
+      });
+  };
 
   const current = access.type as AccessType;
   const owner = permissions.owner.toLowerCase();
@@ -93,11 +115,11 @@ export function AccessSection({ worldName }: { worldName: string }) {
       return;
     }
     setPending(null);
-    void actions.changeType(type);
+    write(() => actions.changeType(type));
   };
 
   const pick = (type: AccessType) => {
-    if (type === current) return;
+    if (type === current || writingRef.current) return;
     if (erasesSomething) setPending(type);
     else apply(type);
   };
@@ -110,6 +132,7 @@ export function AccessSection({ worldName }: { worldName: string }) {
         <FieldTitle as="span">{t('world_detail.settings.access.label')}</FieldTitle>
         <AccessSelect
           value={shown}
+          disabled={writing}
           IconComponent={ChevronDownIcon}
           inputProps={{ 'aria-label': t('world_detail.settings.access.label') }}
           renderValue={value => typeText(value as AccessType)}
@@ -137,14 +160,15 @@ export function AccessSection({ worldName }: { worldName: string }) {
       {current === WorldPermissionType.AllowList && (
         <>
           <InviteForm
-            onAddWallet={address => void actions.addWallet(address)}
-            onAddCommunity={id => void actions.addCommunity(id)}
-            onAddCsv={data => void actions.addCsv(data)}
+            disabled={writing}
+            onAddWallet={address => write(() => actions.addWallet(address))}
+            onAddCommunity={id => write(() => actions.addCommunity(id))}
+            onAddCsv={data => write(() => actions.addCsv(data))}
           />
           <InvitedList
             wallets={invitedWallets}
             communities={invitedCommunities}
-            onRemove={actions.remove}
+            onRemove={removed => write(() => actions.remove(removed))}
           />
         </>
       )}
@@ -179,11 +203,13 @@ export function AccessSection({ worldName }: { worldName: string }) {
             setPassword(null);
             setPending(null);
           }}
-          onConfirm={secret => {
-            setPassword(null);
-            setPending(null);
-            void actions.setPassword(secret);
-          }}
+          onConfirm={secret =>
+            void write(() => actions.setPassword(secret)).then(done => {
+              if (!done) return;
+              setPassword(null);
+              setPending(null);
+            })
+          }
         />
       )}
     </Section>

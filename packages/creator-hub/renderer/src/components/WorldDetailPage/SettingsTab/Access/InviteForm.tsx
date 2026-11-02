@@ -32,6 +32,7 @@ const SEARCH_DELAY_MS = 300;
 type InviteTab = 'user' | 'community' | 'csv';
 
 type Props = {
+  disabled: boolean;
   onAddWallet: (address: string) => void;
   onAddCommunity: (id: string) => void;
   onAddCsv: (data: { addresses: string[]; communityIds: string[] }) => void;
@@ -283,11 +284,11 @@ function CsvPanel({ onAdd }: { onAdd: Props['onAddCsv'] }) {
 }
 
 /** The Invitation Only add area: a wallet, a community or a CSV, each added at once. */
-export function InviteForm({ onAddWallet, onAddCommunity, onAddCsv }: Props) {
+export function InviteForm({ disabled, onAddWallet, onAddCommunity, onAddCsv }: Props) {
   const [tab, setTab] = useState<InviteTab>('user');
   const panelId = useId();
   return (
-    <InviteBlock>
+    <InviteBlock disabled={disabled}>
       <InviteTabs
         value={tab}
         onChange={(_, next: InviteTab) => setTab(next)}

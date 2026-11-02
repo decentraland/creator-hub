@@ -61,11 +61,17 @@ export function Deploy(props: Props) {
   const { getDeployment, executeDeployment } = useDeploy();
   const { pushCustom } = useSnackbar();
   const worldScenes = useSelector(managementSelectors.getWorldScenes);
+  const names = useSelector(state => state.ens.data);
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
+  const worldName = project.worldConfiguration?.name;
+  const ownsWorld =
+    !!wallet &&
+    !!worldName &&
+    names[worldName]?.nftOwnerAddress?.toLowerCase() === wallet.toLowerCase();
 
   /** True if the project needs to undeploy existing world scenes before deploying the new one.
    * True when deploying to a single-scene world and there are existing scenes in the world that do not overlap with the project parcels. */
@@ -356,9 +362,7 @@ export function Deploy(props: Props) {
                   <Success
                     info={deployment.info}
                     url={shareUrl}
-                    worldName={
-                      deployment.info.isWorld ? project.worldConfiguration?.name : undefined
-                    }
+                    worldName={deployment.info.isWorld && ownsWorld ? worldName : undefined}
                     onClick={handleJumpIn}
                     onClose={props.onClose}
                   />

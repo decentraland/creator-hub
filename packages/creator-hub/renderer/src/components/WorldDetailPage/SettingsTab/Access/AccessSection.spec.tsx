@@ -243,6 +243,47 @@ describe('AccessSection', () => {
         'access',
         GUEST,
       );
+      expect(api.postPermissionType).not.toHaveBeenCalled();
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    });
+
+    it('should remove every selected invite in one write', async () => {
+      await renderSection(invited);
+
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Select all invited' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Remove selected' }));
+      await act(async () =>
+        fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Remove' })),
+      );
+
+      expect(api.deletePermissionType).not.toHaveBeenCalled();
+      expect(api.postPermissionType).toHaveBeenCalledTimes(1);
+      expect(api.postPermissionType).toHaveBeenCalledWith(
+        OWNER,
+        'plaza.dcl.eth',
+        'access',
+        'allow-list',
+        { wallets: [OWNER, COLLABORATOR], communities: [] },
+      );
+    });
+
+    it('should keep the selection when the removal fails', async () => {
+      await renderSection(invited);
+      api.postPermissionType.mockResolvedValue(false);
+      api.deletePermissionType.mockResolvedValue(false);
+      const selectAll = () =>
+        screen.getByRole<HTMLInputElement>('checkbox', {
+          name: 'Select all invited',
+          hidden: true,
+        });
+
+      fireEvent.click(selectAll());
+      fireEvent.click(screen.getByRole('button', { name: 'Remove selected' }));
+      await act(async () =>
+        fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Remove' })),
+      );
+
+      expect(selectAll().checked).toBe(true);
     });
 
     it('should add a community picked from the search', async () => {
@@ -267,6 +308,28 @@ describe('AccessSection', () => {
           communities: [CLUB],
         },
       );
+    });
+
+    it('should block another invitation until the access list refreshes', async () => {
+      let complete!: (value: boolean) => void;
+      api.postPermissionType.mockReturnValueOnce(new Promise<boolean>(done => (complete = done)));
+      await renderSection({ type: 'allow-list', wallets: [GUEST] });
+      fireEvent.click(screen.getByRole('tab', { name: 'Add Community' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Search' }), {
+        target: { value: 'fix' },
+      });
+      fireEvent.click(await screen.findByRole('option', { name: 'Fixture Club' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', { name: 'Add' }).closest('fieldset')?.hasAttribute('disabled'),
+        ).toBe(true),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+      expect(api.postPermissionType).toHaveBeenCalledTimes(1);
+
+      await act(async () => complete(true));
     });
 
     it('should add every wallet of a clean CSV, by its file name', async () => {
@@ -357,6 +420,24 @@ describe('AccessSection', () => {
         'shared-secret',
         { secret: 'abcdefg12' },
       );
+      expect(screen.queryByRole('dialog', { name: 'Create New Password' })).toBeNull();
+    });
+
+    it('should keep the dialog and the typed password when the write fails', async () => {
+      await renderSection({ type: 'unrestricted' });
+      api.postPermissionType.mockResolvedValue(false);
+      choose(/^Password Protected/);
+
+      fireEvent.change(screen.getByLabelText('Type your password'), {
+        target: { value: 'abcdefg12' },
+      });
+      fireEvent.change(screen.getByLabelText('Repeat your password'), {
+        target: { value: 'abcdefg12' },
+      });
+      await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Confirm' })));
+
+      expect(screen.getByRole('dialog', { name: 'Create New Password' })).toBeTruthy();
+      expect(screen.getByLabelText<HTMLInputElement>('Type your password').value).toBe('abcdefg12');
     });
   });
 

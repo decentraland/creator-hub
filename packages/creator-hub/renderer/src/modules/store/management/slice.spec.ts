@@ -126,7 +126,6 @@ vi.mock('/@/modules/store/ens', async importOriginal => {
   return {
     ...actual,
     fetchENSList: vi.fn().mockImplementation(({ address }) => {
-      // Return a thunk that reads from the current store state
       return (_dispatch: any, getState: any) => {
         const ensState = getState().ens;
         const ensArray = Object.values(ensState.data || {});
@@ -135,7 +134,6 @@ vi.mock('/@/modules/store/ens', async importOriginal => {
           payload: ensArray,
           meta: { arg: { address } },
         };
-        // Return promise-like object with unwrap method
         const promise: any = Promise.resolve(result);
         promise.unwrap = () => Promise.resolve(ensArray);
         return promise;
@@ -184,7 +182,6 @@ vi.mock('./utils', async importOriginal => ({
     permissions: null,
     summary: {},
     parcels: {},
-    loadingNewUser: false,
     status: 'idle',
     error: null,
   })),
@@ -235,7 +232,6 @@ describe('management slice', () => {
         permissions: null,
         summary: {},
         parcels: {},
-        loadingNewUser: false,
         status: 'idle',
         error: null,
       });
@@ -250,11 +246,9 @@ describe('management slice', () => {
     });
 
     it('should reset page to 0 when sortBy changes', () => {
-      // First set page to something other than 0
       store.dispatch(actions.setPage(5));
       expect(store.getState().management.page).toBe(5);
 
-      // Then change sortBy
       store.dispatch(actions.setSortBy(SortBy.LATEST));
       const state = store.getState().management;
       expect(state.page).toBe(0);
@@ -267,11 +261,9 @@ describe('management slice', () => {
     });
 
     it('should reset page to 0 when publishFilter changes', () => {
-      // First set page to something other than 0
       store.dispatch(actions.setPage(3));
       expect(store.getState().management.page).toBe(3);
 
-      // Then change publishFilter
       store.dispatch(actions.setPublishFilter(FilterBy.UNPUBLISHED));
       const state = store.getState().management;
       expect(state.page).toBe(0);
@@ -285,11 +277,9 @@ describe('management slice', () => {
     });
 
     it('should reset page to 0 when searchQuery changes', () => {
-      // First set page to something other than 0
       store.dispatch(actions.setPage(2));
       expect(store.getState().management.page).toBe(2);
 
-      // Then change searchQuery
       store.dispatch(actions.setSearchQuery('test'));
       const state = store.getState().management;
       expect(state.page).toBe(0);
@@ -526,6 +516,39 @@ describe('management slice', () => {
       const state = store.getState().management;
       expect(state.worldSettings.scenes.length).toBe(mockScenes.length);
     });
+
+    it('should read every page of a World with more than 100 scenes', async () => {
+      const scene = (index: number) => ({ entityId: `scene${index}`, parcels: [`${index},0`] });
+      mockWorldsAPI.fetchWorldScenes.mockImplementation(
+        async (_: string, { offset = 0 }: { offset?: number } = {}) => ({
+          scenes: Array.from({ length: Math.min(100, 150 - offset) }, (_, i) => scene(offset + i)),
+          total: 150,
+        }),
+      );
+
+      await store.dispatch(fetchWorldScenes({ worldName: TEST_WORLD_NAME }));
+
+      expect(store.getState().management.worldSettings.scenes).toHaveLength(150);
+    });
+
+    it('should clear the previous World settings before loading another World', () => {
+      store.dispatch(fetchWorldSettings.pending('r1', { worldName: 'first.dcl.eth' }));
+      store.dispatch(
+        fetchWorldSettings.fulfilled({ title: 'First World' }, 'r1', {
+          worldName: 'first.dcl.eth',
+        }),
+      );
+      store.dispatch(
+        fetchWorldScenes.fulfilled([{ entityId: 'old-scene' } as never], 'r1', {
+          worldName: 'first.dcl.eth',
+        }),
+      );
+      store.dispatch(fetchWorldScenes.pending('r2', { worldName: 'second.dcl.eth' }));
+
+      expect(store.getState().management.worldSettings.settings).toEqual({});
+      expect(store.getState().management.worldSettings.scenes).toEqual([]);
+      expect(store.getState().management.worldSettings.status).toBe('loading');
+    });
   });
 
   describe('fetchWorldPermissions', () => {
@@ -575,47 +598,6 @@ describe('management slice', () => {
   });
 
   describe('addAddressPermission', () => {
-    it('should set loadingNewUser to false after adding a new user to allow list', async () => {
-      store.dispatch({
-        type: fetchWorldPermissions.fulfilled.type,
-        payload: {
-          permissions: {
-            deployment: {
-              type: WorldPermissionType.AllowList,
-              wallets: [],
-            },
-          },
-          summary: {},
-          owner: TEST_ADDRESS,
-        },
-        meta: { arg: { worldName: TEST_WORLD_NAME } },
-      });
-
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockWorldsAPI.putPermissionType.mockResolvedValue(true);
-      mockWorldsAPI.getPermissions.mockResolvedValue({
-        permissions: {
-          deployment: {
-            type: WorldPermissionType.AllowList,
-            wallets: [TEST_WALLET_ADDRESS],
-          },
-        },
-        summary: {},
-        owner: TEST_ADDRESS,
-      } as WorldPermissionsResponse);
-
-      await store.dispatch(
-        addAddressPermission({
-          worldName: TEST_WORLD_NAME,
-          permissionName: 'deployment',
-          walletAddress: TEST_WALLET_ADDRESS,
-        }),
-      );
-
-      const state = store.getState().management;
-      expect(state.worldPermissions.loadingNewUser).toBe(false);
-    });
-
     it('should reject with error when no connected account is found', async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(null);
 
@@ -831,7 +813,6 @@ describe('management slice', () => {
 
     describe('worldName validation', () => {
       it('should update parcels when worldName matches', () => {
-        // Dispatch pending to set the worldName
         store.dispatch({
           type: fetchParcelsPermission.pending.type,
           meta: {
@@ -843,7 +824,6 @@ describe('management slice', () => {
           },
         });
 
-        // Dispatch fulfilled with matching worldName
         store.dispatch({
           type: fetchParcelsPermission.fulfilled.type,
           payload: {
@@ -870,7 +850,6 @@ describe('management slice', () => {
       });
 
       it('should not update parcels when worldName does not match on fulfilled', () => {
-        // Set up initial state with one worldName
         store.dispatch({
           type: fetchParcelsPermission.pending.type,
           meta: {
@@ -882,7 +861,6 @@ describe('management slice', () => {
           },
         });
 
-        // Try to dispatch fulfilled with a different worldName
         store.dispatch({
           type: fetchParcelsPermission.fulfilled.type,
           payload: {
@@ -899,15 +877,12 @@ describe('management slice', () => {
         });
 
         const state = store.getState().management;
-        // worldName should still be the original one
         expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
-        // Parcels should still be in loading state (from pending action)
         expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('loading');
         expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual([]);
       });
 
       it('should not update parcels when worldName does not match on rejected', () => {
-        // Set up initial state with one worldName
         store.dispatch({
           type: fetchParcelsPermission.pending.type,
           meta: {
@@ -919,7 +894,6 @@ describe('management slice', () => {
           },
         });
 
-        // Try to dispatch rejected with a different worldName
         store.dispatch({
           type: fetchParcelsPermission.rejected.type,
           error: { message: 'Failed to fetch parcels' },
@@ -933,14 +907,11 @@ describe('management slice', () => {
         });
 
         const state = store.getState().management;
-        // worldName should still be the original one
         expect(state.worldPermissions.worldName).toBe(TEST_WORLD_NAME);
-        // Parcels should still be in loading state (should not be set to failed)
         expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('loading');
       });
 
       it('should update parcels to failed when worldName matches on rejected', () => {
-        // Set up initial state
         store.dispatch({
           type: fetchParcelsPermission.pending.type,
           meta: {
@@ -952,7 +923,6 @@ describe('management slice', () => {
           },
         });
 
-        // Dispatch rejected with matching worldName
         store.dispatch({
           type: fetchParcelsPermission.rejected.type,
           error: { message: 'Failed to fetch parcels' },
@@ -992,7 +962,10 @@ describe('management slice', () => {
         TEST_WORLD_NAME,
         '0,0',
       );
-      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(TEST_WORLD_NAME);
+      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(
+        TEST_WORLD_NAME,
+        expect.anything(),
+      );
     });
 
     it('should throw error when unpublishing fails', async () => {
@@ -1052,7 +1025,10 @@ describe('management slice', () => {
         TEST_ADDRESS,
         TEST_WORLD_NAME,
       );
-      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(TEST_WORLD_NAME);
+      expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(
+        TEST_WORLD_NAME,
+        expect.anything(),
+      );
     });
 
     it('should throw error when unpublishing fails', async () => {
@@ -1160,13 +1136,11 @@ describe('management slice', () => {
         total: 2,
       };
 
-      // First page (page = 0)
       mockWorldsAPI.fetchWorlds.mockResolvedValueOnce(mockPage1);
       await store.dispatch(fetchWorlds({ address: TEST_ADDRESS }));
 
       expect(store.getState().management.projects).toHaveLength(1);
 
-      // Second page (page = 1)
       store.dispatch(actions.setPage(1));
       mockWorldsAPI.fetchWorlds.mockResolvedValueOnce(mockPage2);
       await store.dispatch(fetchWorlds({ address: TEST_ADDRESS }));
@@ -1258,7 +1232,6 @@ describe('management slice', () => {
 
   describe('fetchEmptyWorlds', () => {
     beforeEach(() => {
-      // Set up mock ENS data in state by dispatching an action
       const ensDataArray = [
         {
           subdomain: 'empty-world.dcl.eth',
@@ -1291,7 +1264,6 @@ describe('management slice', () => {
           content: '',
         },
       ];
-      // Simulate ENS data being loaded
       store.dispatch({
         type: 'ens/fetchENSList/fulfilled',
         payload: ensDataArray,
@@ -1300,15 +1272,14 @@ describe('management slice', () => {
     });
 
     it('should fetch unpublished worlds by checking scene counts via API', async () => {
-      // Mock API responses - empty-world has 0 scenes, published-world has 3 scenes, another-empty has 0 scenes
       mockWorldsAPI.fetchWorldScenes
-        .mockResolvedValueOnce({ scenes: [], total: 0 }) // empty-world.dcl.eth
-        .mockResolvedValueOnce({ scenes: [], total: 3 }) // published-world.dcl.eth (has scenes)
-        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+        .mockResolvedValueOnce({ scenes: [], total: 0 })
+        .mockResolvedValueOnce({ scenes: [], total: 3 })
+        .mockResolvedValueOnce({ scenes: [], total: 0 });
 
       const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
 
-      expect(result).toHaveLength(2); // Only 2 worlds with 0 scenes
+      expect(result).toHaveLength(2);
       expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
       expect(result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth')).toBeDefined();
       expect(
@@ -1317,7 +1288,6 @@ describe('management slice', () => {
     });
 
     it('should use cached scenesCount from existing projects when available', async () => {
-      // Add a project with known scenesCount to state by dispatching an action
       store.dispatch({
         type: fetchWorlds.fulfilled.type,
         payload: {
@@ -1332,7 +1302,7 @@ describe('management slice', () => {
                 description: '',
                 thumbnail: '',
                 lastPublishedAt: 0,
-                scenesCount: 0, // Cached value
+                scenesCount: 0,
               },
             },
           ],
@@ -1341,29 +1311,25 @@ describe('management slice', () => {
         meta: { arg: { address: TEST_ADDRESS } },
       });
 
-      // Mock API for the other two worlds only (first one uses cached value)
       mockWorldsAPI.fetchWorldScenes
-        .mockResolvedValueOnce({ scenes: [], total: 5 }) // published-world.dcl.eth
-        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+        .mockResolvedValueOnce({ scenes: [], total: 5 })
+        .mockResolvedValueOnce({ scenes: [], total: 0 });
 
       const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
 
-      // Should use cached value for empty-world, not call API for it
       expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledTimes(2);
       expect(result).toHaveLength(2);
       expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
     });
 
     it('should handle API errors gracefully and assume 0 scenes', async () => {
-      // Mock API to throw error for first world, return 0 for second, return 5 for third
       mockWorldsAPI.fetchWorldScenes
-        .mockRejectedValueOnce(new Error('API Error')) // empty-world.dcl.eth - error = 0 scenes
-        .mockResolvedValueOnce({ scenes: [], total: 3 }) // published-world.dcl.eth
-        .mockResolvedValueOnce({ scenes: [], total: 0 }); // another-empty.dcl.eth
+        .mockRejectedValueOnce(new Error('API Error'))
+        .mockResolvedValueOnce({ scenes: [], total: 3 })
+        .mockResolvedValueOnce({ scenes: [], total: 0 });
 
       const result = await store.dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS })).unwrap();
 
-      // Even with error, empty-world should be included (defaults to 0 scenes)
       expect(result).toHaveLength(2);
       expect(result.find((w: ManagedProject) => w.id === 'empty-world.dcl.eth')).toBeDefined();
       expect(result.find((w: ManagedProject) => w.id === 'another-empty.dcl.eth')).toBeDefined();
@@ -1417,7 +1383,6 @@ describe('management slice', () => {
     it('should handle case-insensitive address comparison for role assignment', async () => {
       mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
 
-      // Dispatch with uppercase address
       const result = await store
         .dispatch(fetchEmptyWorlds({ address: TEST_ADDRESS.toUpperCase() }))
         .unwrap();
@@ -1435,7 +1400,6 @@ describe('management slice', () => {
       mockWorldsAPI.putWorldSettings.mockResolvedValueOnce({ success: true });
       mockWorldsAPI.fetchWorldSettings.mockResolvedValueOnce(mockSettings);
 
-      // Need to mock fetchManagedProjectsFiltered call
       vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.fetchWorlds.mockResolvedValueOnce({ worlds: [], total: 0 });
 
@@ -1485,6 +1449,23 @@ describe('management slice', () => {
 
       expect(result.meta.requestStatus).toBe('rejected');
       expect(result.payload).toEqual({ message: 'Update failed' });
+    });
+
+    it('should keep a successful save when the settings refresh fails', async () => {
+      store.dispatch(
+        fetchWorldSettings.fulfilled({ title: 'Before' }, 'r1', { worldName: TEST_WORLD_NAME }),
+      );
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.putWorldSettings.mockResolvedValueOnce({ success: true });
+      mockWorldsAPI.fetchWorldSettings.mockRejectedValueOnce(new Error('Refresh failed'));
+
+      const result = await store.dispatch(
+        updateWorldSettings({ worldName: TEST_WORLD_NAME, worldSettings: { title: 'After' } }),
+      );
+
+      expect(result.meta.requestStatus).toBe('fulfilled');
+      expect(store.getState().management.worldSettings.settings.title).toBe('After');
+      expect(store.getState().management.worldSettings.status).toBe('succeeded');
     });
   });
 
@@ -1804,7 +1785,6 @@ describe('management slice', () => {
     });
 
     it('should return parcels state for specific address', () => {
-      // Dispatch pending first to set the worldName
       store.dispatch({
         type: fetchParcelsPermission.pending.type,
         meta: {

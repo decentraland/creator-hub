@@ -2,13 +2,9 @@ import { useRef, useState } from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import { MenuItem } from 'decentraland-ui2';
 
-import { useDispatch } from '#store';
-import { useSnackbar } from '/@/hooks/useSnackbar';
 import { SceneCategory, type WorldSettings } from '/@/lib/worlds';
-import { actions as managementActions } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
 
-import { useDraft } from '../../DetailShell';
 import { menuSurfaceStyles } from '../../Dropdown/component.styled';
 import { ChevronDownIcon, EditIcon } from '../../Icons';
 import { DESCRIPTION_MAX, NAME_MAX } from '../../LandDetailPage/DetailsTab/details';
@@ -16,6 +12,7 @@ import { DetailsField } from '../../LandDetailPage/DetailsTab/DetailsField';
 import { DomainSelect, Field, FieldTitle } from '../../LandDetailPage/DetailsTab/DetailsTab.styled';
 import { Loader } from '../../Loader';
 import { useWorldSettings } from '../useWorldSettings';
+import { useWorldSettingsDraft } from '../useWorldSettingsDraft';
 import { selectRowStyles } from '../../ManagePage/ViewBar/ViewBar.styled';
 import {
   CheckSlot,
@@ -64,38 +61,20 @@ function changesOf(draft: Draft, saved: WorldSettings): Partial<WorldSettings> {
 }
 
 function DetailsForm({ worldName, saved }: { worldName: string; saved: WorldSettings }) {
-  const dispatch = useDispatch();
-  const { pushGeneric } = useSnackbar();
   const fileInput = useRef<HTMLInputElement>(null);
-  const [base, setBase] = useState(saved);
-  const [draft, setDraft] = useState(() => toDraft(saved));
-  const [saving, setSaving] = useState(false);
   const [menuMaxHeight, setMenuMaxHeight] = useState<number>();
-
-  if (saved !== base) {
-    setBase(saved);
-    setDraft(toDraft(saved));
-  }
-
-  const changes = changesOf(draft, saved);
+  const [draft, setDraft] = useWorldSettingsDraft({
+    worldName,
+    saved,
+    toDraft,
+    changesOf,
+    valid: current =>
+      !tooLong(current.title, NAME_MAX) && !tooLong(current.description, DESCRIPTION_MAX),
+  });
   const errors = {
     name: tooLong(draft.title, NAME_MAX),
     description: tooLong(draft.description, DESCRIPTION_MAX),
   };
-
-  useDraft({
-    dirty: Object.keys(changes).length > 0,
-    valid: !errors.name && !errors.description && !saving,
-    onCancel: () => setDraft(toDraft(saved)),
-    onSave: () => {
-      setSaving(true);
-      dispatch(managementActions.updateWorldSettings({ worldName, worldSettings: changes }))
-        .unwrap()
-        .then(() => pushGeneric('success', t('world_detail.details.saved')))
-        .catch(() => undefined)
-        .finally(() => setSaving(false));
-    },
-  });
 
   const pickThumbnail = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

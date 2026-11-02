@@ -93,15 +93,19 @@ export function CollaboratorsTab({ worldName }: { worldName: string }) {
     else run(world.setStream(row.address, !row.stream));
   };
 
-  const savePicked = (chosen: string[]) => {
+  const savePicked = async (chosen: string[]) => {
     if (!picking) return;
     const { row, initial } = picking;
-    setPicking(null);
-    run(
-      world
-        .setParcels(row.address, chosen, initial)
-        .then(() => pushGeneric('success', t('tx.done.parcels_updated'))),
-    );
+    setBusy(true);
+    try {
+      await world.setParcels(row.address, chosen, initial);
+      setPicking(null);
+      pushGeneric('success', t('tx.done.parcels_updated'));
+    } catch {
+      return;
+    } finally {
+      setBusy(false);
+    }
   };
 
   const removeTitle = (rows: WorldCollaborator[]) => {
@@ -125,7 +129,16 @@ export function CollaboratorsTab({ worldName }: { worldName: string }) {
           <StreamNote id={noteId}>{t('world_detail.collaborators.stream_open')}</StreamNote>
         )}
         <AddRecipient
-          onAdd={recipient => run(world.add(recipient.address))}
+          onAdd={recipient =>
+            run(
+              world
+                .add(recipient.address)
+                .then(
+                  added =>
+                    added || pushGeneric('info', t('world_detail.collaborators.already_added')),
+                ),
+            )
+          }
           notice={
             collaborators.length >= MAX_COLLABORATORS
               ? t('world_detail.collaborators.full')
@@ -237,8 +250,9 @@ export function CollaboratorsTab({ worldName }: { worldName: string }) {
           scenes={world.scenes}
           initialParcels={picking.initial}
           allowed={WORLD_BOUNDS}
+          busy={busy}
           onCancel={() => setPicking(null)}
-          onConfirm={savePicked}
+          onConfirm={chosen => void savePicked(chosen)}
         />
       )}
       <DefaultModal

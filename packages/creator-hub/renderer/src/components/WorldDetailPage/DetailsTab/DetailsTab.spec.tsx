@@ -8,6 +8,7 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import type { WorldSettings } from '/@/lib/worlds';
 import type * as WorldsModule from '/@/lib/worlds';
+import { fetchWorldSettings as refetchWorldSettings } from '/@/modules/store/management/slice';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 
@@ -179,6 +180,19 @@ describe('World DetailsTab', () => {
       expect(notices(store)).toContain('success: Changes saved');
     });
 
+    it('should confirm a successful PUT even when its refresh fails', async () => {
+      const store = await renderTab();
+      fetchWorldSettings.mockRejectedValueOnce(new Error('Refetch failed'));
+      edit(nameField(), 'Fixture Plaza');
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      });
+
+      expect(notices(store)).toContain('success: Changes saved');
+      expect(nameField()).toHaveProperty('value', 'Fixture Plaza');
+    });
+
     it('should report a failed save with the existing error, and not confirm it', async () => {
       const store = await renderTab();
       putWorldSettings.mockResolvedValue({ success: false, error: 'Fixture failure' });
@@ -190,6 +204,24 @@ describe('World DetailsTab', () => {
 
       expect(notices(store)).toContain('error: Fixture failure');
       expect(notices(store)).not.toContain('success: Changes saved');
+      expect(nameField()).toHaveProperty('value', 'Fixture Plaza');
+      expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+    });
+
+    it('should keep an in-progress edit when a refetch finishes', async () => {
+      const store = await renderTab();
+      let resolve!: (value: WorldSettings) => void;
+      fetchWorldSettings.mockReturnValueOnce(new Promise<WorldSettings>(done => (resolve = done)));
+      const request = store.dispatch(refetchWorldSettings({ worldName: 'plaza.dcl.eth' }));
+      edit(nameField(), 'Fixture Plaza');
+
+      await act(async () => {
+        resolve({ ...saved });
+        await request;
+      });
+
+      expect(nameField()).toHaveProperty('value', 'Fixture Plaza');
+      expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
     });
 
     it('should block SAVE over a limit and say so', async () => {

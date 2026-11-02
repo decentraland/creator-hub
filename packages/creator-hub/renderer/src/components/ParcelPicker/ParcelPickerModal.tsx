@@ -18,6 +18,7 @@ type Props = {
   allowed: Allowed;
   onCancel: () => void;
   onConfirm: (parcels: string[]) => void;
+  busy?: boolean;
   next?: ModalStep;
 };
 
@@ -31,9 +32,12 @@ export function ParcelPickerModal({
   allowed,
   onCancel,
   onConfirm,
+  busy,
   next,
 }: Props) {
   const [selected, setSelected] = useState(initialParcels);
+  const changed =
+    selected.size !== initialParcels.size || [...selected].some(id => !initialParcels.has(id));
 
   if (next) {
     return (
@@ -52,7 +56,7 @@ export function ParcelPickerModal({
       secondary={{ label: t('modal.cancel'), onClick: onCancel }}
       primary={{
         label: t('modal.confirm'),
-        state: selected.size ? 'idle' : 'blocked',
+        state: busy ? 'busy' : selected.size && changed ? 'idle' : 'blocked',
         onClick: () => onConfirm([...selected]),
       }}
     >
