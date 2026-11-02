@@ -98,7 +98,7 @@ const Container: React.FC<React.PropsWithChildren<Props>> = props => {
       <div className="RightContent">
         {finalRightContent}
         {hasMenu && (
-          <MoreOptionsMenu>
+          <MoreOptionsMenu className="ContainerMenu">
             {clipboardEnabled ? (
               <Button onClick={onCopyValues}>
                 <CopyIcon /> Copy values

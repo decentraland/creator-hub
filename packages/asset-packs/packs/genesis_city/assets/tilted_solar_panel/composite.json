@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/tilted_solar_panel/tilted_solar_panel.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/security_camera_dome/security_camera_dome.glb"
+          }
+        }
+      }
+    }
+  ]
+}

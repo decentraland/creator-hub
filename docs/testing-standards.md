@@ -6,6 +6,7 @@ Project-specific patterns for tests in this repo. See also: [coding-standards.md
 
 - Test framework: **Vitest** (not Jest, though patterns are similar). Tests use `describe`/`it`/`beforeEach`.
 - Structure tests with `describe("when ...", () => { ... })` for context, `it("should ...", () => { ... })` for behavior.
+  `shared/tests/flags.spec.ts` predates this and is flat — don't infer the convention from the nearest neighbour; `shared/tests/scene-parser.spec.ts` and `shared/tests/config.spec.ts` conform.
 - Scope mocks and test data to the specific `describe` block that needs them (not globally).
 - Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
 - React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
@@ -118,6 +119,20 @@ Under happy-dom the whole subtree reports "There are no accessible roles", and
 `Block`, so query those by label (`getByLabelText`) or with
 `querySelector('[role="…"]')` — see `FlowField.spec.tsx`, `CallbackField.spec.tsx`.
 `getByRole` is fine on a bare control (`Pill.spec.tsx`).
+
+### Mocking `@dcl/sdk/ecs` with the real `@dcl/ecs`
+
+`vi.importActual('@dcl/ecs')` hands back the bare generated component
+definitions in place of the helper-wrapped ones: the star re-export of
+`components/generated/global.gen` shadows the module's own `Animator`,
+`AudioSource`, `TriggerArea`, `Material`… so calls like
+`Animator.playSingleAnimation` or `TriggerArea.setBox` are missing. Rebind each
+one from `ecs.components` before returning the mock, as `fakeSdkEcs` in
+`packages/asset-packs/test/script-harness.ts` does.
+
+`vi.resetModules()` does not re-run a `vi.mock` factory's module, so the engine
+singleton survives between tests. Reset the state a test depends on (players,
+captured handlers) instead of expecting a fresh engine.
 
 ### Asset-packs circular imports & vitest
 

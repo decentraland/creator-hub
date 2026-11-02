@@ -9,9 +9,15 @@ export function mapValueToInputAction(value: string): InputAction | undefined {
   return INPUT_ACTIONS.find($ => $.value === Number(value))?.value;
 }
 
+// `maxCameraDistance` stays optional: the proto's default is "none", and the
+// inspector doesn't model the field — defaulting it would write a real camera
+// distance limit into every pointer event.
+type PointerEventInfoDefaults = Required<Omit<PBPointerEvents_Info, 'maxCameraDistance'>> &
+  Pick<PBPointerEvents_Info, 'maxCameraDistance'>;
+
 export function getDefaultPointerEvent(
   def?: Partial<PBPointerEvents_Entry>,
-): PBPointerEvents_Entry & { eventInfo: Required<PBPointerEvents_Info> } {
+): PBPointerEvents_Entry & { eventInfo: PointerEventInfoDefaults } {
   return {
     eventType: def?.eventType ?? PointerEventType.PET_DOWN,
     eventInfo: {

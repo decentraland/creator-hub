@@ -3,9 +3,14 @@ import { Animator, AudioSource, InputAction, pointerEventsSystem } from '@dcl/sd
 import type { ActionCallback } from '~sdk/script-utils';
 
 export class Bell {
+  // Reactions subscribe here (via getAllScriptInstances + onEvent); ring() fans out to them.
+  private subs: Record<string, Array<(arg?: Entity) => void>> = {};
+
   /**
    * A bell that rings when clicked, playing its animation and sound. Other smart
    * items can also ring it.
+   *
+   * @event ring
    *
    * @param hoverText - Text shown when the player points at the bell.
    * @param sound - Name of an audio file inside this smart item's folder (e.g. bell.mp3), played when the bell rings. Leave empty for no sound.
@@ -61,5 +66,11 @@ export class Bell {
       AudioSource.playSound(this.entity, `${this.src}/${this.sound}`);
     }
     if (this.onRing) this.onRing();
+    for (const fn of this.subs.ring ?? []) fn();
+  }
+
+  /** Subscribe a reaction to this item's events (currently 'ring'). */
+  onEvent(name: string, fn: (arg?: Entity) => void) {
+    (this.subs[name] ??= []).push(fn);
   }
 }

@@ -23,6 +23,7 @@ export enum ErrorType {
   Redo = 'redo',
   ImportAsset = 'import-asset',
   RemoveAsset = 'remove-asset',
+  PartialRemoveAsset = 'partial-remove-asset',
   SaveThumbnail = 'save-thumbnail',
   GetThumbnails = 'get-thumbnails',
   CreateCustomAsset = 'create-custom-asset',
@@ -114,7 +115,15 @@ export const dataLayer = createSlice({
     clearRemoveAsset: (state, payload: PayloadAction<Asset>) => {
       delete state.removingAsset[payload.payload.path];
     },
+    removeAssets: (state, payload: PayloadAction<{ paths: string[]; folders?: string[] }>) => {
+      for (const path of payload.payload.paths) state.removingAsset[path] = true;
+    },
+    clearRemoveAssets: (state, payload: PayloadAction<{ paths: string[] }>) => {
+      for (const path of payload.payload.paths) delete state.removingAsset[path];
+    },
     saveThumbnail: (_state, _payload: PayloadAction<SaveFileRequest>) => {},
+    // A looping animated preview (WebP) kept beside the asset's still PNG thumbnail.
+    saveAnimatedThumbnail: (_state, _payload: PayloadAction<SaveFileRequest>) => {},
     getThumbnails: () => {},
     createCustomAsset: (
       _state,
@@ -181,7 +190,10 @@ export const {
   importAsset,
   removeAsset,
   clearRemoveAsset,
+  removeAssets,
+  clearRemoveAssets,
   saveThumbnail,
+  saveAnimatedThumbnail,
   getThumbnails,
   createCustomAsset,
   deleteCustomAsset,

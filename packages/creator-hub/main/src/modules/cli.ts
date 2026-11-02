@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { join } from 'path';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
@@ -12,12 +13,11 @@ import {
   CLIENT_NOT_INSTALLED_ERROR,
   isClientNotInstalledError,
 } from '/shared/types/client';
-import type { DeployOptions } from '/shared/types/deploy';
+import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 import { dynamicImport } from '/shared/dynamic-import';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { dclDeepLink, run, type Child } from './bin';
-import { getBundledNodePath } from './path';
 import { getAvailablePort } from './port';
 import { getWindow } from './window';
 import { getProjectId, track } from './analytics';
@@ -172,6 +172,7 @@ function getPreviewServerUrl(deepLinkUrl: string): string | null {
 export async function getMobilePreview(path: string): Promise<{ url: string; qr: string } | null> {
   const preview = previewCache.get(path);
   if (!isPreviewRunning(preview)) {
+    log.warn('[CLI] getMobilePreview: no running preview to build the QR from');
     return null;
   }
 
@@ -372,18 +373,28 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     opts = { ...opts, enableLandscapeTerrains: false };
   }
 
+  // A mobile-QR start ignores the client option. The phone needs a LAN-reachable server
+  // plus the `decentraland://open?preview=` deeplink, and only the Unity path prints that
+  // (`--mobile` serves the scene without opening the desktop client); `--bevy-web` always
+  // opens the browser client on top, which is not what a QR press asked for.
+  const isMobile = !!opts.mobile;
+  if (isMobile) opts = { ...opts, client: PREVIEW_CLIENT.DESKTOP };
+
   const preview = previewCache.get(path);
 
-  // If we have a preview running for this path, reuse it — but only if it's the
-  // same client. Switching client (Unity <-> Bevy) means a different launch, so
-  // tear the old one down and start fresh below. A mode switch (mobile QR <-> desktop
-  // Preview) also can't be reused: a mobile-mode preview never opened the desktop client,
-  // so a desktop Preview press must restart to actually launch it.
-  if (
-    isPreviewRunning(preview) &&
-    preview.opts.client === opts.client &&
-    preview.mobile === !!opts.mobile
-  ) {
+  // Any running preview (desktop client, Bevy tab, or an earlier QR start) already serves
+  // the scene, and a QR only needs that server — so a mobile-QR start reuses whatever is
+  // up instead of tearing down what the user has open. Decided here from the live process
+  // rather than in the renderer, whose isPreviewRunning only flips back on an explicit kill.
+  if (isPreviewRunning(preview) && isMobile) {
+    return path;
+  }
+
+  // Otherwise reuse a running preview only if it's the same client — switching client
+  // (Unity <-> Bevy) means a different launch, so tear the old one down and start fresh
+  // below — and not a mobile-QR one: it never opened the desktop client, so a desktop
+  // Preview press must restart to actually launch it.
+  if (isPreviewRunning(preview) && preview.opts.client === opts.client && !preview.mobile) {
     if (opts.client === PREVIEW_CLIENT.BEVY_WEB) {
       // The Bevy web client runs in the browser; sdk-commands opened the tab on
       // launch and there's no deep-link to re-issue. Re-open the stored URL so a
@@ -415,10 +426,6 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
   let stopConversionProgress = () => {};
 
   const isBevyWeb = opts.client === PREVIEW_CLIENT.BEVY_WEB;
-  // Mobile-QR start: `--mobile` makes sdk-commands serve the scene and print a capturable
-  // mobile deeplink without opening the desktop client. Only meaningful on the Unity path
-  // (the mobile app opens `decentraland://`); Bevy is web-only, so it keeps its own launch.
-  const isMobile = !!opts.mobile && !isBevyWeb;
 
   try {
     const extraArgs: string[] = [];
@@ -427,8 +434,9 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     // sdk-commands owns the asset-bundle sidecar: --asset-bundles boots it and injects
     // local-ab into the deeplink it fires. Missing binary or a sidecar that never comes
     // up degrades to raw GLTFs inside sdk-commands itself. The sidecar only applies to
-    // the Unity deep-link path — Bevy web has no deeplink to carry local-ab.
-    if (!isBevyWeb && opts.optimizedAssets) {
+    // the Unity deep-link path — neither the Bevy web URL nor the mobile QR deeplink
+    // carries local-ab.
+    if (!isBevyWeb && !isMobile && opts.optimizedAssets) {
       if (await supportsAssetBundles(path)) {
         extraArgs.push('--asset-bundles');
         withSidecar = true;
@@ -439,56 +447,58 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
       }
     }
 
-    // Unity launches via a `decentraland://` deep-link; Bevy (`--bevy-web`) runs
-    // the content server and opens the hosted web client in the browser itself,
-    // so it emits no deep-link — we wait for the server-ready line instead.
-    // On the Unity path, sdk-commands self-opens the client with the deeplink it prints
-    // once the preview is ready; the capture below is only for the cache (re-focus,
-    // option flips, mobile QR).
-    const args = isBevyWeb
-      ? ['start', '--bevy-web', ...generatePreviewArguments(opts)]
-      : [
-          'start',
-          '--explorer-alpha',
-          '--hub',
-          ...(isMobile ? ['--mobile'] : []),
-          ...extraArgs,
-          ...generatePreviewArguments(opts),
-          // `--mcp` (a boolean) is emitted by generatePreviewArguments from opts.mcp;
-          // pin the port too when the gateway asked for one, so it knows where to connect.
-          ...(opts.mcp && opts.mcpPort !== undefined ? ['--mcp-port', String(opts.mcpPort)] : []),
-        ];
+    // Three launches. Unity: sdk-commands self-opens the desktop client via the
+    // `decentraland://` deeplink it prints (captured below only for the cache: re-focus,
+    // option flips, mobile QR); every preview option (auth screen, terrains,
+    // multi-instance, mcp, the sidecar, --hub) is a parameter of THAT launch, so only this
+    // path takes them. Bevy (`--bevy-web`): it opens the hosted web client in the browser
+    // itself and prints no deeplink, so we wait for the browser URL it prints. Mobile
+    // (`--mobile`): it serves the scene and prints the LAN QR deeplink, opening no client
+    // at all. Both are bare.
+    const args = isMobile
+      ? ['start', '--mobile']
+      : isBevyWeb
+        ? ['start', '--bevy-web']
+        : [
+            'start',
+            '--explorer-alpha',
+            '--hub',
+            ...extraArgs,
+            ...generatePreviewArguments(opts),
+            // `--mcp` (a boolean) is emitted by generatePreviewArguments from opts.mcp;
+            // pin the port too when the gateway asked for one, so it knows where to connect.
+            ...(opts.mcp && opts.mcpPort !== undefined ? ['--mcp-port', String(opts.mcpPort)] : []),
+          ];
 
-    // Preview runs on the bundled Node binary rather than an Electron utility process. The
-    // multiplayer server sdk-commands spawns inherits this runtime, and its `isolated-vm`
-    // dependency has no build for Electron's module ABI. Falls back to the utility process when
-    // no real Node is around, which just leaves the multiplayer server unavailable as before.
-    // TEMPORARY: remove with the Bevy migration.
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args,
       cwd: path,
       workspace: path,
       env: await getEnv(path),
-      nodePath: getBundledNodePath(),
     });
 
     // registered before the deeplink resolves so the spawn can be cancelled mid-conversion
     previewCache.set(path, { child: process, url: '', opts, mobile: isMobile });
 
     if (isBevyWeb) {
-      // No deep-link on this path — sdk-commands prints this once the preview
-      // server is up and has already opened the Bevy client in the browser.
-      const serverReady = /Preview server is now running/i;
-      await process.waitFor(serverReady, /CliError|error:/i);
+      // No deep-link on this path — sdk-commands opens the Bevy client in the browser
+      // itself and prints the URL it opened. Wait for that URL line, not the earlier
+      // "Preview server is now running" one: the URL lands in a LATER stdout chunk, so
+      // reading the buffer on the server-ready line raced it and left the cached url
+      // empty — `isPreviewRunning` then reported the live preview as not running (a
+      // repeat Preview press respawned instead of refocusing, and the mobile QR bailed
+      // silently). Raced against process death like the Unity path, so a spawn that dies
+      // before printing rejects instead of leaving the inflight entry stuck.
+      const bevyUrlPattern = /https?:\/\/\S*bevy-web\S*/i;
+      const output = await Promise.race([
+        process.waitFor(bevyUrlPattern, /CliError|error:/i),
+        process.wait().then(() => {
+          throw new Error('Preview process exited before printing the Bevy web URL');
+        }),
+      ]);
 
-      // Store the browser URL sdk-commands opened so a repeat Preview click can
-      // reopen it (see the reuse fast-path above). Fall back to empty string if
-      // the line isn't in the buffer; `isPreviewRunning` also checks `url`.
-      const bevyUrl =
-        process
-          .stdall()
-          .join('')
-          .match(/https?:\/\/\S*bevy-web\S*/i)?.[0] ?? '';
+      // Stored so a repeat Preview click can reopen the tab (see the reuse fast-path above)
+      const bevyUrl = output.match(bevyUrlPattern)?.[0] ?? '';
       const entry = previewCache.get(path);
       if (entry?.child === process) entry.url = bevyUrl;
       return path;
@@ -630,6 +640,8 @@ export async function legacyDeploy({
   return port;
 }
 
+// ############################################################################################
+
 async function readDeployCommandFile(path: string) {
   return fs.readFile(
     join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
@@ -637,16 +649,32 @@ async function readDeployCommandFile(path: string) {
   );
 }
 
-async function shouldRunLegacyDeploy(path: string) {
-  const file = await readDeployCommandFile(path);
-  return !file.includes('--programmatic');
-}
+/** What the project's deploy command supports, read from its dist once per deploy. */
+export type DeployCommandSupport = {
+  /** Predates `--programmatic`, so it runs as a separate process. */
+  legacy: boolean;
+  multiScene: boolean;
+  /** Serves `/api/deploy`: `routes.js` beside the command, or `respond-async` in its help text. */
+  deployResource: boolean;
+  /** `arg` rejects unknown flags, so `--deploy-token` is only passed when declared. */
+  deployToken: boolean;
+};
 
-async function supportsMultiSceneDeploy(path: string) {
-  const file = await readDeployCommandFile(path);
-  return file.includes('--multi-scene');
+export async function getDeployCommandSupport(path: string): Promise<DeployCommandSupport> {
+  const index = await readDeployCommandFile(path);
+  const hasRoutes = await fs
+    .stat(join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/routes.js'))
+    .then(
+      () => true,
+      () => false,
+    );
+  return {
+    legacy: !index.includes('--programmatic'),
+    multiScene: index.includes('--multi-scene'),
+    deployResource: hasRoutes || index.includes('respond-async'),
+    deployToken: index.includes('--deploy-token'),
+  };
 }
-// ############################################################################################
 
 async function getComponents(path: string) {
   const filePath = join(path, 'node_modules', '@dcl/sdk-commands/dist/components/index.js');
@@ -662,26 +690,39 @@ async function runCommand(path: string, command: string, args: string[]) {
   return runSdkCommand(components, command, args);
 }
 
-export async function deploy({
+// The deploy start in flight. The next one waits for it, so it stops that CLI once it's tracked in
+// `deployServer` instead of leaving it running untracked.
+let deployStart: Promise<unknown> = Promise.resolve();
+
+export function deploy(options: DeployOptions): Promise<DeployServer> {
+  const start = deployStart.catch(() => undefined).then(() => startDeploy(options));
+  deployStart = start;
+  return start;
+}
+
+async function startDeploy({
   path,
   target,
   targetContent,
   language,
   chainId,
   wallet,
-}: DeployOptions): Promise<number> {
+}: DeployOptions): Promise<DeployServer> {
   if (deployServer) {
     await deployServer.stop();
   }
 
-  const isLegacyDeploy = await shouldRunLegacyDeploy(path);
-  if (isLegacyDeploy) {
+  const support = await getDeployCommandSupport(path);
+  if (support.legacy) {
     log.info('[CLI] Running legacy deploy');
-    return legacyDeploy({ path, target, targetContent, chainId, wallet });
+    return {
+      port: await legacyDeploy({ path, target, targetContent, chainId, wallet }),
+      supportsDeployResource: false,
+    };
   }
 
   const port = await getAvailablePort();
-  const multiScene = await supportsMultiSceneDeploy(path);
+  const deployToken = support.deployResource && support.deployToken ? randomUUID() : undefined;
 
   const { stop } = await runCommand(path, 'deploy', [
     '--dir',
@@ -693,11 +734,12 @@ export async function deploy({
     ...(targetContent ? ['--target-content', targetContent] : []),
     '--programmatic',
     '--yes',
-    ...(multiScene ? ['--multi-scene'] : []),
+    ...(support.multiScene ? ['--multi-scene'] : []),
     ...(language ? ['--language', language] : []),
+    ...(deployToken ? ['--deploy-token', deployToken] : []),
   ]);
 
   deployServer = { stop };
 
-  return port;
+  return { port, supportsDeployResource: support.deployResource, deployToken };
 }

@@ -86,13 +86,29 @@ function getValueAndTypeFromType(
         }
       }
       break;
-    case 'TSUnionType': // (e.g: string | undefined)
-      // TODO: what do we do with union types? for now, we'll return the first non-undefined type
+    case 'TSUnionType': {
+      // A union of string literals (e.g. `'box' | 'sphere'`) is a dropdown. Any other union
+      // (e.g. `string | undefined`) degrades to its first non-undefined member, as before.
+      const literals: string[] = [];
+      let onlyStringLiterals = true;
+      for (const subType of typeAnnotation.types) {
+        if (subType.type === 'TSUndefinedKeyword') continue;
+        if (subType.type === 'TSLiteralType' && subType.literal.type === 'StringLiteral') {
+          literals.push(subType.literal.value);
+        } else {
+          onlyStringLiterals = false;
+        }
+      }
+      if (onlyStringLiterals && literals.length > 0) {
+        return { type: 'enum', value: literals[0], options: literals };
+      }
       for (const subType of typeAnnotation.types) {
         if (subType.type !== 'TSUndefinedKeyword') {
           return getValueAndTypeFromType(subType);
         }
       }
+      break;
+    }
   }
 
   return { type: 'string', value: '' };
@@ -181,6 +197,25 @@ function extractParamTooltips(
   }
 
   return tooltips;
+}
+
+// A smart item declares the events its reactions can hook with `@event <name>` tags in the
+// class JSDoc — parsed here like @param/@action. Drives the inspector's Reactions section and
+// the AI reaction recipe, so the gate isn't a brittle per-item filename check.
+function extractEvents(comments?: { type: string; value: string }[] | undefined | null): string[] {
+  const events: string[] = [];
+  if (!comments) return events;
+  for (const comment of comments) {
+    if (comment.type !== 'CommentBlock') continue;
+    for (const rawLine of comment.value.split('\n')) {
+      const match = rawLine
+        .trim()
+        .replace(/^\*\s?/, '')
+        .match(/^@event\s+([A-Za-z0-9_-]+)/);
+      if (match && !events.includes(match[1])) events.push(match[1]);
+    }
+  }
+  return events;
 }
 
 function mergeTooltips(
@@ -279,12 +314,15 @@ function extractParamsFromFunctionParams(
 export type ScriptParseResult = {
   params: Record<string, ScriptParamUnion>;
   actions: ScriptAction[];
+  // Event names the script's reactions can hook (from `@event` JSDoc tags).
+  events: string[];
   error?: string;
 };
 
 export function getScriptParams(content: string): ScriptParseResult {
   let params: Record<string, ScriptParamUnion> = {};
   const actions: ScriptAction[] = [];
+  let events: string[] = [];
 
   try {
     const ast = parse(content, {
@@ -307,6 +345,7 @@ export function getScriptParams(content: string): ScriptParseResult {
         params = extractParamsFromFunctionParams(restParams);
 
         mergeTooltips(params, functionDeclaration.leadingComments);
+        events = extractEvents(functionDeclaration.leadingComments);
 
         break;
       }
@@ -334,6 +373,13 @@ export function getScriptParams(content: string): ScriptParseResult {
           mergeTooltips(params, constructor.leadingComments);
         }
 
+        // `@event` tags may sit on the export statement, the class, or the constructor JSDoc.
+        events = extractEvents([
+          ...(statement.leadingComments ?? []),
+          ...(classDeclaration.leadingComments ?? []),
+          ...(constructor?.leadingComments ?? []),
+        ]);
+
         // extract @action tagged methods
         for (const member of classDeclaration.body.body) {
           if (member.type === 'ClassMethod' && member.kind === 'method') {
@@ -360,10 +406,10 @@ export function getScriptParams(content: string): ScriptParseResult {
       }
     }
 
-    return { params, actions };
+    return { params, actions, events };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '';
     console.warn('Failed to parse script params:', error);
-    return { params, actions, error: errorMessage };
+    return { params, actions, events, error: errorMessage };
   }
 }

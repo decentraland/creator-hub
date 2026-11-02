@@ -62,7 +62,15 @@ jobs:
 
           if [[ "${{ github.ref }}" == "refs/heads/main" || ${{ inputs.inspector_changed }} == "false" ]]; then
             echo "Installing latest inspector version: ${{ inputs.inspector_version }}"
-            npm install @dcl/inspector@${{ inputs.inspector_version }}
+            # The inspector job published this version seconds ago and npm serves a CDN-cached
+            # packument for 300s, so resolution needs a forced revalidate and a wait longer than that.
+            for ((i = 1; i <= 10; i++)); do
+              npm install --prefer-online "@dcl/inspector@${{ inputs.inspector_version }}" && exit 0
+              echo "@dcl/inspector@${{ inputs.inspector_version }} not resolvable yet (attempt $i); retrying in 30s"
+              sleep 30
+            done
+            npm view @dcl/inspector versions --json | tail -5 || true
+            exit 1
           else
             echo "Installing inspector version from S3 bucket: ${{ inputs.inspector_s3_bucket_key }}"
             npm install ${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ inputs.inspector_s3_bucket_key }}

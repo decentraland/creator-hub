@@ -6,9 +6,22 @@
       "data": {
         "512": {
           "json": {
-            "position": { "x": 0, "y": 0, "z": 0 },
-            "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
-            "scale": { "x": 1, "y": 1, "z": 1 }
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0,
+              "w": 1
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
           }
         }
       }
@@ -44,7 +57,7 @@
               {
                 "path": "{assetPath}/PadlockScript.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"combination\":{\"type\":\"number\",\"optional\":false,\"value\":1234,\"tooltip\":\"The 4-digit combination that unlocks the padlock.\"},\"unlockedEntity\":{\"type\":\"entity\",\"optional\":false,\"value\":0,\"tooltip\":\"The smart item to activate when the correct combination is entered (e.g. a door or chest).\"},\"unlockedAction\":{\"type\":\"string\",\"optional\":true,\"value\":\"Open\",\"tooltip\":\"Name of the action to call on the unlocked smart item when the padlock is solved.\"}}}"
+                "layout": "{\"params\":{\"combination\":{\"type\":\"number\",\"optional\":false,\"value\":1234,\"tooltip\":\"The 4-digit combination that unlocks the padlock.\"},\"unlockedEntity\":{\"type\":\"entity\",\"optional\":false,\"value\":0,\"tooltip\":\"The smart item to activate when the correct combination is entered (e.g. a door or chest).\"},\"unlockedAction\":{\"type\":\"string\",\"optional\":true,\"value\":\"Open\",\"tooltip\":\"Name of the action to call on the unlocked smart item when the padlock is solved.\"}},\"events\":[\"unlock\"]}"
               }
             ]
           }

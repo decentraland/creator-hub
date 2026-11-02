@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import type { RefObject } from 'react';
 import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import cx from 'classnames';
-import { PreviewCamera, PreviewProjection } from '@dcl/schemas';
+import { PreviewCamera, PreviewMessageType, PreviewProjection, sendMessage } from '@dcl/schemas';
+import type { EmoteWithBlobs, WearableWithBlobs } from '@dcl/schemas';
 import { WearablePreview } from 'decentraland-ui';
 
 import { Loading } from '../Loading';
@@ -102,23 +104,65 @@ export function AssetPreview({ value, resources, onScreenshot, onLoad, isEmote }
   return <div className="assetPreview">{preview}</div>;
 }
 
+/** The preview rejects calls on a scene that a later update replaced; that update loads next. */
+function isSupersededRender(error: unknown) {
+  return error instanceof Error && /newer render/i.test(error.message);
+}
+
+/** The load the frame reports for its initial empty scene, before the model arrives. */
+async function isPlaceholderSceneLoad(wp: ReturnType<typeof WearablePreview.createController>) {
+  return (await wp.scene.getMetrics()).triangles === 0;
+}
+
+/** Resends `blob` on the preview frame's READY message; returns whether it was sent. */
+function useSendModelWhenReady(
+  containerRef: RefObject<HTMLDivElement>,
+  blob: WearableWithBlobs | EmoteWithBlobs,
+) {
+  const modelSent = useRef(false);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const frame = containerRef.current?.querySelector('iframe')?.contentWindow;
+      if (!frame || event.source !== frame) return;
+      if (event.data?.type !== PreviewMessageType.READY) return;
+      sendMessage(frame, PreviewMessageType.UPDATE, { options: { blob } });
+      modelSent.current = true;
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [containerRef, blob]);
+
+  return modelSent;
+}
+
 function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props) {
   const { state, finish } = usePreviewOutcome(onScreenshot);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const blob = useMemo(
+    () => (isEmote ? toEmoteWithBlobs(value, resources) : toWearableWithBlobs(value, resources)),
+    [value, resources, isEmote],
+  );
+  const modelSent = useSendModelWhenReady(containerRef, blob);
 
   const handleLoad = useCallback(async () => {
-    onLoad?.();
+    if (!modelSent.current) return;
     const wp = WearablePreview.createController(value.name);
     try {
       if (isEmote) {
         const middleOfEmote = (await wp.emote.getLength()) * 0.5;
         await wp.emote.goTo(middleOfEmote);
+      } else if (await isPlaceholderSceneLoad(wp)) {
+        return;
       }
+      onLoad?.();
       const screenshot = await wp.scene.getScreenshot(WIDTH, HEIGHT);
       setTimeout(() => finish(screenshot), 1000);
     } catch (error) {
+      if (isSupersededRender(error)) return;
       finish(undefined, error);
     }
-  }, [onLoad, value, isEmote, finish]);
+  }, [onLoad, value, isEmote, finish, modelSent]);
 
   const wearablePreviewExtraOptions = isEmote
     ? {
@@ -135,12 +179,13 @@ function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props)
   return (
     <>
       <div>{state === 'loading' && <Loading dimmer={false} />}</div>
-      <div className={cx('GltfPreview', { hidden: state === 'loading' })}>
+      <div
+        ref={containerRef}
+        className={cx('GltfPreview', { hidden: state === 'loading' })}
+      >
         <WearablePreview
           id={value.name}
-          blob={
-            isEmote ? toEmoteWithBlobs(value, resources) : toWearableWithBlobs(value, resources)
-          }
+          blob={blob}
           disableAutoRotate
           disableBackground
           {...wearablePreviewExtraOptions}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Box, CircularProgress } from 'decentraland-ui2';
 
-import type { AiMirrorState, AiProvider } from '/shared/types/ai';
+import type { AiAssetMention, AiAttachment, AiMirrorState, AiProvider } from '/shared/types/ai';
 
 import { ai as aiPreload } from '#preload';
 import { useDispatch } from '#store';
@@ -37,7 +37,8 @@ export function AiChatWindow() {
   }, []);
 
   const onSend = useCallback(
-    (text: string) => aiPreload.sendAiRemoteCommand({ type: 'send', text }),
+    (text: string, attachments?: AiAttachment[]) =>
+      aiPreload.sendAiRemoteCommand({ type: 'send', text, attachments }),
     [],
   );
   const onStop = useCallback(() => aiPreload.sendAiRemoteCommand({ type: 'stop' }), []);
@@ -75,6 +76,11 @@ export function AiChatWindow() {
     () => aiPreload.sendAiRemoteCommand({ type: 'clearSelection' }),
     [],
   );
+  const onRemoveAssetMention = useCallback(
+    (mention: AiAssetMention) =>
+      aiPreload.sendAiRemoteCommand({ type: 'removeAssetMention', mention }),
+    [],
+  );
   // The close button shuts the assistant entirely (window + inline panel), consistent with the
   // inline close — not a dock-back. The main window handles it (it owns the inline open flag).
   const onClose = useCallback(() => aiPreload.sendAiRemoteCommand({ type: 'closeAssistant' }), []);
@@ -98,6 +104,7 @@ export function AiChatWindow() {
       busy={mirror.busy}
       detecting={mirror.detecting}
       selection={mirror.selection}
+      assetMentions={mirror.assetMentions}
       billingDismissed={mirror.billingDismissed}
       sessions={mirror.sessions}
       currentSessionId={mirror.currentSessionId}
@@ -113,6 +120,7 @@ export function AiChatWindow() {
       onSwitchSession={onSwitchSession}
       onDeleteSession={onDeleteSession}
       onClearSelection={onClearSelection}
+      onRemoveAssetMention={onRemoveAssetMention}
       onClose={onClose}
     />
   );

@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
+import type { ImperativePanelHandle } from 'react-resizable-panels';
 import cx from 'classnames';
 
 import { useSelectedEntity } from '../../hooks/sdk/useSelectedEntity';
@@ -56,6 +57,15 @@ const App = () => {
 
   const handleToggleAssetsPanel = useCallback((collapse: boolean) => {
     setIsAssetsPanelCollapsed(collapse);
+  }, []);
+
+  const assetsPanelRef = useRef<ImperativePanelHandle>(null);
+
+  const handleToggleAssetsCollapse = useCallback(() => {
+    const panel = assetsPanelRef.current;
+    if (!panel) return;
+    if (panel.isCollapsed()) panel.expand();
+    else panel.collapse();
   }, []);
 
   // Collapse the panel at 75 pixels
@@ -157,6 +167,7 @@ const App = () => {
           <>
             <PanelResizeHandle className="vertical-handle" />
             <Panel
+              ref={assetsPanelRef}
               id={isUIDesigner ? 'palette' : 'assets'}
               defaultSize={isUIDesigner ? 14 : 30}
               {...(height
@@ -171,7 +182,10 @@ const App = () => {
                     <Palette />
                   </div>
                 ) : (
-                  <Assets isAssetsPanelCollapsed={isAssetsPanelCollapsed} />
+                  <Assets
+                    isAssetsPanelCollapsed={isAssetsPanelCollapsed}
+                    onToggleCollapse={handleToggleAssetsCollapse}
+                  />
                 )}
               </Box>
             </Panel>

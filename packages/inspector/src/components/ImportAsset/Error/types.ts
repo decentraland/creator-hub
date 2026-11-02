@@ -8,6 +8,7 @@ export type Action = {
 export type PropTypes = {
   assets: Asset[];
   errorMessage: string;
+  description?: React.ReactNode;
   primaryAction: Action;
   secondaryAction?: Action;
 };

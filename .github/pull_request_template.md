@@ -20,6 +20,40 @@ Key changes:
 - [ ] [Edge cases tested]
 - [ ] [Regression testing performed]
 
+## Manual QA
+
+[Fill the blanks below and delete this line. If the change needs no manual QA, delete this whole section.]
+
+Do the same run once on **Windows** and once on **macOS**.
+
+- **What you're testing:** [what to open or import — e.g. a link to a test scene, or "the current project"]
+- **How to know it passed:** [the thing you look at — e.g. "the box at the bottom of the scene turns green instead of red"]
+
+### Run the build from this PR
+
+1. From the build comment on this PR, download the artifact for your OS and set it up as the comment describes (Windows: run the `.exe`; macOS: unzip the `.zip`, then `xattr -c <app>` before launching — it's unsigned).
+2. Open Creator Hub and [open / import what you're testing].
+3. [Do the action — e.g. hit **Preview**].
+4. Look at the result:
+   - **Passed** → you're done on this OS.
+   - **Didn't pass** → leave everything open and note what you saw.
+
+- [ ] Windows — passed
+- [ ] macOS — passed
+
+<!--
+AGENT GUIDANCE — SDK version step (only sometimes needed):
+Add this to the body ONLY if the fix needs a specific @dcl/sdk version
+(a canary tarball or a released version) the test scene doesn't ship yet.
+If so, add after the run above:
+  1. In the project folder: npm install "<@dcl/sdk version or tarball url>"
+  2. Reload the scene's editor so the new SDK version is available.
+  3. Re-run the action; check the result the same way.
+  Then add:
+  - [ ] Windows — passed with that SDK version
+  - [ ] macOS — passed with that SDK version
+-->
+
 ## Impact
 
 [Describe the user-facing impact and any potential side effects or considerations]
