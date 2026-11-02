@@ -24,7 +24,6 @@ const Card = styled('article')(({ theme }) => ({
   },
   '&:hover, &:focus-within, &:has([aria-expanded="true"])': {
     backgroundColor: whiteTransparent.subtle,
-    '& .MuiIconButton-root': { backgroundColor: whiteTransparent.subtle },
   },
   '&:has(a:focus-visible)': {
     outline: `2px solid ${theme.palette.info.light}`,
