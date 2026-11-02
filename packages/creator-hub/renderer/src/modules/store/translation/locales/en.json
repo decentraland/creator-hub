@@ -455,6 +455,8 @@
         "files": {
           "count": "{count} {count, plural, one {file} other {files}}",
           "size": "Total Size <b>{size}</b>",
+          "size_with_limit": "Total Size <b>{size} / {limit}</b>",
+          "checking_limit": "Checking limit…",
           "publish": "Publish"
         },
         "deploying": {
