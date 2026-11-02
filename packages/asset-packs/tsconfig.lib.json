@@ -34,5 +34,5 @@
     "types": ["@dcl/js-runtime"]
   },
   "include": ["src"],
-  "exclude": ["dist"]
+  "exclude": ["dist", "**/*.spec.ts", "**/*.test.ts"]
 }

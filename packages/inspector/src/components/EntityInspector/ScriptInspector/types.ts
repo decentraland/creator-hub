@@ -17,6 +17,9 @@ export type ScriptInput = {
 export type ScriptLayout = {
   params: Record<string, ScriptParamUnion>;
   actions?: ScriptAction[];
+  // Event names the script's reactions can hook (from `@event` JSDoc tags). Drives the
+  // Reactions section; baked into a smart item's composite so it shows on placement.
+  events?: string[];
   error?: string;
 };
 
@@ -28,8 +31,10 @@ export type ScriptAction = {
 
 export type ScriptParamUnion =
   | ScriptParamNumber
+  | ScriptParamSlider
   | ScriptParamBoolean
   | ScriptParamString
+  | ScriptParamEnum
   | ScriptParamEntity
   | ScriptParamAction;
 
@@ -43,6 +48,14 @@ export type ScriptParamNumber = ScriptParam & {
   value: number;
 };
 
+export type ScriptParamSlider = ScriptParam & {
+  type: 'slider';
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+};
+
 export type ScriptParamBoolean = ScriptParam & {
   type: 'boolean';
   value: boolean;
@@ -51,6 +64,14 @@ export type ScriptParamBoolean = ScriptParam & {
 export type ScriptParamString = ScriptParam & {
   type: 'string';
   value: string;
+};
+
+// A string-literal union in the constructor (e.g. `shape: 'box' | 'sphere'`) becomes a
+// dropdown. `options` come from the parsed type; `value` is the current choice.
+export type ScriptParamEnum = ScriptParam & {
+  type: 'enum';
+  value: string;
+  options: string[];
 };
 
 export type ScriptParamEntity = ScriptParam & {

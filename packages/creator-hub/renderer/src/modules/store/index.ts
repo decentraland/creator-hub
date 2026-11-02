@@ -8,6 +8,7 @@ import logger from 'redux-logger';
 import { captureException } from '@sentry/electron/renderer';
 
 import { createAnalyticsMiddleware } from './analytics/middleware';
+import * as ai from './ai';
 import * as editor from './editor';
 import * as snackbar from './snackbar';
 import * as translations from './translation';
@@ -20,10 +21,13 @@ import * as settings from './settings';
 import * as defaultEditor from './defaultEditor';
 import * as featureFlags from './featureFlags';
 import * as management from './management';
+import * as placeAnalytics from './placeAnalytics';
 import * as profiles from './profiles';
+import * as optimizer from './optimizer';
 
 export function createRootReducer() {
   return {
+    ai: ai.reducer,
     editor: editor.reducer,
     snackbar: snackbar.reducer,
     translation: translations.reducer,
@@ -36,7 +40,9 @@ export function createRootReducer() {
     defaultEditor: defaultEditor.reducer,
     featureFlags: featureFlags.reducer,
     management: management.reducer,
+    placeAnalytics: placeAnalytics.reducer,
     profiles: profiles.reducer,
+    optimizer: optimizer.reducer,
   };
 }
 

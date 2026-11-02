@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSdk } from '../sdk/useSdk';
-import type { Gizmos } from '../../lib/babylon/decentraland/GizmoManager';
+import type { RendererGizmos } from '../../lib/renderer/types';
 
 export const useGizmoAlignment = () => {
-  const gizmosRef = useRef<Gizmos | null>(null);
+  const gizmosRef = useRef<RendererGizmos | null>(null);
   const [isGizmoWorldAligned, setGizmoWorldAligned] = useState(false);
   const [isGizmoWorldAlignmentDisabled, setGizmoWorldAlignmentDisabled] = useState(false);
 
@@ -21,11 +21,11 @@ export const useGizmoAlignment = () => {
   const updateState = useCallback(() => {
     if (gizmosRef.current) {
       const gizmos = gizmosRef.current;
-      if (isGizmoWorldAligned !== gizmos.isGizmoWorldAligned()) {
-        setGizmoWorldAligned(gizmos.isGizmoWorldAligned());
+      if (isGizmoWorldAligned !== gizmos.isWorldAligned()) {
+        setGizmoWorldAligned(gizmos.isWorldAligned());
       }
-      if (isGizmoWorldAlignmentDisabled !== gizmos.isGizmoWorldAlignmentDisabled()) {
-        setGizmoWorldAlignmentDisabled(gizmos.isGizmoWorldAlignmentDisabled());
+      if (isGizmoWorldAlignmentDisabled !== gizmos.isWorldAlignmentDisabled()) {
+        setGizmoWorldAlignmentDisabled(gizmos.isWorldAlignmentDisabled());
       }
     }
   }, [isGizmoWorldAligned, isGizmoWorldAlignmentDisabled]);
@@ -34,20 +34,20 @@ export const useGizmoAlignment = () => {
   const updateRenderer = useCallback(() => {
     if (gizmosRef.current) {
       const gizmos = gizmosRef.current;
-      if (gizmos.isGizmoWorldAligned() !== isGizmoWorldAligned) {
-        gizmos.setGizmoWorldAligned(isGizmoWorldAligned);
+      if (gizmos.isWorldAligned() !== isGizmoWorldAligned) {
+        gizmos.setWorldAligned(isGizmoWorldAligned);
       }
     }
   }, [isGizmoWorldAligned]);
 
   // bind changes on renderer to update hook state
   useSdk(
-    ({ gizmos }) => {
+    ({ renderer }) => {
       if (!gizmosRef.current) {
-        gizmosRef.current = gizmos;
+        gizmosRef.current = renderer.gizmos;
         updateState();
       }
-      return gizmos.onChange(updateState);
+      return renderer.gizmos.onChange(updateState);
     },
     [updateState],
   );

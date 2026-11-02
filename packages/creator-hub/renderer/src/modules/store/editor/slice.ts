@@ -1,9 +1,10 @@
-import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
+import { createAction, createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
 import { captureException } from '@sentry/electron/renderer';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { supportsMultiInstance } from '/shared/flags';
+import { supportsMcp, supportsMultiInstance, supportsUiDesigner } from '/shared/flags';
 import type { DeployOptions } from '/shared/types/deploy';
+import type { PreviewProgress } from '/shared/types/ipc';
 import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
 import { type PreviewOptions } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
@@ -11,26 +12,55 @@ import { isWorkspaceError } from '/shared/types/workspace';
 import { editor } from '#preload';
 
 import { actions as deploymentActions } from '../deployment';
+import { registerDeployServer } from '../deployment/deploy-api';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
 export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
+export const setPreviewProgress = createAction<PreviewProgress | null>('editor/setPreviewProgress');
 export const runScene = createAsyncThunk(
   'editor/runScene',
-  async ({ path, ...opts }: PreviewOptions & { path: string }) => {
-    await editor.runScene({ path, opts });
+  async (
+    { path, mobile, ...opts }: PreviewOptions & { path: string; mobile?: boolean },
+    { dispatch },
+  ) => {
+    // Surfaces the sidecar's asset-conversion progress (a large scene's first
+    // conversion can take minutes before the preview is ready)
+    const subscription = editor.subscribePreviewProgress(path, progress =>
+      dispatch(setPreviewProgress(progress)),
+    );
+    try {
+      await editor.runScene({ path, opts, mobile });
+    } finally {
+      subscription.cleanup();
+      dispatch(setPreviewProgress(null));
+    }
   },
 );
+// Cancels a preview that's still converting: the spawn is killed and the pending
+// runScene settles without opening the client.
+export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.cancelPreview);
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
-    const port = await editor.publishScene({ ...opts, language: translation.locale });
-    const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
-    await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
-    return port;
+    // Main stops the previous CLI, so a retry of the previous deployment must not start another.
+    dispatch(deploymentActions.markDeploymentReplaced({ path: opts.path }));
+    const server = await editor.publishScene({ ...opts, language: translation.locale });
+    const { supportsDeployResource, hasCancelToken } = registerDeployServer(server);
+    await dispatch(
+      deploymentActions.initializeDeployment({
+        path: opts.path,
+        port: server.port,
+        supportsDeployResource,
+        hasCancelToken,
+        chainId: opts.chainId,
+        wallet: opts.wallet,
+      }),
+    ).unwrap();
+    return server.port;
   },
 );
 export const killPreviewScene = createAsyncThunk(
@@ -42,16 +72,17 @@ export const openExternalURL = createAsyncThunk('editor/openExternalURL', editor
 
 export const getMobileQR = createAsyncThunk(
   'editor/getMobileQR',
-  async ({ path, opts }: { path: string; opts: PreviewOptions }, { dispatch, getState }) => {
-    const { editor: editorState } = getState();
+  async ({ path, opts }: { path: string; opts: PreviewOptions }, { dispatch }) => {
+    // `mobile: true` asks main for a server the phone can reach: it reuses whatever preview
+    // is already up (desktop client, Bevy tab) and otherwise starts one without opening any
+    // client. Always dispatched — main decides from the live process, whereas this store's
+    // isPreviewRunning only flips back on an explicit kill and can be stale.
+    await dispatch(runScene({ path, ...opts, mobile: true })).unwrap();
 
-    // Start preview if not running
-    if (!editorState.isPreviewRunning) {
-      await dispatch(runScene({ path, ...opts })).unwrap();
-    }
-
-    // Fetch mobile QR data
     const data = await editor.getMobilePreview(path);
+    // null is main's "no usable server" (no LAN IP, preview gone): fail loudly so the
+    // caller's error path runs instead of the click silently doing nothing
+    if (!data) throw new Error('Mobile preview is unavailable for this scene');
     return data;
   },
 );
@@ -60,13 +91,19 @@ export const getMobileQR = createAsyncThunk(
 export type EditorState = {
   version: string | null;
   supportsMultiInstance: boolean;
+  supportsMcp: boolean;
+  supportsUiDesigner: boolean;
   project?: Project;
+  // The scene last asked to open. Set as soon as it starts opening, unlike `project`.
+  openingProjectPath?: string;
   inspectorPort: number;
   publishPort: number;
   loadingPublish: boolean;
   publishError: string | null;
   loadingInspector: boolean;
   loadingPreview: boolean;
+  previewProgress: PreviewProgress | null;
+  previewCancelled: boolean;
   isPreviewRunning: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
@@ -79,12 +116,16 @@ export type EditorState = {
 const initialState: EditorState = {
   version: null,
   supportsMultiInstance: false,
+  supportsMcp: false,
+  supportsUiDesigner: false,
   inspectorPort: 0,
   publishPort: 0,
   loadingPublish: false,
   publishError: null,
   loadingInspector: false,
   loadingPreview: false,
+  previewProgress: null,
+  previewCancelled: false,
   isPreviewRunning: false,
   isInstalling: false,
   isInstallingProject: false,
@@ -98,15 +139,28 @@ const initialState: EditorState = {
 export const slice = createSlice({
   name: 'editor',
   initialState,
-  reducers: {},
+  reducers: {
+    // The editor was closed: a scene that was still opening no longer is.
+    leaveProject: state => {
+      state.openingProjectPath = undefined;
+    },
+  },
   extraReducers: builder => {
-    builder.addCase(workspaceActions.runProject.pending, state => {
+    builder.addCase(setPreviewProgress, (state, action) => {
+      state.previewProgress = action.payload;
+    });
+    builder.addCase(workspaceActions.runProject.pending, (state, action) => {
       state.project = undefined;
+      state.openingProjectPath = action.meta.arg.path;
       state.supportsMultiInstance = false;
+      state.supportsMcp = false;
+      state.supportsUiDesigner = false;
       state.error = null;
     });
     builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
       state.supportsMultiInstance = supportsMultiInstance(action.payload);
+      state.supportsMcp = supportsMcp(action.payload);
+      state.supportsUiDesigner = supportsUiDesigner(action.payload);
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;
@@ -122,6 +176,7 @@ export const slice = createSlice({
         });
       }
       state.project = undefined;
+      state.openingProjectPath = undefined;
     });
     builder.addCase(startInspector.pending, state => {
       state.inspectorPort = 0;
@@ -201,16 +256,35 @@ export const slice = createSlice({
     });
     builder.addCase(runScene.pending, state => {
       state.loadingPreview = true;
+      state.previewCancelled = false;
     });
     builder.addCase(runScene.fulfilled, state => {
       state.loadingPreview = false;
-      state.isPreviewRunning = true;
+      // a cancelled run settles quietly with no client opened, so it isn't "running"
+      if (!state.previewCancelled) state.isPreviewRunning = true;
+      state.previewCancelled = false;
     });
     builder.addCase(runScene.rejected, (state, action) => {
       state.loadingPreview = false;
+      state.previewCancelled = false;
       captureException(action.error, {
         tags: { source: 'editor-page', event: 'run-scene' },
       });
+    });
+    // The button stays blocked until the cancel completes: killPreview resolves only once
+    // the process is confirmed dead (up to the force-kill timeout), and unblocking earlier
+    // would let a Preview press ride the dying spawn and report success without starting
+    // anything — a running UI with nothing running.
+    builder.addCase(cancelPreview.pending, state => {
+      state.previewCancelled = true;
+    });
+    // guarded so a run started while the cancel was in flight (a mobile-QR start) keeps
+    // its own loading state: runScene.pending already cleared previewCancelled for it
+    builder.addCase(cancelPreview.fulfilled, state => {
+      if (state.previewCancelled) state.loadingPreview = false;
+    });
+    builder.addCase(cancelPreview.rejected, state => {
+      if (state.previewCancelled) state.loadingPreview = false;
     });
     builder.addCase(killPreviewScene.fulfilled, state => {
       state.isPreviewRunning = false;
@@ -250,6 +324,8 @@ export const slice = createSlice({
 // exports
 export const actions = {
   ...slice.actions,
+  setPreviewProgress,
+  cancelPreview,
   fetchVersion,
   install,
   startInspector,

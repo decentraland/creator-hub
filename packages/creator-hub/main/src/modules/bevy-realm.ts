@@ -1,0 +1,173 @@
+import log from 'electron-log/main';
+
+import { BEVY_REALM_BUILD_EVENT, type BevyRealmBuildEvent } from '/shared/types/ipc';
+
+import { MAIN_WINDOW_ID } from '../mainWindow';
+import { run, type Child } from './bin';
+import { getAvailablePort } from './port';
+import { getProjectId, track } from './analytics';
+import { getWindow } from './window';
+import { createLineBuffer, parseSceneBuildEvents } from './bevy-realm-build-events';
+
+/**
+ * The Bevy editor renderer loads the scene from an HTTP realm, and the inspector
+ * shares that realm's data-layer WebSocket so entity ids align with the engine
+ * (forward edits land on the right entities). This module owns a headless
+ * `sdk-commands start` per project that serves exactly that: the scene content +
+ * a `/data-layer` WS, with nothing auto-launched.
+ *
+ *   sdk-commands start --port <p> --no-browser --no-client --data-layer
+ *
+ * It's the same server the dev testing setup runs by hand — see the
+ * `bevy-renderer-testing-setup` runbook. `--no-client` suppresses every
+ * auto-launch (no deep-link, no browser); `--data-layer` is load-bearing:
+ * without it `/data-layer` 404s and the inspector tree shows default entities
+ * instead of the scene.
+ *
+ * Lifecycle: one server per project path, started when the Bevy renderer becomes
+ * active for that project and killed when the project closes (or on app quit via
+ * {@link killAllRealms}). Distinct from the preview server in cli.ts — that one
+ * launches a client for the user; this one only feeds the embedded editor engine.
+ */
+
+type Realm = {
+  child: Child;
+  /** e.g. `http://localhost:8004` — fed to the inspector's `bevyRealm` config. */
+  url: string;
+  /** e.g. `ws://localhost:8004/data-layer` — the inspector's `dataLayerRpcWsUrl`. */
+  wsUrl: string;
+  port: number;
+};
+
+const realms: Map<string, Realm> = new Map();
+// In-flight start() per path. Serializes concurrent starts (a rapid renderer
+// toggle) so a second caller reuses the first's pending server instead of
+// spawning a duplicate, and lets kill() cancel a start that hasn't resolved yet.
+const starting: Map<string, Promise<{ url: string; wsUrl: string }>> = new Map();
+
+function isRealmRunning(realm?: Realm): realm is Realm {
+  return !!(realm?.child.alive() && realm.url);
+}
+
+export function getRealm(path: string): Realm | undefined {
+  const realm = realms.get(path);
+  return isRealmRunning(realm) ? realm : undefined;
+}
+
+async function getEnv(path: string) {
+  const projectId = await getProjectId(path);
+  return {
+    ANALYTICS_PROJECT_ID: projectId,
+    ANALYTICS_APP_ID: 'creator-hub',
+  };
+}
+
+/**
+ * Start (or reuse) the Bevy realm server for a project. Resolves once the server
+ * is serving, returning the realm + data-layer URLs the inspector needs.
+ */
+export function start(path: string): Promise<{ url: string; wsUrl: string }> {
+  const existing = realms.get(path);
+  if (isRealmRunning(existing)) {
+    return Promise.resolve({ url: existing.url, wsUrl: existing.wsUrl });
+  }
+
+  // Coalesce concurrent starts for the same path so we never spawn two servers
+  // for one project (the second toggle reuses the first's pending start).
+  const inFlight = starting.get(path);
+  if (inFlight) return inFlight;
+
+  const promise = startInternal(path).finally(() => {
+    // Only clear if still ours — kill() or a later start may have replaced it.
+    if (starting.get(path) === promise) starting.delete(path);
+  });
+  starting.set(path, promise);
+  return promise;
+}
+
+async function startInternal(path: string): Promise<{ url: string; wsUrl: string }> {
+  await kill(path);
+
+  const port = await getAvailablePort();
+  const url = `http://localhost:${port}`;
+  const wsUrl = `ws://localhost:${port}/data-layer`;
+
+  const child = run('@dcl/sdk-commands', 'sdk-commands', {
+    args: ['start', '--port', `${port}`, '--no-browser', '--no-client', '--data-layer'],
+    cwd: path,
+    workspace: path,
+    env: await getEnv(path),
+  });
+
+  relayBuildEvents(path, child);
+
+  // Track the child IMMEDIATELY (before waiting for it to serve) so a kill(path)
+  // during startup — the user switches renderer or closes the editor while the
+  // server is still coming up — can find and terminate it. Storing only after
+  // `waitFor` resolves leaves the pending process orphaned in that window.
+  realms.set(path, { child, url, wsUrl, port });
+
+  // `--no-client` means no deep-link / browser open, so we wait for the
+  // server-ready line sdk-commands prints once it's serving.
+  const serverReady = /Preview server is now running/i;
+  try {
+    await child.waitFor(serverReady, /CliError|error:/i);
+  } catch (err) {
+    // Startup failed or the child was killed mid-boot — make sure it's gone and
+    // the entry doesn't linger as a half-alive realm. Guard the delete so a
+    // concurrent kill()/start() that already replaced our entry isn't clobbered.
+    await child.kill().catch(() => {});
+    if (realms.get(path)?.child === child) realms.delete(path);
+    throw err;
+  }
+
+  log.info(`[BevyRealm] Serving ${path} at ${url}`);
+
+  // Usage analytics (fire-and-forget): a realm only starts when the Bevy renderer is the
+  // active renderer for this project, so one event per successful start is "Bevy renderer
+  // used". Anonymous project id only — no scene content. start() coalesces concurrent
+  // starts and reuses a running realm, so this fires once per activation, not per toggle.
+  void getProjectId(path).then(project_id => track('Use Bevy Renderer', { project_id }));
+
+  return { url, wsUrl };
+}
+
+/**
+ * Forward the realm bundler's per-file rebuild lines to the renderer, which hands them
+ * to the inspector's Bevy renderer. That is how the editor tells a code edit it must
+ * hot-reload from a rebuild its own autosave caused (see BEVY_REALM_BUILD_EVENT).
+ * The matcher dies with the child, so nothing to detach on kill.
+ */
+function relayBuildEvents(path: string, child: Child): void {
+  // Match every chunk and split into lines ourselves: a pipe chunk can end mid-line,
+  // and a matcher tested per chunk would miss a build line cut in two.
+  const lines = createLineBuffer();
+  child.on(/(.*)/, data => {
+    if (!data) return;
+    const events = lines.push(data).flatMap(parseSceneBuildEvents);
+    if (events.length === 0) return;
+    const window = getWindow(MAIN_WINDOW_ID);
+    if (!window || window.isDestroyed()) return;
+    for (const event of events) {
+      const payload: BevyRealmBuildEvent = { path, ...event };
+      window.webContents.send(BEVY_REALM_BUILD_EVENT, payload);
+    }
+  });
+}
+
+export async function kill(path: string): Promise<void> {
+  // Drop any in-flight start so a subsequent start() spawns fresh rather than
+  // joining the server we're about to kill.
+  starting.delete(path);
+  const realm = realms.get(path);
+  const promise = realm?.child.kill().catch(() => {});
+  realms.delete(path);
+  await promise;
+}
+
+export async function killAllRealms(): Promise<void> {
+  for (const path of realms.keys()) {
+    await kill(path);
+  }
+  realms.clear();
+}

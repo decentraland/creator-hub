@@ -132,7 +132,7 @@ export class WearableScanner {
       this.scanning = true;
       Animator.playSingleAnimation(this.entity, 'Laser_Action', true);
       AudioSource.createOrReplace(this.entity, {
-        audioClipUrl: 'assets/scene/Audio/LaserHum.mp3',
+        audioClipUrl: 'assets/Audio/LaserHum.mp3',
         playing: true,
         loop: false,
       });
@@ -143,7 +143,7 @@ export class WearableScanner {
         if (accepted) {
           Animator.playSingleAnimation(this.entity, 'Allow_Action', true);
           AudioSource.createOrReplace(this.entity, {
-            audioClipUrl: 'assets/scene/Audio/accept.mp3',
+            audioClipUrl: 'assets/Audio/accept.mp3',
             playing: true,
             loop: false,
           });
@@ -154,7 +154,7 @@ export class WearableScanner {
         } else {
           Animator.playSingleAnimation(this.entity, 'NotAllow_Action', true);
           AudioSource.createOrReplace(this.entity, {
-            audioClipUrl: 'assets/scene/Audio/access_denied.mp3',
+            audioClipUrl: 'assets/Audio/access_denied.mp3',
             playing: true,
             loop: false,
           });

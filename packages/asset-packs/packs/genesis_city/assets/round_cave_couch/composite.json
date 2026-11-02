@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/round_cave_couch/round_cave_couch.glb"
+          }
+        }
+      }
+    }
+  ]
+}

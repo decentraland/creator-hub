@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { promisify } from 'util';
-import { exec as execCallback } from 'child_process';
+import { exec as execCallback, execFile as execFileCallback } from 'child_process';
 import log from 'electron-log/main';
 import { shell } from 'electron';
 
@@ -11,6 +11,7 @@ import { track } from './analytics';
 import { getConfigStorage } from './config';
 
 const exec = promisify(execCallback);
+const execFile = promisify(execFileCallback);
 
 function getPath() {
   return process.env.PATH || '';
@@ -347,31 +348,30 @@ export async function addEditorsPathsToConfig() {
   }
 }
 
+/**
+ * Opens `_path` in the configured editor, revealing it in the file manager if that is not
+ * possible. Never rejects — callers treat it as fire-and-forget.
+ */
 export async function open(_path: string) {
   const normalizedPath = path.normalize(_path);
-  const config = await getConfigStorage();
-  const editors = (await config.get('editors')) || [];
-  const defaultEditor = editors.find(editor => editor.isDefault);
-
-  log.info('Default editor:', defaultEditor);
 
   try {
+    const editors = await getEditors();
+    const defaultEditor = editors.find(editor => editor.isDefault);
+    log.info('Default editor:', defaultEditor);
+
     if (defaultEditor) {
       log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
-      const command = `"${defaultEditor.path}" "${normalizedPath}"`;
-      await exec(command, {
+      await execFile(defaultEditor.path, [normalizedPath], {
         env: { ...process.env, PATH: getPath() },
       });
       await track('Open Code', undefined);
-    } else {
-      log.info('No default editor found, falling back to system default');
-      await shell.openPath(normalizedPath);
+      return;
     }
+    log.info('No default editor configured, revealing in the file manager instead');
   } catch (error) {
-    log.info(
-      'Failed to open with configured editor, falling back to system default. Error:',
-      error,
-    );
-    await shell.openPath(normalizedPath);
+    log.info('Failed to open with the configured editor, revealing it instead. Error:', error);
   }
+
+  shell.showItemInFolder(normalizedPath);
 }

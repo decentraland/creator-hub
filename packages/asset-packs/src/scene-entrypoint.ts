@@ -7,7 +7,7 @@ import {
   setCompositeProvider,
 } from '@dcl/ecs';
 import { polyfillTextEncoder } from '@dcl/sdk/text-codec';
-import { createReactBasedUiSystem } from '@dcl/react-ecs';
+import { ReactEcsRenderer } from '@dcl/react-ecs';
 import type { IPlayersHelper, ISDKHelpers } from './definitions';
 import { createComponents, initComponents } from './definitions';
 import { createActionsSystem } from './actions';
@@ -89,7 +89,6 @@ export function initAssetPacks(
     const inputSystem = createInputSystem(engine);
     const pointerEventsSystem = createPointerEventsSystem(engine, inputSystem);
     const tweenSystem = createTweenSystem(engine);
-    const reactBasedUiSystem = createReactBasedUiSystem(engine as any, pointerEventsSystem as any);
 
     // create systems that some components needs (VideoPlayer, etc)
     initComponents(engine);
@@ -100,10 +99,14 @@ export function initAssetPacks(
     engine.addSystem(createCounterBarSystem(engine, components));
     engine.addSystem(createTransformSystem(components));
     engine.addSystem(
+      // The toolkit UI must go through the scene's own react-ecs renderer. A second
+      // `createReactBasedUiSystem` on the same engine writes a second sibling chain
+      // (`rightOf: 0`) under the canvas root, and the explorer follows only one chain
+      // per parent — every renderer on the other chain loses its `zIndex` ordering.
       createAdminToolkitSystem(
         engine,
         pointerEventsSystem,
-        reactBasedUiSystem,
+        ReactEcsRenderer,
         sdkHelpers,
         playersHelper,
       ),

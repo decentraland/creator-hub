@@ -13,11 +13,12 @@ import { WorldRoleType } from '/@/lib/worlds';
 import { RoleType as LandRoleType } from '/@/lib/land';
 import FallbackThumbnail from '/assets/images/scene-thumbnail-fallback.png';
 import { analytics, misc } from '#preload';
+import { getJumpInUrl } from '/@/modules/utils';
 import { Image } from '../../Image';
 import { Button } from '../../Button';
 import { Dropdown } from '../../Dropdown';
 import type { Option } from '../../Dropdown';
-import { formatName, getJumpInUrl, getLogo, getStorageUrl, isENSDomain } from './utils';
+import { formatName, getLogo, getStorageUrl, isENSDomain } from './utils';
 import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';

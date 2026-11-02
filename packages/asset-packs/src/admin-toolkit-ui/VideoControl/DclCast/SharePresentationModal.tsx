@@ -1,9 +1,9 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
 import ReactEcs, { Input, Label, UiEntity } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
 import { Modal } from '../../Modal';
 import { Button } from '../../Button';
 import { getPresentationBotToken, startPresentation } from '../api';
+import { COLORS, RADIUS, TYPE } from '../../theme';
 import { getDclCastColors } from './styles';
 
 const SharePresentationModal = ({
@@ -61,7 +61,7 @@ const SharePresentationModal = ({
       >
         <Label
           value="Paste a URL to a PDF or PPTX file"
-          fontSize={14}
+          fontSize={TYPE.body}
           color={colors.lightGray}
           uiTransform={{ margin: { bottom: 8 } }}
         />
@@ -78,14 +78,16 @@ const SharePresentationModal = ({
               setUrl(value);
             }}
             value={url}
-            fontSize={14}
+            fontSize={TYPE.body}
             placeholder="https://example.com/slides.pdf"
-            uiBackground={{ color: Color4.White() }}
+            placeholderColor={COLORS.inputPlaceholder}
+            color={COLORS.inputText}
+            uiBackground={{ color: COLORS.inputBackground }}
             uiTransform={{
               width: '100%',
-              borderWidth: 2,
-              borderRadius: 8,
-              borderColor: error ? colors.danger : colors.white,
+              borderWidth: 1,
+              borderRadius: RADIUS.sm,
+              borderColor: error ? colors.danger : COLORS.inputBorder,
               height: 48,
             }}
           />
@@ -93,7 +95,7 @@ const SharePresentationModal = ({
         {!!error && (
           <Label
             value={error}
-            fontSize={14}
+            fontSize={TYPE.caption}
             color={colors.danger}
             uiTransform={{ margin: { top: 8 } }}
           />
@@ -110,7 +112,7 @@ const SharePresentationModal = ({
             id="share_presentation_cancel"
             value="<b>Cancel</b>"
             variant="secondary"
-            fontSize={16}
+            fontSize={TYPE.button}
             color={colors.white}
             uiTransform={{
               height: 42,
@@ -122,8 +124,7 @@ const SharePresentationModal = ({
           <Button
             id="share_presentation_submit"
             value={isLoading ? '<b>Sharing...</b>' : '<b>Share</b>'}
-            fontSize={16}
-            color={colors.black}
+            fontSize={TYPE.button}
             disabled={isLoading}
             uiTransform={{
               height: 42,

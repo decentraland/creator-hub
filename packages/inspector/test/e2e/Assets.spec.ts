@@ -19,14 +19,25 @@ describe('Assets', () => {
     await expect(Hierarchy.getId('example.glb')).rejects.toThrow();
 
     await Assets.selectTab(AssetsTab.FileSystem);
-    await Assets.openFolder('scene');
-    await Assets.openFolder('scene/Models');
-    await Assets.openFolder('scene/Models/example');
+    await Assets.openFolder('Models');
+    await Assets.openFolder('Models/example');
 
-    await Assets.addFileSystemAsset('scene/Models/example/model.glb');
+    await Assets.addFileSystemAsset('Models/example/model.glb');
 
     // There should be an entity in the Hierarchy tree with the name model.glb
     await expect(Hierarchy.getId('model.glb')).resolves.toBeGreaterThanOrEqual(152);
+  });
+
+  test('Drag asset from the file system TREE into renderer', async () => {
+    // A second instance of the same model is auto-suffixed (`model.glb_2`).
+    const entities = page.locator('.Hierarchy .Tree[data-test-label^="model.glb"]');
+    const before = await entities.count();
+
+    await Assets.selectTab(AssetsTab.FileSystem);
+    await Assets.addFileSystemAssetFromTree('Models/example/model.glb');
+
+    await entities.nth(before).waitFor({ state: 'attached', timeout: 10_000 });
+    await expect(entities.count()).resolves.toBe(before + 1);
   });
 
   test('Drag asset from Builder into renderer', async () => {
@@ -39,5 +50,17 @@ describe('Assets', () => {
 
     // There should be an entity in the Hierarchy tree with the name Pebbles
     await expect(Hierarchy.getId('Pebbles')).resolves.toBeGreaterThanOrEqual(152);
+  });
+
+  test('Name tooltip sits right above the tile in search results, as in the category view', async () => {
+    const category = await Assets.getNameTooltipPlacement('Bookshelf');
+    await Assets.search('Bookshelf');
+    const search = await Assets.getNameTooltipPlacement('Bookshelf');
+
+    // It hugs the tile it labels, instead of floating up the stretched row (#1010)...
+    expect(Math.abs(search.gapAbove - category.gapAbove)).toBeLessThan(2);
+    // ...and still clears the panel header, which is what made it read as "too high".
+    expect(category.clearsHeaderBy).toBeGreaterThan(0);
+    expect(search.clearsHeaderBy).toBeGreaterThan(0);
   });
 });

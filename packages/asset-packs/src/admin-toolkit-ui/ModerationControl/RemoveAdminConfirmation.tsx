@@ -1,13 +1,13 @@
 import type { IEngine } from '@dcl/ecs';
-import { Color4 } from '@dcl/ecs-math';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 
 import { Button } from '../Button';
 import { LoadingDots } from '../Loading';
 import { Error } from '../Error';
+import { COLORS, RADIUS, TYPE } from '../theme';
 import { fetchAndSyncSceneAdmins } from '..';
+import { cancelRemoveAdmin } from '../actions';
 import { deleteSceneAdmin } from './api';
-import { moderationControlState } from '.';
 import type { SceneAdmin } from '.';
 
 export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; engine: IEngine }) {
@@ -33,32 +33,32 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 12,
+          borderRadius: RADIUS.lg,
         }}
-        uiBackground={{ color: Color4.Black() }}
+        uiBackground={{ color: COLORS.surfaceElevated }}
       >
         <UiEntity uiTransform={{ flexDirection: 'row', maxWidth: 675 }}>
           <Label
             value={'Are you sure you want to remove '}
-            fontSize={18}
-            color={Color4.White()}
+            fontSize={TYPE.subtitle}
+            color={COLORS.textPrimary}
           />
           <Label
             value={`<b>${admin.name || (admin.address ? `${admin.address.substring(0, 6)}...${admin.address.substring(admin.address.length - 4)}` : '')}</b>`}
-            fontSize={18}
-            color={Color4.fromHexString('#FF2D55')}
+            fontSize={TYPE.subtitle}
+            color={COLORS.primary}
           />
           <Label
             value={' from the Admin list?'}
-            fontSize={18}
-            color={Color4.White()}
+            fontSize={TYPE.subtitle}
+            color={COLORS.textPrimary}
           />
         </UiEntity>
 
         <Label
-          value="If you proceed, they will lose access to tehe Admin Tools for this scene."
-          fontSize={14}
-          color={Color4.Gray()}
+          value="If you proceed, they will lose access to the Admin Tools for this scene."
+          fontSize={TYPE.body}
+          color={COLORS.textSecondary}
           uiTransform={{
             margin: { top: 12, bottom: 24 },
           }}
@@ -77,9 +77,9 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
             <Button
               id="cancel-remove"
               value="<b>Cancel</b>"
-              variant="primary"
-              fontSize={16}
-              color={Color4.Black()}
+              variant="secondary"
+              fontSize={TYPE.button}
+              color={COLORS.textPrimary}
               uiTransform={{
                 width: 90,
                 height: 40,
@@ -89,7 +89,7 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
                 margin: { right: 30, left: 30 },
               }}
               onMouseDown={() => {
-                moderationControlState.adminToRemove = undefined;
+                cancelRemoveAdmin();
               }}
             />
           )}
@@ -98,15 +98,13 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
               id="confirm-remove"
               value={'<b>Remove</b>'}
               variant="primary"
-              fontSize={16}
-              color={Color4.White()}
+              fontSize={TYPE.button}
               uiTransform={{
                 width: 160,
                 height: 40,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}
-              uiBackground={{ color: Color4.fromHexString('#FF2D55') }}
               onMouseDown={async () => {
                 if (!isLoading && admin.address) {
                   setIsLoading(true);
@@ -114,7 +112,7 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
                   if (error) {
                     setError(error);
                   } else {
-                    moderationControlState.adminToRemove = undefined;
+                    cancelRemoveAdmin();
                     await fetchAndSyncSceneAdmins();
                   }
                   setIsLoading(false);

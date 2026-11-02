@@ -1,10 +1,14 @@
 import { createPublicClient, http } from 'viem';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { type Socket, io } from 'socket.io-client';
 import { ChainId, ProviderType } from '@dcl/schemas';
-import { Authenticator, type AuthIdentity, type AuthChain } from '@dcl/crypto';
+import { type AuthIdentity, type AuthChain } from '@dcl/crypto';
 import * as sso from '@dcl/single-sign-on-client';
 import { analytics } from '#preload';
+import {
+  SIGN_IN_VERIFIER_HEADER,
+  createSignInVerifier,
+  deriveSignInRequestId,
+} from './signInVerifier';
 
 const STORAGE_KEY_ADDRESS = 'auth-server-provider-address';
 const STORAGE_KEY_CHAIN_ID = 'auth-server-provider-chain-id';
@@ -17,7 +21,7 @@ type Payload = {
 /**
  * Reason a deep-link sign in failed, used to surface a translated message.
  */
-export type SignInErrorReason = 'not_found' | 'expired' | 'network' | 'unknown';
+export type SignInErrorReason = 'not_found' | 'expired' | 'network' | 'verifier' | 'unknown';
 
 /**
  * Error thrown while fetching/applying a deep-link sign in identity. Carries a
@@ -88,7 +92,6 @@ function isErrorWithMessage(error: unknown): error is Error {
 export class AuthServerProvider {
   private static authServerUrl: string = '';
   private static authDappUrl: string = '';
-  private static identityExpirationInMillis: number = 30 * 24 * 60 * 60 * 1000; // 30 days in the future.
   private static openBrowser: (url: string, target?: string, features?: string) => void;
 
   /**
@@ -106,13 +109,6 @@ export class AuthServerProvider {
   }
 
   /**
-   * Set the time it will take for the ephemeral message used on sign in to expire.
-   */
-  static setIdentityExpiration(millis: number) {
-    AuthServerProvider.identityExpirationInMillis = millis;
-  }
-
-  /**
    * Set the function that will be used to open the browser.
    */
   static setOpenBrowser(openBrowser: (url: string, target?: string, features?: string) => void) {
@@ -120,29 +116,14 @@ export class AuthServerProvider {
   }
 
   /**
-   * Creates an auth request and returns its id.
-   * An ephemeral key pair is generated only to form the `dcl_personal_sign`
-   * request body; the identity fetched on completion is self-contained, so this
-   * local key pair is not reused.
+   * Generates the id that correlates a deep-link sign in with this app instance,
+   * and the verifier it is derived from. The verifier must be kept for this
+   * attempt and passed to `applyDeepLinkIdentity`: the auth server only hands
+   * the identity to whoever presents it.
    */
-  static createSignInRequest = async (): Promise<string> => {
-    const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const expiration = new Date(Date.now() + AuthServerProvider.identityExpirationInMillis);
-    const ephemeralMessage = Authenticator.getEphemeralMessage(account.address, expiration);
-
-    const response = await fetch(`${AuthServerProvider.authServerUrl}/requests`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ method: 'dcl_personal_sign', params: [ephemeralMessage] }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to create auth request (${response.status})`);
-    }
-
-    const { requestId } = await response.json();
-    return requestId;
+  static createSignInRequest = async (): Promise<{ requestId: string; verifier: string }> => {
+    const verifier = createSignInVerifier();
+    return { requestId: await deriveSignInRequestId(verifier), verifier };
   };
 
   /**
@@ -152,9 +133,11 @@ export class AuthServerProvider {
    */
   static fetchIdentity = async (
     identityId: string,
+    verifier: string,
   ): Promise<{ identity: AuthIdentity; signer: string }> => {
     const response = await fetch(
       `${AuthServerProvider.authServerUrl}/identities/${encodeURIComponent(identityId)}`,
+      { headers: { [SIGN_IN_VERIFIER_HEADER]: verifier } },
     );
 
     if (response.status === 404) {
@@ -162,6 +145,9 @@ export class AuthServerProvider {
     }
     if (response.status === 410) {
       throw new SignInError('expired', 'Sign in identity expired');
+    }
+    if (response.status === 401) {
+      throw new SignInError('verifier', 'Sign in identity belongs to another sign in request');
     }
     if (response.status === 403) {
       throw new SignInError(
@@ -186,8 +172,8 @@ export class AuthServerProvider {
    * Completes a deep-link sign in: fetches the identity for the given id and
    * persists it. Returns the signer address.
    */
-  static applyDeepLinkIdentity = async (identityId: string): Promise<string> => {
-    const { identity, signer } = await AuthServerProvider.fetchIdentity(identityId);
+  static applyDeepLinkIdentity = async (identityId: string, verifier: string): Promise<string> => {
+    const { identity, signer } = await AuthServerProvider.fetchIdentity(identityId, verifier);
     localStorage.setItem(STORAGE_KEY_ADDRESS, signer);
     sso.localStorageStoreIdentity(signer, identity);
     return signer;

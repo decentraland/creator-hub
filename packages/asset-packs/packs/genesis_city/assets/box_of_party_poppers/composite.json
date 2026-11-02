@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/box_of_party_poppers/box_of_party_poppers.glb"
+          }
+        }
+      }
+    }
+  ]
+}

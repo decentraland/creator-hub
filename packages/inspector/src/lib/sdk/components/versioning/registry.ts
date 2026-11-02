@@ -139,7 +139,11 @@ const COMPONENT_REGISTRY = {
       version: Schemas.Optional(Schemas.Number),
     },
   ],
-  'inspector::UIState': [{ sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean) }],
+  'inspector::UIState': [
+    {
+      sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean),
+    },
+  ],
   'inspector::SceneMetadata': [
     // V0 - Original version
     {
@@ -239,6 +243,11 @@ const COMPONENT_REGISTRY = {
     // V4 - Added disableNearbyVoiceChat
     {
       disableNearbyVoiceChat: Schemas.Optional(Schemas.Boolean),
+    },
+    // V5 - Added hideLandscapeTerrain. Stored inverted (scene.json uses landscapeTerrain)
+    // because Schemas.Optional drops falsy values during CRDT serialization.
+    {
+      hideLandscapeTerrain: Schemas.Optional(Schemas.Boolean),
     },
   ],
 } as const;

@@ -1,5 +1,4 @@
-import { useCallback } from 'react';
-import { IoIosImage } from 'react-icons/io';
+import { useCallback, useState } from 'react';
 
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -17,6 +16,7 @@ import { Label, TextArea } from '../../ui';
 import { WalletField } from '../../ui/WalletField';
 import { Tabs } from '../Tabs';
 import { CheckboxField } from '../../ui/CheckboxField';
+import { InfoTooltip } from '../../ui/InfoTooltip';
 import RangeHourField from '../../ui/RangeHourField/RangeHourField';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
@@ -28,13 +28,22 @@ import {
 } from '../../../redux/ui';
 import { SceneInspectorTab } from '../../../redux/ui/types';
 import { Tab } from '../Tab';
-import { transformBinaryToBase64Resource } from '../../../lib/data-layer/host/fs-utils';
-import { selectThumbnails } from '../../../redux/app';
+import { Modal } from '../../Modal';
+import { Error as ImportError } from '../../ImportAsset/Error';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
 import { Layout } from './Layout';
 import type { Props } from './types';
-import { fromScene, toScene, isValidInput, isImage, MIDDAY_SECONDS } from './utils';
+import {
+  fromScene,
+  toScene,
+  isValidInput,
+  isImage,
+  validateThumbnailFile,
+  validateThumbnailPath,
+  MIDDAY_SECONDS,
+} from './utils';
 import { SceneInfoInput } from './SceneInfoInput';
+import { ThumbnailPreview } from './ThumbnailPreview';
 
 import './SceneInspector.css';
 
@@ -109,11 +118,13 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     'disableNearbyVoiceChat',
     e => e.target.checked,
   );
+  const hideLandscapeTerrainProps = getInputProps('hideLandscapeTerrain', e => e.target.checked);
 
   const [componentValue, setComponentValue] = useComponentValue<EditorComponentsTypes['Scene']>(
     entity,
     Scene,
   );
+  const [rejectedThumbnail, setRejectedThumbnail] = useState<string | null>(null);
 
   const handleSkyboxAutoChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,11 +169,21 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     [componentValue, setComponentValue],
   );
 
-  const handleDrop = useCallback(async (thumbnail: string) => {
-    const { operations } = sdk;
-    operations.updateValue(Scene, entity, { thumbnail });
-    await operations.dispatch();
-  }, []);
+  const handleThumbnailChange = useCallback(
+    async (thumbnail: string) => {
+      const error = await validateThumbnailPath(thumbnail);
+      if (error) {
+        setRejectedThumbnail(error.message);
+        return;
+      }
+      const { operations } = sdk;
+      operations.updateValue(Scene, entity, { thumbnail });
+      await operations.dispatch();
+    },
+    [sdk, Scene, entity],
+  );
+
+  const dismissRejectedThumbnail = useCallback(() => setRejectedThumbnail(null), []);
 
   if (!hasScene) {
     return null;
@@ -171,36 +192,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const hiddenSceneInspectorTabs = useAppSelector(getHiddenSceneInspectorTabs);
   const selectedSceneInspectorTab = useAppSelector(getSelectedSceneInspectorTab);
   const dispatch = useAppDispatch();
-
-  const thumbnails = useAppSelector(selectThumbnails);
-  const getThumbnail = useCallback(
-    (value: string) => {
-      const [name] = value.split('.');
-      const thumbnail = thumbnails.find($ => $.path.endsWith(name + '.png'));
-      if (thumbnail) {
-        return thumbnail?.content;
-      }
-    },
-    [thumbnails],
-  );
-
-  const renderThumbnail = useCallback(() => {
-    const filename = thumbnailProps.value
-      ? (thumbnailProps.value as unknown as string).split('/').pop()
-      : null;
-    if (filename) {
-      const thumbnail = getThumbnail(filename);
-      if (thumbnail) {
-        return (
-          <img
-            src={transformBinaryToBase64Resource(thumbnail)}
-            alt={filename}
-          />
-        );
-      }
-    }
-    return <IoIosImage />;
-  }, [thumbnailProps.value, getThumbnail]);
 
   const handleSelectTab = useCallback(
     (tab: SceneInspectorTab) => {
@@ -265,18 +256,32 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Description"
             {...descriptionProps}
           />
-          <span className="ThumbnailRow">
-            <div className="thumbnail">{renderThumbnail()}</div>
+          <div className="ThumbnailRow">
             <FileUploadField
               {...thumbnailProps}
+              onChange={undefined}
               label="Thumbnail"
               accept={ACCEPTED_FILE_TYPES['image']}
               options={imageOptions}
-              onDrop={handleDrop}
+              onDrop={handleThumbnailChange}
               isValidFile={isImage}
-              showPreview
+              validateFile={validateThumbnailFile}
             />
-          </span>
+            <ThumbnailPreview path={(thumbnailProps.value as unknown as string) ?? ''} />
+          </div>
+          <Modal
+            isOpen={rejectedThumbnail !== null}
+            onRequestClose={dismissRejectedThumbnail}
+            className="ImportAssetModal"
+            overlayClassName="ImportAssetModalOverlay"
+          >
+            <ImportError
+              assets={[]}
+              errorMessage="Thumbnail not supported"
+              description={rejectedThumbnail}
+              primaryAction={{ name: 'OK', onClick: dismissRejectedThumbnail }}
+            />
+          </Modal>
           <Dropdown
             label="Categories"
             options={CATEGORIES_OPTIONS}
@@ -291,7 +296,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           />
           <TextField
             autoSelect
-            label="Creator name (optional)"
+            label="Creator name"
             placeholder="Decentraland user"
             {...authorProps}
           />
@@ -343,6 +348,20 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Disable Nearby Voice Chat"
             checked={componentValue.disableNearbyVoiceChat}
             {...disableNearbyVoiceChatProps}
+          />
+          <Block
+            label="Terrain"
+            className="underlined"
+          ></Block>
+          <CheckboxField
+            label={
+              <>
+                Hide Landscape Terrain
+                <InfoTooltip text="Hides the auto-generated landscape (grassland, trees, and sea) around your scene, for example for scenes surrounded by open water or a void. Only applies to Worlds and local preview; Genesis City always shows terrain." />
+              </>
+            }
+            checked={componentValue.hideLandscapeTerrain}
+            {...hideLandscapeTerrainProps}
           />
           <Block
             label="Skybox"

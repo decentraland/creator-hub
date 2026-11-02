@@ -17,7 +17,10 @@ function UnlitMaterial({
   return (
     <>
       <Block label="Diffuse color">
-        <ColorField {...diffuseColor} />
+        <ColorField
+          clearable
+          {...diffuseColor}
+        />
       </Block>
       <Block>
         <CheckboxField

@@ -1,6 +1,7 @@
 import { Color4 } from '@dcl/ecs-math';
 import type { UiTransformProps } from '@dcl/react-ecs';
 import { getContentUrl } from '../../constants';
+import { COLORS, RADIUS } from '../../theme';
 
 const ICONS = {
   get VERIFIED_USER() {
@@ -28,11 +29,11 @@ export const getModalStyles = (): Record<string, UiTransformProps> => ({
     width: 675,
     maxHeight: 679,
     minHeight: 479,
-    padding: 20,
+    padding: 24,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
   },
   content: {
     display: 'flex',
@@ -172,9 +173,9 @@ export const getModalStyles = (): Record<string, UiTransformProps> => ({
 });
 
 export const getModalBackgrounds = () => ({
-  container: { color: Color4.Black() },
-  divider: { color: Color4.fromHexString('#43404A') },
-  roleBadge: { color: Color4.fromHexString('#A09BA8') },
+  container: { color: COLORS.surfaceElevated },
+  divider: { color: COLORS.divider },
+  roleBadge: { color: COLORS.border },
   headerIcon: {
     textureMode: 'stretch' as const,
     texture: {
@@ -203,14 +204,14 @@ export const getModalBackgrounds = () => ({
 });
 
 export const getModalColors = () => ({
-  white: Color4.White(),
-  gray: Color4.Gray(),
-  addressGray: Color4.fromHexString('#716B7C'),
-  removeRed: Color4.fromHexString('#FF2D55FF'),
-  disabledGray: Color4.fromHexString('#323232'),
-  black: Color4.Black(),
-  softBlack: Color4.fromHexString('#161518'),
-  transparent: Color4.create(0, 0, 0, 0),
+  white: COLORS.textPrimary,
+  gray: COLORS.textSecondary,
+  addressGray: COLORS.textSecondary,
+  removeRed: COLORS.danger,
+  disabledGray: COLORS.textDisabled,
+  black: COLORS.black,
+  softBlack: COLORS.surface,
+  transparent: COLORS.transparent,
 });
 
 export const getPaginationColor = (isDisabled: boolean) => {

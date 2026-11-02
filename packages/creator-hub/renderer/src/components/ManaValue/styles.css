@@ -1,0 +1,10 @@
+.ManaValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Matches how decentraland-ui2's own Mana component fills the icon. */
+.ManaValue svg path {
+  fill: currentColor;
+}

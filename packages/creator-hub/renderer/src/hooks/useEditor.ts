@@ -51,6 +51,10 @@ export const useEditor = () => {
     }
   }, [project, editorActions.killPreviewScene]);
 
+  const leaveProject = useCallback(() => {
+    dispatch(editorActions.leaveProject());
+  }, [editorActions.leaveProject]);
+
   const openCode = useCallback(() => {
     if (project) {
       editorApi.openCode(project.path);
@@ -109,16 +113,39 @@ export const useEditor = () => {
     [project],
   );
 
+  // Start/kill the headless Bevy realm for a project (the sdk-commands content +
+  // data-layer the embedded Bevy editor engine loads from). Direct
+  // request/response like openCode — no redux round-trip needed. Path is passed
+  // in (not closed over `project`) so these stay referentially stable across
+  // project-object updates — the realm effect keys on path and must not restart
+  // the server on every scene edit.
+  const startBevyRealm = useCallback(
+    (path: string) => {
+      return editorApi.startBevyRealm(path);
+    },
+    [editorApi.startBevyRealm],
+  );
+
+  const killBevyRealm = useCallback(
+    (path: string) => {
+      return editorApi.killBevyRealm(path);
+    },
+    [editorApi.killBevyRealm],
+  );
+
   return {
     ...editor,
     startInspector,
     publishScene,
     openPreview,
     killPreview,
+    leaveProject,
     openCode,
     updateScene,
     saveAndGetThumbnail,
     refreshProject,
     getMobileQR,
+    startBevyRealm,
+    killBevyRealm,
   };
 };

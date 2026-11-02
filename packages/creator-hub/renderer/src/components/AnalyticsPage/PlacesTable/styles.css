@@ -1,0 +1,86 @@
+/*
+ * Fixed layout so column widths come from the header alone. With the default
+ * auto layout the browser measures the rendered cells, so filtering the list
+ * down to fewer rows silently re-sizes every column.
+ */
+.PlacesTable {
+  table-layout: fixed;
+}
+
+.PlacesTable .MuiTableCell-root {
+  border-bottom: 1px solid var(--dark-gray);
+  padding: 12px 16px;
+}
+
+.PlacesTable .MuiTableHead-root .MuiTableCell-root:nth-child(1) {
+  width: 32%;
+}
+
+.PlacesTable .MuiTableHead-root .MuiTableCell-root:nth-child(2),
+.PlacesTable .MuiTableHead-root .MuiTableCell-root:nth-child(3),
+.PlacesTable .MuiTableHead-root .MuiTableCell-root:nth-child(4),
+.PlacesTable .MuiTableHead-root .MuiTableCell-root:nth-child(5),
+.PlacesTable .MuiTableHead-root .MuiTableCell-root:nth-child(6) {
+  width: 12.5%;
+}
+
+.PlacesTable .MuiTableHead-root .MuiTableCell-root {
+  color: var(--secondary-text);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.PlacesTable .MuiTableBody-root .MuiTableCell-root {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.PlacesTable .MuiTableBody-root .MuiTableRow-root {
+  cursor: pointer;
+}
+
+.PlacesTable .MuiTableBody-root .MuiTableRow-root:hover {
+  background-color: var(--card);
+}
+
+.PlacesTable .PlaceCell {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Fixed columns can't grow for a long name, so truncate it instead. */
+.PlacesTable .PlaceCell .MuiTypography-root {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.PlacesTable .Thumbnail {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.PlacesTable .PinnedIcon {
+  flex-shrink: 0;
+  color: var(--secondary-text);
+}
+
+.PlacesTable .ActionsCell {
+  width: 64px;
+  text-align: right;
+}
+
+.PlacesTable .ActionsCell .MuiIconButton-root {
+  opacity: 0;
+}
+
+.PlacesTable .MuiTableRow-root:hover .ActionsCell .MuiIconButton-root,
+.PlacesTable .ActionsCell .MuiIconButton-root:focus-visible,
+.PlacesTable .ActionsCell .MuiIconButton-root[aria-expanded="true"] {
+  opacity: 1;
+}

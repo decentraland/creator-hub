@@ -1,0 +1,33 @@
+.StatsRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  background-color: var(--background);
+}
+
+.StatsRow .Stats {
+  display: flex;
+  gap: 16px;
+}
+
+.StatsRow .Stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 0;
+}
+
+.StatsRow .Stat .MuiTypography-body2 {
+  color: var(--secondary-text);
+}
+
+.StatsRow .Stat .MuiTypography-h5 {
+  font-weight: 600;
+}
+
+.StatsRow .Footnote {
+  color: var(--secondary-text);
+  font-style: italic;
+}

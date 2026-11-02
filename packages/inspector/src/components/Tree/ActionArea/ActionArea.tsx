@@ -1,9 +1,11 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { IoEyeOutline as VisibleIcon, IoEyeOffOutline as InvisibleIcon } from 'react-icons/io5';
 import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
-import { Entity } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 
-import { WithSdkProps, withSdk } from '../../../hoc/withSdk';
+import type { WithSdkProps } from '../../../hoc/withSdk';
+import { withSdk } from '../../../hoc/withSdk';
+import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { CAMERA, PLAYER, ROOT } from '../../../lib/sdk/tree';
 import { InfoTooltip } from '../../ui';
 
@@ -20,17 +22,19 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   } = sdk;
   const { entity } = props;
 
-  const isEntityLocked = useMemo(() => {
-    return Lock.getOrNull(entity) !== null;
-  }, [entity, sdk]);
+  // Subscribe to the components so the icon + toggle closure recompute when the
+  // component is added/removed (a plain useMemo over getOrNull never re-fires —
+  // its deps [entity, sdk] don't change on a component write — so the button
+  // would freeze on its first state and look dead after one click).
+  const isEntityLocked = useHasComponent(entity, Lock);
+  const isEntityHidden = useHasComponent(entity, Hide);
 
-  const isEntityHidden = useMemo(() => {
-    return Hide.getOrNull(entity) !== null;
-  }, [entity, sdk]);
-
+  // lock/hide only write the component; dispatch flushes it to the engine. The row's
+  // selection handler used to do that as the click bubbled, which it no longer does.
   const lock = useCallback(
     (value: boolean) => {
       sdk.operations.lock(entity, value);
+      void sdk.operations.dispatch();
     },
     [entity, sdk],
   );
@@ -38,36 +42,51 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   const hide = useCallback(
     (value: boolean) => {
       sdk.operations.hide(entity, value);
+      void sdk.operations.dispatch();
     },
     [entity, sdk],
   );
 
-  const handleToggleHideComponent = useCallback(() => {
-    const value = !isEntityHidden;
-    hide(value);
-    analytics.track(Event.HIDE, { value });
-  }, [hide, isEntityHidden]);
+  // The buttons sit inside the row's selectable area, whose click handler treats
+  // event.detail > 1 as a double-click that focuses the camera. Rapidly toggling an
+  // icon must not select the row, let alone fly the camera to it (#368).
+  const handleToggleHideComponent = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      const value = !isEntityHidden;
+      hide(value);
+      analytics.track(Event.HIDE, { value });
+    },
+    [hide, isEntityHidden],
+  );
 
-  const handleToggleLockComponent = useCallback(() => {
-    const value = !isEntityLocked;
-    lock(value);
-    analytics.track(Event.LOCK, { value });
-  }, [lock, isEntityLocked]);
+  const handleToggleLockComponent = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      const value = !isEntityLocked;
+      lock(value);
+      analytics.track(Event.LOCK, { value });
+    },
+    [lock, isEntityLocked],
+  );
 
   const toggleLockButton = useCallback(() => {
     return (
-      <div className="action-button">
+      <div
+        className="action-button"
+        role="button"
+        aria-label={isEntityLocked ? 'Unlock item' : 'Lock item'}
+        onClick={handleToggleLockComponent}
+      >
         {isEntityLocked ? (
           <LockIcon
             className="lock-icon"
             size={16}
-            onClick={handleToggleLockComponent}
           />
         ) : (
           <UnlockIcon
             className="unlock-icon"
             size={16}
-            onClick={handleToggleLockComponent}
           />
         )}
       </div>
@@ -76,18 +95,21 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
 
   const toggleVisibleButton = useCallback(() => {
     return (
-      <div className="action-button">
+      <div
+        className="action-button"
+        role="button"
+        aria-label={isEntityHidden ? 'Show item' : 'Hide item'}
+        onClick={handleToggleHideComponent}
+      >
         {isEntityHidden ? (
           <InvisibleIcon
             className="invisible-icon"
             size={16}
-            onClick={handleToggleHideComponent}
           />
         ) : (
           <VisibleIcon
             className="visible-icon"
             size={16}
-            onClick={handleToggleHideComponent}
           />
         )}
       </div>

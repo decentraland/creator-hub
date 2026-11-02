@@ -26,6 +26,7 @@ export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
 export const MAX_POINTER_SIZE_BYTES = 15 * 1e6; // 15MB validation in the content-server
 
 const ASSET_BUNDLE_REGISTRY = config.get('ASSET_BUNDLE_REGISTRY_URL');
+const ASSET_BUNDLE_REGISTRY_ABGEN = config.get('ASSET_BUNDLE_REGISTRY_ABGEN_URL');
 
 export const getDeploymentUrl = (publishPort: number) => {
   const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -50,14 +51,40 @@ export function getInvalidFiles(files: File[]) {
   return files.filter(file => file.size > MAX_FILE_SIZE_BYTES).map(file => file.name);
 }
 
-export const deploy = async (
-  url: string,
-  payload: {
-    address: string;
-    authChain: AuthChain;
-    chainId: ChainId;
-  },
-) => {
+export type DeployPayload = {
+  address: string;
+  authChain: AuthChain;
+  chainId: ChainId;
+};
+
+// The local CLI holds this request until the upload ends and answers it with an error itself
+// when the upload fails, so this only guards against a hung CLI. Large scenes take minutes to
+// upload (sdk-commands allows each upload request 600 s), which a short timeout reported as a
+// failed deployment while the CLI went on to publish it.
+export const DEPLOY_REQUEST_TIMEOUT_MS = minutes(60);
+
+export async function discardBody(resp: Response) {
+  await resp.body?.cancel().catch(() => undefined);
+}
+
+/**
+ * Reports to Sentry a deployment the local CLI reported as failed, and returns its error, keeping
+ * only the catalyst's own message when the CLI wraps a whole catalyst response.
+ */
+export function reportDeployRequestError(message: string, extra: Record<string, unknown>): Error {
+  let error = message;
+  if (/Response was/.test(error)) {
+    error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
+  }
+  const serverError = new Error(error);
+  captureException(serverError, {
+    tags: { source: 'deployment', event: 'deploy-request' },
+    extra,
+  });
+  return serverError;
+}
+
+export const deploy = async (url: string, payload: DeployPayload) => {
   const resp = await fetch(
     `${url}/deploy`,
     {
@@ -65,36 +92,24 @@ export const deploy = async (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     },
-    seconds(30),
+    DEPLOY_REQUEST_TIMEOUT_MS,
   );
 
   if (!resp.ok) {
     const data = await resp.json().catch(() => ({ message: `HTTP ${resp.status}` }));
-    let error = data.message;
     console.log('[DEPLOY ERROR] raw data:', JSON.stringify(data));
-    console.log('[DEPLOY ERROR] error message:', error);
-    if (/Response was/.test(error)) {
-      try {
-        error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
-      } catch (e) {
-        // Keep original error if parsing fails
-      }
-    }
-    const serverError = new Error(error);
-    captureException(serverError, {
-      tags: { source: 'deployment', event: 'deploy-request' },
-      extra: { status: resp.status, url },
+    console.log('[DEPLOY ERROR] error message:', data.message);
+    throw reportDeployRequestError(data.message ?? `HTTP ${resp.status}`, {
+      status: resp.status,
+      url,
     });
-    throw serverError;
   }
+  await discardBody(resp);
 };
 
-export const getInitialDeploymentStatus = (
-  isWorld: boolean = false,
-): DeploymentComponentsStatus => ({
+export const getInitialDeploymentStatus = (): DeploymentComponentsStatus => ({
   catalyst: 'idle',
   assetBundle: 'idle',
-  lods: isWorld ? 'complete' : 'idle', // Auto-complete for worlds
 });
 
 export const retryDelayInMs = seconds(10);
@@ -171,35 +186,53 @@ export function cleanPendingsFromDeploymentStatus(
   ) as DeploymentComponentsStatus;
 }
 
+async function fetchEntityStatus(
+  url: URL,
+  headers: Record<string, string>,
+): Promise<AssetBundleRegistryResponse> {
+  const response = await fetch(url, { method: 'get', headers });
+
+  if (!response.ok) {
+    // A publish polls this until the deployment event reaches the registry, so the 404 branch
+    // can run hundreds of times: release the body instead of leaving it to the collector.
+    await discardBody(response);
+    throw new Error(`Error fetching deployment status: ${response.status}`);
+  }
+
+  return (await response.json()) as AssetBundleRegistryResponse;
+}
+
 /**
  * Fetches the deployment status for a given scene.
  *
+ * LOD generation is deliberately not a deployment component: it keeps running on the registry
+ * long after the scene is live, and creators should not wait on it to enter their scene. The
+ * registry still reports a `lods` field — it is ignored on purpose.
+ *
  * @param info - The scene info.
  * @param identity - The authentication identity for signing requests.
+ * @param useAbgenRegistry - Whether asset-bundle status comes from the abgen registry.
  * @returns A promise resolving to the deployment status.
  */
 export async function fetchDeploymentStatus(
   info: Info,
   identity: AuthIdentity,
+  useAbgenRegistry: boolean = false,
 ): Promise<DeploymentComponentsStatus> {
-  const { rootCID: sceneId, isWorld } = info;
-  const method = 'get';
-  const path = `/entities/status/${sceneId}`;
-  const url = new URL(path, ASSET_BUNDLE_REGISTRY);
-  const headers = getAuthHeaders(method, url.pathname, payload =>
+  const { rootCID: sceneId } = info;
+  const url = new URL(
+    `/entities/status/${sceneId}`,
+    useAbgenRegistry ? ASSET_BUNDLE_REGISTRY_ABGEN : ASSET_BUNDLE_REGISTRY,
+  );
+  const headers = getAuthHeaders('get', url.pathname, payload =>
     Authenticator.signPayload(identity, payload),
   );
 
-  const response = await fetch(url, { method, headers });
-
-  if (!response.ok) throw new Error(`Error fetching deployment status: ${response.status}`);
-
-  const json = (await response.json()) as AssetBundleRegistryResponse;
+  const status = await fetchEntityStatus(url, headers);
 
   return {
-    catalyst: validateStatus(json.catalyst),
-    assetBundle: deriveOverallStatus(json.assetBundles),
-    lods: isWorld ? 'complete' : deriveOverallStatus(json.lods), // Skip lods for worlds
+    catalyst: validateStatus(status.catalyst),
+    assetBundle: deriveOverallStatus(status.assetBundles),
   };
 }
 
@@ -269,27 +302,6 @@ export async function checkDeploymentStatus(
   throw maxRetriesError;
 }
 
-/**
- * Checks if the deployment is nearing completion based on a given percentage threshold.
- *
- * This function evaluates the `DeploymentStatus` object to determine whether the proportion
- * of steps with a 'complete' status meets or exceeds the specified threshold (default: 60%).
- *
- * @param status - The `DeploymentStatus` object containing the current statuses of deployment steps.
- * @param percentage - The completion threshold as a decimal (e.g., `0.6` for 60%). Defaults to 0.6.
- * @returns `true` if the proportion of completed steps is greater than or equal to the threshold; otherwise, `false`.
- */
-export function checkDeploymentCompletion(
-  status: DeploymentComponentsStatus,
-  percentage: number = 0.6,
-): boolean {
-  const statuses = Object.values(status);
-  const total = statuses.length;
-  if (total === 0) return false;
-  const completedCount = statuses.filter(value => value === 'complete').length;
-  return completedCount / total >= percentage;
-}
-
 export function getCatalystServers(chainId: ChainId) {
   const network = chainId === ChainId.ETHEREUM_SEPOLIA ? 'sepolia' : 'mainnet';
   return getCatalystServersFromCache(network);
@@ -340,6 +352,10 @@ export function translateError(error: SerializedError) {
       return t('modal.publish_project.deploy.deploying.errors.invalid_creator_wallet');
     case 'MAX_POINTER_SIZE_EXCEEDED':
       return t('modal.publish_project.deploy.deploying.errors.max_scene_size_exceeded');
+    case 'DEPLOY_STATE_LOST':
+      return t('modal.publish_project.deploy.deploying.errors.deploy_state_lost');
+    case 'DEPLOY_REQUEST_TIMEOUT':
+      return t('modal.publish_project.deploy.deploying.errors.deploy_request_timeout');
     default:
       return t('modal.publish_project.deploy.deploying.errors.unknown');
   }
