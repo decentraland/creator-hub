@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/glowing_ring_pendant/glowing_ring_pendant.glb"
+          }
+        }
+      }
+    }
+  ]
+}

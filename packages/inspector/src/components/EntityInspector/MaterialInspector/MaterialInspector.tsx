@@ -72,6 +72,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           metallic={getInputProps('metallic')}
           roughness={getInputProps('roughness')}
           albedoColor={getInputProps('albedoColor')}
+          albedoColorAlpha={getInputProps('albedoColorAlpha')}
           reflectivityColor={getInputProps('reflectivityColor')}
           specularIntensity={getInputProps('specularIntensity')}
           directIntensity={getInputProps('directIntensity')}

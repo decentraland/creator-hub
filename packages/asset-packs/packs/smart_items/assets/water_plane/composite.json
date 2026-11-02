@@ -1,0 +1,449 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Water.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"activatedBy\":{\"type\":\"enum\",\"options\":[\"my player\",\"all players\"],\"optional\":true,\"tooltip\":\"Who makes it splash: 'my player' is just you; 'all players' is any avatar.\",\"value\":\"my player\"},\"depth\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"How far below the surface the area reaches, in metres before scaling. It never reaches past the bottom of a pool.\"},\"splashSize\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"Size of the splash effect, in metres.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"splash.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder played on each splash. Leave empty for no sound.\"}},\"actions\":[{\"methodName\":\"splash\",\"description\":\"Plays a splash in the middle of the water\",\"params\":{}}],\"events\":[\"enter\",\"exit\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "call_script_method",
+                "name": "Splash",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Water.ts\",\"methodName\":\"splash\",\"params\":{}}",
+                "default": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/water_plane_placeholder.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 1.02,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.707107,
+              "y": 0.0,
+              "z": 0.0,
+              "w": 0.707107
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 0.01
+            },
+            "parent": 0
+          }
+        },
+        "514": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.866,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": 0.5,
+              "z": -0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 0.01
+            },
+            "parent": 0
+          }
+        },
+        "515": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.712,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": -0.5,
+              "z": 0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 0.01
+            },
+            "parent": 0
+          }
+        },
+        "516": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.462,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": -0.5,
+              "z": 0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 0.01
+            },
+            "parent": 0
+          }
+        },
+        "517": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.02,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": 0.5,
+              "z": -0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 0.01
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::MeshRenderer",
+      "data": {
+        "513": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "514": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "515": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "516": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "517": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Material",
+      "data": {
+        "513": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.1875,
+                        "y": 1.1875
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "514": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.1875,
+                        "y": 1.1875
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "515": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.1875,
+                        "y": 1.1875
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "516": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.1875,
+                        "y": 1.1875
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "517": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.1875,
+                        "y": 1.1875
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "513": {
+          "json": {
+            "value": "Water Layer 1"
+          }
+        },
+        "514": {
+          "json": {
+            "value": "Water Layer 2"
+          }
+        },
+        "515": {
+          "json": {
+            "value": "Water Layer 3"
+          }
+        },
+        "516": {
+          "json": {
+            "value": "Water Layer 4"
+          }
+        },
+        "517": {
+          "json": {
+            "value": "Water Layer 5"
+          }
+        }
+      }
+    }
+  ]
+}

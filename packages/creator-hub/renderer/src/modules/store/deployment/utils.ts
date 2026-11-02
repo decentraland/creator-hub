@@ -11,6 +11,7 @@ import { delay } from '/shared/utils';
 import { fetch } from '/shared/fetch';
 
 import { config } from '/@/config';
+import { WORLD_LIMITS_TIMEOUT_MS, Worlds } from '/@/lib/worlds';
 import { t } from '/@/modules/store/translation/utils';
 import {
   type Info,
@@ -23,7 +24,8 @@ import {
 } from '/@/lib/deploy';
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
-export const MAX_POINTER_SIZE_BYTES = 15 * 1e6; // 15MB validation in the content-server
+// @dcl/content-validator `entityParameters.scene.maxSizeInMB`, checked per pointer in binary units.
+export const MAX_POINTER_SIZE_BYTES = 15 * 1024 * 1024;
 
 const ASSET_BUNDLE_REGISTRY = config.get('ASSET_BUNDLE_REGISTRY_URL');
 const ASSET_BUNDLE_REGISTRY_ABGEN = config.get('ASSET_BUNDLE_REGISTRY_ABGEN_URL');
@@ -51,14 +53,101 @@ export function getInvalidFiles(files: File[]) {
   return files.filter(file => file.size > MAX_FILE_SIZE_BYTES).map(file => file.name);
 }
 
-export const deploy = async (
-  url: string,
-  payload: {
-    address: string;
-    authChain: AuthChain;
-    chainId: ChainId;
-  },
-) => {
+export function getTotalSize(files: File[]) {
+  return files.reduce((total, file) => total + file.size, 0);
+}
+
+export function getGenesisCitySceneSizeLimit(parcelCount: number) {
+  return parcelCount * MAX_POINTER_SIZE_BYTES;
+}
+
+/**
+ * Picks the parcels to ask the world limits for: one shared parcel per replaced scene, which
+ * credits back the same scenes as the whole list, or one of the scene's own when none is replaced.
+ * Keeps the request small, as the server caps how many parcels it takes.
+ */
+export function getWorldLimitsParcels(parcels: string[], replacedScenesParcels: string[][]) {
+  const sceneParcels = new Set(parcels);
+  const picked = new Set<string>();
+  for (const replacedParcels of replacedScenesParcels) {
+    const shared = replacedParcels.find(parcel => sceneParcels.has(parcel));
+    if (shared) picked.add(shared);
+  }
+  if (picked.size === 0 && parcels.length > 0) picked.add(parcels[0]);
+  return [...picked];
+}
+
+/**
+ * Resolves the size the worlds server will accept for the whole scene, or `null` when it cannot be
+ * known (a server without the limits endpoint, or a failed request), in which case the server
+ * stays the only gate.
+ */
+export async function fetchWorldSceneSizeLimit(
+  worldName: string,
+  parcels: string[],
+  { replacesWorld = false }: { replacesWorld?: boolean } = {},
+): Promise<number | null> {
+  const worlds = new Worlds();
+  // Publish waits for both requests, so one deadline bounds them together.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WORLD_LIMITS_TIMEOUT_MS);
+  try {
+    // The world is emptied before deploying: without parcels the server credits back all of it.
+    if (replacesWorld) {
+      const limits = await worlds.fetchWorldLimits(worldName, [], controller.signal);
+      return limits?.maxSceneSizeInBytes ?? null;
+    }
+    const replacedScenesParcels = await worlds.fetchReplacedScenesParcels(
+      worldName,
+      parcels,
+      controller.signal,
+    );
+    if (!replacedScenesParcels) return null;
+    const limits = await worlds.fetchWorldLimits(
+      worldName,
+      getWorldLimitsParcels(parcels, replacedScenesParcels),
+      controller.signal,
+    );
+    return limits?.maxSceneSizeInBytes ?? null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export type DeployPayload = {
+  address: string;
+  authChain: AuthChain;
+  chainId: ChainId;
+};
+
+// The local CLI holds this request until the upload ends and answers it with an error itself
+// when the upload fails, so this only guards against a hung CLI. Large scenes take minutes to
+// upload (sdk-commands allows each upload request 600 s), which a short timeout reported as a
+// failed deployment while the CLI went on to publish it.
+export const DEPLOY_REQUEST_TIMEOUT_MS = minutes(60);
+
+export async function discardBody(resp: Response) {
+  await resp.body?.cancel().catch(() => undefined);
+}
+
+/**
+ * Reports to Sentry a deployment the local CLI reported as failed, and returns its error, keeping
+ * only the catalyst's own message when the CLI wraps a whole catalyst response.
+ */
+export function reportDeployRequestError(message: string, extra: Record<string, unknown>): Error {
+  let error = message;
+  if (/Response was/.test(error)) {
+    error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
+  }
+  const serverError = new Error(error);
+  captureException(serverError, {
+    tags: { source: 'deployment', event: 'deploy-request' },
+    extra,
+  });
+  return serverError;
+}
+
+export const deploy = async (url: string, payload: DeployPayload) => {
   const resp = await fetch(
     `${url}/deploy`,
     {
@@ -66,28 +155,19 @@ export const deploy = async (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     },
-    seconds(30),
+    DEPLOY_REQUEST_TIMEOUT_MS,
   );
 
   if (!resp.ok) {
     const data = await resp.json().catch(() => ({ message: `HTTP ${resp.status}` }));
-    let error = data.message;
     console.log('[DEPLOY ERROR] raw data:', JSON.stringify(data));
-    console.log('[DEPLOY ERROR] error message:', error);
-    if (/Response was/.test(error)) {
-      try {
-        error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
-      } catch (e) {
-        // Keep original error if parsing fails
-      }
-    }
-    const serverError = new Error(error);
-    captureException(serverError, {
-      tags: { source: 'deployment', event: 'deploy-request' },
-      extra: { status: resp.status, url },
+    console.log('[DEPLOY ERROR] error message:', data.message);
+    throw reportDeployRequestError(data.message ?? `HTTP ${resp.status}`, {
+      status: resp.status,
+      url,
     });
-    throw serverError;
   }
+  await discardBody(resp);
 };
 
 export const getInitialDeploymentStatus = (): DeploymentComponentsStatus => ({
@@ -178,7 +258,7 @@ async function fetchEntityStatus(
   if (!response.ok) {
     // A publish polls this until the deployment event reaches the registry, so the 404 branch
     // can run hundreds of times: release the body instead of leaving it to the collector.
-    await response.body?.cancel().catch(() => undefined);
+    await discardBody(response);
     throw new Error(`Error fetching deployment status: ${response.status}`);
   }
 
@@ -335,6 +415,10 @@ export function translateError(error: SerializedError) {
       return t('modal.publish_project.deploy.deploying.errors.invalid_creator_wallet');
     case 'MAX_POINTER_SIZE_EXCEEDED':
       return t('modal.publish_project.deploy.deploying.errors.max_scene_size_exceeded');
+    case 'DEPLOY_STATE_LOST':
+      return t('modal.publish_project.deploy.deploying.errors.deploy_state_lost');
+    case 'DEPLOY_REQUEST_TIMEOUT':
+      return t('modal.publish_project.deploy.deploying.errors.deploy_request_timeout');
     default:
       return t('modal.publish_project.deploy.deploying.errors.unknown');
   }

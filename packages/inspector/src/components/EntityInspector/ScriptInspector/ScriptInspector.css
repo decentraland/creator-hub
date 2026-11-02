@@ -85,3 +85,55 @@
   gap: 12px;
   align-items: normal;
 }
+
+.ScriptInspector .ScriptReactions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.ScriptInspector .ScriptReactions .description {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-color-secondary, #a1a1a1);
+}
+
+.ScriptInspector .ScriptReactions .asks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ScriptInspector .ScriptReactions .ReactionButton {
+  display: flex;
+  justify-content: flex-start;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: var(--background-gray);
+  border: 1px solid #303031;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.ScriptInspector .ScriptReactions .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ScriptInspector .ScriptReactions .ReactionChip {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid #303031;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.ScriptInspector .ScriptReactions .ReactionButton:hover,
+.ScriptInspector .ScriptReactions .ReactionChip:hover {
+  background: rgba(255, 255, 255, 0.05);
+}

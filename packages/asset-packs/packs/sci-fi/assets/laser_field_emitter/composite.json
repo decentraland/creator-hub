@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/laser_field_emitter/laser_field_emitter.glb"
+          }
+        }
+      }
+    }
+  ]
+}

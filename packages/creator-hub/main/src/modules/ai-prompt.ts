@@ -46,6 +46,29 @@ You have MCP tools for the scene graph — prefer them over parsing files by han
 All mutations apply live to the editor, autosave, and are undoable (the user can Undo them). The read tools reflect the last autosave (~100 ms behind live). Use them to understand the scene before changing it; still read src/ files directly for code.
 For "make X do Y when clicked/touched", reach for a Smart Item (search_catalog + place_smart_item) first; write a custom script (attach_script) only when no Smart Item fits.
 
+REACTIONS ("when this smart item does X, make Y happen").
+Many Smart Items expose named EVENTS a reaction can hook: a Trigger Area fires 'enter'/'exit'; a button 'click'; a lever/toggle 'activate'/'deactivate'; a door 'open'/'close'; a padlock 'unlock'. The item's own generic script (…/TriggerArea.tsx, Button.ts, Lever.ts, Door.ts, …) owns the SDK callback and fans out via onEvent(name, fn) on its instance. Its params (e.g. a Trigger Area's activatedBy / shape) tune the item, not the reaction.
+To make an item DO something on one of its events, do NOT edit that shared script — every copy shares it — and do NOT touch the SDK system yourself (one callback per entity/event, which the item owns). Instead write a small reaction script, attach it to the SAME entity, find the item's instance via getAllScriptInstances (from '~sdk/script-utils'), and subscribe with onEvent. Use exactly this shape (swap the event name(s) for the item's — check the entity's script or the [Scene] for which events it has):
+  import { Entity } from '@dcl/sdk/ecs'
+  import { getAllScriptInstances } from '~sdk/script-utils'
+  type Reactable = { onEvent(name: string, fn: (who?: Entity) => void): void }
+  export class ShowMessageReaction {
+    private wired = false
+    constructor(public src: string, public entity: Entity) {}
+    start() {}
+    update() {
+      if (this.wired) return
+      const item = getAllScriptInstances(this.entity)
+        .map(s => s.instance)
+        .find(i => i && typeof i.onEvent === 'function') as Reactable | undefined
+      if (!item) return // instance not ready this frame — retry next tick
+      this.wired = true
+      item.onEvent('enter', (who?: Entity) => { /* what happens on this event */ })
+      // subscribe to more events on the same item as needed, e.g. item.onEvent('exit', …)
+    }
+  }
+Then attach_script(entity, 'assets/Scripts/<Name>Reaction.tsx'). Name the reaction for WHAT IT DOES, not the event it currently handles — ShowMessageReaction, not OnEnterReaction — because the same script often handles several events. A Trigger Area replays anyone already inside to a new 'enter' subscriber and offers isInside() for "while inside" logic. Detection is client-side only — fine for doors, sounds, UI; never gate a valuable reward on it alone.
+
 RUNNING THE SCENE (PREVIEW).
 To VERIFY your work in the actual running scene — see it rendered, walk around, click things, read runtime logs and performance — launch the preview:
 - launch_preview — start the scene in the Decentraland Explorer and connect to it. Returns whether the scene is ready plus a catalog of runtime tools. Booting takes a while and may need the user signed in; if it's not ready, wait a few seconds and call preview_status again.

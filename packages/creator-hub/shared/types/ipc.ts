@@ -2,13 +2,14 @@ import type { OpenDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
-import type { DeployOptions } from '/shared/types/deploy';
+import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
+import type { SkillsUpdateStatus } from './skills';
 import type {
   AiMirrorState,
   AiProvider,
@@ -16,6 +17,12 @@ import type {
   AiRemoteCommand,
   AiSendParams,
 } from './ai';
+import type {
+  OptimizeOptions,
+  OptimizeResult,
+  OptimizeScanResult,
+  OptimizeToolsInfo,
+} from './optimizer';
 
 export type IpcResult<T> = {
   success: true;
@@ -82,6 +89,13 @@ export type AiSceneOpRequest = { id: string; op: string; params: Record<string, 
 // A null answer means the user dismissed it (or the turn was stopped before they chose).
 export const AI_ASK_REQUEST = 'ai.askRequest';
 
+// Main gave up waiting on an AI_ASK_REQUEST (its timeout passed, so the agent was told the
+// question was dismissed). The renderer closes that prompt so it can't take an answer that
+// nothing is waiting for any more.
+export const AI_ASK_EXPIRED = 'ai.askExpired';
+
+export type AiAskExpired = { id: string };
+
 export type AiAskOption = { label: string; description?: string };
 export type AiAskRequest = {
   id: string;
@@ -101,6 +115,19 @@ export const AI_REMOTE_COMMAND = 'ai.remoteCommand';
 export const AI_WINDOW_STATE = 'ai.windowState';
 
 export type AiWindowState = { open: boolean };
+
+// Detached console window (#1272). Same shape as the AI window: the console can be popped
+// out of its lower tab into its own always-on-top-able OS window. CONSOLE_WINDOW_STATE tells
+// the main window whether that window is open (so the inline tab shows the logs or a "opened
+// in a separate window" placeholder). CONSOLE_MIRROR_STATE (main window → main → detached)
+// carries the bits the detached window can't observe itself — whether the preview is running,
+// so it knows to (re)attach to the debugger on the next run. The log lines themselves are
+// NOT mirrored: the detached window subscribes to the main-process debugger directly.
+export const CONSOLE_MIRROR_STATE = 'console.mirrorState';
+export const CONSOLE_WINDOW_STATE = 'console.windowState';
+
+export type ConsoleWindowState = { open: boolean };
+export type ConsoleMirrorState = { previewRunning: boolean };
 
 // AI sign-in without a pre-installed CLI (#1531). Users with a Claude/ChatGPT subscription
 // who never installed a CLI can sign in from the setup panel: main installs the official CLI
@@ -151,9 +178,16 @@ export interface Ipc {
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
+  'optimizer.scan': (path: string) => Promise<OptimizeScanResult>;
+  'optimizer.run': (path: string, options: OptimizeOptions) => Promise<OptimizeResult>;
+  'optimizer.revert': (path: string) => Promise<{ restored: number }>;
+  'optimizer.tools': () => Promise<OptimizeToolsInfo>;
+  'optimizer.installTools': (path: string) => Promise<OptimizeToolsInfo>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
-  'inspector.attachSceneDebugger': (path: string) => Promise<string>;
+  'inspector.attachSceneDebugger': (
+    path: string,
+  ) => Promise<{ eventName: string; backlog: string[] }>;
   'inspector.detachSceneDebugger': (path: string) => void;
   'bevyRealm.start': (path: string) => Promise<{ url: string; wsUrl: string }>;
   'bevyRealm.kill': (path: string) => Promise<void>;
@@ -175,7 +209,7 @@ export interface Ipc {
   'cli.start': (path: string, opts: PreviewOptions, mobile?: boolean) => Promise<string>;
   'cli.cancelPreview': (path: string) => Promise<void>;
   'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
-  'cli.deploy': (opts: DeployOptions) => Promise<number>;
+  'cli.deploy': (opts: DeployOptions) => Promise<DeployServer>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;
   'analytics.track': <T extends keyof Events>(event: T, data?: Events[T]) => void;
@@ -185,6 +219,8 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
+  'skills.getProjectStatus': (path: string) => Promise<SkillsUpdateStatus>;
+  'skills.updateProject': (path: string) => Promise<void>;
 
   // AI scene assistant. `ai.send` streams its result over AI_STREAM_EVENT (payload
   // AiEvent) to the calling WebContents; the returned turnId correlates the stream.
@@ -232,6 +268,13 @@ export interface Ipc {
   'ai.isWindowOpen': () => Promise<boolean>;
   'ai.mirrorPush': (state: AiMirrorState) => void;
   'ai.remoteCommand': (command: AiRemoteCommand) => void;
+  // Detached console window (#1272). openWindow/closeWindow manage the separate OS window
+  // (`path` picks the scene to attach to, `locale` seeds its i18n); mirrorPush relays the
+  // main window's preview-running state to it (main window → main → detached).
+  'console.openWindow': (path: string, locale?: string) => Promise<void>;
+  'console.closeWindow': () => Promise<void>;
+  'console.isWindowOpen': () => Promise<boolean>;
+  'console.mirrorPush': (state: ConsoleMirrorState) => void;
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
   'mobileDebug.unsubscribeEntries': () => Promise<void>;

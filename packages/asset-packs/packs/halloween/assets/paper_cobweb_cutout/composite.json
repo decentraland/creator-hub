@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/paper_cobweb_cutout/paper_cobweb_cutout.glb"
+          }
+        }
+      }
+    }
+  ]
+}

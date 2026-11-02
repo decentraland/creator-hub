@@ -1,0 +1,9 @@
+{
+  "id": "592006fc-2442-419b-abe8-70ed9f14e952",
+  "name": "Sitting Ground 2",
+  "category": "sitting",
+  "tags": ["2", "animation", "avatar", "built-in", "default", "emote", "ground", "sitting"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'sittingGround2' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "sittingGround2"
+}

@@ -45,14 +45,20 @@ export function useAiSession(
     dispatch(aiActions.fetchProviders());
     const stream = aiPreload.subscribeAiStream(event => {
       dispatch(aiActions.applyEvent(event));
-      if (event.kind === 'done') dispatch(aiActions.persistConversation());
+      if (event.kind === 'done') {
+        dispatch(aiActions.persistConversation());
+        void dispatch(aiActions.recheckAfterTurn(event.ok));
+      }
     });
     // Interactive `ask_user` prompts arrive on their own channel (they block an MCP tool call,
     // not a stream token) — fold each into the transcript.
     const ask = aiPreload.onAskRequest(req => dispatch(aiActions.pushPrompt(req)));
+    // Main gave up waiting on a prompt: close it so it can't take an answer that goes nowhere.
+    const expired = aiPreload.onAskExpired(({ id }) => dispatch(aiActions.expirePrompt(id)));
     return () => {
       stream.cleanup();
       ask.cleanup();
+      expired.cleanup();
     };
   }, [enabled, dispatch]);
 
@@ -92,7 +98,7 @@ export function useAiSession(
     const { cleanup } = aiPreload.onAiRemoteCommand(command => {
       switch (command.type) {
         case 'send':
-          dispatch(aiActions.send(command.text));
+          dispatch(aiActions.send({ text: command.text, attachments: command.attachments }));
           break;
         case 'stop':
           dispatch(aiActions.stop());
@@ -123,6 +129,9 @@ export function useAiSession(
           break;
         case 'clearSelection':
           latest.current.onClearSelection?.();
+          break;
+        case 'removeAssetMention':
+          dispatch(aiActions.removeAssetMention(command.mention));
           break;
         case 'closeAssistant':
           void aiPreload.closeAiWindow();

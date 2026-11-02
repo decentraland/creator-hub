@@ -88,4 +88,39 @@ describe('SceneProvider', () => {
       expect(sceneJsonAfter.landscapeTerrain).toBe(true);
     });
   });
+
+  describe('when the scene name keeps changing while the previous change is still being saved', () => {
+    it('should persist the last name into scene.json', async () => {
+      const mocked = await mockedRpcInit();
+      // A slow file system keeps the state manager busy persisting the first keystroke while
+      // the next ones land, like the real host writing scene.json + main.composite to disk.
+      const fs = {
+        ...mocked.fs,
+        writeFile: async (path: string, content: Buffer) => {
+          await new Promise(resolve => setTimeout(resolve, 20));
+          return mocked.fs.writeFile(path, content);
+        },
+      };
+      await initRpcMethods(fs, mocked.engine, mocked.addEngineListener);
+
+      const Scene = mocked.engine.getComponent(
+        EditorComponentNames.Scene,
+      ) as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>;
+
+      const typed = ['My s', 'My sc', 'My scene', 'My scene template'];
+      for (const name of typed) {
+        const current = Scene.get(mocked.engine.RootEntity);
+        Scene.createOrReplace(
+          mocked.engine.RootEntity,
+          serializationRoundTrip(Scene, { ...current, name }),
+        );
+        await mocked.engine.update(1);
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const sceneJson = await readSceneJson(mocked.fs);
+      expect(sceneJson.display.title).toBe('My scene template');
+    });
+  });
 });

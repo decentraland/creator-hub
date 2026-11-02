@@ -12,67 +12,17 @@
       }
     },
     {
-      "name": "asset-packs::Actions",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": [
-              {
-                "name": "Respawn Player",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Move Player\", \"Play Spawn Sound\"] }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Move Player",
-                "type": "move_player_here",
-                "jsonPayload": "{ }"
-              },
-              {
-                "name": "Play Spawn Sound",
-                "type": "play_sound",
-                "jsonPayload": "{ \"src\": \"{assetPath}/spawn.mp3\" }"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
+      "name": "asset-packs::Script",
       "data": {
         "0": {
           "json": {
             "value": [
               {
-                "type": "on_player_spawn",
-                "actions": [],
-                "basicViewId": "trigger-when-player-spawn"
+                "path": "{assetPath}/RespawnPad.tsx",
+                "priority": 0,
+                "layout": "{\"params\":{\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"spawn.mp3\"}},\"events\":[\"spawn\"]}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Respawn Pad",
-            "fields": [
-              {
-                "name": "When Player Spawns Here",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-player-spawn"
-              }
-            ],
-            "helpTooltip": {
-              "text": "A respawn pad that can be used to respawn the player when they die. It can work together with the health bar smart item."
-            },
-            "version": 1
           }
         }
       }

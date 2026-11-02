@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import type { AiProvider } from '/shared/types/ai';
+import type { AiAssetMention, AiAttachment, AiProvider } from '/shared/types/ai';
 
 import { useDispatch, useSelector } from '#store';
 import { actions as aiActions } from '/@/modules/store/ai';
@@ -30,12 +30,17 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     busy,
     detecting,
     selection,
+    assetMentions,
     billingDismissed,
     sessions,
     currentSessionId,
+    draftPrompt,
   } = useSelector(state => state.ai);
 
-  const onSend = useCallback((text: string) => dispatch(aiActions.send(text)), [dispatch]);
+  const onSend = useCallback(
+    (text: string, attachments?: AiAttachment[]) => dispatch(aiActions.send({ text, attachments })),
+    [dispatch],
+  );
   const onStop = useCallback(() => dispatch(aiActions.stop()), [dispatch]);
   const onNewChat = useCallback(() => dispatch(aiActions.newChat()), [dispatch]);
   const onProviderChange = useCallback(
@@ -60,15 +65,23 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     (id: string) => dispatch(aiActions.deleteSession(id)),
     [dispatch],
   );
+  const onRemoveAssetMention = useCallback(
+    (mention: AiAssetMention) => dispatch(aiActions.removeAssetMention(mention)),
+    [dispatch],
+  );
+  const onDraftConsumed = useCallback(() => dispatch(aiActions.consumeDraftPrompt()), [dispatch]);
 
   return (
     <ChatView
+      draftPrompt={draftPrompt}
+      onDraftConsumed={onDraftConsumed}
       providers={providers}
       provider={provider}
       messages={messages}
       busy={busy}
       detecting={detecting}
       selection={selection}
+      assetMentions={assetMentions}
       billingDismissed={billingDismissed}
       sessions={sessions}
       currentSessionId={currentSessionId}
@@ -84,6 +97,7 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
       onSwitchSession={onSwitchSession}
       onDeleteSession={onDeleteSession}
       onClearSelection={onClearSelection}
+      onRemoveAssetMention={onRemoveAssetMention}
       onPopOut={onPopOut}
       onClose={onClose}
     />
