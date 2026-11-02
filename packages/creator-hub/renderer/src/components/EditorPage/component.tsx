@@ -150,6 +150,7 @@ export function EditorPage() {
     loadingPublish,
     isInstallingProject,
     killPreview,
+    leaveProject,
     publishScene,
     getMobileQR,
     supportsMultiInstance,
@@ -553,8 +554,9 @@ export function EditorPage() {
       }
     }
     killPreview();
+    leaveProject();
     navigate('/scenes');
-  }, [navigate, refreshProject, killPreview]);
+  }, [navigate, refreshProject, killPreview, leaveProject]);
 
   // Recover from the outdated-deps load error (#1457): update the scene's packages.
   // installProject toggles isInstallingProject, which re-runs the realm-start effect
