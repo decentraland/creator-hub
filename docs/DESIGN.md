@@ -3083,8 +3083,9 @@ Set `Place Entry` [`5655:2522`](https://www.figma.com/design/albOLmqF5fUwmRJ7CjB
 | Variant | State | Fill | Kebab | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
 | Unpublished / Published | rest | White 5 | no fill, White 40 glyph | name 15.73; coords 5.95; kebab 3.73 | the card is one link to the detail page, named by the LAND name; the kebab is a separate `<button aria-haspopup="menu">` with an accessible name, 40px target |
-| any | hover | ✱ White 10, not Figma's White 15, so the Role tags keep 4.5:1 (user decision) | White 10 fill | name 13.50; coords 5.11; kebab glyph on its fill 3.06 | — |
-| any | ✱ focus-within / menu open | as hover | White 10 fill | ring ui2 `palette.info.light` 7.22 on the card | `:focus-visible` 2px ring on the card and on the kebab |
+| any | hover | ✱ White 10, not Figma's White 15, so the Role tags keep 4.5:1 (user decision) | no fill, White 40 glyph, as at rest (user decision). The set's Hover = On variants draw the kebab filled: a known Figma error (the kebab was left in its hovered state), to fix in the file, not to sync | name 13.50; coords 5.11; kebab glyph on the card's hover fill 3.54 | — |
+| any | ✱ focus on the card | as hover | no fill, White 40 glyph | ring ui2 `palette.info.light` 7.22 on the card | `:focus-visible` 2px ring on the card |
+| any | pointer on the kebab, ✱ kebab focus, menu open | as hover | White 10 fill (user decision) | kebab glyph on its fill 3.06; ring ui2 `palette.info.light` 7.22 | `:focus-visible` 2px `palette.info.light` ring on the kebab |
 | Published | rest | — | — | ✱ stats Gray on Black 60: 8.02 over a mid-grey thumbnail, 3.65 over white (accepted: user decision) | the count is also on the detail page |
 
 | Part | Rule |
