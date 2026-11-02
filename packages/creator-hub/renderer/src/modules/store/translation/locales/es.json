@@ -514,6 +514,23 @@
           "land": "Tierra",
           "jump_in": "Entrar"
         }
+      },
+      "place_continuity": {
+        "title": "Esta publicación cambiará tu Place",
+        "land_description": "Tu escena ya está publicada en Genesis City y esta publicación cambia tanto su parcela base como el conjunto de parcelas que ocupa. Decentraland la tratará como un Place nuevo en lugar de una actualización del existente.",
+        "world_description": "Tu escena {overlap, plural, =0 {no se superpone con ninguna escena existente} other {se superpone con # escenas existentes}} en este World. Una publicación solo conserva su Place cuando reemplaza exactamente una escena existente, por lo que Decentraland la tratará como un Place nuevo.",
+        "consequences_title": "Todo lo asociado al Place actual podría perderse, incluyendo:",
+        "consequences": {
+          "storage": "Los datos guardados en el almacenamiento del servidor multijugador podrían borrarse.",
+          "analytics": "Las analíticas de tu escena se reiniciarán.",
+          "creator_fund": "Podrías perder dinero del Creator Fund.",
+          "badges": "Podrías perder las insignias asociadas (próximamente).",
+          "other": "Cualquier otro dato, me gusta, favoritos o rankings vinculados al Place actual."
+        },
+        "tip": "Para conservar tu Place, publica en la misma parcela base o en el mismo conjunto de parcelas que antes.",
+        "cancel": "Volver",
+        "confirm": "Publicar de todos modos",
+        "checking": "Comprobando…"
       }
     },
     "publish_history": {

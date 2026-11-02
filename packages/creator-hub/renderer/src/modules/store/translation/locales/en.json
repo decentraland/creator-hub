@@ -515,6 +515,23 @@
           "land": "Land",
           "jump_in": "Jump In"
         }
+      },
+      "place_continuity": {
+        "title": "This publish will change your Place",
+        "land_description": "Your scene is already published in Genesis City, and this publish changes both its base parcel and the set of parcels it occupies. Decentraland will treat it as a new Place instead of an update to the existing one.",
+        "world_description": "Your scene {overlap, plural, =0 {doesn't overlap any existing scene} other {overlaps # existing scenes}} in this World. A publish only keeps its Place when it replaces exactly one existing scene, so Decentraland will treat it as a new Place.",
+        "consequences_title": "Anything tied to the current Place may be lost, including:",
+        "consequences": {
+          "storage": "The data stored in your Multiplayer Server storage may be erased.",
+          "analytics": "Your scene analytics will be reset.",
+          "creator_fund": "You may lose money from the Creator Fund.",
+          "badges": "You may lose associated badges (coming soon).",
+          "other": "Any other data, likes, favorites or rankings linked to the current Place."
+        },
+        "tip": "To keep your Place, publish to the same base parcel or to the same set of parcels as before.",
+        "cancel": "Go back",
+        "confirm": "Publish anyway",
+        "checking": "Checking…"
       }
     },
     "publish_history": {

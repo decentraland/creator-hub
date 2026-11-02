@@ -52,7 +52,13 @@ import { type AtlasScene, WorldAtlas, WorldAtlasColors } from '/@/components/Wor
 import { PublishModal } from '../../PublishModal';
 import { ProjectStepWrapper } from '../../ProjectStepWrapper';
 import { COLORS, type Props, type Coordinate } from '../../types';
-import { calculateParcels, parseCoords } from '../../utils';
+import {
+  breaksWorldPlaceContinuity,
+  calculateParcels,
+  countOverlappedWorldScenes,
+  parseCoords,
+} from '../../utils';
+import { PlaceContinuityWarning } from '../../PlaceContinuityWarning';
 
 import './styles.css';
 
@@ -77,6 +83,8 @@ export function PublishToWorld(props: Props) {
     managementSelectors.getParcelsStateForAddress(state, wallet || ''),
   );
   const [step, setStep] = useState<Step>(Step.SELECTION);
+  /** Step the confirmation was reached from, so going back returns to it. */
+  const [confirmOrigin, setConfirmOrigin] = useState<Step>(Step.LOCATION);
   const emptyNames = Object.keys(names).length === 0;
 
   const isOwner: boolean = useMemo(() => {
@@ -92,13 +100,13 @@ export function PublishToWorld(props: Props) {
 
   const handleBack = useCallback(() => {
     if (step === Step.CONFIRM_OVERWRITE) {
-      setStep(Step.LOCATION);
+      setStep(confirmOrigin);
     } else if (step === Step.LOCATION) {
       setStep(Step.SELECTION);
     } else {
       props.onBack?.();
     }
-  }, [step, props.onBack]);
+  }, [step, confirmOrigin, props.onBack]);
 
   const handleChangeName = useCallback(
     (worldName: string) => {
@@ -145,8 +153,9 @@ export function PublishToWorld(props: Props) {
   );
 
   const handleShowConfirmation = useCallback(
-    async (projectUpdates: Partial<Project>) => {
+    async (projectUpdates: Partial<Project>, origin: Step = Step.LOCATION) => {
       if (projectUpdates) await handleUpdateProject(projectUpdates);
+      setConfirmOrigin(origin);
       setStep(Step.CONFIRM_OVERWRITE);
     },
     [handleUpdateProject],
@@ -190,6 +199,7 @@ export function PublishToWorld(props: Props) {
               hasWorldWidePermissions={hasWorldWidePermissions}
               onChangeName={handleChangeName}
               onSelectLocation={handleSelectLocation}
+              onShowConfirmation={updates => handleShowConfirmation(updates, Step.SELECTION)}
               onPublish={handlePublish}
             />
           )}
@@ -229,6 +239,7 @@ function SelectWorld({
   onChangeMultiScene,
   onChangeName,
   onSelectLocation,
+  onShowConfirmation,
   onPublish,
 }: {
   name: string;
@@ -240,6 +251,7 @@ function SelectWorld({
   onChangeMultiScene: (isMultiSceneEnabled: boolean) => void;
   onChangeName: (name: string) => void;
   onSelectLocation: (projectUpdates: Partial<Project>) => void;
+  onShowConfirmation: (projectUpdates: Partial<Project>) => void;
   onPublish: (projectUpdates: Partial<Project>) => Promise<void>;
 }) {
   const names = useSelector(state => state.ens.data);
@@ -323,9 +335,22 @@ function SelectWorld({
           coordsToId(parcel.x, parcel.y),
         ),
       };
-      onPublish({ worldConfiguration, scene });
+      // The world already has scenes: publishing at 0,0 may break the Place continuity.
+      if (breaksWorldPlaceContinuity(worldSettings.scenes, scene.parcels)) {
+        onShowConfirmation({ worldConfiguration, scene });
+      } else {
+        onPublish({ worldConfiguration, scene });
+      }
     }
-  }, [project, name, isMultiSceneEnabled, worldSettings.scenes, onPublish, onSelectLocation]);
+  }, [
+    project,
+    name,
+    isMultiSceneEnabled,
+    worldSettings.scenes,
+    onPublish,
+    onSelectLocation,
+    onShowConfirmation,
+  ]);
 
   // Only an in-flight thumbnail save blocks publishing (so the deploy doesn't
   // race the file write). `status` stays undefined when no thumbnail was ever
@@ -682,12 +707,19 @@ function SelectLocation({
       base: coordsToId(placement.x, placement.y),
       parcels: Array.from(placedProjectParcels),
     };
-    if (isOverlappingScenes) {
+    if (isOverlappingScenes || breaksWorldPlaceContinuity(worldScenes, scene.parcels)) {
       onShowConfirmation({ scene });
     } else {
       onPublish({ scene });
     }
-  }, [placement, placedProjectParcels, isOverlappingScenes, onShowConfirmation, onPublish]);
+  }, [
+    placement,
+    placedProjectParcels,
+    isOverlappingScenes,
+    worldScenes,
+    onShowConfirmation,
+    onPublish,
+  ]);
 
   return (
     <div className="SelectLocation">
@@ -781,17 +813,28 @@ function ConfirmOverwrite({
     });
   }, [worldScenes, project.scene.parcels]);
 
+  const overlap = useMemo(
+    () => countOverlappedWorldScenes(worldScenes, project.scene.parcels),
+    [worldScenes, project.scene.parcels],
+  );
+  const breaksContinuity = breaksWorldPlaceContinuity(worldScenes, project.scene.parcels);
+  const hasReplacedScenes = replacedScenes.length > 0;
+
   return (
     <div className="ConfirmOverwrite">
-      <Typography variant="h5">
-        {t('modal.publish_project.worlds.select_world.confirm_overwrite.title')}
-      </Typography>
-      <Typography variant="body2">
-        {t('modal.publish_project.worlds.select_world.confirm_overwrite.scenes_count', {
-          count: replacedScenes.length,
-          b: (child: string) => <b>{child}</b>,
-        })}
-      </Typography>
+      {hasReplacedScenes ? (
+        <>
+          <Typography variant="h5">
+            {t('modal.publish_project.worlds.select_world.confirm_overwrite.title')}
+          </Typography>
+          <Typography variant="body2">
+            {t('modal.publish_project.worlds.select_world.confirm_overwrite.scenes_count', {
+              count: replacedScenes.length,
+              b: (child: string) => <b>{child}</b>,
+            })}
+          </Typography>
+        </>
+      ) : null}
       <ul className="ScenesList">
         {replacedScenes.map((scene, index) => (
           <li key={scene.entityId}>
@@ -808,9 +851,17 @@ function ConfirmOverwrite({
           </li>
         ))}
       </ul>
-      <Typography variant="body2">
-        {t('modal.publish_project.worlds.select_world.confirm_overwrite.description')}
-      </Typography>
+      {hasReplacedScenes && (
+        <Typography variant="body2">
+          {t('modal.publish_project.worlds.select_world.confirm_overwrite.description')}
+        </Typography>
+      )}
+      {breaksContinuity && (
+        <PlaceContinuityWarning
+          kind="world"
+          overlap={overlap}
+        />
+      )}
       <div className="actions">
         <Button
           color="secondary"

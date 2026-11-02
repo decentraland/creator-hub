@@ -1,0 +1,18 @@
+.PlaceContinuityWarning {
+  text-align: left;
+  align-items: flex-start;
+}
+
+.PlaceContinuityWarning .PlaceContinuityWarning-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.PlaceContinuityWarning .PlaceContinuityWarning-subtitle {
+  margin-top: 8px;
+}
+
+.PlaceContinuityWarning ul {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}

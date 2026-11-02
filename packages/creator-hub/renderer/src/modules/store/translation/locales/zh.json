@@ -514,6 +514,23 @@
           "land": "土地",
           "jump_in": "跳转"
         }
+      },
+      "place_continuity": {
+        "title": "此次发布将更改您的 Place",
+        "land_description": "您的场景已发布在 Genesis City，此次发布同时更改了其基准地块和所占用的地块集合。Decentraland 会将其视为新的 Place，而不是对现有 Place 的更新。",
+        "world_description": "您的场景在此 World 中{overlap, plural, =0 {不与任何现有场景重叠} other {与 # 个现有场景重叠}}。只有恰好替换一个现有场景时，发布才会保留其 Place，因此 Decentraland 会将其视为新的 Place。",
+        "consequences_title": "与当前 Place 关联的内容可能会丢失，包括：",
+        "consequences": {
+          "storage": "存储在多人服务器存储中的数据可能会被清除。",
+          "analytics": "您的场景分析数据将被重置。",
+          "creator_fund": "您可能会失去来自 Creator Fund 的收益。",
+          "badges": "您可能会失去相关徽章（即将推出）。",
+          "other": "与当前 Place 关联的任何其他数据、点赞、收藏或排名。"
+        },
+        "tip": "若要保留您的 Place，请发布到与之前相同的基准地块或相同的地块集合。",
+        "cancel": "返回",
+        "confirm": "仍然发布",
+        "checking": "检查中…"
       }
     },
     "publish_history": {
