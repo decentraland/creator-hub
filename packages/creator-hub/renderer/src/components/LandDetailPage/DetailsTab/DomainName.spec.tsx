@@ -55,6 +55,7 @@ describe('DomainName', () => {
           {
             subdomain: 'plaza.dcl.eth',
             nftOwnerAddress: '0xme',
+            ensOwnerAddress: '0xme',
             provider: 'dcl',
             content: '0xaaa',
           },

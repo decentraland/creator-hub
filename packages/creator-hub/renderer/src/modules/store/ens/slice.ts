@@ -252,7 +252,13 @@ export const fetchENSList = createAsyncThunk(
       .dispatch(fetchContributableNames(payload))
       .unwrap();
 
-    return [...dclNames, ...ensNames, ...contributableNames];
+    const owned = [...dclNames, ...ensNames];
+    const ownedSubdomains = new Set(owned.map(({ subdomain }) => subdomain));
+
+    return [
+      ...owned,
+      ...contributableNames.filter(({ subdomain }) => !ownedSubdomains.has(subdomain)),
+    ];
   },
 );
 

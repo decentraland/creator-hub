@@ -45,7 +45,7 @@ export function getDomainState(names: ENS[], context: DomainContext): DomainStat
   const owned = names.filter(
     item =>
       item.provider === ENSProvider.DCL &&
-      item.nftOwnerAddress?.toLowerCase() === context.self.toLowerCase(),
+      item.ensOwnerAddress?.toLowerCase() === context.self.toLowerCase(),
   );
   if (!owned.length) return { kind: 'empty' };
 
