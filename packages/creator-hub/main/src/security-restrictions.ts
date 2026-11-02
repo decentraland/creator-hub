@@ -12,9 +12,10 @@
  * engine's asset-loader worker throwing `SharedArrayBuffer transfer requires
  * self.crossOriginIsolated`.
  *
- * The headers are therefore injected onto the app's own documents (`file://` renderer plus
- * localhost inspector) and nothing else, so external embeds such as YouTube, docs and studios
- * are unaffected — a blanket COEP would block their cross-origin subresources. COEP is
+ * The isolation headers (COOP + COEP + CORP) are therefore injected onto the app's own documents
+ * (`file://` renderer plus localhost inspector) only; external documents such as docs and
+ * studios are left alone, since a blanket COEP would block their cross-origin subresources. The
+ * frames listed under "Frames the app embeds" below get COEP alone, and nothing else. COEP is
  * `credentialless` rather than `require-corp` so the inspector iframe's cross-origin
  * subresources load without needing CORP on every one, matching the inspector http-server and
  * the engine's own service worker.

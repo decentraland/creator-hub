@@ -163,7 +163,16 @@ describe('response header rules', () => {
       'utf8',
     );
     const allowlist = source.match(/ALLOWED_EXTERNAL_IFRAME_ORIGINS[^[]*\[([^\]]*)\]/s);
-    return [...(allowlist?.[1] ?? '').matchAll(/'(https:\/\/[^']+)'/g)].map(match => match[1]);
+    const entries = (allowlist?.[1] ?? '').split(',').filter(entry => entry.trim());
+    const origins = [...(allowlist?.[1] ?? '').matchAll(/'(https:\/\/[^']+)'/g)].map(
+      match => match[1],
+    );
+    // An entry written as a constant, a spread or an http:// literal would be skipped by the
+    // pattern above and silently drop out of every assertion below.
+    expect(origins, 'every allowlist entry must be a plain https string literal').toHaveLength(
+      entries.length,
+    );
+    return origins;
   }
 
   describe('when the request is for an origin the inspector embeds in a markdown iframe', () => {
@@ -180,6 +189,49 @@ describe('response header rules', () => {
           `${origin} is embedded by the isolated inspector document but gets no embedder policy, so the frame is blocked with ERR_BLOCKED_BY_RESPONSE`,
         ).toEqual(['credentialless']);
       }
+    });
+
+    it('should be covered by the registered filter', () => {
+      for (const origin of origins) {
+        const url = `${origin}/embed/abc`;
+        expect(
+          subject.urls.some(pattern => url.startsWith(pattern.replace(/\*$/, ''))),
+          `${url} is not covered by the filter, so the handler never runs for it`,
+        ).toBe(true);
+      }
+    });
+
+    it("should keep a single embedder policy beside YouTube's own report-only header", () => {
+      const headers = {
+        'cross-origin-embedder-policy-report-only': ['require-corp'],
+        'cross-origin-embedder-policy': ['credentialless'],
+      };
+
+      expect(
+        subject.valuesFor(
+          'https://www.youtube.com/embed/abc',
+          'Cross-Origin-Embedder-Policy',
+          headers,
+        ),
+      ).toEqual(['credentialless']);
+      expect(
+        subject.valuesFor(
+          'https://www.youtube.com/embed/abc',
+          'Cross-Origin-Embedder-Policy-Report-Only',
+          headers,
+        ),
+      ).toEqual(['require-corp']);
+    });
+  });
+
+  describe('when the request only looks like an embedded video origin', () => {
+    it.each([
+      'https://www.youtube.com.evil.example/embed/x',
+      'https://evil.example/?u=https://www.youtube.com/embed/x',
+      'http://www.youtube.com/embed/x',
+      'https://music.youtube.com/',
+    ])('should add no embedder policy to %s', url => {
+      expect(subject.valuesFor(url, 'Cross-Origin-Embedder-Policy')).toEqual([]);
     });
   });
 
