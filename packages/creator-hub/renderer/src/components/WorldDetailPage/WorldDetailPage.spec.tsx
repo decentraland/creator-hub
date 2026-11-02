@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
@@ -46,14 +46,17 @@ vi.mock('/@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('../AvatarWithInfo', () => ({
   AvatarWithInfo: ({ value }: { value: string }) => <span>{value}</span>,
 }));
+const fetchWorldScenes = vi.fn(async () => ({ scenes: [], total: 1 }));
+const fetchWorldSettings = vi.fn(async () => ({ title: 'Deep World' }));
+const getContentSrcUrl = vi.fn((hash: string) => hash);
 vi.mock('/@/lib/worlds', async importOriginal => {
   const original = await importOriginal<typeof WorldsModule>();
   return {
     ...original,
     Worlds: class {
-      fetchWorldScenes = async () => ({ scenes: [], total: 1 });
-      fetchWorldSettings = async () => ({ title: 'Deep World' });
-      getContentSrcUrl = (hash: string) => hash;
+      fetchWorldScenes = fetchWorldScenes;
+      fetchWorldSettings = fetchWorldSettings;
+      getContentSrcUrl = getContentSrcUrl;
     },
   };
 });
@@ -131,10 +134,13 @@ function renderPage(path: string) {
               element={<WorldDetailPage />}
             />
           </Routes>
+          <Link to="/manage/world/plaza.dcl.eth/details">Go to plaza</Link>
+          <Link to="/manage/world/deep.dcl.eth/details">Go to deep</Link>
         </ThemeProvider>
       </MemoryRouter>
     </Provider>,
   );
+  return store;
 }
 
 const tabs = () => screen.getAllByRole('tab').map(tab => tab.textContent);
@@ -147,7 +153,15 @@ describe('WorldDetailPage', () => {
     setCurrentLocale('en', flatten(en));
   });
 
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    fetchWorldScenes.mockReset();
+    fetchWorldScenes.mockResolvedValue({ scenes: [], total: 1 });
+    fetchWorldSettings.mockReset();
+    fetchWorldSettings.mockResolvedValue({ title: 'Deep World' });
+    getContentSrcUrl.mockReset();
+    getContentSrcUrl.mockImplementation((hash: string) => hash);
+  });
 
   describe('when the owner opens a World', () => {
     it('should title it by its World Name, with the four tabs in order and Details open', async () => {
@@ -181,6 +195,19 @@ describe('WorldDetailPage', () => {
       renderPage('/manage/world/bare.dcl.eth/details');
 
       expect(screen.getByRole('heading', { level: 1, name: 'Manage - bare.dcl.eth' })).toBeTruthy();
+    });
+
+    it('should stay mounted when a list refresh removes this World from page zero', async () => {
+      const store = renderPage('/manage/world/plaza.dcl.eth/details');
+      const input = await screen.findByRole('textbox', { name: 'World Name' });
+      act(() =>
+        store.dispatch(fetchWorlds.fulfilled({ worlds: [], total: 1 }, 'r2', { address: '' })),
+      );
+
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Manage - Fixture Plaza' }),
+      ).toBeTruthy();
+      expect(screen.getByRole('textbox', { name: 'World Name' })).toBe(input);
     });
   });
 
@@ -220,6 +247,41 @@ describe('WorldDetailPage', () => {
         await screen.findByRole('heading', { level: 1, name: 'Manage - Deep World' }),
       ).toBeTruthy();
       expect(tabs()).toEqual(['Details', 'Scenes', 'Settings', 'Collaborators']);
+    });
+
+    it('should stop loading when resolving the World fails', async () => {
+      fetchWorldSettings.mockResolvedValueOnce({
+        title: 'Deep World',
+        thumbnailHash: 'QmThumbnail',
+      } as never);
+      getContentSrcUrl.mockImplementationOnce(() => {
+        throw new Error('Unavailable');
+      });
+      renderPage('/manage/world/deep.dcl.eth/details');
+
+      expect(
+        await screen.findByRole('heading', { name: 'This World is no longer in your list.' }),
+      ).toBeTruthy();
+    });
+
+    it('should try resolving it again after visiting another World', async () => {
+      getContentSrcUrl.mockImplementationOnce(() => {
+        throw new Error('Unavailable');
+      });
+      fetchWorldSettings.mockResolvedValueOnce({
+        title: 'Deep World',
+        thumbnailHash: 'QmThumbnail',
+      } as never);
+      renderPage('/manage/world/deep.dcl.eth/details');
+      await screen.findByRole('heading', { name: 'This World is no longer in your list.' });
+
+      fireEvent.click(screen.getByRole('link', { name: 'Go to plaza' }));
+      await screen.findByRole('heading', { level: 1, name: 'Manage - Fixture Plaza' });
+      fireEvent.click(screen.getByRole('link', { name: 'Go to deep' }));
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Manage - Deep World' }),
+      ).toBeTruthy();
     });
   });
 

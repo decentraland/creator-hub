@@ -36,8 +36,15 @@ export function WorldDetailPage() {
   const status = useSelector(state => state.management.status);
   const [unpublishing, setUnpublishing] = useState<string | null>(null);
   const [resolved, setResolved] = useState<ManagedProject | null>(null);
+  const [resolutionFailure, setResolutionFailure] = useState<string | null>(null);
   const loading = status === 'idle' || status === 'loading';
   const project = listed ?? (resolved?.id === name ? resolved : undefined);
+
+  useEffect(() => {
+    if (listed) setResolved(listed);
+  }, [listed]);
+
+  useEffect(() => setResolutionFailure(null), [name]);
 
   useEffect(() => {
     if (isSignedIn && wallet && status === 'idle')
@@ -45,15 +52,19 @@ export function WorldDetailPage() {
   }, [isSignedIn, wallet, status, dispatch]);
 
   useEffect(() => {
-    if (listed || loading || !ens || !wallet) return;
+    if (project || loading || !ens || !wallet || resolutionFailure === name) return;
     let current = true;
-    void resolveWorldProject(new Worlds(), ens, wallet).then(found => {
-      if (current) setResolved(found);
-    });
+    void resolveWorldProject(new Worlds(), ens, wallet)
+      .then(found => {
+        if (current) setResolved(found);
+      })
+      .catch(() => {
+        if (current) setResolutionFailure(name);
+      });
     return () => {
       current = false;
     };
-  }, [listed, loading, ens, wallet]);
+  }, [project, loading, ens, wallet, resolutionFailure, name]);
 
   if (!isSignedIn && !isSigningIn)
     return (
@@ -66,7 +77,7 @@ export function WorldDetailPage() {
   const permissions = project && getWorldPermissions(project);
 
   const page = (() => {
-    if (!project && (loading || ens)) return <Loader size={70} />;
+    if (!project && (loading || (ens && resolutionFailure !== name))) return <Loader size={70} />;
     if (!project || !permissions) return <DetailMissing message={t('world_detail.not_found')} />;
 
     const activeTab: WorldTab = permissions.tabs.includes(tab as WorldTab)

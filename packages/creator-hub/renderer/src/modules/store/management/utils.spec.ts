@@ -529,6 +529,19 @@ describe('resolveWorldProject', () => {
       expect(project.owner).toBe('0xother');
     });
   });
+
+  describe('when the NAME owner is unavailable', () => {
+    it('should keep the World accessible as a collaborator', async () => {
+      const project = await resolveWorldProject(
+        worldsApi() as never,
+        { subdomain: 'plaza.dcl.eth', nftOwnerAddress: undefined } as never,
+        TEST_ADDRESS,
+      );
+
+      expect(project.role).toBe(WorldRoleType.COLLABORATOR);
+      expect(project.owner).toBeUndefined();
+    });
+  });
 });
 
 describe('selectWorldProjects', () => {

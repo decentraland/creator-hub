@@ -20,7 +20,8 @@ type Removal = { wallets: string[]; communities: string[] };
 type Props = {
   wallets: string[];
   communities: string[];
-  onRemove: (removal: Removal) => Promise<unknown>;
+  disabled: boolean;
+  onRemove: (removal: Removal) => Promise<boolean>;
 };
 
 const keyOf = (invite: Invite) => `${invite.kind}:${invite.id}`;
@@ -42,7 +43,7 @@ const toRemoval = (invites: Invite[]): Removal => ({
 });
 
 /** The World's invites, wallets first then communities, removable one by one or in bulk after a confirm. */
-export function InvitedList({ wallets, communities, onRemove }: Props) {
+export function InvitedList({ wallets, communities, disabled, onRemove }: Props) {
   const displayName = useDisplayName();
   const { communities: resolved } = useCommunities(communities);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -72,7 +73,7 @@ export function InvitedList({ wallets, communities, onRemove }: Props) {
     if (!removing) return;
     setBusy(true);
     try {
-      await onRemove(toRemoval(removing));
+      if (!(await onRemove(toRemoval(removing)))) return;
       setSelected(current => {
         const next = new Set(current);
         removing.forEach(invite => next.delete(keyOf(invite)));
@@ -129,6 +130,7 @@ export function InvitedList({ wallets, communities, onRemove }: Props) {
               <IconButton
                 className="Trash"
                 aria-label={t('world_detail.settings.access.remove', { name: invite.name })}
+                disabled={disabled}
                 onClick={() => setRemoving([invite])}
               >
                 <DeleteIcon />
@@ -151,7 +153,7 @@ export function InvitedList({ wallets, communities, onRemove }: Props) {
         secondary={{ label: t('modal.cancel'), onClick: () => setRemoving(null) }}
         primary={{
           label: t('land_detail.collaborators.remove_confirm'),
-          state: busy ? 'busy' : 'idle',
+          state: busy || disabled ? 'busy' : 'idle',
           onClick: () => void confirm(),
         }}
       />

@@ -26,13 +26,14 @@ type Props = { worldName: string; mode: RowMode };
 /** The World's scenes: the owner manages all of them, a deploy collaborator sees the ones on their parcels. */
 export function ScenesTab({ worldName, mode }: Props) {
   const navigate = useNavigate();
-  const { all, scenes, deployers, ready, unpublishScene } = useWorldScenes(worldName, mode);
+  const { all, scenes, deployers, ready, failed, unpublishScene } = useWorldScenes(worldName, mode);
   const storageStats = useSelector(state => state.management.storageStats);
   const accountHoldings = useSelector(state => state.management.accountHoldings);
   const [map, setMap] = useState(false);
   const [storageOpen, setStorageOpen] = useState(false);
 
   if (!ready) return <Loader size={70} />;
+  if (failed) return <EmptyState title={t('install.errors.unknown')} />;
 
   const isOwner = mode === 'manage';
   const { width, height } = getWorldDimensions(all);

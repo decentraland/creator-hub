@@ -1,6 +1,6 @@
 import { useState, type ButtonHTMLAttributes } from 'react';
 import { Provider } from 'react-redux';
-import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { Link, MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -35,15 +35,18 @@ const onSave = vi.fn();
 const onCancel = vi.fn();
 
 function Form() {
+  const [saved, setSaved] = useState('Plaza');
   const [value, setValue] = useState('Plaza');
   useDraft({
-    dirty: value !== 'Plaza',
+    dirty: value !== saved,
     valid: value !== '',
     onCancel: () => {
       onCancel();
-      setValue('Plaza');
+      setValue(saved);
     },
-    onSave,
+    onSave: () => {
+      if (onSave() !== false) setSaved(value);
+    },
   });
   return (
     <input
@@ -57,18 +60,21 @@ function Form() {
 function Shell() {
   const { tab = 'details' } = useParams();
   return (
-    <DetailShell
-      title="Manage - Plaza"
-      basePath="/manage/land/96%2C15"
-      menu={<button>Options</button>}
-      tabs={[
-        { value: 'details', label: 'Details' },
-        { value: 'scenes', label: 'Scenes' },
-      ]}
-      activeTab={tab}
-    >
-      {tab === 'details' ? <Form /> : <p>scenes panel</p>}
-    </DetailShell>
+    <>
+      <Link to="/manage">Navbar link</Link>
+      <DetailShell
+        title="Manage - Plaza"
+        basePath="/manage/land/96%2C15"
+        menu={<button>Options</button>}
+        tabs={[
+          { value: 'details', label: 'Details' },
+          { value: 'scenes', label: 'Scenes' },
+        ]}
+        activeTab={tab}
+      >
+        {tab === 'details' ? <Form /> : <p>scenes panel</p>}
+      </DetailShell>
+    </>
   );
 }
 
@@ -187,7 +193,7 @@ describe('DetailShell', () => {
       expect(location()).toBe('/manage/land/96%2C15/scenes');
     });
 
-    it('should save and stay on SAVE', async () => {
+    it('should save and continue to the requested tab', async () => {
       renderShell();
       edit('Fixture Plaza');
       fireEvent.click(screen.getByRole('tab', { name: 'Scenes' }));
@@ -195,8 +201,54 @@ describe('DetailShell', () => {
       fireEvent.click(screen.getAllByRole('button', { name: 'Save' }).at(-1)!);
 
       expect(onSave).toHaveBeenCalledTimes(1);
-      expect(location()).toBe('/manage/land/96%2C15/details');
+      await waitFor(() => expect(location()).toBe('/manage/land/96%2C15/scenes'));
       await waitFor(() => expect(guard()).toBeNull());
+    });
+
+    it('should keep the guard open when saving fails', () => {
+      onSave.mockReturnValueOnce(false);
+      renderShell();
+      edit('Fixture Plaza');
+      fireEvent.click(screen.getByRole('tab', { name: 'Scenes' }));
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'Save' }).at(-1)!);
+
+      expect(guard()).toBeTruthy();
+      expect(location()).toBe('/manage/land/96%2C15/details');
+    });
+
+    it('should guard a navbar link before leaving', () => {
+      renderShell();
+      edit('Fixture Plaza');
+
+      fireEvent.click(screen.getByRole('link', { name: 'Navbar link' }));
+
+      expect(guard()).toBeTruthy();
+      expect(location()).toBe('/manage/land/96%2C15/details');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+      expect(location()).toBe('/manage');
+    });
+
+    it('should leave a modified click to the browser', () => {
+      renderShell();
+      edit('Fixture Plaza');
+
+      for (const modifier of ['shiftKey', 'altKey', 'metaKey', 'ctrlKey'])
+        fireEvent.click(screen.getByRole('link', { name: 'Navbar link' }), { [modifier]: true });
+
+      expect(guard()).toBeNull();
+    });
+
+    it('should never block closing or reloading the window', () => {
+      renderShell();
+      edit('Fixture Plaza');
+
+      const unload = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(unload);
+
+      expect(unload.defaultPrevented).toBe(false);
     });
 
     it('should stay, keeping the changes, when the question is dismissed', async () => {

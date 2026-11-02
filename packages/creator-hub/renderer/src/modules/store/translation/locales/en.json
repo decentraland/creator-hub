@@ -931,8 +931,6 @@
       "menu": {
         "jump_in": "Jump In",
         "copy_url": "Copy URL",
-        "edit_name": "Edit Name",
-        "permissions": "Permissions",
         "view_storage": "View Storage",
         "unpublish": "Unpublish",
         "create_event": "Create Event",
@@ -1226,6 +1224,7 @@
     },
     "collaborators": {
       "description": "Add up to 100 collaborators and manage their permission to deploy or stream into your world.",
+      "already_added": "This wallet is already a collaborator.",
       "count": "Collaborators: {count}/100",
       "stream": "Stream",
       "stream_label": "Stream permission for {name}",

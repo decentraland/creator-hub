@@ -9,6 +9,7 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { useAuth } from '/@/hooks/useAuth';
 import type { WorldSettings } from '/@/lib/worlds';
 import type * as WorldsModule from '/@/lib/worlds';
+import { fetchWorldSettings as refetchWorldSettings } from '/@/modules/store/management/slice';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 
@@ -84,8 +85,9 @@ async function renderTab(settings: WorldSettings = saved) {
     },
     summary: {},
   });
+  const store = createTestStore();
   render(
-    <Provider store={createTestStore() as never}>
+    <Provider store={store as never}>
       <MemoryRouter>
         <ThemeProvider theme={dark}>
           <DetailShell
@@ -103,6 +105,7 @@ async function renderTab(settings: WorldSettings = saved) {
   );
   await screen.findByRole('textbox', { name: 'X' });
   await act(async () => {});
+  return store;
 }
 
 const slider = () => screen.getByRole('slider', { name: 'Night/Day Time' });
@@ -202,6 +205,94 @@ describe('World SettingsTab', () => {
       fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '1.5' } });
 
       expect(save()).toHaveProperty('disabled', true);
+    });
+  });
+
+  describe('when both spawn coordinates are cleared', () => {
+    it('should offer CANCEL but block SAVE on an unsupported clear', async () => {
+      await renderTab();
+      fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '' } });
+      fireEvent.change(screen.getByRole('textbox', { name: 'Y' }), { target: { value: '' } });
+
+      expect(save()).toHaveProperty('disabled', true);
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+  });
+
+  describe('when one spawn coordinate is cleared', () => {
+    it('should offer CANCEL but block SAVE', async () => {
+      await renderTab();
+      fireEvent.change(screen.getByRole('textbox', { name: 'Y' }), { target: { value: '' } });
+
+      expect(save()).toHaveProperty('disabled', true);
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+  });
+
+  describe('when settings are edited', () => {
+    it('should keep the form and draft after a failed save', async () => {
+      await renderTab();
+      api.putWorldSettings.mockResolvedValue({ success: false, error: 'Fixture failure' });
+      fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '5' } });
+
+      await act(async () => fireEvent.click(save()!));
+
+      expect(screen.getByRole('textbox', { name: 'X' })).toHaveProperty('value', '5');
+      expect(screen.getByRole('combobox', { name: 'Access' })).toBeTruthy();
+      expect(save()).toBeTruthy();
+    });
+
+    it('should preserve edits when a refetch finishes', async () => {
+      const store = await renderTab();
+      let resolve!: (value: WorldSettings) => void;
+      api.fetchWorldSettings.mockReturnValueOnce(
+        new Promise<WorldSettings>(done => (resolve = done)),
+      );
+      const request = store.dispatch(refetchWorldSettings({ worldName: 'plaza.dcl.eth' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '5' } });
+
+      await act(async () => {
+        resolve({ ...saved });
+        await request;
+      });
+
+      expect(screen.getByRole('textbox', { name: 'X' })).toHaveProperty('value', '5');
+      expect(save()).toBeTruthy();
+    });
+
+    it('should keep a half-typed spawn when a refetch finishes', async () => {
+      const store = await renderTab({ ...saved, spawnCoordinates: undefined });
+      let resolve!: (value: WorldSettings) => void;
+      api.fetchWorldSettings.mockReturnValueOnce(
+        new Promise<WorldSettings>(done => (resolve = done)),
+      );
+      const request = store.dispatch(refetchWorldSettings({ worldName: 'plaza.dcl.eth' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '7' } });
+
+      await act(async () => {
+        resolve({ ...saved, spawnCoordinates: undefined });
+        await request;
+      });
+
+      expect(screen.getByRole('textbox', { name: 'X' })).toHaveProperty('value', '7');
+    });
+
+    it('should take a refetched value for a field left alone', async () => {
+      const store = await renderTab();
+      let resolve!: (value: WorldSettings) => void;
+      api.fetchWorldSettings.mockReturnValueOnce(
+        new Promise<WorldSettings>(done => (resolve = done)),
+      );
+      const request = store.dispatch(refetchWorldSettings({ worldName: 'plaza.dcl.eth' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'X' }), { target: { value: '5' } });
+
+      await act(async () => {
+        resolve({ ...saved, spawnCoordinates: '3,9' });
+        await request;
+      });
+
+      expect(screen.getByRole('textbox', { name: 'X' })).toHaveProperty('value', '5');
+      expect(screen.getByRole('textbox', { name: 'Y' })).toHaveProperty('value', '9');
     });
   });
 

@@ -31,7 +31,7 @@ export function useAccessActions(worldName: string, access: Access) {
         worldPermissionType: WorldPermissionType.AllowList,
         options: next,
       }),
-    );
+    ).unwrap();
 
   return {
     changeType: (type: WorldPermissionType) =>
@@ -41,7 +41,7 @@ export function useAccessActions(worldName: string, access: Access) {
           worldPermissionName: WorldPermissionName.Access,
           worldPermissionType: type,
         }),
-      ),
+      ).unwrap(),
     setPassword: (secret: string) =>
       dispatch(
         updateWorldPermissions({
@@ -50,7 +50,7 @@ export function useAccessActions(worldName: string, access: Access) {
           worldPermissionType: WorldPermissionType.SharedSecret,
           options: { secret },
         }),
-      ),
+      ).unwrap(),
     addWallet: (address: string) => {
       const wallet = address.toLowerCase();
       if (!list || wallets.includes(wallet)) return;
@@ -60,7 +60,7 @@ export function useAccessActions(worldName: string, access: Access) {
           permissionName: WorldPermissionName.Access,
           walletAddress: wallet,
         }),
-      );
+      ).unwrap();
     },
     addCommunity: (id: string) => {
       if (!list || communities.includes(id)) return;
@@ -76,21 +76,18 @@ export function useAccessActions(worldName: string, access: Access) {
         communities: [...communities, ...newCommunities],
       });
     },
-    remove: async (removed: { wallets: string[]; communities: string[] }) => {
-      for (const wallet of removed.wallets) {
-        await dispatch(
-          removeAddressPermission({
-            worldName,
-            permissionName: WorldPermissionName.Access,
-            walletAddress: wallet,
+    remove: (removed: { wallets: string[]; communities: string[] }) =>
+      removed.wallets.length === 1 && !removed.communities.length
+        ? dispatch(
+            removeAddressPermission({
+              worldName,
+              permissionName: WorldPermissionName.Access,
+              walletAddress: removed.wallets[0],
+            }),
+          ).unwrap()
+        : writeList({
+            wallets: wallets.filter(wallet => !removed.wallets.includes(wallet)),
+            communities: communities.filter(id => !removed.communities.includes(id)),
           }),
-        );
-      }
-      if (removed.communities.length)
-        await writeList({
-          wallets: wallets.filter(wallet => !removed.wallets.includes(wallet)),
-          communities: communities.filter(id => !removed.communities.includes(id)),
-        });
-    },
   };
 }

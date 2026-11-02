@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useDispatch, useSelector } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
-import { WorldPermissionName } from '/@/lib/worlds';
+import { WorldPermissionName, WorldPermissionType } from '/@/lib/worlds';
 import {
   fetchParcelsPermission,
   fetchWorldPermissions,
@@ -40,6 +40,11 @@ export function useWorldScenes(worldName: string, mode: RowMode) {
         entry => entry.permission === 'deployment',
       )
     : undefined;
+  const listedDeployer =
+    permissions.permissions?.deployment.type === WorldPermissionType.AllowList &&
+    permissions.permissions.deployment.wallets.some(
+      address => address.toLowerCase() === wallet?.toLowerCase(),
+    );
   const parcels = wallet ? permissions.parcels[wallet] : undefined;
   const parcelsWanted = mode === 'view' && !!deployment && !deployment.worldWide;
 
@@ -55,12 +60,22 @@ export function useWorldScenes(worldName: string, mode: RowMode) {
   }, [dispatch, worldName, wallet, parcelsWanted]);
 
   const allowed: 'all' | Set<string> | undefined =
-    mode === 'manage' || deployment?.worldWide
+    mode === 'manage' || deployment?.worldWide || (listedDeployer && !deployment)
       ? 'all'
       : parcels?.status === 'succeeded'
         ? new Set(parcels.parcels)
         : undefined;
-  const ready = loaded && (mode === 'manage' || (!!summary && (!parcelsWanted || !!allowed)));
+  const failed =
+    mode === 'view' &&
+    permissions.worldName === worldName &&
+    (permissions.status === 'failed' || (parcelsWanted && parcels?.status === 'failed'));
+  const ready =
+    loaded &&
+    (mode === 'manage' ||
+      failed ||
+      (permissions.worldName === worldName &&
+        permissions.status === 'succeeded' &&
+        (!parcelsWanted || !!allowed)));
 
   const rows = useMemo(() => toWorldScenes(all), [all]);
   const scenes = allowed ? scenesOnParcels(rows, allowed) : [];
@@ -75,5 +90,5 @@ export function useWorldScenes(worldName: string, mode: RowMode) {
     [dispatch, worldName],
   );
 
-  return { all, scenes, deployers, ready, unpublishScene };
+  return { all, scenes, deployers, ready, failed, unpublishScene };
 }

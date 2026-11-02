@@ -26,6 +26,8 @@ export function UnpublishWorldModal({
       setLoading(true);
       await dispatch(unpublishEntireWorld({ worldName })).unwrap();
       onClose();
+    } catch {
+      return;
     } finally {
       setLoading(false);
     }

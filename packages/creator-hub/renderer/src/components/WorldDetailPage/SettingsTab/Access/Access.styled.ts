@@ -151,8 +151,14 @@ const InviteTabs = styled(Tabs)(({ theme }) => ({
   },
 }));
 
-const InviteBlock = styled(Block)(({ theme }) => ({
+const InviteBlock = styled('fieldset')(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
   gap: theme.spacing(2.5),
+  margin: 0,
+  padding: 0,
+  minWidth: 0,
+  border: 0,
 }));
 
 const Invalid = styled('p')(({ theme }) => ({

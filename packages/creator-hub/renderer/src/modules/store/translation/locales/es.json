@@ -930,8 +930,6 @@
       "menu": {
         "jump_in": "Entrar",
         "copy_url": "Copiar URL",
-        "edit_name": "Editar Nombre",
-        "permissions": "Permisos",
         "view_storage": "Ver Almacenamiento",
         "unpublish": "Despublicar",
         "create_event": "Crear evento",
@@ -1225,6 +1223,7 @@
     },
     "collaborators": {
       "description": "Agrega hasta 100 colaboradores y gestiona sus permisos para publicar o transmitir en tu mundo.",
+      "already_added": "Esta wallet ya es colaboradora.",
       "count": "Colaboradores: {count}/100",
       "stream": "Transmitir",
       "stream_label": "Permiso de transmisión para {name}",

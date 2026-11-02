@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AvatarFace, type AvatarFaceProps, Tab } from 'decentraland-ui2';
 
@@ -117,12 +117,41 @@ export function DetailShell({ title, basePath, people, menu, tabs, activeTab, ch
   const navigate = useNavigate();
   const titleId = useId();
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [exit, setExit] = useState<{ path: string; replace: boolean } | null>(null);
+  const [exit, setExit] = useState<{
+    path: string;
+    replace: boolean;
+    saveRequested: boolean;
+  } | null>(null);
 
   const leave = (path: string, replace: boolean) => {
-    if (draft?.dirty) setExit({ path, replace });
+    if (draft?.dirty) setExit({ path, replace, saveRequested: false });
     else navigate(path, { replace });
   };
+
+  useEffect(() => {
+    if (!draft?.dirty) return;
+    const guardLink = (event: MouseEvent) => {
+      const modified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+      if (event.defaultPrevented || event.button !== 0 || modified) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest('a[href]');
+      if (!link || link.getAttribute('target') === '_blank') return;
+      const href = link.getAttribute('href');
+      if (!href?.startsWith('/')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setExit({ path: href, replace: false, saveRequested: false });
+    };
+    document.addEventListener('click', guardLink, true);
+    return () => document.removeEventListener('click', guardLink, true);
+  }, [draft?.dirty]);
+
+  useEffect(() => {
+    if (!exit?.saveRequested || draft?.dirty) return;
+    setExit(null);
+    navigate(exit.path, { replace: exit.replace });
+  }, [draft?.dirty, exit, navigate]);
 
   const discardAndLeave = () => {
     if (!exit) return;
@@ -131,9 +160,9 @@ export function DetailShell({ title, basePath, people, menu, tabs, activeTab, ch
     navigate(exit.path, { replace: exit.replace });
   };
 
-  const saveAndStay = () => {
+  const saveAndLeave = () => {
+    setExit(current => (current ? { ...current, saveRequested: true } : null));
     draft?.onSave();
-    setExit(null);
   };
 
   return (
@@ -198,7 +227,7 @@ export function DetailShell({ title, basePath, people, menu, tabs, activeTab, ch
         primary={{
           label: t('land_detail.save'),
           state: draft?.valid ? 'idle' : 'blocked',
-          onClick: saveAndStay,
+          onClick: saveAndLeave,
         }}
       />
     </DraftContext.Provider>

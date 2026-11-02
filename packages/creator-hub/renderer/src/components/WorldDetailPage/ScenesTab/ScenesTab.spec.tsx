@@ -105,7 +105,7 @@ const worldScene = (
 const PLAZA = worldScene('bafa', 'Plaza', ['0,0', '1,0'], '2026-10-27T12:00:00Z', '1048576');
 const STAGE = worldScene('bafb', 'Stage', ['2,0'], '2026-10-20T12:00:00Z', '524288');
 
-type Access = 'owner' | { worldWide: true } | { parcels: string[] };
+type Access = 'owner' | { worldWide: true; noSummary?: boolean } | { parcels: string[] };
 
 async function renderTab(scenes: WorldScene[], access: Access = 'owner') {
   const wallet = access === 'owner' ? OWNER : COLLABORATOR;
@@ -120,7 +120,7 @@ async function renderTab(scenes: WorldScene[], access: Access = 'owner') {
       streaming: { type: 'allow-list', wallets: [] },
     },
     summary:
-      access === 'owner'
+      access === 'owner' || ('noSummary' in access && access.noSummary)
         ? {}
         : {
             [COLLABORATOR]: [
@@ -293,6 +293,30 @@ describe('World ScenesTab', () => {
       await renderTab([PLAZA, STAGE], { worldWide: true });
 
       expect(rowNames()).toEqual(['Plaza', 'Stage']);
+    });
+
+    it('should list every scene when the deployer is absent from the summary', async () => {
+      await renderTab([PLAZA, STAGE], { worldWide: true, noSummary: true });
+
+      expect(rowNames()).toEqual(['Plaza', 'Stage']);
+    });
+  });
+
+  describe('when collaborator permissions fail to load', () => {
+    it('should show an error instead of an endless loader', async () => {
+      api.getPermissions.mockRejectedValueOnce(new Error('Unavailable'));
+      await renderTab([PLAZA], { parcels: ['0,0'] });
+
+      expect(screen.getByRole('heading', { name: 'An unknown error occurred' })).toBeTruthy();
+    });
+  });
+
+  describe('when parcel permissions fail to load', () => {
+    it('should show an error instead of an endless loader', async () => {
+      api.fetchParcelsPermission.mockRejectedValueOnce(new Error('Unavailable'));
+      await renderTab([PLAZA], { parcels: ['0,0'] });
+
+      expect(screen.getByRole('heading', { name: 'An unknown error occurred' })).toBeTruthy();
     });
   });
 

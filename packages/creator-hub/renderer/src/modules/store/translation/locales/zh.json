@@ -930,8 +930,6 @@
       "menu": {
         "jump_in": "进入",
         "copy_url": "复制URL",
-        "edit_name": "编辑名称",
-        "permissions": "权限",
         "view_storage": "查看存储",
         "unpublish": "取消发布",
         "create_event": "创建活动",
@@ -1225,6 +1223,7 @@
     },
     "collaborators": {
       "description": "添加最多 100 个协作者，并管理他们在你的世界中部署或流媒体的权限。",
+      "already_added": "该钱包已是协作者。",
       "count": "协作者：{count}/100",
       "stream": "流媒体",
       "stream_label": "{name} 的流媒体权限",
