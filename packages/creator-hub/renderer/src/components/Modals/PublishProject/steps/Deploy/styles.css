@@ -37,6 +37,15 @@
   flex: none;
 }
 
+.Deploy .scene .files .filters .size.invalid {
+  color: var(--error);
+}
+
+.Deploy .scene .files .filters .size .limit-loading {
+  margin-left: 8px;
+  font-size: 12px;
+}
+
 .Deploy .scene .files .list {
   flex: 1 1 auto;
   display: flex;
