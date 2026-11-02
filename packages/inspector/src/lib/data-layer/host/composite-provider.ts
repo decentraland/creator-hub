@@ -49,6 +49,11 @@ export class CompositeProvider implements StateProvider {
   private lastSaveTime = 0;
   private readonly minSaveInterval = 100;
   private trailingSaveTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Bumped by every edit. A save only marks the provider clean when no edit arrived between
+  // its engine dump and the end of its write: the trailing save does not hold the
+  // transaction queue, so an edit can land mid-write, and calling it clean then would leave
+  // that edit in memory with nothing left to save it.
+  private editGeneration = 0;
 
   constructor(
     fs: FileSystemInterface,
@@ -177,6 +182,7 @@ export class CompositeProvider implements StateProvider {
     if (!this.canHandle(operation)) return;
 
     this.pendingOperations.add(transaction.id);
+    this.editGeneration++;
 
     if (this.dirtyState === DirtyState.Clean) {
       this.dirtyState = DirtyState.DirtyAndNeedsDump;
@@ -225,12 +231,11 @@ export class CompositeProvider implements StateProvider {
   }
 
   async saveComposite(dump = true): Promise<CompositeDefinition | null> {
-    if (this.savePromise) {
-      // Never rethrows a previous save's failure: each caller only owns its own attempt.
-      await this.savePromise.catch(() => {});
-    }
-
-    const save = this.performSave(dump).then(() => {});
+    // Chained rather than awaited-then-started: two callers waiting on the same promise would
+    // otherwise both wake up and write concurrently. A previous save's failure is never
+    // rethrown here — each caller only owns its own attempt.
+    const previous = this.savePromise ?? Promise.resolve();
+    const save = previous.catch(() => {}).then(() => this.performSave(dump).then(() => {}));
     this.savePromise = save;
     try {
       await save;
@@ -244,10 +249,11 @@ export class CompositeProvider implements StateProvider {
   }
 
   private async performSave(dump: boolean): Promise<CompositeDefinition | null> {
+    const generation = this.editGeneration;
     this.composite = dumpEngineToComposite(this.engine, 'json');
 
     if (!dump) {
-      this.dirtyState = DirtyState.Clean;
+      this.markCleanIfUnchangedSince(generation);
       return this.composite;
     }
 
@@ -267,8 +273,12 @@ export class CompositeProvider implements StateProvider {
       this.fs,
     );
 
-    this.dirtyState = DirtyState.Clean;
+    this.markCleanIfUnchangedSince(generation);
     return this.composite;
+  }
+
+  private markCleanIfUnchangedSince(generation: number): void {
+    if (this.editGeneration === generation) this.dirtyState = DirtyState.Clean;
   }
 
   getComposite(): CompositeDefinition | null {

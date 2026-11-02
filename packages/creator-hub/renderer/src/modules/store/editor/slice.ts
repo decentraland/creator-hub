@@ -55,6 +55,10 @@ export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.can
  *
  * A closed editor (no iframe mounted) has nothing to flush and is not an error.
  */
+function isSaveSceneUnsupported(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('"save_scene" not implemented');
+}
+
 async function flushEditorToDisk() {
   const scene = getActiveSceneClient();
   if (!scene) return;
@@ -62,6 +66,10 @@ async function flushEditorToDisk() {
   try {
     await scene.saveScene();
   } catch (error) {
+    // An inspector that predates save_scene (a dev build served on VITE_INSPECTOR_PORT, say)
+    // cannot flush on request. Publishing then behaves exactly as it did before this RPC
+    // existed, rather than being blocked by an editor that never could have answered.
+    if (isSaveSceneUnsupported(error)) return;
     throw new Error(
       t('editor.publish.save_failed', {
         reason: error instanceof Error ? error.message : String(error),
@@ -74,9 +82,11 @@ export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
+    // Before marking anything replaced: a failed flush starts no deploy, so the previous
+    // deployment must stay retryable.
+    await flushEditorToDisk();
     // Main stops the previous CLI, so a retry of the previous deployment must not start another.
     dispatch(deploymentActions.markDeploymentReplaced({ path: opts.path }));
-    await flushEditorToDisk();
     const server = await editor.publishScene({ ...opts, language: translation.locale });
     const { supportsDeployResource, hasCancelToken } = registerDeployServer(server);
     await dispatch(

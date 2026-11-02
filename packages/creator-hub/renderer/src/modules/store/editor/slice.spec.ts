@@ -344,11 +344,35 @@ describe('editor slice publish flush', () => {
       expect(editor.publishScene).not.toHaveBeenCalled();
     });
 
+    it('should leave an earlier deployment of the scene retryable', async () => {
+      saveScene.mockResolvedValueOnce(undefined);
+      await store.dispatch(publishScene(PUBLISH_OPTS));
+      vi.mocked(editor.publishScene).mockClear();
+
+      await store.dispatch(publishScene(PUBLISH_OPTS));
+
+      expect(editor.publishScene).not.toHaveBeenCalled();
+      expect(store.getState().deployment.deployments[TEST_PATH]?.replaced).toBeUndefined();
+    });
+
     it('should surface the reason instead of failing silently', async () => {
       await store.dispatch(publishScene(PUBLISH_OPTS));
 
       expect(store.getState().editor.loadingPublish).toBe(false);
       expect(store.getState().editor.publishError).toContain('EBUSY');
+    });
+  });
+
+  describe('when the open inspector predates the save_scene RPC', () => {
+    beforeEach(() => {
+      saveScene.mockRejectedValue(new Error('Method "save_scene" not implemented'));
+    });
+
+    it('should publish as it did before the flush existed', async () => {
+      await store.dispatch(publishScene(PUBLISH_OPTS));
+
+      expect(editor.publishScene).toHaveBeenCalled();
+      expect(store.getState().editor.publishError).toBeNull();
     });
   });
 
