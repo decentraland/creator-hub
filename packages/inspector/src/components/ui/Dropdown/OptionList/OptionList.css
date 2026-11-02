@@ -1,14 +1,13 @@
+/* Rendered in a portal on document.body and placed by usePopoverPosition, so the menu escapes
+   the scroll/overflow clipping of whichever panel the field lives in. */
 .OptionList {
-  position: absolute;
+  position: fixed;
   display: flex;
   flex-direction: column;
-  top: calc(100% + 1px);
-  left: 0;
-  width: 100%;
   padding-top: 8px;
   background: var(--gray-0);
   border-radius: 4px;
-  z-index: 5;
+  z-index: 1000;
   user-select: none;
   max-height: 132px;
   overflow-y: auto;

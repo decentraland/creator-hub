@@ -65,7 +65,7 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace
           <TableCell>{t('analytics.list.columns.day_7_retention')}</TableCell>
           {/* revenue: awaiting a revenue metric.
           <TableCell>{t('analytics.list.columns.revenue')}</TableCell> */}
-          <TableCell>{t('analytics.list.columns.avg_playtime')}</TableCell>
+          <TableCell>{t('analytics.list.columns.median_playtime')}</TableCell>
           <TableCell>{t('analytics.list.columns.concurrent_users')}</TableCell>
           <TableCell className="ActionsCell" />
         </TableRow>
@@ -132,7 +132,7 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace
                 <TableCell>
                   <ManaValue>{formatRevenue(place.revenue)}</ManaValue>
                 </TableCell> */}
-                <TableCell>{formatMinutes(place.avgPlaytime)}</TableCell>
+                <TableCell>{formatMinutes(place.medianPlaytime)}</TableCell>
                 <TableCell>{formatDecimal(place.concurrentUsers)}</TableCell>
               </>
             )}

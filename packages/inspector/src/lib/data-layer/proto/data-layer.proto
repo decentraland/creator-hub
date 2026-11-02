@@ -113,6 +113,10 @@ message RemoveFilesRequest {
   repeated string file_paths = 1;
 }
 
+message RemoveAssetsRequest {
+  repeated string paths = 1;
+}
+
 message RemoveFilesResponse {
   repeated string success = 1;
   repeated string failed = 2;
@@ -145,6 +149,7 @@ service DataService {
   rpc GetAssetData(Asset) returns (AssetData) {}
   rpc ImportAsset(ImportAssetRequest) returns (Empty) {}
   rpc RemoveAsset(Asset) returns (Empty) {}
+  rpc RemoveAssets(RemoveAssetsRequest) returns (RemoveFilesResponse) {}
   rpc RemoveFiles(RemoveFilesRequest) returns (RemoveFilesResponse) {}
   rpc Save(Empty) returns (Empty) {}
   rpc GetInspectorPreferences(Empty) returns (InspectorPreferencesMessage) {}

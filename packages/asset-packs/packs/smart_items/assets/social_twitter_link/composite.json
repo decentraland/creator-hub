@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/SocialLink.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"url\":{\"type\":\"string\",\"optional\":true,\"value\":\"https://x.com/home\",\"tooltip\":\"URL opened when the item is clicked.\"},\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"X Link\",\"tooltip\":\"Text shown when the player points at the item.\"}},\"actions\":[{\"methodName\":\"openLink\",\"description\":\"Opens the link in the player's browser\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -19,62 +35,11 @@
             "id": "{self}",
             "value": [
               {
+                "type": "call_script_method",
                 "name": "Open Link",
-                "type": "open_link",
-                "jsonPayload": "{ \"url\": \"https://x.com/home\" }",
-                "allowedInBasicView": true,
-                "basicViewId": "open-link"
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/SocialLink.ts\",\"methodName\":\"openLink\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_click",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Open Link"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "label": "X Link",
-            "sections": [
-              {
-                "id": "link",
-                "items": [
-                  {
-                    "component": "asset-packs::Actions",
-                    "widget": "TextField",
-                    "label": "X Link",
-                    "path": "url",
-                    "basicViewId": "open-link"
-                  }
-                ]
-              }
-            ],
-            "helpTooltip": {
-              "text": "Enter an X URL to open when the item is clicked."
-            },
-            "version": 2
           }
         }
       }

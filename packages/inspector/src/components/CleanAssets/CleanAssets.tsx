@@ -3,6 +3,9 @@ import { IoClose } from 'react-icons/io5';
 import { FiAlertTriangle } from 'react-icons/fi';
 import cx from 'classnames';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import { getStorage } from '../../lib/data-layer/client/storage';
+import { removeAssetFiles, removeEmptiedFolders } from '../../lib/data-layer/remove-assets';
+import { DEFAULT_UNDO_MAX_SIZE } from '../../lib/data-layer/host/utils/undo-redo-array';
 import { setRemovedFiles } from '../../redux/clean-assets';
 import { getAssetCatalog, getDataLayerInterface } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
@@ -89,36 +92,45 @@ const CleanAssets: React.FC<Props> = ({
     try {
       const filePaths = Array.from(selectedAssets.values());
       const filesBackup = await dataLayer.getFilesList({ paths: filePaths });
-      const successfulBackups = filesBackup.files
-        .filter(file => file.success && file.content)
+      const { removed, error, batched } = await removeAssetFiles(dataLayer, filePaths);
+      const storage = getStorage();
+      if (storage) await removeEmptiedFolders(storage, removed);
+      const backups = filesBackup.files
+        .filter(file => file.success && file.content && removed.includes(file.path))
         .map(file => ({ path: file.path, content: file.content }));
+      if (removed.length) dispatch(setRemovedFiles(backups));
 
-      const removedFiles = await dataLayer.removeFiles({ filePaths });
-
-      if (removedFiles.success.length > 0) {
-        const recoveryData = successfulBackups.filter(backup =>
-          removedFiles.success.includes(backup.path),
+      if (!error) {
+        const removedBytes = assets
+          .filter(asset => removed.includes(asset.path))
+          .reduce((total, asset) => total + asset.size, 0);
+        const undoHint =
+          batched && removedBytes < DEFAULT_UNDO_MAX_SIZE ? ' Press Ctrl+Z (Cmd+Z) to undo.' : '';
+        pushNotification(
+          'success',
+          `${removed.length} ${removed.length === 1 ? 'file has' : 'files have'} been removed.${undoHint}`,
         );
-        dispatch(setRemovedFiles(recoveryData));
+        setShowConfirmation(false);
+      } else if (removed.length) {
+        console.error('Failed to remove some files:', error);
+        const failed = filePaths.length - removed.length;
+        pushNotification(
+          'error',
+          `${removed.length} ${removed.length === 1 ? 'file has' : 'files have'} been removed. ${failed} ${failed === 1 ? 'file' : 'files'} could not be removed.`,
+        );
+      } else {
+        console.error('Failed to remove files:', error);
+        pushNotification('error', 'Failed to remove files. Please try again.');
       }
-
-      let message = `${removedFiles.success.length} ${removedFiles.success.length === 1 ? 'file' : 'files'} have been successfully removed.`;
-      if (removedFiles.failed.length > 0) {
-        message += ` ${removedFiles.failed.length} ${removedFiles.failed.length === 1 ? 'file' : 'files'} could not be removed.`;
-      }
-      pushNotification('success', message);
-
-      // Refresh asset catalog and reset state
-      dispatch(getAssetCatalog());
-      setShowConfirmation(false);
     } catch (error) {
-      console.error('Failed to remove files:', error);
+      console.error('Failed to read the files to remove:', error);
       pushNotification('error', 'Failed to remove files. Please try again.');
     } finally {
+      dispatch(getAssetCatalog());
       onClose();
       setIsRemoving(false);
     }
-  }, [selectedAssets, onClose, pushNotification, dispatch]);
+  }, [assets, selectedAssets, onClose, pushNotification, dispatch]);
 
   const validateRemove = useCallback(() => {
     if (selectedAssets.size === 0) return;

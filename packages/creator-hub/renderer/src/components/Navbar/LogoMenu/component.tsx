@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
-import { Menu, MenuItem } from 'decentraland-ui2';
+import { Menu, MenuItem, Tooltip } from 'decentraland-ui2';
 
 import { misc } from '#preload';
 import logo from '/assets/images/logo-editor.png';
@@ -52,19 +52,25 @@ export function LogoMenu({ onClickAbout, onClickSettings, onClickCheckForUpdates
 
   return (
     <>
-      <button
-        className="LogoButton"
-        ref={logoRef}
-        data-testid="logo-menu-button"
-        aria-haspopup="menu"
-        aria-expanded={open ? 'true' : undefined}
-        onClick={() => setOpen(true)}
+      <Tooltip
+        title={t('navbar.logo_menu.main_menu_tooltip')}
+        placement="bottom"
+        classes={{ tooltip: 'MainMenuTooltip' }}
       >
-        <img
-          src={logo}
-          alt="Decentraland Creator Hub"
-        />
-      </button>
+        <button
+          className="LogoButton"
+          ref={logoRef}
+          data-testid="logo-menu-button"
+          aria-haspopup="menu"
+          aria-expanded={open ? 'true' : undefined}
+          onClick={() => setOpen(true)}
+        >
+          <img
+            src={logo}
+            alt="Decentraland Creator Hub"
+          />
+        </button>
+      </Tooltip>
       <Menu
         className="LogoMenu"
         anchorEl={logoRef.current}

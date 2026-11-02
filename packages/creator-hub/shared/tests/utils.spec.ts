@@ -1,5 +1,34 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { debounce, debounceByKey, isValidFolderName, getBaseName } from '../utils';
+import {
+  debounce,
+  debounceByKey,
+  formatBytes,
+  isValidFolderName,
+  getBaseName,
+  retry,
+} from '../utils';
+
+describe('formatBytes', () => {
+  it('should pick the unit from the magnitude', () => {
+    expect(formatBytes(0)).toBe('0 B');
+    expect(formatBytes(512)).toBe('512 B');
+    expect(formatBytes(1536)).toBe('1.5 KB');
+    expect(formatBytes(3 * 1024 ** 2)).toBe('3.0 MB');
+    expect(formatBytes(2.5 * 1024 ** 3)).toBe('2.5 GB');
+  });
+
+  it('should keep the sign of a negative size instead of printing NaN', () => {
+    // A run that grew the scene: before - after is negative.
+    expect(formatBytes(-1536)).toBe('-1.5 KB');
+    expect(formatBytes(-1)).toBe('-1 B');
+  });
+
+  it('should read NaN and non-finite input as nothing', () => {
+    expect(formatBytes(NaN)).toBe('0 B');
+    expect(formatBytes(Infinity)).toBe('0 B');
+    expect(formatBytes(undefined as unknown as number)).toBe('0 B');
+  });
+});
 
 describe('isValidFolderName', () => {
   it('should accept a normal name', () => {
@@ -181,5 +210,41 @@ describe('debounceByKey', () => {
     // Should have executed only the last call
     expect(mockFn).toHaveBeenCalledTimes(1);
     expect(mockFn).toHaveBeenLastCalledWith('a');
+  });
+});
+
+describe('retry', () => {
+  beforeEach(() => {
+    vi.useRealTimers();
+  });
+
+  describe('when the first attempt fails', () => {
+    it('should answer with the next one, since a timeout says nothing about it', async () => {
+      const attempt = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('REQUEST_TIMEOUT'))
+        .mockResolvedValue('ok');
+
+      expect(await retry(attempt, 2, 0)).toBe('ok');
+      expect(attempt).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when every attempt fails', () => {
+    it('should let the last failure through rather than swallowing it', async () => {
+      const attempt = vi.fn().mockRejectedValue(new Error('gone'));
+
+      await expect(retry(attempt, 3, 0)).rejects.toThrow('gone');
+      expect(attempt).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('when the first attempt succeeds', () => {
+    it('should not try again', async () => {
+      const attempt = vi.fn().mockResolvedValue('ok');
+
+      expect(await retry(attempt, 3, 0)).toBe('ok');
+      expect(attempt).toHaveBeenCalledTimes(1);
+    });
   });
 });

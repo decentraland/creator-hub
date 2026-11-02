@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/framed_kandinsky_style_art/framed_kandinsky_style_art.glb"
+          }
+        }
+      }
+    }
+  ]
+}

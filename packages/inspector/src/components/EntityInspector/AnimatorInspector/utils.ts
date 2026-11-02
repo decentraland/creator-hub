@@ -25,9 +25,11 @@ export function isValidSpeed(speed: string | undefined): boolean {
 // Build animation states from the renderer's clips, honoring any GLTF-authored
 // playback values the renderer reports and falling back to the inspector
 // defaults (weight 1, not playing, speed 1, no loop) for anything omitted.
+// A reported weight outside [0, 1] (e.g. Babylon's -1 "unset" sentinel) is
+// treated as unset too, so a fresh Animator never starts out invalid.
 export function mapAnimationsToStates(animations: RendererAnimation[]): PBAnimationState[] {
   return animations.map(({ name, weight, speed, loop, playing }) => ({
-    weight: weight ?? 1,
+    weight: weight !== undefined && weight >= 0 && weight <= 1 ? weight : 1,
     clip: name,
     playing: playing ?? false,
     speed: speed ?? 1,

@@ -10,6 +10,8 @@ export const DELETE = 'delete';
 export const BACKSPACE = 'backspace';
 export const COPY = `${CTRL}+c`;
 export const COPY_ALT = `${COMMAND}+c`;
+export const CUT = `${CTRL}+x`;
+export const CUT_ALT = `${COMMAND}+x`;
 export const PASTE = `${CTRL}+v`;
 export const PASTE_ALT = `${COMMAND}+v`;
 export const UNDO = `${CTRL}+z`;
@@ -27,8 +29,22 @@ export const SAVE = `${CTRL}+s`;
 export const SAVE_ALT = `${COMMAND}+s`;
 export const DUPLICATE = `${CTRL}+d`;
 export const DUPLICATE_ALT = `${COMMAND}+d`;
+export const SELECT_ALL = `${CTRL}+a`;
+export const SELECT_ALL_ALT = `${COMMAND}+a`;
+export const ESCAPE = 'esc';
+export const ARROW_UP = 'up';
+export const ARROW_DOWN = 'down';
+export const ARROW_LEFT = 'left';
+export const ARROW_RIGHT = 'right';
+export const EXTEND_UP = `${SHIFT}+up`;
+export const EXTEND_DOWN = `${SHIFT}+down`;
 export const FOCUS_SELECTED = 'f';
 export const TOGGLE_FREE_CAMERA = '`';
+
+interface UseHotkeyOptions {
+  /** Skip registration entirely while false (default true). */
+  enabled?: boolean;
+}
 
 /**
  * Hook that listens for key presses and triggers a callback function when the specified keys are pressed.
@@ -36,37 +52,33 @@ export const TOGGLE_FREE_CAMERA = '`';
  * @param keys - An array of strings representing the keys to listen for.
  * @param callback - The callback function to be executed when the specified keys are pressed.
  * @param node - The target DOM node to attach the event listener to. If not provided, the listener will be attached to the entire document.
+ * @param options - See {@link UseHotkeyOptions}.
  */
 export const useHotkey = (
   keys: string | string[],
   callback: KeyHandler | (() => void),
   node: any = undefined,
+  options: UseHotkeyOptions = {},
 ) => {
+  const { enabled = true } = options;
   const callbackRef = useRef(callback);
   useLayoutEffect(() => {
     callbackRef.current = callback;
   });
 
+  const formattedKeys = Array.isArray(keys) ? keys.join(',') : keys;
+
   useEffect(() => {
     // Uses document when the node is undefined
     const targetDocument = node !== undefined ? node : document;
-    const formattedKeys = Array.isArray(keys) ? keys.join(',') : keys;
-    if (targetDocument) {
-      hotkeys(
-        formattedKeys,
-        {
-          element: targetDocument,
-        },
-        (event, handler) => {
-          event.preventDefault();
-          callbackRef.current(event, handler);
-        },
-      );
-    }
-    return () => {
-      if (targetDocument) {
-        hotkeys.unbind(formattedKeys);
-      }
+    if (!targetDocument || !enabled) return;
+    const handler: KeyHandler = (event, hotkeysEvent) => {
+      event.preventDefault();
+      callbackRef.current(event, hotkeysEvent);
     };
-  }, [node]);
+    hotkeys(formattedKeys, { element: targetDocument }, handler);
+    return () => {
+      hotkeys.unbind(formattedKeys, handler);
+    };
+  }, [node, formattedKeys, enabled]);
 };

@@ -175,6 +175,47 @@ describe('BevyRenderer scene run/freeze', () => {
   });
 });
 
+describe('BevyRenderer audio mute (#1569)', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => renderer.dispose());
+
+  it('should default to unmuted', () => {
+    expect(renderer.audio.isMuted()).toBe(false);
+  });
+
+  it('should post the mute state and notify subscribers on change', () => {
+    const posted: boolean[] = [];
+    renderer.setMutedPoster(muted => posted.push(muted));
+    const seen: boolean[] = [];
+    renderer.audio.onMuteChange(muted => seen.push(muted));
+
+    renderer.audio.setMuted(true);
+    expect(renderer.audio.isMuted()).toBe(true);
+    expect(posted).toEqual([true]);
+    expect(seen).toEqual([true]);
+  });
+
+  it('should ignore a no-op set to the current state', () => {
+    const posted: boolean[] = [];
+    renderer.setMutedPoster(muted => posted.push(muted));
+    renderer.audio.setMuted(false); // already unmuted
+    expect(posted).toEqual([]);
+  });
+
+  it('should stop notifying after unsubscribe', () => {
+    const seen: boolean[] = [];
+    const off = renderer.audio.onMuteChange(muted => seen.push(muted));
+    off();
+    renderer.audio.setMuted(true);
+    expect(seen).toEqual([]);
+  });
+});
+
 describe('BevyRenderer gizmo world alignment', () => {
   let renderer: BevyRenderer;
 
@@ -275,23 +316,36 @@ describe('BevyRenderer getEntityAnimations', () => {
 
   afterEach(() => renderer.dispose());
 
-  it('should map the agent-resolved clip names to RendererAnimations', async () => {
-    renderer.setAnimationsResolver(async () => ['Idle', 'Walk']);
-    const anims = await renderer.getEntityAnimations(512 as never);
-    expect(anims).toEqual([{ name: 'Idle' }, { name: 'Walk' }]);
-  });
+  // A text glTF is enough for the parser; it reads the file's `animations` list.
+  const gltfWith = (names: string[]) =>
+    new TextEncoder().encode(JSON.stringify({ animations: names.map(name => ({ name })) }));
 
-  it('should pass the queried entity to the resolver', async () => {
-    const asked: number[] = [];
-    renderer.setAnimationsResolver(async entity => {
-      asked.push(entity as number);
-      return [];
+  const addModel = (src: string) => {
+    const entity = renderer.context.engine.addEntity();
+    renderer.context.getForwardableComponent('core::GltfContainer')!.createOrReplace(entity, {
+      src,
     });
-    await renderer.getEntityAnimations(700 as never);
-    expect(asked).toEqual([700]);
+    return entity;
+  };
+
+  it("should parse the clip names from the entity's model file via the asset loader", async () => {
+    const loaded: string[] = [];
+    renderer.setAssetLoader(async src => {
+      loaded.push(src);
+      return src === 'assets/dog.glb' ? gltfWith(['Idle', 'Walk']) : null;
+    });
+    const entity = addModel('assets/dog.glb');
+    const anims = await renderer.getEntityAnimations(entity);
+    expect(anims).toEqual([{ name: 'Idle' }, { name: 'Walk' }]);
+    expect(loaded).toEqual(['assets/dog.glb']);
   });
 
-  it('should return none when no resolver is wired (conformance path)', async () => {
-    expect(await renderer.getEntityAnimations(512 as never)).toEqual([]);
+  it('should return none for a model without animations', async () => {
+    renderer.setAssetLoader(async () => gltfWith([]));
+    expect(await renderer.getEntityAnimations(addModel('assets/rock.glb'))).toEqual([]);
+  });
+
+  it('should return none when no asset loader is wired (conformance path)', async () => {
+    expect(await renderer.getEntityAnimations(addModel('assets/dog.glb'))).toEqual([]);
   });
 });

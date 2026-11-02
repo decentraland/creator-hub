@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/soft_blue_pouf/soft_blue_pouf.glb"
+          }
+        }
+      }
+    }
+  ]
+}

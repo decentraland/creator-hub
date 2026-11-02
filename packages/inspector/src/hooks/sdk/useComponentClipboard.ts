@@ -8,6 +8,7 @@ import { getComponentValue, isLastWriteWinComponent } from './useComponentValue'
 
 const CLIPBOARD_TAG = '__dclComponent';
 const TRANSFORM_COMPONENT_NAME = 'core::Transform';
+const UI_TRANSFORM_COMPONENT_NAME = 'core::UiTransform';
 
 type ClipboardPayload = {
   [CLIPBOARD_TAG]: string;
@@ -63,12 +64,39 @@ const getDisplayName = (componentName: string): string => {
   return (match && match[0]) || componentName;
 };
 
-const stripParentForTransform = (componentName: string, value: unknown): unknown => {
-  if (componentName !== TRANSFORM_COMPONENT_NAME || !value || typeof value !== 'object') {
-    return value;
+const stripTreePointers = (componentName: string, value: unknown): unknown => {
+  if (!value || typeof value !== 'object') return value;
+  if (componentName === TRANSFORM_COMPONENT_NAME) {
+    const { parent: _p, ...rest } = value as Record<string, unknown>;
+    return rest;
   }
-  const { parent: _parent, ...rest } = value as Record<string, unknown>;
-  return rest;
+  if (componentName === UI_TRANSFORM_COMPONENT_NAME) {
+    const { parent: _p, rightOf: _r, ...rest } = value as Record<string, unknown>;
+    return rest;
+  }
+  return value;
+};
+
+const isTypeCompatible = (got: unknown, want: unknown): boolean => {
+  if (want === null || want === undefined) return true;
+  if (got === null || got === undefined) return true;
+  if (Array.isArray(want)) return Array.isArray(got);
+  const wantType = typeof want;
+  if (wantType === 'number') return typeof got === 'number' && Number.isFinite(got);
+  if (wantType === 'object') {
+    if (typeof got !== 'object' || Array.isArray(got)) return false;
+    const wantMap = want as Record<string, unknown>;
+    const gotMap = got as Record<string, unknown>;
+    return Object.keys(gotMap).every(key => isTypeCompatible(gotMap[key], wantMap[key]));
+  }
+  return typeof got === wantType;
+};
+
+export const matchesSchemaShape = (value: unknown, defaults: unknown): boolean => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const defaultMap = (defaults ?? {}) as Record<string, unknown>;
+  const valueMap = value as Record<string, unknown>;
+  return Object.keys(valueMap).every(key => isTypeCompatible(valueMap[key], defaultMap[key]));
 };
 
 export const useComponentClipboard = <T>(
@@ -86,7 +114,7 @@ export const useComponentClipboard = <T>(
     if (entities.length === 0) return;
     try {
       const value = getComponentValue(entities[0], component);
-      const normalized = stripParentForTransform(component.componentName, value);
+      const normalized = stripTreePointers(component.componentName, value);
       const payload: ClipboardPayload = {
         [CLIPBOARD_TAG]: component.componentName,
         value: normalized,
@@ -138,8 +166,14 @@ export const useComponentClipboard = <T>(
       return;
     }
 
+    const value = stripTreePointers(component.componentName, parsed.value) as T;
+
+    if (!matchesSchemaShape(value, component.schema.create())) {
+      await pushNotification('error', `Cannot paste malformed ${targetName} values`);
+      return;
+    }
+
     try {
-      const value = stripParentForTransform(component.componentName, parsed.value) as T;
       const lwwComponent = component as LastWriteWinElementSetComponentDefinition<T>;
       for (const entity of entities) {
         sdk.operations.updateValue(lwwComponent, entity, value as Partial<T>);

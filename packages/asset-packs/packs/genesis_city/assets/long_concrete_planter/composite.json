@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/long_concrete_planter/long_concrete_planter.glb"
+          }
+        }
+      }
+    }
+  ]
+}

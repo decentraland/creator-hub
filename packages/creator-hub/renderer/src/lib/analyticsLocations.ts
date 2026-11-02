@@ -128,10 +128,12 @@ async function landPlaces(lands: Land[], fallbackThumbnail: string): Promise<Ana
  * Every scene the signed-in wallet owns or collaborates on.
  *
  * The analytics service enumerates nothing, so the list is assembled here from
- * what the app already knows: its managed worlds and its LAND.
+ * the wallet's worlds and its LAND. Both are fetched for this list rather than
+ * read off the Manage page, whose own list is narrowed by its search and page.
  *
- * ponytail: worlds come from the managed-projects page the app already loads,
- * which is capped at 50; page through `total` if anyone holds more.
+ * Deduplicated by location, because that is what analytics answers by: two
+ * scenes sharing a coordinate are one row, and keeping both would key them to
+ * the same metrics and lose one anyway.
  */
 export async function collectAnalyticsPlaces(
   projects: ManagedProject[],
@@ -139,5 +141,7 @@ export async function collectAnalyticsPlaces(
   fallbackThumbnail: string,
 ): Promise<AnalyticsPlace[]> {
   const genesisCity = await landPlaces(lands, fallbackThumbnail);
-  return [...worldPlaces(projects, fallbackThumbnail), ...genesisCity];
+  const places = [...worldPlaces(projects, fallbackThumbnail), ...genesisCity];
+
+  return [...new Map(places.map(place => [place.placeId, place])).values()];
 }

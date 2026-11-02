@@ -75,9 +75,9 @@ export function OverviewTab({ overview }: Props) {
           }}
           metrics={[
             {
-              label: t('analytics.metrics.avg_playtime.label'),
-              tooltip: t('analytics.metrics.avg_playtime.tooltip'),
-              value: formatMinutes(overview.avgPlaytime),
+              label: t('analytics.metrics.median_playtime.label'),
+              tooltip: t('analytics.metrics.median_playtime.tooltip'),
+              value: formatMinutes(overview.medianPlaytime),
             },
             {
               label: t('analytics.metrics.afk_time.label'),
