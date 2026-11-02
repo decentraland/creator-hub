@@ -86,12 +86,15 @@ const DETECTION_TIMEOUT = 30_000;
  */
 export async function isEmote(file: File): Promise<boolean> {
   const url = URL.createObjectURL(file);
-  const canvas = document.createElement('canvas');
-  const engine = new Engine(canvas, false);
-  const scene = new Scene(engine);
+  let engine: Engine | undefined;
+  let scene: Scene | undefined;
   let timeout: ReturnType<typeof setTimeout> | undefined;
 
   try {
+    // Inside the try: `new Engine` throws synchronously when no WebGL context can be created,
+    // which would otherwise reject the whole import dialog's detection and leave it empty.
+    engine = new Engine(document.createElement('canvas'), false);
+    scene = new Scene(engine);
     const result = await Promise.race([
       SceneLoader.LoadAssetContainerAsync(
         '',
@@ -115,7 +118,7 @@ export async function isEmote(file: File): Promise<boolean> {
   } finally {
     clearTimeout(timeout);
     URL.revokeObjectURL(url);
-    scene.dispose();
-    engine.dispose();
+    scene?.dispose();
+    engine?.dispose();
   }
 }

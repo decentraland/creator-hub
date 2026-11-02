@@ -2,10 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isEmote } from './utils';
 
-const babylon = vi.hoisted(() => ({ loadAssetContainer: vi.fn() }));
+const babylon = vi.hoisted(() => ({
+  loadAssetContainer: vi.fn(),
+  engineError: undefined as Error | undefined,
+}));
 
 vi.mock('@babylonjs/core/Engines/engine', () => ({
   Engine: class {
+    constructor() {
+      if (babylon.engineError) throw babylon.engineError;
+    }
     dispose() {}
   },
 }));
@@ -37,6 +43,7 @@ describe('isEmote', () => {
     globalThis.URL.createObjectURL = vi.fn(() => 'blob:model');
     globalThis.URL.revokeObjectURL = vi.fn();
     babylon.loadAssetContainer.mockReset();
+    babylon.engineError = undefined;
     model = new File([], 'model.glb');
   });
 
@@ -51,11 +58,28 @@ describe('isEmote', () => {
 
       await expect(isEmote(model)).resolves.toBe(true);
     });
+
+    it('should leave no timer pending', async () => {
+      babylon.loadAssetContainer.mockResolvedValue(emoteContainer);
+
+      await isEmote(model);
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
   });
 
   describe('when the loader rejects', () => {
     it('should not be an emote, rather than propagate', async () => {
       babylon.loadAssetContainer.mockRejectedValue(new Error('corrupt glb'));
+
+      await expect(isEmote(model)).resolves.toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
+
+  describe('when no WebGL context can be created', () => {
+    it('should not be an emote, rather than propagate', async () => {
+      babylon.engineError = new Error('WebGL not supported');
 
       await expect(isEmote(model)).resolves.toBe(false);
     });
@@ -67,8 +91,13 @@ describe('isEmote', () => {
     it('should give up and report not an emote so the dialog can still open', async () => {
       babylon.loadAssetContainer.mockReturnValue(new Promise(() => {}));
 
-      const detecting = isEmote(model);
-      await vi.advanceTimersByTimeAsync(30_000);
+      let settled = false;
+      const detecting = isEmote(model).finally(() => {
+        settled = true;
+      });
+      await vi.advanceTimersByTimeAsync(29_999);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
 
       await expect(detecting).resolves.toBe(false);
       expect(console.error).toHaveBeenCalled();
