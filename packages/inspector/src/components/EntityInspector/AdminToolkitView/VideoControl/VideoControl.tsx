@@ -83,7 +83,7 @@ const VideoControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
             label="Custom Name"
             value={videoPlayer.customName}
             onBlur={e => {
-              if (e.target.value === videoPlayer.customName) return;
+              if (e.target.value === (videoPlayer.customName ?? '')) return;
               setVideoPlayers(
                 videoPlayers.with(idx, { ...videoPlayer, customName: e.target.value }),
               );

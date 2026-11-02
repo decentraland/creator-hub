@@ -85,7 +85,7 @@ const SmartItemControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
             label="Custom Name"
             value={smartItem.customName}
             onBlur={e => {
-              if (e.target.value === smartItem.customName) return;
+              if (e.target.value === (smartItem.customName ?? '')) return;
               setSmartItems(smartItems.with(idx, { ...smartItem, customName: e.target.value }));
             }}
           />

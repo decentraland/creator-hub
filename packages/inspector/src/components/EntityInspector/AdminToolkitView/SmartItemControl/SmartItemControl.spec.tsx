@@ -225,6 +225,24 @@ describe('SmartItemControl', () => {
     });
   });
 
+  describe('when the custom name of a row saved without one is blurred unedited', () => {
+    beforeEach(() => {
+      mocks.admin = {
+        smartItemsControl: {
+          isEnabled: true,
+          linkAllSmartItems: false,
+          smartItems: [{ entity: 512, defaultAction: 'open' }],
+        },
+      };
+      render(<SmartItemControl entity={1 as Entity} />);
+      fireEvent.blur(screen.getAllByLabelText('Custom Name')[0]);
+    });
+
+    it('should not write an empty name to the AdminTools component', () => {
+      expect(mocks.setValue).not.toHaveBeenCalled();
+    });
+  });
+
   describe("when a row's entity no longer has Actions", () => {
     beforeEach(() => {
       mocks.removedEntities.add(600);

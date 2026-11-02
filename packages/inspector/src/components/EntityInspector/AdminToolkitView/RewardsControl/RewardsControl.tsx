@@ -74,7 +74,7 @@ const RewardsControl: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   const handleRewardItemNameBlur = useCallback(
     (idx: number, e: React.FocusEvent<HTMLInputElement>) => {
       const rewardItems = adminComponent.rewardsControl.rewardItems;
-      if (rewardItems?.[idx]?.customName === e.target.value) return;
+      if ((rewardItems?.[idx]?.customName ?? '') === e.target.value) return;
       const updatedRewardItems = rewardItems?.map((rewardItem, index) =>
         index === idx ? { ...rewardItem, customName: e.target.value } : rewardItem,
       );
