@@ -33,6 +33,10 @@ import {
   BLEND_MODE_OPTIONS,
   PLAYBACK_STATE_OPTIONS,
   SIMULATION_SPACE_OPTIONS,
+  WRAP_MODE_OPTIONS,
+  FILTER_MODE_OPTIONS,
+  DEFAULT_WRAP_MODE,
+  DEFAULT_FILTER_MODE,
 } from './types';
 import { fromComponent, toComponent, isValidInput, createDefaultBurst } from './utils';
 
@@ -161,6 +165,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const limitVelocityEnabled = getInputProps('limitVelocityEnabled', e => e.target.checked);
   const shapeType = getInputProps('shapeType');
   const textureSrc = getInputProps('texture.src');
+  const textureWrapMode = getInputProps('texture.wrapMode');
+  const textureFilterMode = getInputProps('texture.filterMode');
   const currentShape = String(shapeType.value);
 
   return (
@@ -722,6 +728,112 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         </Block>
       </Container>
 
+      {/* Rotation */}
+      <Container
+        label="Rotation"
+        border
+        initialOpen={false}
+        rightContent={
+          <InfoTooltip
+            text="How particles are oriented and how they spin around their own axes."
+            type="help"
+          />
+        }
+      >
+        <Block
+          label={
+            <>
+              Billboard{' '}
+              <InfoTooltip
+                text="When on, each particle always faces the camera: Z rotation spins it in place and X/Y tilt it. Turn off for particles that should tumble freely in 3D."
+                type="help"
+              />
+            </>
+          }
+        >
+          <CheckboxField
+            checked={!!billboard.value}
+            {...billboard}
+          />
+        </Block>
+        <Block
+          label={
+            <>
+              Face Travel Direction{' '}
+              <InfoTooltip
+                text="Each particle starts out pointing along its direction of movement, like an arrow or asteroid. Initial Rotation and Rotation Over Time still apply on top of that alignment."
+                type="help"
+              />
+            </>
+          }
+        >
+          <CheckboxField
+            checked={!!faceTravelDirection.value}
+            {...faceTravelDirection}
+          />
+        </Block>
+        <Block
+          label={
+            <>
+              Initial Rotation (deg){' '}
+              <InfoTooltip
+                text="Rotation of each particle at birth, in degrees per axis."
+                type="help"
+              />
+            </>
+          }
+        >
+          <TextField
+            leftLabel="X"
+            type="number"
+            {...getInputProps('initialRotation.x')}
+            autoSelect
+          />
+          <TextField
+            leftLabel="Y"
+            type="number"
+            {...getInputProps('initialRotation.y')}
+            autoSelect
+          />
+          <TextField
+            leftLabel="Z"
+            type="number"
+            {...getInputProps('initialRotation.z')}
+            autoSelect
+          />
+        </Block>
+        <Block
+          label={
+            <>
+              Rotation Over Time (deg/sec){' '}
+              <InfoTooltip
+                text="Angular velocity per axis in degrees per second. Values are limited to ±180 per axis by the underlying rotation encoding."
+                type="help"
+              />
+            </>
+          }
+        >
+          <TextField
+            leftLabel="X"
+            type="number"
+            {...getInputProps('rotationOverTime.x')}
+            autoSelect
+          />
+          <TextField
+            leftLabel="Y"
+            type="number"
+            {...getInputProps('rotationOverTime.y')}
+            autoSelect
+          />
+          <TextField
+            leftLabel="Z"
+            type="number"
+            {...getInputProps('rotationOverTime.z')}
+            autoSelect
+          />
+        </Block>
+      </Container>
+
       {/* Color */}
       <Container
         label="Color"
@@ -803,19 +915,51 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           />
         </Block>
         {!!textureEnabled.value && (
-          <Block label="Texture Path">
-            <FileUploadField
-              {...textureSrc}
-              label="Path"
-              accept={ACCEPTED_FILE_TYPES['image']}
-              options={imageOptions}
-              onDrop={handleTextureDrop}
-              onChange={handleTextureChange}
-              error={!!textureSrc.value && !isValidTexturePath(textureSrc.value)}
-              isValidFile={isModel}
-              acceptURLs
-            />
-          </Block>
+          <>
+            <Block label="Texture Path">
+              <FileUploadField
+                {...textureSrc}
+                label="Path"
+                accept={ACCEPTED_FILE_TYPES['image']}
+                options={imageOptions}
+                onDrop={handleTextureDrop}
+                onChange={handleTextureChange}
+                error={!!textureSrc.value && !isValidTexturePath(textureSrc.value)}
+                isValidFile={isModel}
+                acceptURLs
+              />
+            </Block>
+            <Block>
+              <Dropdown
+                label={
+                  <>
+                    Wrap Mode{' '}
+                    <InfoTooltip
+                      text="How the texture behaves outside the 0–1 UV range. Clamp (default): stretch edge pixels. Repeat: tile. Mirror: tile with alternating flips."
+                      type="help"
+                    />
+                  </>
+                }
+                options={WRAP_MODE_OPTIONS}
+                {...textureWrapMode}
+                value={String(textureWrapMode.value || DEFAULT_WRAP_MODE)}
+              />
+              <Dropdown
+                label={
+                  <>
+                    Filter Mode{' '}
+                    <InfoTooltip
+                      text="Texture sampling. Bilinear (default): smooth. Point: pixelated (good for pixel art). Trilinear: smooth across mipmap levels."
+                      type="help"
+                    />
+                  </>
+                }
+                options={FILTER_MODE_OPTIONS}
+                {...textureFilterMode}
+                value={String(textureFilterMode.value || DEFAULT_FILTER_MODE)}
+              />
+            </Block>
+          </>
         )}
         <Block>
           <Dropdown
@@ -830,38 +974,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
             }
             options={BLEND_MODE_OPTIONS}
             {...getInputProps('blendMode')}
-          />
-        </Block>
-        <Block
-          label={
-            <>
-              Billboard{' '}
-              <InfoTooltip
-                text="When on, each particle always faces the camera. Turn off for particles that should tumble in 3D."
-                type="help"
-              />
-            </>
-          }
-        >
-          <CheckboxField
-            checked={!!billboard.value}
-            {...billboard}
-          />
-        </Block>
-        <Block
-          label={
-            <>
-              Face Travel Direction{' '}
-              <InfoTooltip
-                text="Particles auto-rotate to point in their direction of movement, like asteroids. Overrides Billboard when on."
-                type="help"
-              />
-            </>
-          }
-        >
-          <CheckboxField
-            checked={!!faceTravelDirection.value}
-            {...faceTravelDirection}
           />
         </Block>
       </Container>

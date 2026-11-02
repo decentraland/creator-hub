@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/flat_low_poly_rock/flat_low_poly_rock.glb"
+          }
+        }
+      }
+    }
+  ]
+}

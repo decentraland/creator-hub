@@ -7,6 +7,7 @@ import { SortBy } from '/shared/types/place-analytics';
 import { useDispatch, useSelector } from '#store';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as placeAnalyticsActions, selectors } from '/@/modules/store/placeAnalytics';
+import { fetchENSList } from '/@/modules/store/ens';
 import { useAuth } from '/@/hooks/useAuth';
 
 import emptyAnalytics from '/assets/images/analytics-empty.svg';
@@ -30,7 +31,7 @@ const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
 ];
 
 export function AnalyticsPage() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, wallet } = useAuth();
   const { places, pinnedPlaceIds, sortBy, searchQuery, exportedAt, status, error } = useSelector(
     state => state.placeAnalytics,
   );
@@ -43,6 +44,14 @@ export function AnalyticsPage() {
   useEffect(() => {
     if (isSignedIn) dispatch(placeAnalyticsActions.fetchAnalytics());
   }, [isSignedIn]);
+
+  // Names can change outside the app (a purchase, a granted deploy permission), so the
+  // sign-in-time fetch goes stale. Refresh in the background on every visit to this tab.
+  useEffect(() => {
+    if (wallet) {
+      dispatch(fetchENSList({ address: wallet }));
+    }
+  }, [wallet, dispatch]);
 
   const handleSortChange = useCallback((e: SelectChangeEvent<SortBy>) => {
     dispatch(placeAnalyticsActions.setSortBy(e.target.value as SortBy));

@@ -1,21 +1,23 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { XYCoord, useDrag, useDrop } from 'react-dnd';
+import type { XYCoord } from 'react-dnd';
+import { useDrag, useDrop } from 'react-dnd';
 import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
-import cx from 'classnames';
-import { Entity } from '@dcl/ecs';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
+import cx from 'classnames';
+import type { Entity } from '@dcl/ecs';
 
 import { withContextMenu } from '../../hoc/withContextMenu';
 import { Input } from '../Input';
+import { useSdk } from '../../hooks/sdk/useSdk';
+import { useAppSelector } from '../../redux/hooks';
+import type { GizmoType } from '../../lib/utils/gizmo';
+import { getEntitiesOutOfBoundaries } from '../../redux/scene-metrics';
+import { InfoTooltip } from '../ui';
 import { ContextMenu } from './ContextMenu';
 import { ActionArea } from './ActionArea';
 import { Edit as EditInput } from './Edit';
-import { DropType, calculateDropType } from './utils';
-import { useSdk } from '../../hooks/sdk/useSdk';
-import { useAppSelector } from '../../redux/hooks';
-import { GizmoType } from '../../lib/utils/gizmo';
-import { getEntitiesOutOfBoundaries } from '../../redux/scene-metrics';
-import { InfoTooltip } from '../ui';
+import type { DropType } from './utils';
+import { calculateDropType } from './utils';
 
 import './Tree.css';
 
@@ -36,6 +38,8 @@ type Props<T> = {
   canAddChild?: (value: T) => boolean;
   canRemove?: (value: T) => boolean;
   canDuplicate?: (value: T) => boolean;
+  addChildLabel?: string;
+  addChildIcon?: JSX.Element;
   canDrag?: (value: T) => boolean;
   canReorder?: (source: T, target: T, type: DropType) => boolean;
   onSetOpen: (value: T, isOpen: boolean) => void;
@@ -47,9 +51,14 @@ type Props<T> = {
   onRemove: (value: T) => void;
   onDuplicate: (value: T, preferredGizmo?: GizmoType) => void;
   getDragContext?: () => unknown;
+  getDragItem?: (items: T[], context: unknown) => unknown;
   dndType?: string;
+  externalDndTypes?: string[];
+  onExternalDrop?: (item: unknown, target: T, dropType: DropType) => void;
+  allowBeforeDrop?: boolean;
   onLastSelectedChange?: (value: T) => void;
   isRoot?: (value: T) => boolean;
+  renderActionArea?: (value: T) => React.ReactNode;
 };
 
 type EmptyString = '';
@@ -85,6 +94,8 @@ export function Tree<T>() {
         canAddChild,
         canRemove,
         canDuplicate,
+        addChildLabel,
+        addChildIcon,
         canDrag,
         canReorder,
         onRename,
@@ -95,7 +106,11 @@ export function Tree<T>() {
         onSetOpen,
         isRoot,
         getDragContext = () => ({}),
+        getDragItem,
         dndType = 'tree',
+        externalDndTypes,
+        onExternalDrop,
+        allowBeforeDrop = false,
         onLastSelectedChange,
       } = props;
       const ref = useRef<HTMLDivElement>(null);
@@ -144,12 +159,17 @@ export function Tree<T>() {
 
       const [{ isHover }, drop] = useDrop(
         () => ({
-          accept: dndType,
-          drop: (item: { items: T[]; context: unknown }, monitor) => {
+          accept: externalDndTypes?.length ? [dndType, ...externalDndTypes] : dndType,
+          drop: (item: { items?: T[]; context?: unknown }, monitor) => {
             const dropTypeValue = dropType || dropTypeRef.current;
             if (monitor.didDrop() || !dropTypeValue) return;
 
-            const { items } = item;
+            if (!item.items) {
+              onExternalDrop?.(item, value, dropTypeValue);
+              return;
+            }
+
+            const items = item.items;
             const isMultipleDrag = items.length > 1;
 
             if (isMultipleDrag) {
@@ -161,27 +181,27 @@ export function Tree<T>() {
               onDrop(sourceItem, value, dropTypeValue);
             }
           },
-          hover: (item: { items: T[]; context: unknown }, monitor) => {
+          hover: (item: { items?: T[]; context?: unknown }, monitor) => {
             if (!ref.current) {
               dropTypeRef.current = '';
               return setDropType('');
             }
 
-            const { items } = item;
+            const items = item.items;
 
-            // check if hovering over one of the dragged items
-            if (items.some(sourceItem => getId(sourceItem) === getId(value))) {
+            if (items && items.some(sourceItem => getId(sourceItem) === getId(value))) {
               dropTypeRef.current = '';
               return setDropType('');
             }
 
             const coords = monitor.getClientOffset() as XYCoord;
             const rect = ref.current.getBoundingClientRect();
-            const dropType = calculateDropType(coords.y, rect);
+            const dropType = calculateDropType(coords.y, rect, allowBeforeDrop);
 
-            const enableReorder = canReorder
-              ? items.every(sourceItem => canReorder(sourceItem, value, dropType))
-              : true;
+            const enableReorder =
+              items && canReorder
+                ? items.every(sourceItem => canReorder(sourceItem, value, dropType))
+                : true;
 
             const newDropTypeValue = enableReorder ? dropType : '';
 
@@ -192,7 +212,19 @@ export function Tree<T>() {
             isHover: monitor.isOver({ shallow: true }),
           }),
         }),
-        [value, dropType, onDrop, canDrop, canDropMultiple, canReorder, getId],
+        [
+          value,
+          dropType,
+          onDrop,
+          onExternalDrop,
+          canDrop,
+          canDropMultiple,
+          canReorder,
+          getId,
+          dndType,
+          externalDndTypes,
+          allowBeforeDrop,
+        ],
       );
 
       const quitEditMode = () => setEditMode(false);
@@ -247,22 +279,14 @@ export function Tree<T>() {
           item: () => {
             const selectedItems = getSelectedItems ? getSelectedItems() : [];
             // if this item is selected and there are multiple selections, drag all selected items
-            if (
-              selectedItems.length > 1 &&
-              selectedItems.some(item => getId(item) === getId(value))
-            ) {
-              return {
-                items: selectedItems,
-                context: getDragContext(),
-              };
-            }
-            return {
-              items: [value],
-              context: getDragContext(),
-            };
+            const isPartOfSelection =
+              selectedItems.length > 1 && selectedItems.some(item => getId(item) === getId(value));
+            const items = isPartOfSelection ? selectedItems : [value];
+            const context = getDragContext();
+            return getDragItem ? getDragItem(items, context) : { items, context };
           },
         }),
-        [value, getSelectedItems, getId],
+        [value, getSelectedItems, getId, getDragItem],
       );
 
       const handleRemove = () => {
@@ -345,6 +369,8 @@ export function Tree<T>() {
           false,
         enableRemove,
         enableDuplicate,
+        addChildLabel,
+        addChildIcon,
         onAddChild: handleNewChild,
         onEdit: handleToggleEdit,
         onRemove: handleRemove,
@@ -385,7 +411,9 @@ export function Tree<T>() {
               >
                 {props.getIcon && props.getIcon(value)}
                 <div>{label || id}</div>
-                {isEntity && <ActionArea entity={value as Entity} />}
+                {props.renderActionArea
+                  ? props.renderActionArea(value)
+                  : isEntity && <ActionArea entity={value as Entity} />}
                 {!isRoot?.(value as T) && isEntityOutOfBoundaries && (
                   <InfoTooltip
                     text="This entity is out of bounds and might not display correctly in-world."

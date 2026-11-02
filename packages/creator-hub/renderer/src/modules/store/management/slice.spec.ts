@@ -3,6 +3,7 @@ import { AuthServerProvider } from '../../../lib/auth';
 import type { ManagedProject } from '../../../../../shared/types/manage';
 import { SortBy, FilterBy, ManagedProjectType } from '../../../../../shared/types/manage';
 import { createTestStore } from '../../../../tests/utils/testStore';
+import type * as ManagementUtils from './utils';
 import {
   actions,
   initialState,
@@ -151,7 +152,8 @@ vi.mock('../../../lib/auth', () => ({
   },
 }));
 
-vi.mock('./utils', () => ({
+vi.mock('./utils', async importOriginal => ({
+  ...(await importOriginal<ManagementUtils>()),
   fetchWorldSceneCoords: vi.fn(async () => [{ x: 0, y: 0 }]),
   getThumbnailUrlFromDeployment: vi.fn((deployment, getContentUrl) => {
     if (deployment?.metadata?.display?.favicon) {
@@ -1024,6 +1026,10 @@ describe('management slice', () => {
   });
 
   describe('fetchWorlds', () => {
+    beforeEach(() => {
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+    });
+
     it('should fetch and transform worlds successfully on first page', async () => {
       const mockWorlds = {
         worlds: [

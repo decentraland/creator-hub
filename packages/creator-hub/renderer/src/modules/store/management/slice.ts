@@ -20,10 +20,10 @@ import { fetchLandList, actions as landActions } from '/@/modules/store/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
 import {
-  fetchWorldSceneCoords,
   getThumbnailUrlFromDeployment,
   getWorldPermissionsInitialState,
   getWorldSettingsInitialState,
+  toManagedProject,
 } from './utils';
 import type {
   AddressPermissionPayload,
@@ -157,32 +157,7 @@ export const fetchWorlds = createAsyncThunk(
     }
 
     const worldProjects: ManagedProject[] = await Promise.all(
-      worldsResponse.worlds.map(world =>
-        limit(async () => ({
-          id: world.name,
-          displayName: world.name,
-          type: ManagedProjectType.WORLD,
-          role:
-            world.owner?.toLowerCase() === address.toLowerCase()
-              ? WorldRoleType.OWNER
-              : WorldRoleType.COLLABORATOR,
-          deployment: world.owner // If world has never been deployed, backend returns null in the owner and every field.
-            ? {
-                title: world.title || world.name,
-                description: world.description || '',
-                thumbnail: world.thumbnailHash
-                  ? WorldsAPI.getContentSrcUrl(world.thumbnailHash)
-                  : '',
-
-                lastPublishedAt: world.lastDeployedAt
-                  ? new Date(world.lastDeployedAt).getTime()
-                  : 0,
-                scenesCount: world.deployedScenes || 0,
-              }
-            : undefined,
-          scenes: world.deployedScenes ? await fetchWorldSceneCoords(WorldsAPI, world.name) : [],
-        })),
-      ),
+      worldsResponse.worlds.map(world => limit(() => toManagedProject(WorldsAPI, world, address))),
     );
 
     return { worlds: worldProjects, total: worldsResponse.total };

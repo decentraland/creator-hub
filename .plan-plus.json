@@ -1,0 +1,67 @@
+{
+  "specs": "external",
+  "automation": {
+    "enabled": true,
+    "base_branch": "main",
+    "required_checks": [
+      { "id": "install", "command": ["make", "install"], "mutates": true, "timeout_seconds": 1800 },
+      { "id": "protoc", "command": ["make", "protoc"], "mutates": true, "timeout_seconds": 600 },
+      {
+        "id": "build-asset-packs",
+        "command": ["make", "build-asset-packs"],
+        "mutates": true,
+        "timeout_seconds": 1800
+      },
+      {
+        "id": "build-inspector",
+        "command": ["make", "build-inspector"],
+        "mutates": true,
+        "timeout_seconds": 2400
+      },
+      { "id": "lint", "command": ["npm", "run", "lint"], "timeout_seconds": 900 },
+      { "id": "format", "command": ["npm", "run", "format"], "timeout_seconds": 900 },
+      {
+        "id": "typecheck",
+        "command": ["npm", "run", "typecheck", "--if-present"],
+        "timeout_seconds": 1800
+      },
+      { "id": "tests", "command": ["npm", "run", "test"], "timeout_seconds": 1800 }
+    ],
+    "not_applicable": [
+      {
+        "id": "docs-only",
+        "applies_to": ["test_first", "required_check:tests"],
+        "paths": ["docs/**", "*.md", "**/*.md"]
+      }
+    ],
+    "protected_paths": [
+      ".plan-plus.json",
+      ".ai/**",
+      ".cursorrules",
+      "Makefile",
+      "package.json",
+      "package-lock.json",
+      "**/package.json",
+      "**/package-lock.json",
+      ".eslintrc.json",
+      "**/.eslintrc.json",
+      ".prettierrc",
+      ".prettierignore",
+      ".nano-staged.js",
+      ".simple-git-hooks.json",
+      ".syncpackrc.json",
+      ".gitmodules",
+      ".gitattributes",
+      ".editorconfig",
+      "packages/*/scripts/**",
+      "packages/creator-hub/electron-builder.cjs",
+      "packages/inspector/build.js",
+      "**/tsconfig*.json",
+      "**/vite.config.*",
+      "**/vitest*.config.*"
+    ],
+    "blocking_severity": "Medium",
+    "budgets": { "iterations": 3, "ci_repairs": 2, "dispatches": 40 },
+    "replan_unattended": false
+  }
+}

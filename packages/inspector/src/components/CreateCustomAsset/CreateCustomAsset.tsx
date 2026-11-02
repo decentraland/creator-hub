@@ -103,9 +103,9 @@ const CreateCustomAsset: React.FC = () => {
     [handleCreate, handleCancel],
   );
 
-  const handleScreenshot = useCallback((value: string) => {
+  const handleScreenshot = useCallback((value?: string) => {
     setIsGeneratingThumbnail(false);
-    setThumbnail(value);
+    setThumbnail(value ?? null);
   }, []);
 
   if (!stagedCustomAsset) return null;
@@ -116,18 +116,20 @@ const CreateCustomAsset: React.FC = () => {
         <div className="file-container">
           {previewFile && resources !== null ? (
             <div className="preview-container">
-              {isGeneratingThumbnail && !thumbnail ? (
+              {isGeneratingThumbnail ? (
                 <div className="loader-container">
                   <Loader
                     active
                     size="small"
                   />
                 </div>
-              ) : (
+              ) : thumbnail ? (
                 <div
                   className="thumbnail"
                   style={{ backgroundImage: `url(${thumbnail})` }}
                 ></div>
+              ) : (
+                <CustomAssetIcon />
               )}
               <AssetPreview
                 value={previewFile}

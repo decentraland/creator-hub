@@ -37,6 +37,19 @@ export function isValidFolderName(name: string): boolean {
 }
 
 /**
+ * Human-readable size. Negative values (a run that grew the scene) keep their sign instead of
+ * feeding `Math.log` a negative and printing "NaN undefined"; NaN/undefined read as 0.
+ */
+export function formatBytes(bytes: number): string {
+  if (!bytes || !Number.isFinite(bytes)) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const magnitude = Math.abs(bytes);
+  const i = Math.min(units.length - 1, Math.floor(Math.log(magnitude) / Math.log(1024)));
+  const value = (magnitude / 1024 ** i).toFixed(i === 0 ? 0 : 1);
+  return `${bytes < 0 ? '-' : ''}${value} ${units[i]}`;
+}
+
+/**
  * Returns the last segment of a file system path (POSIX or Windows), i.e. the file/folder name.
  * Unlike `node:path`'s `basename`, this is safe to use from the renderer, which has no access to
  * Node built-ins.
@@ -87,6 +100,23 @@ export const chunk = <T>(items: T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
     items.slice(index * size, index * size + size),
   );
+
+/**
+ * Runs `attempt` again after a pause if it throws, and lets the last failure through.
+ *
+ * For reads across the internet, where a timeout or a 5xx says nothing about
+ * whether the next call will work.
+ */
+export async function retry<T>(attempt: () => Promise<T>, attempts = 2, pauseMs = 500): Promise<T> {
+  for (let remaining = attempts - 1; ; remaining--) {
+    try {
+      return await attempt();
+    } catch (error) {
+      if (remaining <= 0) throw error;
+      await delay(pauseMs);
+    }
+  }
+}
 
 export function debounce<F extends (...args: any[]) => void>(func: F, delay: number) {
   let timer: ReturnType<typeof setTimeout>;

@@ -1,10 +1,12 @@
-import { useCallback, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import type { RefObject } from 'react';
 import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import cx from 'classnames';
-import { PreviewCamera, PreviewProjection } from '@dcl/schemas';
+import { PreviewCamera, PreviewMessageType, PreviewProjection, sendMessage } from '@dcl/schemas';
+import type { EmoteWithBlobs, WearableWithBlobs } from '@dcl/schemas';
 import { WearablePreview } from 'decentraland-ui';
 
 import { Loading } from '../Loading';
@@ -15,6 +17,50 @@ import './AssetPreview.css';
 
 const WIDTH = 300;
 const HEIGHT = 300;
+
+const GIVE_UP_AFTER_MS = 30_000;
+
+type PreviewState = 'loading' | 'ready' | 'failed';
+
+/**
+ * Reports a preview's outcome exactly once, with a thumbnail or without one.
+ *
+ * The import dialog gates its button on every model and image preview reporting back, so a
+ * preview that can neither succeed nor fail leaves the dialog stuck with no error surfaced
+ * anywhere — the failure mode of #694, #1456 and #1485. Both previews below can fail in ways
+ * they cannot observe directly, a frame the browser refused to load reporting nothing at all,
+ * so giving up after `GIVE_UP_AFTER_MS` is what makes reporting back unconditional rather than
+ * best-effort. A failure `reason` can originate in the preview frame, so it is logged and never
+ * rendered.
+ *
+ * `onScreenshot` is held in a ref so that `finish` — and with it the deadline — keeps a stable
+ * identity no matter how often the caller re-renders with a fresh callback. A deadline that
+ * restarts on every render is a deadline that never arrives.
+ */
+function usePreviewOutcome(onScreenshot: (thumbnail?: string) => void) {
+  const [state, setState] = useState<PreviewState>('loading');
+  const reported = useRef(false);
+  const report = useRef(onScreenshot);
+  report.current = onScreenshot;
+
+  const finish = useCallback((thumbnail?: string, reason?: unknown) => {
+    if (reported.current) return;
+    reported.current = true;
+    if (reason) console.error('Asset preview failed to render:', reason);
+    report.current(thumbnail);
+    setState(thumbnail ? 'ready' : 'failed');
+  }, []);
+
+  useEffect(() => {
+    const giveUp = setTimeout(
+      () => finish(undefined, `no preview after ${GIVE_UP_AFTER_MS}ms`),
+      GIVE_UP_AFTER_MS,
+    );
+    return () => clearTimeout(giveUp);
+  }, [finish]);
+
+  return { state, finish };
+}
 
 export function AssetPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props) {
   const preview = useMemo(() => {
@@ -58,32 +104,65 @@ export function AssetPreview({ value, resources, onScreenshot, onLoad, isEmote }
   return <div className="assetPreview">{preview}</div>;
 }
 
-function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props) {
-  const [loading, setLoading] = useState(true);
+/** The preview rejects calls on a scene that a later update replaced; that update loads next. */
+function isSupersededRender(error: unknown) {
+  return error instanceof Error && /newer render/i.test(error.message);
+}
 
-  const handleScreenshot = useCallback(
-    (screenshot: string) => {
-      setTimeout(() => {
-        onScreenshot(screenshot);
-        setLoading(false);
-      }, 1000);
-    },
-    [onScreenshot],
+/** The load the frame reports for its initial empty scene, before the model arrives. */
+async function isPlaceholderSceneLoad(wp: ReturnType<typeof WearablePreview.createController>) {
+  return (await wp.scene.getMetrics()).triangles === 0;
+}
+
+/** Resends `blob` on the preview frame's READY message; returns whether it was sent. */
+function useSendModelWhenReady(
+  containerRef: RefObject<HTMLDivElement>,
+  blob: WearableWithBlobs | EmoteWithBlobs,
+) {
+  const modelSent = useRef(false);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const frame = containerRef.current?.querySelector('iframe')?.contentWindow;
+      if (!frame || event.source !== frame) return;
+      if (event.data?.type !== PreviewMessageType.READY) return;
+      sendMessage(frame, PreviewMessageType.UPDATE, { options: { blob } });
+      modelSent.current = true;
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [containerRef, blob]);
+
+  return modelSent;
+}
+
+function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props) {
+  const { state, finish } = usePreviewOutcome(onScreenshot);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const blob = useMemo(
+    () => (isEmote ? toEmoteWithBlobs(value, resources) : toWearableWithBlobs(value, resources)),
+    [value, resources, isEmote],
   );
+  const modelSent = useSendModelWhenReady(containerRef, blob);
 
   const handleLoad = useCallback(async () => {
-    onLoad?.();
+    if (!modelSent.current) return;
     const wp = WearablePreview.createController(value.name);
-    if (isEmote) {
-      const length = await wp.emote.getLength();
-      //takes a screenshot at the middle of the emote
-      void wp.emote.goTo(length * 0.5).then(() => {
-        void wp.scene.getScreenshot(WIDTH, HEIGHT).then(handleScreenshot);
-      });
-    } else {
-      void wp.scene.getScreenshot(WIDTH, HEIGHT).then(handleScreenshot);
+    try {
+      if (isEmote) {
+        const middleOfEmote = (await wp.emote.getLength()) * 0.5;
+        await wp.emote.goTo(middleOfEmote);
+      } else if (await isPlaceholderSceneLoad(wp)) {
+        return;
+      }
+      onLoad?.();
+      const screenshot = await wp.scene.getScreenshot(WIDTH, HEIGHT);
+      setTimeout(() => finish(screenshot), 1000);
+    } catch (error) {
+      if (isSupersededRender(error)) return;
+      finish(undefined, error);
     }
-  }, [onLoad, value, isEmote, handleScreenshot]);
+  }, [onLoad, value, isEmote, finish, modelSent]);
 
   const wearablePreviewExtraOptions = isEmote
     ? {
@@ -95,21 +174,25 @@ function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props)
       }
     : {};
 
+  if (state === 'failed') return <OtherIcon size="large" />;
+
   return (
     <>
-      <div>{loading && <Loading dimmer={false} />}</div>
-      <div className={cx('GltfPreview', { hidden: loading })}>
+      <div>{state === 'loading' && <Loading dimmer={false} />}</div>
+      <div
+        ref={containerRef}
+        className={cx('GltfPreview', { hidden: state === 'loading' })}
+      >
         <WearablePreview
           id={value.name}
-          blob={
-            isEmote ? toEmoteWithBlobs(value, resources) : toWearableWithBlobs(value, resources)
-          }
+          blob={blob}
           disableAutoRotate
           disableBackground
           {...wearablePreviewExtraOptions}
           projection={PreviewProjection.ORTHOGRAPHIC}
           camera={PreviewCamera.STATIC}
           onLoad={handleLoad}
+          onError={error => finish(undefined, error)}
         />
       </div>
     </>
@@ -117,12 +200,14 @@ function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props)
 }
 
 function PngPreview({ value, onScreenshot, onLoad }: Props) {
-  const [loading, setLoading] = useState(true);
+  const { state, finish } = usePreviewOutcome(onScreenshot);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const url = URL.createObjectURL(value);
   const img = new Image(WIDTH, HEIGHT);
   img.src = url;
+
+  img.onerror = () => finish(undefined, `could not decode ${value.name}`);
 
   img.onload = () => {
     onLoad?.();
@@ -151,21 +236,22 @@ function PngPreview({ value, onScreenshot, onLoad }: Props) {
       );
       ctx.drawImage(img, 0, 0, WIDTH, HEIGHT);
 
-      onScreenshot(canvas.toDataURL('image/png'));
-      setLoading(false);
+      finish(canvas.toDataURL('image/png'));
 
       canvas2.remove();
     }
   };
 
+  if (state === 'failed') return <OtherIcon size="large" />;
+
   return (
     <>
-      <div>{loading && <Loading dimmer={false} />}</div>
+      <div>{state === 'loading' && <Loading dimmer={false} />}</div>
       <canvas
         ref={canvasRef}
         id="asset-png-preview"
         touch-action="none"
-        style={{ display: loading ? 'none' : 'block' }}
+        style={{ display: state === 'loading' ? 'none' : 'block' }}
       ></canvas>
     </>
   );

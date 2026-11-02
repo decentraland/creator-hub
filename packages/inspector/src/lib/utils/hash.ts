@@ -27,12 +27,15 @@ export async function generateHash(input: string): Promise<string> {
  * @param assetPath - The full path to the asset file
  * @returns A promise that resolves to a unique thumbnail filename
  */
-export async function getThumbnailHashNameForAsset(assetPath: string): Promise<string> {
+export async function getThumbnailHashNameForAsset(
+  assetPath: string,
+  extension: 'png' | 'webp' = 'png',
+): Promise<string> {
   // Normalize path separators to forward slashes
   const normalizedPath = assetPath.replace(/\\/g, '/');
 
   // Generate hash from the full path
   const pathHash = await generateHash(normalizedPath);
 
-  return `${pathHash}.png`;
+  return `${pathHash}.${extension}`;
 }

@@ -33,6 +33,15 @@ describe('Hash utilities', () => {
   });
 
   describe('getThumbnailHashNameForAsset (async)', () => {
+    it('should name the animated thumbnail like the still one, with a webp extension', async () => {
+      const still = await getThumbnailHashNameForAsset('asset-packs/dance/Dance_emote.glb');
+      const animated = await getThumbnailHashNameForAsset(
+        'asset-packs/dance/Dance_emote.glb',
+        'webp',
+      );
+      expect(animated).toBe(still.replace(/\.png$/, '.webp'));
+    });
+
     it('should return a proper hash filename with .png extension', async () => {
       const thumbnailName = await getThumbnailHashNameForAsset('asset-packs/models/tree.glb');
       expect(thumbnailName).toMatch(/^[0-9a-f]{16}\.png$/);
