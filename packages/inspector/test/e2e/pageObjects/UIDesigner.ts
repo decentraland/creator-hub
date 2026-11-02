@@ -107,7 +107,7 @@ class UIDesignerPageObject {
   async toggleHidden(label: string) {
     const row = this.nodeRowSelector(label);
     await page.locator(row).hover();
-    await page.locator(`${row} [aria-label="Hide node"], ${row} [aria-label="Show node"]`).click();
+    await page.locator(`${row} [aria-label="Hide ${label}"]`).click();
   }
 
   async isNodeHidden(label: string) {

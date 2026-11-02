@@ -1,8 +1,9 @@
 import React from 'react';
 
-export function CaretIcon() {
+export function CaretIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
+      {...props}
       width="10"
       height="7"
       viewBox="0 0 10 7"

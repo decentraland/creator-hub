@@ -491,13 +491,10 @@ export function DisclosureWidget({ enabled, isOpen, onOpen }: DisclosureWidgetPr
     );
   }
   return (
-    <span
+    <CaretIcon
       className={cx('caret', { closed: !isOpen })}
-      aria-hidden="true"
       onClick={onOpen}
-    >
-      <CaretIcon />
-    </span>
+    />
   );
 }
 

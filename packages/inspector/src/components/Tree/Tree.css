@@ -47,12 +47,11 @@
   color: var(--palette-whiteTransparent-blurry);
 }
 
-.Tree .caret svg {
-  width: 10px;
+.Tree svg.caret {
   height: 6.09px;
 }
 
-.Tree .caret.closed svg {
+.Tree .caret.closed {
   transform: rotate(-90deg);
 }
 
