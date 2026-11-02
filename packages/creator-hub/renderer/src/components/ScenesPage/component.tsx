@@ -10,8 +10,6 @@ import { sortProjectsBy } from './utils';
 
 import './styles.css';
 
-// MARK: ScenesPage
-/** Renders the user's local scenes and the optional tutorials sidebar. */
 export function ScenesPage() {
   const { isLoading, projects, settings, sortBy, setSortBy } = useWorkspace();
 

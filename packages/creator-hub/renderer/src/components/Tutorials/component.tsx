@@ -55,8 +55,6 @@ export function Tutorials() {
   );
 }
 
-// MARK: TutorialsWrapper
-/** Places content beside the tutorials sidebar, expanding it when tutorials are hidden. */
 export function TutorialsWrapper({
   children,
   showTutorials = true,

@@ -567,8 +567,8 @@
             "do_nothing": "Do nothing"
           }
         },
-        "scenes_tab": {
-          "label": "Scenes tab",
+        "scenes_page": {
+          "label": "Scenes page",
           "show_tutorials": "Show tutorials"
         },
         "code_editor": {

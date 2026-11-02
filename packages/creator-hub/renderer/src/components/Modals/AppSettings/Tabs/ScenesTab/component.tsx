@@ -20,8 +20,6 @@ import type { ScenesTabProps } from '../../types';
 
 import './styles.css';
 
-// MARK: ScenesTab
-/** Renders the scene-related application preferences. */
 const ScenesTab: React.FC<ScenesTabProps> = ({
   settings,
   updateSettings,
@@ -51,7 +49,6 @@ const ScenesTab: React.FC<ScenesTabProps> = ({
     [settings, updateSettings],
   );
 
-  // MARK: handleChangeShowTutorials
   const handleChangeShowTutorials = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       updateSettings({ ...settings, showScenesTutorials: event.target.checked });
@@ -131,8 +128,8 @@ const ScenesTab: React.FC<ScenesTabProps> = ({
           />
         </RadioGroup>
       </FormGroup>
-      <FormGroup className="ScenesTabFormGroup">
-        <Typography variant="body1">{t('modal.app_settings.fields.scenes_tab.label')}</Typography>
+      <FormGroup className="ScenesPageFormGroup">
+        <Typography variant="body1">{t('modal.app_settings.fields.scenes_page.label')}</Typography>
         <FormControlLabel
           control={
             <Checkbox
@@ -140,7 +137,7 @@ const ScenesTab: React.FC<ScenesTabProps> = ({
               onChange={handleChangeShowTutorials}
             />
           }
-          label={t('modal.app_settings.fields.scenes_tab.show_tutorials')}
+          label={t('modal.app_settings.fields.scenes_page.show_tutorials')}
         />
       </FormGroup>
     </Box>

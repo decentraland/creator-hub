@@ -290,3 +290,25 @@ describe('the one-time debug console promotion', () => {
     });
   });
 });
+
+describe('the scenes tutorials setting', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.mocked(existsSync).mockReturnValue(true);
+  });
+
+  describe('when the stored config predates the setting', () => {
+    it('should show the tutorials and persist that value', async () => {
+      const { getConfig, getDefaultConfig } = await import('../src/modules/config');
+      storedConfig = getDefaultConfig();
+      delete (storedConfig.settings as Partial<Config['settings']>).showScenesTutorials;
+
+      const config = await getConfig();
+
+      expect(config.settings.showScenesTutorials).toBe(true);
+      const written = storage.setAll.mock.calls.at(-1)?.[0] as Config;
+      expect(written.settings.showScenesTutorials).toBe(true);
+    });
+  });
+});

@@ -23,6 +23,6 @@
 }
 
 .AppSettingsModal .DependencyUpdateFormGroup,
-.AppSettingsModal .ScenesTabFormGroup {
+.AppSettingsModal .ScenesPageFormGroup {
   gap: 16px;
 }

@@ -566,8 +566,8 @@
             "do_nothing": "No hacer nada"
           }
         },
-        "scenes_tab": {
-          "label": "Pestaña de escenas",
+        "scenes_page": {
+          "label": "Página de escenas",
           "show_tutorials": "Mostrar tutoriales"
         },
         "code_editor": {
