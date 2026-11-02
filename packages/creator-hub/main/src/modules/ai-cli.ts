@@ -122,11 +122,13 @@ function update(provider: AiProvider, onProgress: (message: string) => void): Pr
 
 /** Update every app-installed CLI once per app run, so a long-lived install keeps up. */
 export async function updateManagedClis(): Promise<void> {
-  for (const provider of Object.keys(CLI_SPECS) as AiProvider[]) {
-    if (!CLI_SPECS[provider].managedSignIn || !isInstalled(provider)) continue;
-    if (updatedThisRun.has(provider)) continue;
-    await update(provider, message => log.info(`[AI-CLI] ${message}`));
-  }
+  const due = (Object.keys(CLI_SPECS) as AiProvider[]).filter(
+    provider =>
+      CLI_SPECS[provider].managedSignIn && isInstalled(provider) && !updatedThisRun.has(provider),
+  );
+  // Queued in one go: queuing the next only after the previous finished let a turn waiting on
+  // whenManagedCliIdle start in between, while npm was about to replace the next CLI.
+  await Promise.all(due.map(provider => update(provider, m => log.info(`[AI-CLI] ${m}`))));
 }
 
 let turnsStarting = 0;
@@ -230,7 +232,10 @@ function extractAuthUrl(text: string): string | null {
 }
 
 let activeLogin: pty.IPty | null = null;
-let signInCancelled = false;
+// Bumped by every sign-in and every cancel. A sign-in still waiting on npm compares it to tell
+// whether it was cancelled meanwhile; a plain flag would be reset by a retry started in that
+// window, letting the cancelled one go on to open a second login.
+let signInAttempt = 0;
 
 // Auto-kill a sign-in that never completes, so a hung login (provider OAuth failing, user
 // walked away) can't wedge activeLogin. Generous enough for an unhurried browser SSO; codex's
@@ -373,13 +378,13 @@ export async function signInCli(provider: AiProvider): Promise<void> {
     );
   }
   const onProgress = (message: string) => sendLoginEvent({ type: 'progress', message });
-  signInCancelled = false;
+  const attempt = ++signInAttempt;
   // Skip the update when this run already did one: a second npm run only delays the browser.
   if (!isInstalled(provider)) await install(provider, onProgress);
   else if (!updatedThisRun.has(provider)) await update(provider, onProgress);
   else await whenManagedCliIdle();
   // Cancel can't stop npm (there is no login to kill yet), so honour it before the login starts.
-  if (signInCancelled) throw new Error('Sign-in cancelled');
+  if (attempt !== signInAttempt) throw new Error('Sign-in cancelled');
   await login(provider, onProgress);
   setSignedIn(provider, true);
   log.info(`[AI-CLI] signed in to ${provider} (managed CLI)`);
@@ -416,7 +421,7 @@ export async function submitSignInCode(code: string): Promise<void> {
 }
 
 export async function cancelSignInCli(): Promise<void> {
-  signInCancelled = true;
+  signInAttempt++;
   const child = activeLogin;
   if (!child) return;
   activeLogin = null;

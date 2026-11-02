@@ -175,6 +175,23 @@ describe('startTurnWhenIdle', () => {
     npm.resolve();
     await expect(turn).resolves.toBe('turn-1');
   });
+
+  it('should hold a turn until every app-installed CLI is updated, not just the first', async () => {
+    installManaged('claude');
+    installManaged('codex');
+    const claudeNpm = deferred();
+    const codexNpm = deferred();
+    mocks.npmInstall.mockReturnValueOnce(claudeNpm.promise).mockReturnValueOnce(codexNpm.promise);
+    const { updateManagedClis, startTurnWhenIdle } = await loadModule();
+    void updateManagedClis();
+    const startTurn = vi.fn(async () => 'turn-1');
+    const turn = startTurnWhenIdle(startTurn);
+    claudeNpm.resolve();
+    await new Promise(r => setTimeout(r, 10));
+    expect(startTurn).not.toHaveBeenCalled();
+    codexNpm.resolve();
+    await expect(turn).resolves.toBe('turn-1');
+  });
 });
 
 describe('detectThenUpdate', () => {
@@ -272,6 +289,20 @@ describe('signInCli', () => {
     npm.resolve();
     await expect(signIn).rejects.toThrow('Sign-in cancelled');
     expect(mocks.ptySpawn).not.toHaveBeenCalled();
+  });
+
+  it('should not open the cancelled login when the user retries while npm still runs', async () => {
+    installManaged('codex');
+    const npm = deferred();
+    mocks.npmInstall.mockReturnValue(npm.promise);
+    const { signInCli, cancelSignInCli } = await loadModule();
+    const cancelled = signInCli('codex');
+    await cancelSignInCli();
+    const retry = signInCli('codex');
+    npm.resolve();
+    await expect(cancelled).rejects.toThrow('Sign-in cancelled');
+    await expect(retry).resolves.toBeUndefined();
+    expect(mocks.ptySpawn).toHaveBeenCalledTimes(1);
   });
 });
 

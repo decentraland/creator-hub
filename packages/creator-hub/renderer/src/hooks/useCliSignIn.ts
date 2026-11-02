@@ -28,13 +28,17 @@ const IDLE: CliSignInState = {
 // settings "Connect" section so both behave identically.
 export function useCliSignIn(provider: AiProvider, onSignedIn?: () => void) {
   const [signIn, setSignIn] = useState<CliSignInState>(IDLE);
-  const cancelled = useRef(false);
+  // Bumped by every start and cancel: a cancelled attempt still settles later (the kill rejects
+  // it, or npm finishes first), and must neither surface a scary "exited with code" error nor
+  // reset the state of a retry the user started meanwhile.
+  const attempt = useRef(0);
 
   const start = useCallback(async () => {
-    cancelled.current = false;
+    const mine = ++attempt.current;
     setSignIn({ ...IDLE, busy: true, message: t('editor.ai.setup.signin_starting') });
     try {
       await aiPreload.signInCli(provider, event => {
+        if (attempt.current !== mine) return;
         setSignIn(s =>
           event.type === 'auth'
             ? {
@@ -46,18 +50,17 @@ export function useCliSignIn(provider: AiProvider, onSignedIn?: () => void) {
             : { ...s, message: event.message },
         );
       });
+      if (attempt.current !== mine) return;
       setSignIn(IDLE);
       onSignedIn?.();
     } catch (e) {
-      setSignIn({
-        ...IDLE,
-        error: cancelled.current ? null : e instanceof Error ? e.message : String(e),
-      });
+      if (attempt.current !== mine) return;
+      setSignIn({ ...IDLE, error: e instanceof Error ? e.message : String(e) });
     }
   }, [provider, onSignedIn]);
 
   const cancel = useCallback(() => {
-    cancelled.current = true;
+    attempt.current++;
     void aiPreload.cancelSignInCli();
     setSignIn(IDLE);
   }, []);
