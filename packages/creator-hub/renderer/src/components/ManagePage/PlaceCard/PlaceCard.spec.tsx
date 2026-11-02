@@ -121,6 +121,19 @@ describe('PlaceCard', () => {
       expect(screen.queryByText('Detail page')).toBeNull();
     });
 
+    describe('and the pointer or focus is elsewhere on the card', () => {
+      it('should leave the kebab to style itself, with no card-level hover or focus rule', () => {
+        renderCard({ to });
+
+        const css = Array.from(document.querySelectorAll('style'), style => style.textContent).join(
+          '\n',
+        );
+
+        expect(css).toContain('MuiIconButton-root:hover');
+        expect(css).not.toMatch(/:(hover|focus-within)\s+\.MuiIconButton-root/);
+      });
+    });
+
     describe('and nothing is published on the LAND', () => {
       it('should keep View Scenes clickable without navigating', () => {
         const { onViewScenes } = renderCard({ to, status: 'unpublished' });
