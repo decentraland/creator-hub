@@ -1,6 +1,6 @@
 # Validate report
 
-One report per Validate round, saved as `docs/specs/<unit>/validate-round<N>.md` (excluded locally, never committed). Judge the running render against the Figma frame itself, not the spec alone (`SKILL.md` §8), with one row per state on the spec's §8 screenshot checklist. Before classing a row, grep `docs/DESIGN.md`'s ✱ rows, its Open items and the spec's resolved decisions: an accepted deviation is ✱, not drift.
+One report per Validate round, saved as `docs/specs/<unit>/validate-round<N>.md` (excluded locally, never committed). Judge the running render against the Figma frame itself, not the spec alone ([`design-loop.md`](design-loop.md)), with one row per state on the spec's §8 screenshot checklist. Before classing a row, grep `docs/DESIGN.md`'s ✱ rows, its Open items and the spec's resolved decisions: an accepted deviation is ✱, not drift.
 
 Classes and owners:
 

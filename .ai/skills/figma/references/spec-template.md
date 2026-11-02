@@ -1,6 +1,6 @@
 # Spec template
 
-One spec per unit: one Figma component set, or the assembly of a surface against its board (`SKILL.md` §8). Save it as `docs/specs/<unit>/spec.md`; `docs/specs/` is excluded locally and never committed. Keep every section, in this order, even when one says "none", so two specs can be compared.
+One spec per unit: one Figma component set, or the assembly of a surface against its board ([`design-loop.md`](design-loop.md)). Save it as `docs/specs/<unit>/spec.md`; `docs/specs/` is excluded locally and never committed. Keep every section, in this order, even when one says "none", so two specs can be compared.
 
 ```markdown
 # <Unit name> spec

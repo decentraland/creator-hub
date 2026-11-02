@@ -222,7 +222,7 @@ Figma names four steps per base colour, Backdrop 60% · Blurry 40% · Soft 20% �
 
 #### System status (success, warning, error)
 
-ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.warning` / `.error`, each with `main`, `dark` = Dark 1, `light` = Light 1), so Creator Hub reads status colours from the theme. The inspector's status tokens take the same values in #1703. The error role is System/Red `#FB3B3B`; `DCL/Red` `#FF0000` is a legacy variable, not the error role.
+ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.warning` / `.error`, each with `main`, `dark` = Dark 1, `light` = Light 1), so Creator Hub reads status colours from the theme. The inspector's status tokens take the same values (ships in #1703). The error role is System/Red `#FB3B3B`; `DCL/Red` `#FF0000` is a legacy variable, not the error role.
 
 | Figma variable | Value | Use | `vars.css` | `theme.css` / ui2 | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -404,7 +404,7 @@ Inspector tokens that name a role rather than a Figma variable: surfaces, foregr
 | `--base-17` | `#303031` | — | VS Code ramp |
 | `--base-18` | `#292929` | — | VS Code ramp |
 | `--base-19` | `#242129` | Charcoal `#25212a` (**✱ deviation**, 1/255) | The UI Designer panel through `--ui-designer-panel-bg` |
-| `--base-20` | `#161518` | Neutrals/Shadow | Trees, panels, the inspector page |
+| `--base-20` | `#161518` | Neutrals/Shadow | The inspector page and its panels through `--tree-bg-color`; the trees on `main` (the 3D Hierarchy moves to `--base-19`, ships in #1729) |
 | `--base-21` | `#000` | Neutrals/Black | Darkest step |
 | `--accent-blue-01` … `--accent-blue-10` | `#75beff` … `#062f4a` | none (VS Code) | The embedded-webview theme; `--accent-blue-05` / `-07` / `-08` are also `Button color="info"`'s fill / hover / pressed, a colour with no Figma counterpart |
 
@@ -767,7 +767,7 @@ No interaction states drawn. Shared chrome: fill Shadow, 12px radius, 44 tall, p
 | Notification_Action | default | `notification_important` 18px Snow | "Action required" | `ACTION` Primary + `Close` 20px Snow, 16px gap | 265 × 44 | as Notification | as Notification | same; close glyph 17.73:1 | close `<button aria-label="Dismiss">`; 20px glyph needs a ≥ 24px hit area |
 | Loading | default | Spinner 24px, stroke 2 | "Loading..." | none | 127 × 44 | as Notification | as Notification | text 17.73:1; arc 4.99:1 | `role="status"`, `aria-busy="true"` |
 | any with action | ✱ hover | — | — | keep Primary, add underline; Primary Dark 1 `#F70038` is not an option | — | — | — | `#F70038` on Shadow 4.34:1, below 4.5:1 text | — |
-| any with action | ✱ focus | — | — | `:focus-visible` ring `--border-focused` (inspector) / ui2 `palette.info.light` (Creator Hub), offset 2px | — | — | — | ring on `#161518`: `--border-focused` 4.34:1, `#63b4f6` 8.13:1 (≥ 3:1) | — |
+| any with action | ✱ focus | — | — | `:focus-visible` ring `--focus-ring` (inspector) / ui2 `palette.info.light` (Creator Hub), offset 2px | — | — | — | ring on `#161518`: `--focus-ring` 17.73:1, `#63b4f6` 8.13:1 (≥ 3:1) | — |
 | any | ✱ surface | — | — | — | — | — | — | Shadow vs Creator Hub page `#16141a` 1.00:1 and inspector `#161518` 1.00:1: the snackbar does not separate from the page it floats over | the code follows Figma's Shadow fill with no shadow and no border, an accepted miss ✱ (1.00:1) |
 
 ### Tooltip (Tooltips)
@@ -860,7 +860,7 @@ The page labels Notification "UNUSED". Hover and Notification are mutually exclu
 | Active=True, Hover=True, Notification=False | active + hover | White 10 | 2px Snow bottom | Snow | — | as above | as above | label over the fill 13.53:1 | — |
 | Active=True, Hover=False, Notification=True | active | none | 2px Snow bottom | Snow | 8 × 8 Primary dot, `right: 0`, `top: 0.46px` | as above | as above | dot 4.99:1 | as above |
 | Icon=True (6 variants) | as the no-icon variant with the same Active / Hover / Notification | as that variant | as that variant | as that variant; `settings` glyph 24 high, Silver at rest, Snow when active (SVG asset) | badge `top: 0.96px` inactive, `0.46px` active | as that variant | as that variant | as that variant | as that variant |
-| any | ✱ focus | — | — | — | — | — | — | ring on `#161518`: `--border-focused` 4.34:1, `--ui-designer-control-accent` 8.13:1; Creator Hub ui2 `palette.info.light` 8.13:1 (≥ 3:1) | `:focus-visible` outline 2px, offset −2px, as `ModeSwitcher` does |
+| any | ✱ focus | — | — | — | — | — | — | ring on `#161518`: `--focus-ring` 17.73:1 (`ModeSwitcher`, ships in #1707), `--ui-designer-control-accent` 8.13:1 in UI Designer panels; Creator Hub ui2 `palette.info.light` 8.13:1 (≥ 3:1) | `:focus-visible` outline 2px, offset −2px, as `ModeSwitcher` does |
 | any | ✱ disabled | — | — | — | — | — | — | — | not drawn; `Navbar` omits an unavailable entry instead of greying it — keep that, no disabled style |
 
 ### TabVertical (Tabs)
@@ -1296,7 +1296,7 @@ Shared: row, Hug 700 × Hug, fill `#181225` (a raw hex, no variable), 1px White 
 | Horizontal | default | `#181225` + glow | 1px White 10 | row, gap 20: `Secondary` (White 10 fill) "CANCEL" then `PrimaryBlocked` (Primary fill) "DELETE MOBILE", each Fill 240 × 46 | White 10 pill, 36 × 36 | title 17.77:1, body 11.58:1 on `#181225`; CANCEL 13.51:1 over White 10; **DELETE 3.55:1 Snow on Primary — fails 4.5:1** (16px / 600 is not large text); modal vs page `#16141a` 1.00:1 — only the 1.32:1 border and the glow separate it; close pill vs modal 1.32:1, a Gray glyph on it 8.80:1, a Snow one 13.51:1 | `role="dialog" aria-modal="true" aria-labelledby` the title, `aria-describedby` the body; focus trapped, Escape closes; close is `<button aria-label="Close">`, 36px target; Cancel first in DOM order | fill `--modal-content-bg-color` `#181225` (ships in #1731); `--palette-whiteTransparent-subtle` (border, Secondary, close); `--primary-main`; radius `--shape-borderRadiusXXLarge`; glow missing (asset) | fill `--modal` `#181225` (ships in #1731; ui2's `Modal` paper does not read it); `--primary`; the rest missing |
 | Vertical | default | same | same | column, gap 20: `PrimaryBlocked` "DELETE MOBILE" above `Secondary` "CANCEL", each Fill 500 × 46 | same | as Horizontal | primary action first in DOM order here: each variant follows its own drawn order (Horizontal Cancel first, Vertical Delete first) | as Horizontal | as Horizontal |
 | any | ✱ hover / press | — | — | per the Buttons page | ✱ not drawn on this page (`Hover Style` True appears nowhere); the nearest drawn rule is one step up the White ramp on hover: the Close-Button set `20768:59567` (Search Bar page) draws White 5 → White 10, and the Buttons page's Secondary draws the same step from a White 10 rest, White 10 → White 20. Hover White 20 `--palette-whiteTransparent-soft`; press returns to the White 10 rest, as Secondary's press | — | — | — | — |
-| any | ✱ focus | — | — | — | — | ring on `#181225`: `--ui-designer-control-accent` 8.15:1, `--border-focused` 4.35:1; Creator Hub ui2 `palette.info.light` 8.15:1 | `:focus-visible` outline 2px on every button; initial focus on Cancel | — | — |
+| any | ✱ focus | — | — | — | — | ring on `#181225`: `--focus-ring` 17.77:1 (every inspector `Button`, ships in #1707), `--ui-designer-control-accent` 8.15:1 in UI Designer modals; Creator Hub ui2 `palette.info.light` 8.15:1 | `:focus-visible` outline 2px on every button; initial focus on Cancel | — | — |
 
 ### Help & Support Modal (Modals)
 
@@ -2034,7 +2034,7 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` | match: `InputAction` hover fill, the `ColourPanel` hex cells, the AI menu's hover row |
 | Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph` (→ `--palette-neutral-gray2`); `--ui-designer-text-muted` is Silver | `--dropdown` | match: idle glyphs, the `Position` / `Size` icons, the Logic placeholders and empty lines |
 | Neutrals/Black | `#000000` | `--black` | — | match: the `BottomPanel3D` surface behind its 1px gaps |
-| System/Blue Dark 2 | `#244B7D` | `--palette-system-blueDark2` (`--ui-designer-control-active-bg`; the `UIDesigner.css` `--selected-item` override) | `--ai-session-selected` | match |
+| System/Blue Dark 2 | `#244B7D` | `--palette-system-blueDark2` (`--ui-designer-control-active-bg` and the `UIDesigner.css` `--selected-item` override, both ship in #1707) | `--ai-session-selected` | match |
 | System/Blue Dark 3 | `#243852` | `--palette-system-blueDark3` | `--ai-session-selected-hover` | match: the tree row, selected-hover and `On` + hover toggle fill |
 | White 5 / 10 / 20 | `rgba(255,255,255,.05 / .1 / .2)` | `--ui-designer-control-empty-bg` / `--ui-designer-control-selected-bg` · `--ui-designer-control-border` / `--ui-designer-control-border-strong` | `--palette-whiteTransparent-faint` / `-subtle` / `-soft` | match; the row hover is White 5 in Figma, the toggle and icon-button hover White 10 |
 | White 40 / 60 | `rgba(255,255,255,.4 / .6)` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | match: placeholders, the Scale Slider hover track, scrollbar-handle borders, bound-input borders |
@@ -2163,7 +2163,7 @@ The four fills are the single-toggle pattern (none, White 10, Blue Dark 2, Blue 
 | --- | --- | --- | --- | --- | --- | --- |
 | Not Visible | No | none | 8 | 24 × 24 at 4 / 4, Silver `#A09BA8` | `--ui-designer-text-muted` | 5.85:1 |
 | Not Visible | Yes | White 10 `rgba(255,255,255,0.1)` | 8 | Silver | `--palette-whiteTransparent-subtle` | 4.31:1 on the fill |
-| Visible | No | Blue Dark 2 `#244B7D` | 8 | Snow `#FCFCFC` | `--ui-designer-control-active-bg` | 8.61:1 |
+| Visible | No | Blue Dark 2 `#244B7D` | 8 | Snow `#FCFCFC` | `--ui-designer-control-active-bg` (Blue Dark 2 ships in #1707) | 8.61:1 |
 | Visible | Yes | Blue Dark 3 `#243852` | 8 | Snow | `--palette-system-blueDark3` | 11.61:1 |
 
 ### FoldersHierarchy (3D Editor Bottom Panel — Components)
@@ -2224,7 +2224,7 @@ The names are inverted: `Selected` is the unfilled look and `Default` the Blue D
 | --- | --- | --- | --- | --- | --- | --- |
 | Selected | No | none | 8 | 24 × 24 at 4 / 4, Silver `#A09BA8` | `--ui-designer-text-muted` | 5.85:1 |
 | Selected | Yes | White 10 `rgba(255,255,255,0.1)` | 8 | Silver | `--palette-whiteTransparent-subtle` | 4.31:1 on the fill |
-| Default | No | Blue Dark 2 `#244B7D` | 8 | Snow `#FCFCFC`, mirrored | `--ui-designer-control-active-bg` | 8.61:1 |
+| Default | No | Blue Dark 2 `#244B7D` | 8 | Snow `#FCFCFC`, mirrored | `--ui-designer-control-active-bg` (Blue Dark 2 ships in #1707) | 8.61:1 |
 | Default | Yes | Blue Dark 3 `#243852` | 8 | Snow, mirrored | `--palette-system-blueDark3` | 11.61:1 |
 
 ### UI Editor (page lead)
@@ -2390,7 +2390,7 @@ Fill 290, padding L / R 10: Paint vertical Hug 52 gap 6; Image vertical Hug 111 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Row | none | none | 0 | label "Fill" Inter 400 12 Gray `#CFCDD4` | `HelpCTA` 12 | 290 wide, padding 0 / 10 | `--palette-neutral-gray4` |
 | Mode control (ToggleTabs slot) | Charcoal `#25212A` | 1px Onix `#35333B` | 6 | — | cell glyph 18 × 18 | 130 × 20, gap 8, five flex-1 cells (Paint, Image, Video, Avatar, None) | `--ui-designer-panel-bg` (✱ deviation 1/255), `--palette-neutral-onyx` |
-| Mode cell, selected | Blue Dark 2 `#244B7D` | none | 0 (the slot clips the ends) | — | 18 | flex 1 | `--ui-designer-control-active-bg` |
+| Mode cell, selected | Blue Dark 2 `#244B7D` | none | 0 (the slot clips the ends) | — | 18 | flex 1 | `--ui-designer-control-active-bg` (Blue Dark 2 ships in #1707) |
 | Mode cell, unselected | none | 1px Onix | 0 | — | 18 | flex 1 | `--palette-neutral-onyx` |
 | Paint: colour pair | Onix | none | 6 on the outer ends (joined at 1px) | "FFFFFF" and "100%" Inter 400 14 Gray | `MarginsIcons` 16 (left); `AddVariant` 18 at right 4 / top 4 (right) | h 26; left min-width 128, padding 0 / 24 / 0 / 8; right 75 wide, padding 0 / 24 / 0 / 8 | `--ui-designer-control-bg` |
 | Image: texture input | Onix | none | 6 | "Search" Inter 400 14, White 40 `rgba(255,255,255,0.4)` | icon 10 × 10; two round 26 × 26 buttons (radius 100, glyph inset 20%: link, local assets) | h 26, padding 6 / 8, gap 8; 6 between input and buttons | `--ui-designer-control-bg`, `--palette-whiteTransparent-blurry` |
@@ -3017,7 +3017,7 @@ The brand pink matches the inspector's `--primary-main`, but it's defined separa
 
 **Figma alignment of the status, surface, and hover tokens.** `--error`, `--danger`, `--background`, `--bg`, `--primary-hover` and `--purple-banner` carry Figma's System/Red, System/Orange, Neutrals/Shadow, Primary Light 1 and Brand/Purple values, which ship in #1703. Names are unchanged.
 
-- `--primary-hover` is the primary-button hover at five sites: the wrapper `components/Button` (`.Button.MuiButton-colorPrimary:hover`), the editor header actions (`EditorPage/styles.css`), both `CreateButton` segments, and the AI `SendButton`; those sites read the token in #1707. Raw ui2 contained-primary `Button`s (`SignInPage`, `UpdateAvailable`, `WarningModal` and others) hover to ui2 `palette.primary.dark` `#F70038`. `--dcl-hover` and `--dcl-dark` have no consumers left; removing them is a naming decision for the user. White text on `#ff6280` measures 2.87:1 (Snow `#fcfcfc` 2.80:1); the value is the user's pick from Figma and a known trade-off, not a pass. The fill itself is 6.36:1 against the page.
+- `--primary-hover` is the primary-button hover at five sites: the wrapper `components/Button` (`.Button.MuiButton-colorPrimary:hover`), the editor header actions (`EditorPage/styles.css`), both `CreateButton` segments, and the AI `SendButton`; those sites read the token (ships in #1707). Raw ui2 contained-primary `Button`s (`SignInPage`, `UpdateAvailable`, `WarningModal` and others) hover to ui2 `palette.primary.dark` `#F70038`. `--dcl-hover` and `--dcl-dark` have no consumers left; removing them is a naming decision for the user. White text on `#ff6280` measures 2.87:1 (Snow `#fcfcfc` 2.80:1); the value is the user's pick from Figma and a known trade-off, not a pass. The fill itself is 6.36:1 against the page.
 - `--bg` and `--purple-banner` have no consumer.
 - `--background` paints `EngagementTab .SocialChart`, which only commented-out code renders, and the `Deploy` error-detail block (the Analytics detail stat blocks moved to the inner panel); `--danger` and `--error` paint text, icons and one border.
 
