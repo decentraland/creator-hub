@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/potted_yellow_bush/potted_yellow_bush.glb"
+          }
+        }
+      }
+    }
+  ]
+}

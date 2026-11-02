@@ -155,8 +155,7 @@ export async function killPreviewScene(path: string) {
 }
 
 export async function publishScene(opts: DeployOptions) {
-  const port = await invoke('cli.deploy', opts);
-  return port;
+  return invoke('cli.deploy', opts);
 }
 
 export async function openPreview(port: number) {

@@ -1,10 +1,16 @@
 import { useCallback } from 'react';
 
 import type { Asset, CustomAsset } from '../lib/logic/catalog';
+import { ANIMATED_PREVIEW_PATH } from '../lib/logic/catalog';
 import { getConfig } from '../lib/logic/config';
 import { DIRECTORY, withAssetDir } from '../lib/data-layer/host/fs-utils';
 import { getRelativeResourcePath, getResourcesBasePath } from '../lib/utils/path-utils';
-import { getDataLayerInterface, getAssetCatalog, saveThumbnail } from '../redux/data-layer';
+import {
+  getDataLayerInterface,
+  getAssetCatalog,
+  saveAnimatedThumbnail,
+  saveThumbnail,
+} from '../redux/data-layer';
 import { useAppDispatch } from '../redux/hooks';
 import { analytics, Event } from '../lib/logic/analytics';
 
@@ -37,10 +43,16 @@ export function useImportAssetToFilesystem() {
       const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
       const assetPath = Object.keys(asset.contents).find(isAssetFile);
       let thumbnail: Uint8Array | undefined;
+      let animatedThumbnail: Uint8Array | undefined;
 
       await Promise.all(
         Object.entries(asset.contents)
-          .filter(([path]) => path.endsWith(THUMBNAIL_PATH) || !skipContent?.(path))
+          .filter(
+            ([path]) =>
+              path.endsWith(THUMBNAIL_PATH) ||
+              path === ANIMATED_PREVIEW_PATH ||
+              !skipContent?.(path),
+          )
           .map(async ([path, contentHash]) => {
             try {
               const url = getContentFetchUrl(path, contentHash);
@@ -48,6 +60,8 @@ export function useImportAssetToFilesystem() {
               const content = new Uint8Array(await response.arrayBuffer());
               if (path.endsWith(THUMBNAIL_PATH)) {
                 thumbnail = content;
+              } else if (path === ANIMATED_PREVIEW_PATH) {
+                animatedThumbnail = content;
               } else {
                 fileContent[path] = content;
               }
@@ -70,13 +84,12 @@ export function useImportAssetToFilesystem() {
         }
       }
 
+      const thumbnailPath = `${destFolder}/${assetPackageName}/${assetPath || asset.name}`;
       if (thumbnail) {
-        dispatch(
-          saveThumbnail({
-            content: thumbnail,
-            path: `${destFolder}/${assetPackageName}/${assetPath || asset.name}`,
-          }),
-        );
+        dispatch(saveThumbnail({ content: thumbnail, path: thumbnailPath }));
+      }
+      if (animatedThumbnail) {
+        dispatch(saveAnimatedThumbnail({ content: animatedThumbnail, path: thumbnailPath }));
       }
 
       analytics.track(Event.ADD_ITEM, {

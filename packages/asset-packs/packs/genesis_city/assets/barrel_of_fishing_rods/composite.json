@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/barrel_of_fishing_rods/barrel_of_fishing_rods.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/green_liquor_bottle/green_liquor_bottle.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/wire_shelving_unit/wire_shelving_unit.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -19,6 +19,8 @@ import { t } from '/@/modules/store/translation/utils';
 
 import type { PreviewOptionsProps } from './types';
 
+const DESKTOP_SUBMENU_CLOSE_DELAY_MS = 300;
+
 export function PreviewOptions({
   onChange,
   options,
@@ -98,13 +100,30 @@ export function PreviewOptions({
     [onChange, options],
   );
 
-  const handleDesktopRowMouseEnter = useCallback(() => {
-    setDesktopOptionsOpen(true);
+  // Closing on the instant of mouseleave drops the flyout while the pointer is still crossing
+  // the 8px gap to it, or cutting diagonally over the neighbouring rows to reach it. The grace
+  // period is cancelled by re-entering the row, which includes entering the flyout (a child).
+  const closeDesktopOptionsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const cancelCloseDesktopOptions = useCallback(() => {
+    clearTimeout(closeDesktopOptionsTimer.current);
+    closeDesktopOptionsTimer.current = undefined;
   }, []);
 
+  useEffect(() => cancelCloseDesktopOptions, [cancelCloseDesktopOptions]);
+
+  const handleDesktopRowMouseEnter = useCallback(() => {
+    cancelCloseDesktopOptions();
+    setDesktopOptionsOpen(true);
+  }, [cancelCloseDesktopOptions]);
+
   const handleDesktopRowMouseLeave = useCallback(() => {
-    setDesktopOptionsOpen(false);
-  }, []);
+    cancelCloseDesktopOptions();
+    closeDesktopOptionsTimer.current = setTimeout(
+      () => setDesktopOptionsOpen(false),
+      DESKTOP_SUBMENU_CLOSE_DELAY_MS,
+    );
+  }, [cancelCloseDesktopOptions]);
 
   const showDesktopSubmenu = isDesktopClient && desktopOptionsOpen;
 
@@ -132,7 +151,7 @@ export function PreviewOptions({
   return (
     <div className="PreviewOptions">
       <div className="options">
-        <span className="title">{t('editor.header.actions.preview_options.menu_title')}</span>
+        <span className="title">{t('editor.header.actions.preview_options.title')}</span>
         <div
           ref={desktopRowRef}
           className="client-row"

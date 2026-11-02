@@ -38,6 +38,8 @@ type Props<T> = {
   canAddChild?: (value: T) => boolean;
   canRemove?: (value: T) => boolean;
   canDuplicate?: (value: T) => boolean;
+  addChildLabel?: string;
+  addChildIcon?: JSX.Element;
   canDrag?: (value: T) => boolean;
   canReorder?: (source: T, target: T, type: DropType) => boolean;
   onSetOpen: (value: T, isOpen: boolean) => void;
@@ -92,6 +94,8 @@ export function Tree<T>() {
         canAddChild,
         canRemove,
         canDuplicate,
+        addChildLabel,
+        addChildIcon,
         canDrag,
         canReorder,
         onRename,
@@ -365,6 +369,8 @@ export function Tree<T>() {
           false,
         enableRemove,
         enableDuplicate,
+        addChildLabel,
+        addChildIcon,
         onAddChild: handleNewChild,
         onEdit: handleToggleEdit,
         onRemove: handleRemove,

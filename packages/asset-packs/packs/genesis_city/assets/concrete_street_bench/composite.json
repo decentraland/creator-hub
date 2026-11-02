@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/concrete_street_bench/concrete_street_bench.glb"
+          }
+        }
+      }
+    }
+  ]
+}

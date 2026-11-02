@@ -30,7 +30,10 @@ vi.mock('../src/modules/node-runtime', () => ({
 vi.mock('cross-spawn', () => ({
   default: Object.assign(vi.fn(), { sync: runtimeMocks.spawnSync }),
 }));
-vi.mock('../src/modules/electron', () => ({ getUserDataPath: () => '/tmp/creator-hub-test' }));
+vi.mock('../src/modules/electron', () => ({
+  getUserDataPath: () => '/tmp/creator-hub-test',
+  getAppDataPath: () => '/tmp/creator-hub-test-appdata',
+}));
 vi.mock('../src/modules/explorer-gateway', () => ({
   callExplorerTool: vi.fn(),
   explorerTools: () => [],
@@ -50,8 +53,13 @@ import {
   filterEnvForChild,
   friendlyCliError,
   getCliVersion,
+  isClaudeDesktopInstalled,
   nvmBinDirs,
   parseShellPath,
+  redactSecrets,
+  signInRequiredMessage,
+  turnOutcome,
+  usableBin,
 } from '../src/modules/ai';
 
 const PROJECT = '/home/user/scene';
@@ -800,5 +808,212 @@ describe('when probing an AI CLI version', () => {
       ['--version'],
       expect.objectContaining({ env: { PATH: '/bundle/bin' } }),
     );
+  });
+});
+
+describe('when resolving which AI CLI binary to use', () => {
+  const managedBin = path.join('/tmp/creator-hub-test', 'ai-cli', 'node_modules', '.bin');
+
+  it('should ignore a leftover managed claude install, since its in-app sign-in never worked', () => {
+    expect(usableBin(path.join(managedBin, 'claude'), 'claude')).toBeNull();
+  });
+
+  it('should ignore a managed cursor-agent install, since that npm package is not Cursor’s', () => {
+    expect(usableBin(path.join(managedBin, 'cursor-agent'), 'cursor')).toBeNull();
+  });
+
+  it('should keep a managed codex install, whose in-app sign-in works', () => {
+    const bin = path.join(managedBin, 'codex');
+    expect(usableBin(bin, 'codex')).toBe(bin);
+  });
+
+  it('should keep a claude found on the PATH', () => {
+    expect(usableBin('/usr/local/bin/claude', 'claude')).toBe('/usr/local/bin/claude');
+  });
+
+  it('should pass a missing binary through as missing', () => {
+    expect(usableBin(null, 'claude')).toBeNull();
+  });
+});
+
+describe('when detecting Claude Desktop', () => {
+  let appData: string;
+
+  beforeEach(() => {
+    appData = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-appdata-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(appData, { recursive: true, force: true });
+  });
+
+  it('should report it installed when its app-data folder exists', () => {
+    fs.mkdirSync(path.join(appData, 'Claude'));
+    expect(isClaudeDesktopInstalled(appData)).toBe(true);
+  });
+
+  it('should report it missing when there is no app-data folder', () => {
+    expect(isClaudeDesktopInstalled(appData)).toBe(false);
+  });
+});
+
+describe('when telling whether an agent asked the user to sign in', () => {
+  it('should read Claude’s authentication_failed assistant event', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      error: 'authentication_failed',
+      message: { content: [{ type: 'text', text: 'Not logged in · Please run /login' }] },
+    });
+    expect(PROVIDERS.claude.needsLogin(line)).toBe(true);
+  });
+
+  it('should not flag Claude text that merely talks about players not being logged in', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      message: {
+        content: [{ type: 'text', text: 'Show the door only if the player is not logged in.' }],
+      },
+    });
+    expect(PROVIDERS.claude.needsLogin(line)).toBe(false);
+  });
+
+  it('should read Codex’s failed turn with a 401', () => {
+    const line = JSON.stringify({
+      type: 'turn.failed',
+      error: {
+        message:
+          'unexpected status 401 Unauthorized: Missing bearer or basic authentication in header',
+      },
+    });
+    expect(PROVIDERS.codex.needsLogin(line)).toBe(true);
+  });
+
+  it('should not flag a Codex turn that failed for another reason', () => {
+    const line = JSON.stringify({ type: 'turn.failed', error: { message: 'stream disconnected' } });
+    expect(PROVIDERS.codex.needsLogin(line)).toBe(false);
+  });
+
+  it('should read Gemini’s missing auth method message', () => {
+    expect(
+      PROVIDERS.gemini.needsLogin(
+        'Please set an Auth method in your /home/u/.gemini/settings.json or specify one of the following environment variables before running: GEMINI_API_KEY',
+      ),
+    ).toBe(true);
+  });
+
+  it('should read Cursor’s plain-text sign-in prompt but not its JSON assistant output', () => {
+    expect(
+      PROVIDERS.cursor.needsLogin(
+        "Authentication required. Please run 'cursor-agent login' first.",
+      ),
+    ).toBe(true);
+    const assistant = JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'text', text: 'Run cursor-agent login to connect it.' }] },
+    });
+    expect(PROVIDERS.cursor.needsLogin(assistant)).toBe(false);
+  });
+
+  it('should not flag a Gemini reply that quotes the auth method message', () => {
+    const reply = JSON.stringify({
+      type: 'message',
+      role: 'assistant',
+      content: 'If Gemini says "Please set an Auth method", set GEMINI_API_KEY.',
+    });
+    expect(PROVIDERS.gemini.needsLogin(reply)).toBe(false);
+  });
+});
+
+describe('when telling the user how to sign an agent back in', () => {
+  it('should give the terminal sign-out and sign-in steps for a terminal install', () => {
+    expect(signInRequiredMessage('claude', 'signin')).toBe(
+      'Claude isn\'t signed in, or its sign-in expired. In a terminal, run `claude auth logout`, then `claude auth login`, then send your message again. Or set `ANTHROPIC_API_KEY` and turn on "Bill this to an API key instead" in Settings → AI.',
+    );
+  });
+
+  it('should point an in-app install at Settings, since its CLI is not on the PATH', () => {
+    expect(signInRequiredMessage('codex', 'managed')).toBe(
+      "Codex isn't signed in, or its sign-in expired. In Settings → AI, click Sign out, then Sign in, then send your message again.",
+    );
+  });
+
+  it('should say the API key was rejected when the turn billed to one', () => {
+    expect(signInRequiredMessage('claude', 'apiKey')).toBe(
+      'Claude rejected the API key in `ANTHROPIC_API_KEY`. Check the key, or turn off "Bill this to an API key instead" in Settings → AI to use your sign-in.',
+    );
+  });
+});
+
+describe('when writing CLI error output to the log', () => {
+  it('should hide API keys and bearer tokens', () => {
+    const out = redactSecrets(
+      'bad key sk-example1234567890 and AIzaExample1234567890abcdef; Authorization: Bearer example.token-123',
+    );
+    expect(out).not.toMatch(/sk-example1234567890|AIzaExample1234567890abcdef|example\.token-123/);
+    expect(out).toContain('bad key');
+  });
+});
+
+describe('when a turn ends', () => {
+  const base = {
+    label: 'Claude',
+    turnId: 't3',
+    code: 0 as number | null,
+    signal: null as NodeJS.Signals | null,
+    durationMs: 12_345,
+    textCount: 0,
+    toolCount: 0,
+    imageCount: 0,
+    stderr: '',
+  };
+
+  describe('and the CLI exited cleanly after replying', () => {
+    it('should report success and log the code, duration and output counts', () => {
+      expect(turnOutcome({ ...base, textCount: 2, toolCount: 3 })).toEqual({
+        logLine:
+          '[AI] Claude turn t3 exited code=0 signal=none after 12.3s: 2 text, 3 tools, 0 images',
+        ok: true,
+      });
+    });
+  });
+
+  describe('and the CLI exited cleanly without producing anything', () => {
+    it('should report an error instead of leaving an empty reply', () => {
+      expect(turnOutcome(base)).toMatchObject({
+        ok: false,
+        message: expect.stringContaining('Claude finished without replying'),
+      });
+    });
+  });
+
+  describe('and the turn only showed an image', () => {
+    it('should count it as a reply', () => {
+      expect(turnOutcome({ ...base, imageCount: 1 }).ok).toBe(true);
+    });
+  });
+
+  describe('and the CLI failed with output on stderr', () => {
+    it('should report the stderr and log its tail on one line', () => {
+      const outcome = turnOutcome({
+        ...base,
+        code: 1,
+        stderr: 'Not logged in\n  Please run /login\n',
+      });
+      expect(outcome).toEqual({
+        logLine:
+          '[AI] Claude turn t3 exited code=1 signal=none after 12.3s: 0 text, 0 tools, 0 images; stderr: Not logged in Please run /login',
+        ok: false,
+        message: 'Not logged in\n  Please run /login',
+      });
+    });
+  });
+
+  describe('and a signal killed the CLI', () => {
+    it('should report an interruption', () => {
+      expect(turnOutcome({ ...base, code: null, signal: 'SIGKILL', textCount: 1 })).toMatchObject({
+        ok: false,
+        message: 'assistant was interrupted (SIGKILL)',
+      });
+    });
   });
 });

@@ -126,7 +126,14 @@
   background-color: var(--success);
 }
 
+.AgentStatusDot.warning {
+  background-color: var(--mui-palette-warning-main);
+}
+
 .AgentSignLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-left: auto;
   padding: 0;
   border: none;
@@ -142,4 +149,24 @@
 
 .AgentSignLink.primary {
   color: var(--dcl);
+}
+
+.AgentSignLink:disabled {
+  cursor: default;
+}
+
+.AgentGuideLink {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--dcl);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.AgentGuideLink:hover {
+  text-decoration: underline;
 }

@@ -120,6 +120,20 @@ Under happy-dom the whole subtree reports "There are no accessible roles", and
 `querySelector('[role="…"]')` — see `FlowField.spec.tsx`, `CallbackField.spec.tsx`.
 `getByRole` is fine on a bare control (`Pill.spec.tsx`).
 
+### Mocking `@dcl/sdk/ecs` with the real `@dcl/ecs`
+
+`vi.importActual('@dcl/ecs')` hands back the bare generated component
+definitions in place of the helper-wrapped ones: the star re-export of
+`components/generated/global.gen` shadows the module's own `Animator`,
+`AudioSource`, `TriggerArea`, `Material`… so calls like
+`Animator.playSingleAnimation` or `TriggerArea.setBox` are missing. Rebind each
+one from `ecs.components` before returning the mock, as `fakeSdkEcs` in
+`packages/asset-packs/test/script-harness.ts` does.
+
+`vi.resetModules()` does not re-run a `vi.mock` factory's module, so the engine
+singleton survives between tests. Reset the state a test depends on (players,
+captured handlers) instead of expecting a fresh engine.
+
 ### Asset-packs circular imports & vitest
 
 `packages/asset-packs/src/definitions.ts` re-exports every internal module via
