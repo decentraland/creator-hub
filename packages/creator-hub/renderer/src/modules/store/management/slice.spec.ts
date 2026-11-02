@@ -1476,6 +1476,23 @@ describe('management slice', () => {
       expect(store.getState().management.worldSettings.settings.title).toBe('After');
       expect(store.getState().management.worldSettings.status).toBe('succeeded');
     });
+
+    it('should keep a successful save when the settings refresh returns no settings', async () => {
+      store.dispatch(
+        fetchWorldSettings.fulfilled({ title: 'Before' }, 'r1', { worldName: TEST_WORLD_NAME }),
+      );
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.putWorldSettings.mockResolvedValueOnce({ success: true });
+      mockWorldsAPI.fetchWorldSettings.mockResolvedValueOnce(null);
+
+      const result = await store.dispatch(
+        updateWorldSettings({ worldName: TEST_WORLD_NAME, worldSettings: { title: 'After' } }),
+      );
+
+      expect(result.meta.requestStatus).toBe('fulfilled');
+      expect(store.getState().management.worldSettings.settings.title).toBe('After');
+      expect(store.getState().management.worldSettings.status).toBe('succeeded');
+    });
   });
 
   describe('updateWorldPermissions', () => {

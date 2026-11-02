@@ -52,7 +52,12 @@ async function renderField(names: Name[]) {
   );
   store.dispatch({
     type: 'ens/fetchENSList/fulfilled',
-    payload: names.map(name => ({ ...name, nftOwnerAddress: '0xme', provider: 'dcl' })),
+    payload: names.map(name => ({
+      ...name,
+      nftOwnerAddress: '0xme',
+      ensOwnerAddress: '0xme',
+      provider: 'dcl',
+    })),
   });
   render(
     <Provider store={store as never}>
