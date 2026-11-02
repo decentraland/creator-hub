@@ -20,6 +20,16 @@ vi.mock('./utils/engine-to-composite', async importOriginal => ({
 }));
 
 const COMPOSITE_PATH = 'assets/scene/main.composite';
+
+function deferred() {
+  let resolve = () => {};
+  let reject: (error: Error) => void = () => {};
+  const promise = new Promise<void>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 const MIN_SAVE_INTERVAL = 100;
 
 function transaction(id: string): Transaction {
@@ -143,6 +153,92 @@ describe('CompositeProvider', () => {
       await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL * 4);
 
       expect(save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when an edit lands while the trailing save is still writing', () => {
+    let write: ReturnType<typeof deferred>;
+
+    beforeEach(async () => {
+      await completeTransaction('tx-1');
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL / 2);
+      await completeTransaction('tx-2');
+
+      write = deferred();
+      save.mockImplementationOnce(() => write.promise);
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL / 2);
+      // The trailing save does not hold the transaction queue, so this edit is processed
+      // while its write is still in flight.
+      await completeTransaction('tx-3');
+
+      write.resolve();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    it('should stay dirty once that write finishes', () => {
+      expect(provider.isDirty()).toBe(true);
+    });
+
+    it('should save the edit on the next trailing save', async () => {
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL);
+
+      expect(savedCompositeVersions()).toEqual([1, 2, 3]);
+      expect(provider.isDirty()).toBe(false);
+    });
+  });
+
+  describe('when the trailing save fails to write', () => {
+    const originalError = console.error;
+
+    beforeEach(async () => {
+      console.error = () => {};
+      await completeTransaction('tx-1');
+      await completeTransaction('tx-2');
+      save.mockRejectedValueOnce(new Error('EBUSY: resource busy or locked'));
+      await vi.advanceTimersByTimeAsync(MIN_SAVE_INTERVAL);
+    });
+
+    afterEach(() => {
+      console.error = originalError;
+    });
+
+    it('should stay dirty', () => {
+      expect(provider.isDirty()).toBe(true);
+    });
+
+    it('should let the next save write without rethrowing the old failure', async () => {
+      await provider.saveComposite(true);
+
+      expect(provider.isDirty()).toBe(false);
+    });
+  });
+
+  describe('when several callers save at once', () => {
+    let inFlight: number;
+    let maxInFlight: number;
+
+    beforeEach(async () => {
+      inFlight = 0;
+      maxInFlight = 0;
+      save.mockImplementation(async () => {
+        inFlight++;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise(resolve => setTimeout(resolve, 10));
+        inFlight--;
+      });
+
+      const saves = [
+        provider.saveComposite(true),
+        provider.saveComposite(true),
+        provider.saveComposite(true),
+      ];
+      await vi.advanceTimersByTimeAsync(50);
+      await Promise.all(saves);
+    });
+
+    it('should write one at a time', () => {
+      expect(save).toHaveBeenCalledTimes(3);
+      expect(maxInFlight).toBe(1);
     });
   });
 });

@@ -47,8 +47,13 @@ export class CompositeProvider implements StateProvider {
   private pendingOperations = new Set<string>();
   private savePromise: Promise<void> | null = null;
   private lastSaveTime = 0;
-  private trailingSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly minSaveInterval = 100;
+  private trailingSaveTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Bumped by every edit. A save only marks the provider clean when no edit arrived between
+  // its engine dump and the end of its write: the trailing save does not hold the
+  // transaction queue, so an edit can land mid-write, and calling it clean then would leave
+  // that edit in memory with nothing left to save it.
+  private editGeneration = 0;
 
   constructor(
     fs: FileSystemInterface,
@@ -177,6 +182,7 @@ export class CompositeProvider implements StateProvider {
     if (!this.canHandle(operation)) return;
 
     this.pendingOperations.add(transaction.id);
+    this.editGeneration++;
 
     if (this.dirtyState === DirtyState.Clean) {
       this.dirtyState = DirtyState.DirtyAndNeedsDump;
@@ -188,85 +194,91 @@ export class CompositeProvider implements StateProvider {
 
     this.pendingOperations.delete(transaction.id);
 
-    if (this.dirtyState !== DirtyState.DirtyAndNeedsDump) return;
-    if (!this.getInspectorPreferences().autosaveEnabled) return;
+    if (this.dirtyState === DirtyState.DirtyAndNeedsDump) {
+      const preferences = this.getInspectorPreferences();
+      const shouldAutosave = preferences.autosaveEnabled;
+      if (!shouldAutosave) return;
 
-    const now = Date.now();
-    const sinceLastSave = now - this.lastSaveTime;
-
-    if (sinceLastSave >= this.minSaveInterval) {
-      this.clearTrailingSave();
-      this.lastSaveTime = now;
-      await this.saveComposite(true);
-      return;
+      const now = Date.now();
+      if (now - this.lastSaveTime >= this.minSaveInterval) {
+        this.lastSaveTime = now;
+        await this.saveComposite(true);
+      } else {
+        // Throttled. Without a trailing save the final edit of a rapid burst stays dirty
+        // until some later transaction happens to arrive — and if none does, it never
+        // reaches disk at all.
+        this.scheduleTrailingSave(this.minSaveInterval - (now - this.lastSaveTime));
+      }
     }
-
-    this.scheduleTrailingSave(this.minSaveInterval - sinceLastSave);
   }
 
   private scheduleTrailingSave(delay: number): void {
-    if (this.trailingSaveTimer) return;
+    if (this.trailingSaveTimeout) return;
 
-    this.trailingSaveTimer = setTimeout(() => {
-      this.trailingSaveTimer = null;
+    this.trailingSaveTimeout = setTimeout(() => {
+      this.trailingSaveTimeout = null;
       if (this.dirtyState !== DirtyState.DirtyAndNeedsDump) return;
       if (!this.getInspectorPreferences().autosaveEnabled) return;
 
       this.lastSaveTime = Date.now();
-      void this.saveComposite(true);
+      // Fire-and-forget by necessity (no caller to await a timer), but the rejection is
+      // handled here so it cannot go unobserved; the dirty state survives for the flush
+      // that runs before publishing.
+      this.saveComposite(true).catch(error =>
+        console.error('Failed saving composite (trailing save):', error),
+      );
     }, delay);
   }
 
-  private clearTrailingSave(): void {
-    if (!this.trailingSaveTimer) return;
-
-    clearTimeout(this.trailingSaveTimer);
-    this.trailingSaveTimer = null;
-  }
-
   async saveComposite(dump = true): Promise<CompositeDefinition | null> {
-    if (this.savePromise) {
-      await this.savePromise;
+    // Chained rather than awaited-then-started: two callers waiting on the same promise would
+    // otherwise both wake up and write concurrently. A previous save's failure is never
+    // rethrown here — each caller only owns its own attempt.
+    const previous = this.savePromise ?? Promise.resolve();
+    const save = previous.catch(() => {}).then(() => this.performSave(dump).then(() => {}));
+    this.savePromise = save;
+    try {
+      await save;
+    } finally {
+      // Without the `finally` a rejected save leaves `savePromise` set forever, and every
+      // later call rethrows that same stale error while never writing anything.
+      if (this.savePromise === save) this.savePromise = null;
     }
-
-    this.savePromise = this.performSave(dump).then(() => {});
-    await this.savePromise;
-    this.savePromise = null;
 
     return this.composite;
   }
 
   private async performSave(dump: boolean): Promise<CompositeDefinition | null> {
-    try {
-      this.composite = dumpEngineToComposite(this.engine, 'json');
+    const generation = this.editGeneration;
+    this.composite = dumpEngineToComposite(this.engine, 'json');
 
-      if (!dump) {
-        this.dirtyState = DirtyState.Clean;
-        return this.composite;
-      }
-
-      if (!this.compositeManager) {
-        throw new Error('Composite manager not initialized');
-      }
-
-      await this.compositeManager.save(
-        { src: this.compositePath, composite: this.composite! },
-        'json',
-      );
-
-      await generateEntityNamesType(
-        this.engine,
-        withAssetDir(DIRECTORY.SCENE + '/' + ENTITY_NAMES_PATH),
-        'EntityNames',
-        this.fs,
-      );
-
-      this.dirtyState = DirtyState.Clean;
+    if (!dump) {
+      this.markCleanIfUnchangedSince(generation);
       return this.composite;
-    } catch (error) {
-      console.error('Failed saving composite:', error);
-      return null;
     }
+
+    if (!this.compositeManager) {
+      throw new Error('Composite manager not initialized');
+    }
+
+    await this.compositeManager.save(
+      { src: this.compositePath, composite: this.composite! },
+      'json',
+    );
+
+    await generateEntityNamesType(
+      this.engine,
+      withAssetDir(DIRECTORY.SCENE + '/' + ENTITY_NAMES_PATH),
+      'EntityNames',
+      this.fs,
+    );
+
+    this.markCleanIfUnchangedSince(generation);
+    return this.composite;
+  }
+
+  private markCleanIfUnchangedSince(generation: number): void {
+    if (this.editGeneration === generation) this.dirtyState = DirtyState.Clean;
   }
 
   getComposite(): CompositeDefinition | null {
@@ -286,10 +298,13 @@ export class CompositeProvider implements StateProvider {
   }
 
   async dispose(): Promise<void> {
-    this.clearTrailingSave();
+    if (this.trailingSaveTimeout) {
+      clearTimeout(this.trailingSaveTimeout);
+      this.trailingSaveTimeout = null;
+    }
 
     if (this.savePromise) {
-      await this.savePromise;
+      await this.savePromise.catch(() => {});
     }
 
     this.pendingOperations.clear();
