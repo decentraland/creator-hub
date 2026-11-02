@@ -728,8 +728,8 @@ describe('management slice', () => {
       });
     });
 
-    describe('when some pages fail', () => {
-      it('should collect successful results and skip failed pages', async () => {
+    describe('when a later page fails', () => {
+      it('should reject rather than succeed with a shortened parcel list', async () => {
         const firstPageParcels = Array.from({ length: 100 }, (_, i) => `${i},${i}`);
 
         mockWorldsAPI.fetchParcelsPermission
@@ -743,7 +743,7 @@ describe('management slice', () => {
           })
           .mockResolvedValueOnce(null);
 
-        await store.dispatch(
+        const result = await store.dispatch(
           fetchParcelsPermission({
             worldName: TEST_WORLD_NAME,
             permissionName: 'deployment',
@@ -751,9 +751,40 @@ describe('management slice', () => {
           }),
         );
 
+        expect(result.type).toBe('management/fetchParcelsPermission/rejected');
         const state = store.getState().management;
-        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toHaveLength(200);
-        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]).toEqual({
+          parcels: [],
+          status: 'failed',
+        });
+      });
+    });
+
+    describe("when another world's parcels were loaded before this world's fetch fails", () => {
+      it("should not keep the other world's parcels as deployable", async () => {
+        mockWorldsAPI.fetchParcelsPermission
+          .mockResolvedValueOnce({ parcels: ['1,1'], total: 1 })
+          .mockResolvedValueOnce(null);
+        const fetchFor = (worldName: string) =>
+          store.dispatch(
+            fetchParcelsPermission({
+              worldName,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            }),
+          );
+
+        await fetchFor('world-a.dcl.eth');
+        const pending = fetchFor('world-b.dcl.eth');
+        expect(
+          store.getState().management.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels,
+        ).toEqual([]);
+        await pending;
+
+        expect(store.getState().management.worldPermissions.parcels[TEST_WALLET_ADDRESS]).toEqual({
+          parcels: [],
+          status: 'failed',
+        });
       });
     });
 

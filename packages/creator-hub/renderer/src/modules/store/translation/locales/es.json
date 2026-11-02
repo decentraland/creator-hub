@@ -375,7 +375,8 @@
             "publish": "Publicar",
             "reset": "Reiniciar",
             "cancel": "Cancelar",
-            "confirm": "Confirmar"
+            "confirm": "Confirmar",
+            "retry": "Reintentar"
           },
           "ens_providers": {
             "dcl": "NOMBRE",
@@ -399,7 +400,8 @@
             "description": "Publicar tu escena aquí eliminará todas las escenas presentes en las parcelas seleccionadas.",
             "scenes_count": "Tu selección de parcelas ya contiene <b>{count} {count, plural, one {escena} other {escenas}}</b>:",
             "scene_title_placeholder": "Escena {index}"
-          }
+          },
+          "permissions_error": "No pudimos comprobar en qué parcelas de este mundo puedes publicar."
         },
         "empty_names": {
           "title": "No tienes ningún mundo disponible",

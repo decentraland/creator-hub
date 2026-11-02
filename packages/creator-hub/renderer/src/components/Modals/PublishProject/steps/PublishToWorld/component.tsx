@@ -99,6 +99,18 @@ export function PublishToWorld(props: Props) {
     }
   }, [step, props.onBack]);
 
+  const fetchParcelsPermission = useCallback(
+    (worldName: string) =>
+      dispatch(
+        managementActions.fetchParcelsPermission({
+          worldName,
+          permissionName: WorldPermissionName.Deployment,
+          walletAddress: wallet || '',
+        }),
+      ),
+    [wallet],
+  );
+
   const handleChangeName = useCallback(
     (worldName: string) => {
       setIsMultiSceneEnabled(false);
@@ -106,16 +118,17 @@ export function PublishToWorld(props: Props) {
 
       dispatch(managementActions.fetchWorldSettings({ worldName }));
       dispatch(managementActions.fetchWorldScenes({ worldName }));
-      dispatch(
-        managementActions.fetchParcelsPermission({
-          worldName,
-          permissionName: WorldPermissionName.Deployment,
-          walletAddress: wallet || '',
-        }),
-      );
+      fetchParcelsPermission(worldName);
     },
-    [wallet],
+    [fetchParcelsPermission],
   );
+
+  const handleRetryParcelsPermission = useCallback(
+    () => fetchParcelsPermission(name),
+    [fetchParcelsPermission, name],
+  );
+
+  const parcelsPermissionFailed = !!name && !isOwner && worldPermissions?.status === 'failed';
 
   const handleUpdateProject = useCallback(
     async (projectUpdates: Partial<Project>) => {
@@ -178,6 +191,24 @@ export function PublishToWorld(props: Props) {
           name={name}
           project={project}
         >
+          {parcelsPermissionFailed && (
+            <Box className="ParcelsPermissionError">
+              <Typography
+                variant="body2"
+                color="error"
+              >
+                {t('modal.publish_project.worlds.select_world.permissions_error')}
+              </Typography>
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="small"
+                onClick={handleRetryParcelsPermission}
+              >
+                {t('modal.publish_project.worlds.select_world.actions.retry')}
+              </Button>
+            </Box>
+          )}
           {step === Step.SELECTION && (
             <SelectWorld
               name={name}

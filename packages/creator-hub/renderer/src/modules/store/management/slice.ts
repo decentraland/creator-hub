@@ -413,7 +413,10 @@ export const fetchParcelsPermission = createAsyncThunk(
     );
 
     const pages = await Promise.all(remainingPagesPromises);
-    const allParcels = [...firstPage.parcels, ...pages.flatMap(p => p?.parcels || [])];
+    if (pages.some(page => !page)) {
+      throw new Error(`Failed to fetch every parcels permission page for world "${worldName}"`);
+    }
+    const allParcels = [...firstPage.parcels, ...pages.flatMap(page => page!.parcels)];
 
     return {
       walletAddress,
@@ -620,9 +623,12 @@ const slice = createSlice({
       })
       .addCase(fetchParcelsPermission.pending, (state, action) => {
         const { walletAddress, worldName } = action.meta.arg;
+        // Parcels are stored per wallet, not per world: carrying another world's list over
+        // would show its parcels as deployable here until this fetch settles.
+        const sameWorld = state.worldPermissions.worldName === worldName;
         state.worldPermissions.worldName = worldName;
         state.worldPermissions.parcels[walletAddress] = {
-          parcels: state.worldPermissions.parcels[walletAddress]?.parcels || [],
+          parcels: sameWorld ? state.worldPermissions.parcels[walletAddress]?.parcels || [] : [],
           status: 'loading',
         };
       })
@@ -637,9 +643,7 @@ const slice = createSlice({
       .addCase(fetchParcelsPermission.rejected, (state, action) => {
         if (action.meta.arg.worldName !== state.worldPermissions.worldName) return;
         const { walletAddress } = action.meta.arg;
-        if (state.worldPermissions.parcels[walletAddress]) {
-          state.worldPermissions.parcels[walletAddress].status = 'failed';
-        }
+        state.worldPermissions.parcels[walletAddress] = { parcels: [], status: 'failed' };
       });
   },
 });

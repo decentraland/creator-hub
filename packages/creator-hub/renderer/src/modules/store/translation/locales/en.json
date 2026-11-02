@@ -376,7 +376,8 @@
             "publish": "Publish",
             "reset": "Reset",
             "cancel": "Cancel",
-            "confirm": "Confirm"
+            "confirm": "Confirm",
+            "retry": "Retry"
           },
           "ens_providers": {
             "dcl": "NAME",
@@ -400,7 +401,8 @@
             "description": "Publishing your scene here will delete the entire scenes present in the selected parcels.",
             "scenes_count": "Your parcel selection already contains <b>{count} {count, plural, one {scene} other {scenes}}</b>:",
             "scene_title_placeholder": "Scene {index}"
-          }
+          },
+          "permissions_error": "We couldn't check which parcels you can deploy to in this world."
         },
         "empty_names": {
           "title": "You don't have any available World",
