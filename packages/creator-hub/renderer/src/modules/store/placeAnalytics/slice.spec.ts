@@ -241,6 +241,30 @@ describe('placeAnalytics slice', () => {
     });
   });
 
+  describe('when the account is disconnected while a fetch is in flight', () => {
+    let resolveSnapshot: (snapshot: typeof SNAPSHOT) => void;
+
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAnalyticsSnapshot).mockReturnValue(
+        new Promise(resolve => {
+          resolveSnapshot = resolve;
+        }),
+      );
+    });
+
+    it('should not let the previous account analytics land once it settles', async () => {
+      const inFlight = store.dispatch(fetchAnalytics());
+      await vi.waitFor(() => expect(fetchAnalyticsSnapshot).toHaveBeenCalled());
+
+      store.dispatch(managementActions.clearState());
+      resolveSnapshot(SNAPSHOT);
+      await inFlight;
+
+      expect(store.getState().placeAnalytics).toEqual(initialState);
+    });
+  });
+
   describe('when reading the visible places', () => {
     beforeEach(async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
