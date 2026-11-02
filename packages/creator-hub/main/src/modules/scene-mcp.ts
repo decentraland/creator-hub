@@ -58,7 +58,7 @@ export function setSceneMcpProject(projectDir: string | null): void {
 }
 
 export const DATA_LAYER_DOWN =
-  "The scene's data layer stopped unexpectedly, so nothing was read or changed. Wait for the editor to reload the scene, then retry.";
+  "The scene's data layer stopped unexpectedly, so nothing was read or changed. Wait for the editor to reload the scene, then retry; if the editor shows an error instead, the user has to reopen the scene.";
 export const DATA_LAYER_STOPPED_DURING_OP =
   "The scene's data layer stopped while applying this change, so it was not saved. Wait for the editor to reload the scene, then retry.";
 

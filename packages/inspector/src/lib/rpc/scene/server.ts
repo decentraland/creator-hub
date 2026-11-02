@@ -591,6 +591,11 @@ export class SceneServer extends RPC<Method, Params, Result> {
         return { ok: true as const };
       });
 
+      // Scene settings live in the versioned SceneMetadata component on the root (#1527).
+      // resolveActiveSceneComponent picks the version the data layer actually speaks, so
+      // reads/writes round-trip and persist to scene.json like the SceneInspector UI. Spawn
+      // axes are converted to and from the scene.json shape the AI speaks: the component
+      // needs OneOf `{ $case, value }`, and a bare value there crashes older data layers.
       const readSceneSettings = () => {
         const Scene = resolveActiveSceneComponent(engine);
         const settings = (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown>;
@@ -604,9 +609,12 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
       this.handle('set_scene_settings', async patch => {
         const spawnPoints = patch.spawnPoints as SceneJsonSpawnPoint[] | undefined;
+        if (spawnPoints !== undefined && !Array.isArray(spawnPoints)) {
+          throw new Error('spawnPoints must be an array');
+        }
         spawnPoints?.forEach((spawnPoint, index) => {
           for (const axis of ['x', 'y', 'z'] as const) {
-            if (!isSceneSpawnAxis(spawnPoint.position?.[axis])) {
+            if (!isSceneSpawnAxis(spawnPoint?.position?.[axis])) {
               throw new Error(
                 `spawnPoints[${index}].position.${axis} must be a number or a [min, max] pair of numbers`,
               );

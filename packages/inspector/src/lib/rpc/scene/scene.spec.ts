@@ -887,6 +887,28 @@ describe('SceneServer RPC scene settings spawn points', () => {
     });
   });
 
+  describe('when a spawn point entry is null', () => {
+    it('should reject naming the axis and leave the component unchanged', async () => {
+      const before = structuredClone(storedValue());
+
+      await expect(host.request('set_scene_settings', { spawnPoints: [null] })).rejects.toThrow(
+        'spawnPoints[0].position.x',
+      );
+      expect(storedValue()).toEqual(before);
+    });
+  });
+
+  describe('when spawnPoints is not an array', () => {
+    it('should reject and leave the component unchanged', async () => {
+      const before = structuredClone(storedValue());
+
+      await expect(
+        host.request('set_scene_settings', { spawnPoints: { name: 'E' } }),
+      ).rejects.toThrow('spawnPoints must be an array');
+      expect(storedValue()).toEqual(before);
+    });
+  });
+
   describe('when another field is patched after a ranges write', () => {
     it('should keep the stored spawn points as range cases', async () => {
       await host.request('set_scene_settings', { spawnPoints: [rangeSpawnPoint] });

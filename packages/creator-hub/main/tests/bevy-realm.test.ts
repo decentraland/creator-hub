@@ -105,7 +105,10 @@ describe('bevy-realm supervision', () => {
 
     it('should send one exit event with the path and a message to the main window', () => {
       expect(exitEvents()).toEqual([
-        [BEVY_REALM_EXIT_EVENT, { path, message: expect.any(String) }],
+        [
+          BEVY_REALM_EXIT_EVENT,
+          { path, message: expect.any(String), uptimeMs: expect.any(Number) },
+        ],
       ]);
     });
 
@@ -162,8 +165,82 @@ describe('bevy-realm supervision', () => {
 
     it('should send the exit event with the failure in its message', () => {
       expect(exitEvents()).toEqual([
-        [BEVY_REALM_EXIT_EVENT, { path, message: expect.stringContaining('code=1') }],
+        [
+          BEVY_REALM_EXIT_EVENT,
+          { path, message: expect.stringContaining('code=1'), uptimeMs: expect.any(Number) },
+        ],
       ]);
+    });
+  });
+
+  describe('when a realm process exits before it is serving', () => {
+    let booting: FakeChild;
+    let starting: Promise<unknown>;
+
+    beforeEach(async () => {
+      booting = createFakeChild({ holdReady: true });
+      mocks.child = booting.child;
+      starting = start(path);
+      starting.catch(() => {});
+      await flush();
+      booting.exit();
+    });
+
+    it('should reject the start instead of waiting forever', async () => {
+      await expect(starting).rejects.toThrow('exited before it was ready');
+    });
+
+    it('should not send an exit event', async () => {
+      await starting.catch(() => {});
+      expect(exitEvents()).toEqual([]);
+    });
+
+    describe('and the editor starts it again', () => {
+      beforeEach(async () => {
+        await starting.catch(() => {});
+        mocks.child = createFakeChild().child;
+      });
+
+      it('should spawn a fresh realm', async () => {
+        await expect(start(path)).resolves.toEqual({
+          url: 'http://localhost:8004',
+          wsUrl: 'ws://localhost:8004/data-layer',
+        });
+      });
+    });
+  });
+
+  describe('when a realm is killed while it is still booting', () => {
+    let starting: Promise<unknown>;
+
+    beforeEach(async () => {
+      mocks.child = createFakeChild({ holdReady: true }).child;
+      starting = start(path);
+      starting.catch(() => {});
+      await flush();
+      await kill(path);
+    });
+
+    it('should settle the pending start', async () => {
+      await expect(starting).rejects.toThrow();
+    });
+  });
+
+  describe('when a realm exits after serving for a while', () => {
+    beforeEach(async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      await start(path);
+      vi.setSystemTime(Date.now() + 90_000);
+      fake.exit();
+      await flush();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should report how long it was serving', () => {
+      expect(exitEvents()[0][1].uptimeMs).toBeGreaterThanOrEqual(90_000);
     });
   });
 

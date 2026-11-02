@@ -117,8 +117,14 @@ async function startInternal(path: string): Promise<{ url: string; wsUrl: string
   // `--no-client` means no deep-link / browser open, so we wait for the
   // server-ready line sdk-commands prints once it's serving.
   const serverReady = /Preview server is now running/i;
+  // waitFor only watches output, so a process that dies without printing a matching
+  // line (a crash on boot, a kill mid-boot) would leave it pending forever.
+  const exitedBeforeReady = child.wait().then(() => {
+    throw new Error('The scene server exited before it was ready.');
+  });
+  exitedBeforeReady.catch(() => {});
   try {
-    await child.waitFor(serverReady, /CliError|error:/i);
+    await Promise.race([child.waitFor(serverReady, /CliError|error:/i), exitedBeforeReady]);
   } catch (err) {
     // Startup failed or the child was killed mid-boot — make sure it's gone and
     // the entry doesn't linger as a half-alive realm. Guard the delete so a
@@ -165,6 +171,7 @@ function relayBuildEvents(path: string, child: Child): void {
 }
 
 function watchExit(path: string, child: Child): void {
+  const servingSince = Date.now();
   const onExit = (message: string) => {
     if (shuttingDown || realms.get(path)?.child !== child) return;
     realms.delete(path);
@@ -172,7 +179,7 @@ function watchExit(path: string, child: Child): void {
     log.error(`[BevyRealm] ${path} exited unexpectedly: ${message}`);
     const window = getWindow(MAIN_WINDOW_ID);
     if (!window || window.isDestroyed()) return;
-    const payload: BevyRealmExitEvent = { path, message };
+    const payload: BevyRealmExitEvent = { path, message, uptimeMs: Date.now() - servingSince };
     window.webContents.send(BEVY_REALM_EXIT_EVENT, payload);
   };
   void child.wait().then(

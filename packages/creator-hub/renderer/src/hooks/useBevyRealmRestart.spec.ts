@@ -4,14 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BevyRealmExitEvent } from '/shared/types/ipc';
 
 const { editor } = await import('#preload');
-const { useBevyRealmRestart } = await import('./useBevyRealmRestart');
+const { HEALTHY_UPTIME_MS, useBevyRealmRestart } = await import('./useBevyRealmRestart');
 
 describe('useBevyRealmRestart', () => {
   let emit: (event: BevyRealmExitEvent) => void;
   let unsubscribe: ReturnType<typeof vi.fn>;
   let onRestart: ReturnType<typeof vi.fn>;
   let onGiveUp: ReturnType<typeof vi.fn>;
-  let crash: (path: string) => void;
+  let crash: (path: string, uptimeMs?: number) => void;
 
   beforeEach(() => {
     unsubscribe = vi.fn();
@@ -21,7 +21,7 @@ describe('useBevyRealmRestart', () => {
     });
     onRestart = vi.fn();
     onGiveUp = vi.fn();
-    crash = path => emit({ path, message: 'exited with code=1' });
+    crash = (path, uptimeMs = 1_000) => emit({ path, message: 'exited with code=1', uptimeMs });
   });
 
   describe('when the Bevy renderer is active for a project', () => {
@@ -44,6 +44,26 @@ describe('useBevyRealmRestart', () => {
 
       it('should restart each time without giving up', () => {
         expect([onRestart.mock.calls.length, onGiveUp.mock.calls.length]).toEqual([3, 0]);
+      });
+
+      describe('and it exits again after serving for a healthy period', () => {
+        beforeEach(() => {
+          crash('/scenes/demo', HEALTHY_UPTIME_MS);
+        });
+
+        it('should restart with a fresh count instead of giving up', () => {
+          expect([onRestart.mock.calls.length, onGiveUp.mock.calls.length]).toEqual([4, 0]);
+        });
+
+        describe('and then crashes quickly 3 more times', () => {
+          beforeEach(() => {
+            for (let i = 0; i < 3; i++) crash('/scenes/demo');
+          });
+
+          it('should give up on the 3rd quick crash', () => {
+            expect([onRestart.mock.calls.length, onGiveUp.mock.calls.length]).toEqual([6, 1]);
+          });
+        });
       });
 
       describe('and it exits a 4th time', () => {
