@@ -299,7 +299,7 @@ export const updateWorldSettings = createAsyncThunk(
     void dispatch(fetchManagedProjectsFiltered({ resetPage: true }));
     return {
       worldName,
-      worldSettings: refresh.meta.requestStatus === 'fulfilled' ? null : worldSettings,
+      worldSettings: refresh.payload ? null : worldSettings,
     };
   },
 );
