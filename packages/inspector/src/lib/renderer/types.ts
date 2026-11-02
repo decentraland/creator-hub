@@ -370,6 +370,21 @@ export interface RendererInteraction {
 }
 
 /**
+ * Optional capability for renderers that PLAY the scene's audio (a looping sound
+ * keeps playing while you edit). Such a renderer can silence all scene audio with
+ * an editor-side mute, independent of the run/freeze state. Babylon doesn't play
+ * scene audio, so it omits this; the Bevy renderer runs the real scene and exposes
+ * a mute toggle (default: unmuted).
+ */
+export interface RendererAudio {
+  /** True when scene audio is silenced by the editor; false (default) when it plays. */
+  isMuted(): boolean;
+  setMuted(muted: boolean): void;
+  /** Notify on change (so a toolbar toggle reflects the state). */
+  onMuteChange(cb: (muted: boolean) => void): Unsubscribe;
+}
+
+/**
  * An animation clip exposed by a renderer (see `getEntityAnimations`). Only
  * `name` is consumed today; the object shape leaves room to add `duration`,
  * `loopable`, etc. without breaking the public contract.
@@ -424,6 +439,12 @@ export interface IRenderer {
    * that can be toggled off to interact with the running scene (Bevy; #1458).
    */
   readonly interaction?: RendererInteraction;
+  /**
+   * Present only if the renderer plays the scene's audio and can silence it with an
+   * editor-side mute (Bevy runs the real scene, so it exposes a mute toggle; Babylon
+   * doesn't play scene audio, so it omits this — #1569).
+   */
+  readonly audio?: RendererAudio;
 
   /** Set the editor selection by entity ID (the renderer draws it however it likes). */
   setSelection(entities: Entity[]): void;

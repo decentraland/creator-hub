@@ -148,6 +148,88 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('when a Name component is deleted (undo of an add, without a DELETE_ENTITY)', () => {
+    it('should send delete_entity so a mirrored engine drops the whole entity (#1460)', async () => {
+      const GltfContainer = components.GltfContainer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 0, y: 0, z: 0 },
+        parent: ctx.engine.RootEntity,
+      });
+      GltfContainer.create(entity, { src: 'assets/car.glb', visibleMeshesCollisionMask: 3 });
+      ctx.Name.create(entity, { value: 'Car' });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      // Undo reverts an add by deleting each component one-by-one — including Name —
+      // and never calls removeEntity, so no DELETE_ENTITY is emitted. The Name delete
+      // must still tear the entity down in the mirrored engine.
+      ctx.Transform.deleteFrom(entity);
+      GltfContainer.deleteFrom(entity);
+      ctx.Name.deleteFrom(entity);
+      await ctx.engine.update(1);
+
+      expect(sent).toContainEqual({ cmd: 'delete_entity', args: [String(entity)] });
+    });
+  });
+
+  describe('setAudioMuted (#1569)', () => {
+    it('forwards AudioSource with volume 0 when muted and the authored volume when unmuted', async () => {
+      const AudioSource = components.AudioSource(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      AudioSource.create(entity, {
+        audioClipUrl: 'sound.mp3',
+        playing: true,
+        volume: 0.8,
+        loop: true,
+      });
+      ctx.Name.create(entity, { value: 'Speaker' });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAudioMuted(true);
+      await new Promise(r => setTimeout(r, 0));
+      const muted = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioSource');
+      expect(muted).toBeDefined();
+      const mutedValue = JSON.parse(muted!.args[2]);
+      expect(mutedValue.volume).toBe(0);
+      // Mute only overrides volume — the authored non-volume fields are preserved.
+      expect(mutedValue.audioClipUrl).toBe('sound.mp3');
+      expect(mutedValue.loop).toBe(true);
+
+      sent.length = 0;
+      bridge.setAudioMuted(false);
+      await new Promise(r => setTimeout(r, 0));
+      const unmuted = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioSource');
+      expect(unmuted).toBeDefined();
+      expect(JSON.parse(unmuted!.args[2]).volume).toBe(0.8);
+    });
+
+    it('re-silences a live AudioSource edit while muted (does not un-mute)', async () => {
+      const AudioSource = components.AudioSource(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      AudioSource.create(entity, { audioClipUrl: 'a.mp3', playing: true, volume: 0.5, loop: true });
+      ctx.Name.create(entity, { value: 'Speaker' });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      bridge.setAudioMuted(true);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      // A user tweaks the clip volume while muted — it must stay silenced.
+      AudioSource.getMutable(entity).volume = 0.9;
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioSource');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).volume).toBe(0);
+    });
+  });
+
   describe('when an unsupported (custom/schema) component changes', () => {
     it('should not send anything (deferred, not mis-addressed)', async () => {
       // PlayerIdentityData etc. aren't in the engine-name map; use a component
@@ -558,6 +640,122 @@ describe('createForwardEditBridge', () => {
         expect(v.collisionMask & 1).toBe(1); // pointer added
         expect(v.collisionMask & 2).toBe(2); // physics preserved
       }
+    });
+  });
+
+  describe('when a LightSource is written', () => {
+    it('should forward it live with the light-type oneof collapsed for serde', async () => {
+      const LightSource = components.LightSource(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Lamp' });
+      LightSource.create(entity, {
+        active: true,
+        intensity: 800,
+        color: { r: 1, g: 0.5, b: 0 },
+        type: { $case: 'spot', spot: { innerAngle: 20, outerAngle: 45 } },
+      });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'LightSource');
+      expect(write).toBeDefined();
+      expect(write!.args[0]).toBe(String(entity));
+      const value = JSON.parse(write!.args[2]);
+      expect(value.intensity).toBe(800);
+      expect(value.color).toEqual({ r: 1, g: 0.5, b: 0 });
+      expect(value.type).toEqual({ spot: { innerAngle: 20, outerAngle: 45 } });
+    });
+  });
+
+  describe('when a static engine component without a live path before is written', () => {
+    it.each([
+      [
+        'VirtualCamera',
+        () => components.VirtualCamera(ctx.engine),
+        { defaultTransition: { transitionMode: { $case: 'time', time: 2 } } },
+        (v: any) => expect(v.defaultTransition.transitionMode).toEqual({ time: 2 }),
+      ],
+      [
+        'AvatarAttach',
+        () => components.AvatarAttach(ctx.engine),
+        { anchorPointId: 3 },
+        (v: any) => expect(v.anchorPointId).toBe(3),
+      ],
+      [
+        'CameraModeArea',
+        () => components.CameraModeArea(ctx.engine),
+        { area: { x: 4, y: 2, z: 4 }, mode: 1 },
+        (v: any) => expect(v.area).toEqual({ x: 4, y: 2, z: 4 }),
+      ],
+      [
+        'NftShape',
+        () => components.NftShape(ctx.engine),
+        { urn: 'urn:decentraland:ethereum:erc721:0xabc:1' },
+        (v: any) => expect(v.urn).toContain('erc721'),
+      ],
+    ])('should forward %s as-is', async (engineName, getComponent, value, check) => {
+      const Component = getComponent() as unknown as { create: (e: unknown, v: unknown) => void };
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: engineName });
+      Component.create(entity, value);
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === engineName);
+      expect(write).toBeDefined();
+      expect(write!.args[0]).toBe(String(entity));
+      check(JSON.parse(write!.args[2]));
+    });
+  });
+
+  describe('when an AudioSource is written', () => {
+    it('should force playing:false while frozen and restore the authored value on unfreeze', async () => {
+      const AudioSource = components.AudioSource(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Speaker' });
+      AudioSource.create(entity, { audioClipUrl: 'sounds/loop.mp3', playing: true, volume: 0.5 });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      // The default bridge is frozen: the edit lands paused, other fields intact.
+      const frozenWrite = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioSource');
+      expect(frozenWrite).toBeDefined();
+      expect(JSON.parse(frozenWrite!.args[2])).toMatchObject({
+        audioClipUrl: 'sounds/loop.mp3',
+        playing: false,
+        volume: 0.5,
+      });
+
+      sent.length = 0;
+      bridge.setAnimationsFrozen(false);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const resumed = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioSource');
+      expect(resumed).toBeDefined();
+      expect(JSON.parse(resumed!.args[2]).playing).toBe(true);
+    });
+  });
+
+  describe('when an AudioStream is written', () => {
+    it('should force playing:false while frozen', async () => {
+      const AudioStream = components.AudioStream(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Radio' });
+      AudioStream.create(entity, { url: 'https://stream.example/live', playing: true });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioStream');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2])).toMatchObject({
+        url: 'https://stream.example/live',
+        playing: false,
+      });
     });
   });
 

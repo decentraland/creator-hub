@@ -56,7 +56,7 @@
   right: 5px;
 }
 
-.ActionInspector .content .Block .content .MoreOptionsMenu .MoreOptionsContent {
+.MoreOptionsContent.ActionMenu {
   min-width: 140px;
 }
 

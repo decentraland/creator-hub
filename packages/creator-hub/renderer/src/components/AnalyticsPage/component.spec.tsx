@@ -24,19 +24,18 @@ vi.mock('/@/lib/placeAnalytics', () => ({ fetchAnalytics: vi.fn() }));
 vi.mock('/@/lib/auth', () => ({ AuthServerProvider: { getAccount: vi.fn() } }));
 vi.mock('/@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 
-vi.mock('/@/modules/store/management', async () => {
-  const actual = await import('/@/modules/store/management');
-  return {
-    ...actual,
-    fetchAllManagedProjectsData: vi.fn(() => () => {
-      const dispatched = Promise.resolve<unknown[]>([]) as Promise<unknown[]> & {
-        unwrap: () => Promise<unknown[]>;
-      };
-      dispatched.unwrap = () => Promise.resolve([]);
-      return dispatched;
-    }),
-  };
-});
+/** The scene lists the thunk reads before asking for metrics; empty is enough here. */
+vi.mock('/@/modules/store/management/utils', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  fetchAllDeployedWorlds: vi.fn(() => Promise.resolve([])),
+}));
+vi.mock('/@/modules/store/land', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  fetchLandList: vi.fn(() => () => {
+    const land = { land: [] };
+    return Object.assign(Promise.resolve(land), { unwrap: () => Promise.resolve(land) });
+  }),
+}));
 
 describe('AnalyticsPage', () => {
   let store: TestStore;

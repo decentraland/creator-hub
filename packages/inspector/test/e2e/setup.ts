@@ -30,6 +30,7 @@ beforeAll(async () => {
   browser = await chromium.launch({
     headless: process.env.CI ? true : false,
     slowMo: process.env.CI ? 100 : 50, // Increase slowMo for CI
+    timeout: 60_000, // slow shared runners can exceed the 30s launch default
     args: [
       '--disable-dev-shm-usage',
       '--disable-web-security',
@@ -44,6 +45,15 @@ beforeAll(async () => {
     ],
   });
   page = await browser.newPage();
+
+  // Raise Playwright's 30s default for slow CI runners; explicit timeouts are unaffected.
+  page.setDefaultTimeout(60_000);
+
+  // Feed browser console + page errors to the failure diagnostics (App.waitUntilReady).
+  const consoleLogs: string[] = [];
+  page.on('console', msg => consoleLogs.push(`[${msg.type()}] ${msg.text()}`));
+  page.on('pageerror', err => consoleLogs.push(`[pageerror] ${err.message}`));
+  (global as any).__e2eConsoleLogs = consoleLogs;
 
   // Optimize page performance
   await page.addInitScript(() => {
@@ -77,7 +87,9 @@ beforeAll(async () => {
   // 90s (Playwright defaults to 30s): the dev server serves a ~43MB unminified
   // bundle, and on a heavily-loaded runner the first byte alone can take >10s.
   // A genuinely dead server still fails fast via the fetch() check above.
-  await page.goto(`${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`, {
+  const navUrl = `${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`;
+  (global as any).__e2eNavUrl = navUrl;
+  await page.goto(navUrl, {
     timeout: 90_000,
   });
 

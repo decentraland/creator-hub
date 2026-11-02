@@ -3,7 +3,7 @@ import type { Props as DropdownProps } from '../Dropdown/types';
 
 export type Props = Pick<
   DropdownProps,
-  'className' | 'disabled' | 'label' | 'value' | 'onChange'
+  'className' | 'disabled' | 'error' | 'label' | 'value' | 'onChange'
 > & {
   components?: Component[];
 };

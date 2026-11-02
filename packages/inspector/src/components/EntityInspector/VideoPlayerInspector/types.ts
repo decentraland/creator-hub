@@ -10,5 +10,9 @@ export type VideoPlayerInput = {
   playing?: boolean;
   loop?: boolean;
   volume?: string;
+  position?: string;
   playbackRate?: string;
+  spatial?: boolean;
+  spatialMinDistance?: string;
+  spatialMaxDistance?: string;
 };

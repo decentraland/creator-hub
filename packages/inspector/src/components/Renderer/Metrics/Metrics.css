@@ -34,6 +34,11 @@
   color: var(--base-06);
 }
 
+.Metrics .Buttons .Button.Disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .Metrics .Buttons .Button svg {
   color: var(--base-02);
 }

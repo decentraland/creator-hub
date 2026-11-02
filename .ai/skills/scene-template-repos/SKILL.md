@@ -32,7 +32,7 @@ There are 12 scene template repos. The blank scene lives in the `decentraland` o
 | 11  | mansion-template-scene   | decentraland-scenes | Mansion                              |
 | 12  | Video-Streaming-Template | decentraland-scenes | Video Streaming                      |
 
-The blank scene repo is referenced in the Creator Hub codebase at `packages/creator-hub/preload/src/modules/constants.ts` as `EMPTY_SCENE_TEMPLATE_REPO`. The other 11 templates are fetched dynamically from the API at `https://studios-admin.decentraland.org/items/resources?limit=-1` filtered by `scene_type` containing "Scene template".
+The blank scene repo is referenced in the Creator Hub codebase at `packages/creator-hub/preload/src/modules/constants.ts` as `EMPTY_SCENE_TEMPLATE_REPO`. The other 11 templates are the hardcoded `TEMPLATES` list in `packages/creator-hub/renderer/src/modules/templates.ts` (title, description, tags, difficulty, repo, artwork under `packages/creator-hub/renderer/assets/templates/`). They used to be fetched from the Decentraland Studios resources API, which is being retired.
 
 ## Local directory convention
 
@@ -56,13 +56,13 @@ Create a `scene-templates/` folder as a sibling to this repo (i.e. in the same p
 
 ## Validating the template list
 
-Before cloning or applying changes, always verify the current list of templates by fetching from the API:
+Before cloning or applying changes, always verify the current list of templates against the Creator Hub source:
 
 ```bash
-curl -s "https://studios-admin.decentraland.org/items/resources?limit=-1" | jq '[.data[] | select(.scene_type | test("Scene template")) | {title, github_link}]'
+grep -E "^\s+repo: " packages/creator-hub/renderer/src/modules/templates.ts
 ```
 
-Compare the returned `github_link` values against the table above. If templates have been added, removed, or their repos changed, inform the user and update the workflow accordingly. The blank scene (`sdk-empty-scene-template`) is not returned by this API — it is hardcoded in the Creator Hub codebase.
+Compare the `repo` values against the table above. If templates have been added, removed, or their repos changed, inform the user and update the workflow accordingly. The blank scene (`sdk-empty-scene-template`) is not in that list — it lives in `constants.ts` as noted above.
 
 ## Cloning
 

@@ -10,7 +10,7 @@
               {
                 "clip": "armature_psAction",
                 "playing": false,
-                "weight": 0.9399999976158142,
+                "weight": 1,
                 "speed": 1,
                 "loop": true,
                 "shouldReset": false
@@ -18,7 +18,7 @@
               {
                 "clip": "RaysAnim",
                 "playing": false,
-                "weight": -1,
+                "weight": 1,
                 "speed": 1,
                 "loop": false,
                 "shouldReset": false
@@ -36,6 +36,22 @@
             "src": "{assetPath}/spinner.glb",
             "visibleMeshesCollisionMask": 0,
             "invisibleMeshesCollisionMask": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/VisualEffect.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"animation\":{\"type\":\"string\",\"optional\":true,\"value\":\"RaysAnim\",\"tooltip\":\"Name of the animation clip in the effect's model that plays when the effect is triggered.\"},\"loop\":{\"type\":\"boolean\",\"optional\":true,\"value\":true,\"tooltip\":\"If true, the animation keeps playing until the effect is hidden.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"explosion.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played when the effect is triggered. Leave empty for no sound.\"},\"hideAfter\":{\"type\":\"number\",\"optional\":true,\"value\":0,\"tooltip\":\"Seconds until the effect hides itself again after being triggered. Use 0 to keep it visible until Hide is called.\"},\"delayedSound\":{\"type\":\"string\",\"optional\":true,\"value\":\"\",\"tooltip\":\"Name of a second audio file inside this smart item's folder, played some seconds after the effect is triggered (e.g. a firework explosion after the launch). Leave empty for no sound.\"},\"delayedSoundDelay\":{\"type\":\"number\",\"optional\":true,\"value\":0,\"tooltip\":\"Seconds after the trigger before the delayed sound plays.\"}},\"actions\":[{\"methodName\":\"trigger\",\"description\":\"Shows the effect, playing its animation and sound\",\"params\":{}},{\"methodName\":\"hide\",\"description\":\"Hides the effect and stops its animation\",\"params\":{}}]}"
+              }
+            ]
           }
         }
       }
@@ -78,59 +94,16 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play anim",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"RaysAnim\",\"loop\":true}"
-              },
-              {
-                "name": "Reset",
-                "type": "stop_animation",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Show",
-                "type": "set_visibility",
-                "jsonPayload": "{\"visible\":true,\"collider\":0}"
-              },
-              {
-                "name": "Hide",
-                "type": "set_visibility",
-                "jsonPayload": "{\"visible\":false,\"collider\":0}",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Delay hide",
-                "type": "start_delay",
-                "jsonPayload": "{\"actions\":[\"Hide\"],\"timeout\":1.1}"
-              },
-              {
+                "type": "call_script_method",
                 "name": "Pop Up",
-                "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Play anim\",\"Show\",\"Sound\"]}",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/VisualEffect.ts\",\"methodName\":\"trigger\",\"params\":{}}"
               },
               {
-                "name": "Sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/explosion.mp3\"}"
+                "type": "call_script_method",
+                "name": "Hide",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/VisualEffect.ts\",\"methodName\":\"hide\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Sunny Spinner",
-            "fields": [],
-            "helpTooltip": {
-              "text": "A spinning set of sun rays that can look very cool. It is invisible until it is activated by other smart items, for example a trigger area or a button."
-            },
-            "version": 1
           }
         }
       }

@@ -145,5 +145,13 @@ describe('NumberUtils', () => {
         { clip: 'walk', weight: 1, speed: 1, loop: false, playing: false, shouldReset: false },
       ]);
     });
+
+    it('falls back to weight 1 when the reported weight is out of range', () => {
+      const states = mapAnimationsToStates([
+        { name: 'main', weight: -1 },
+        { name: 'close', weight: 2 },
+      ]);
+      expect(states.map($ => $.weight)).toEqual([1, 1]);
+    });
   });
 });

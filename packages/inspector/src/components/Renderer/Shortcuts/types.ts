@@ -1,5 +1,5 @@
 export interface Props {
-  canvas: React.RefObject<HTMLCanvasElement>;
+  viewport: React.RefObject<HTMLElement>;
   onResetCamera: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;

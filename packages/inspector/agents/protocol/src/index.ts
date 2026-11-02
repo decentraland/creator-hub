@@ -134,12 +134,6 @@ export type AgentToPage =
   // inspector selects that spawn point / target (spawn points are scene metadata,
   // not entities, so this is separate from the entity `pick`).
   | { kind: 'spawn-pick'; index: number; target: 'position' | 'cameraTarget' }
-  // Reply to `query-animations`: the animation clip names of the entity's loaded
-  // GLTF (empty if none / not loaded). The agent reads them from the engine's
-  // `GltfContainerLoadingState.animationNames` — a field the inspector's older
-  // `@dcl/ecs` can't decode, so it must come from the engine over the bus. `id`
-  // correlates the reply with its request.
-  | { kind: 'animations'; id: number; names: string[] }
   // The editor (free-fly) camera's live pose, streamed while free-cam is active so
   // the inspector's minimap can track it (the camera lives in the engine). Both
   // vectors are SCENE-LOCAL (the agent subtracts the scene offset) since the
@@ -163,7 +157,13 @@ export type AgentToPage =
   // engine records it as a SceneError). The agent polls the scene logs and reports
   // each NEW error so the host can notify the user and stop the scene (#1448).
   // `message` is the error's first log line.
-  | { kind: 'scene-error'; message: string };
+  | { kind: 'scene-error'; message: string }
+  // The scene entity under the pointer while editing is OFF (Interact toggled on),
+  // so the host can show its PointerEvents hover hint — e.g. "Press E" (#1476). The
+  // engine's own hover-hint HUD isn't mounted in the editor. `entity` 0 = pointer
+  // over nothing / cleared. Only the id is sent; the host reads the hoverText/key
+  // from its own ECS (the agent's separate engine can't read the scene's values).
+  | { kind: 'hover'; entity: number };
 
 /** One selected entity's world pose, supplied by the inspector (the agent can't
  * read the inspected scene's Transform from its own engine). */
@@ -221,11 +221,6 @@ export type PageToScene =
   // pointer is stale (the host overlay captures the drag). Omit `ndc` to fall back
   // to the engine's current pointer. `id` correlates the `drop-point` reply.
   | { kind: 'query-drop-point'; id: number; ndc?: { x: number; y: number } }
-  // Ask the agent for the animation clip names of an entity's loaded GLTF. The
-  // agent reads `GltfContainerLoadingState.animationNames` from the engine (the
-  // inspector's `@dcl/ecs` can't decode that field); answered by `animations`.
-  // `id` correlates request/reply.
-  | { kind: 'query-animations'; id: number; entity: number }
   // Toggle the editor camera. `avatar` = the engine's native player camera (walk
   // /look/zoom); `free` = an editor fly-camera the agent drives (WASD + mouse-
   // look), with avatar input disabled. The inspector's camera toggle sends this.

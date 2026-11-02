@@ -122,7 +122,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           border
           initialOpen={false}
           rightContent={
-            <MoreOptionsMenu>
+            <MoreOptionsMenu className="GltfNodeModifiersMenu">
               <div className="RightMenu">
                 <RemoveButton onClick={() => removeSwap(idx)}>Remove Material Swap</RemoveButton>
               </div>

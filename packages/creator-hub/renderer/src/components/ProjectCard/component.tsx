@@ -33,8 +33,8 @@ export function ProjectCard({
 
   const handleMouseLeaveVideo = useCallback(
     ({ currentTarget: video }: React.MouseEvent<HTMLVideoElement>) => {
-      video.pause();
-      video.currentTime = 0;
+      // load() rather than pause + rewind: it is what brings the poster back.
+      video.load();
     },
     [],
   );
@@ -57,6 +57,7 @@ export function ProjectCard({
         <video
           className="video"
           src={videoUrl}
+          poster={imageUrl}
           onMouseEnter={handleMouseEnterVideo}
           onMouseLeave={handleMouseLeaveVideo}
         />

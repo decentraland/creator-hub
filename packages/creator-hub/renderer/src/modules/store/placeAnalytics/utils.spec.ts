@@ -14,7 +14,7 @@ function buildPlace(
     thumbnail: 'thumbnail.png',
     totalVisits: 0,
     day7Retention: 0,
-    avgPlaytime: 0,
+    medianPlaytime: 0,
     concurrentUsers: 0,
     hasNoData: false,
     ...overrides,

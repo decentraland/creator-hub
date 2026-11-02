@@ -1,6 +1,32 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
-import { getAvailableCatalystServer } from './utils';
+import type { AuthIdentity } from 'decentraland-crypto-fetch';
+import type * as SharedFetch from '/shared/fetch';
+import type { DeploymentComponentsStatus, Info } from '/@/lib/deploy';
+
+const REGISTRY = 'https://asset-bundle-registry.example.org';
+const ABGEN_REGISTRY = 'https://asset-bundle-registry-abgen.example.org';
+
+const fetchMock = vi.fn();
+const fetchWorldLimitsMock = vi.fn();
+const fetchReplacedScenesParcelsMock = vi.fn();
+
+vi.mock('/@/config', () => ({
+  config: {
+    get: (key: string) => (key === 'ASSET_BUNDLE_REGISTRY_ABGEN_URL' ? ABGEN_REGISTRY : REGISTRY),
+  },
+}));
+
+vi.mock('/shared/fetch', async importOriginal => ({
+  ...(await importOriginal<typeof SharedFetch>()),
+  fetch: (...args: unknown[]) => fetchMock(...args),
+}));
+
+vi.mock('@dcl/crypto', () => ({
+  Authenticator: {
+    signPayload: vi.fn(() => [{ type: 'SIGNER', payload: '0xtest', signature: '' }]),
+  },
+}));
 
 vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
   getCatalystServersFromCache: vi.fn((network: string) => {
@@ -18,6 +44,25 @@ vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
     }
   }),
 }));
+
+const WORLD_LIMITS_TIMEOUT_MS = 5000;
+
+vi.mock('/@/lib/worlds', () => ({
+  WORLD_LIMITS_TIMEOUT_MS,
+  Worlds: class {
+    fetchWorldLimits = fetchWorldLimitsMock;
+    fetchReplacedScenesParcels = fetchReplacedScenesParcelsMock;
+  },
+}));
+
+// Imported after the mocks: `utils` reads the registry hosts from config at module load.
+const {
+  deploy,
+  fetchDeploymentStatus,
+  fetchWorldSceneSizeLimit,
+  getAvailableCatalystServer,
+  getGenesisCitySceneSizeLimit,
+} = await import('./utils');
 
 describe('getAvailableCatalystServer', () => {
   it('should return a server for sepolia network', () => {
@@ -58,5 +103,278 @@ describe('getAvailableCatalystServer', () => {
         'No available catalyst servers to try',
       );
     });
+  });
+});
+
+describe('fetchDeploymentStatus', () => {
+  const SCENE_ID = 'QmScene123';
+  const statusUrl = (registry: string) => `${registry}/entities/status/${SCENE_ID}`;
+  const requestedUrls = () => fetchMock.mock.calls.map(([url]) => url.toString());
+
+  /** The registry's `/entities/status/:id` body, pending everywhere unless overridden. */
+  const registryResponse = (overrides: Record<string, unknown> = {}) => ({
+    ok: true,
+    status: 200,
+    json: () =>
+      Promise.resolve({
+        complete: false,
+        catalyst: 'complete',
+        assetBundles: { mac: 'pending', windows: 'pending' },
+        lods: { mac: 'pending', windows: 'pending' },
+        ...overrides,
+      }),
+  });
+
+  const bothPlatforms = (status: string) => ({ mac: status, windows: status });
+
+  let identity: AuthIdentity;
+  let info: Info;
+  let status: DeploymentComponentsStatus;
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    identity = {} as AuthIdentity;
+    info = { rootCID: SCENE_ID } as Info;
+  });
+
+  describe('when the abgen pipeline is off', () => {
+    beforeEach(async () => {
+      fetchMock.mockResolvedValue(registryResponse({ assetBundles: bothPlatforms('complete') }));
+      status = await fetchDeploymentStatus(info, identity, false);
+    });
+
+    it('should read the status from the regular registry in a single request', () => {
+      expect(requestedUrls()).toEqual([statusUrl(REGISTRY)]);
+    });
+
+    it('should derive both statuses from that response', () => {
+      expect(status).toEqual({ catalyst: 'complete', assetBundle: 'complete' });
+    });
+  });
+
+  describe('when the abgen pipeline is on', () => {
+    beforeEach(async () => {
+      fetchMock.mockResolvedValue(registryResponse({ assetBundles: bothPlatforms('complete') }));
+      status = await fetchDeploymentStatus(info, identity, true);
+    });
+
+    it('should read the status from the abgen registry alone', () => {
+      expect(requestedUrls()).toEqual([statusUrl(ABGEN_REGISTRY)]);
+    });
+
+    it('should derive both statuses from that response', () => {
+      expect(status).toEqual({ catalyst: 'complete', assetBundle: 'complete' });
+    });
+  });
+
+  describe('when the registry still reports the lods as pending', () => {
+    it('should report the deployment as complete, since lods are not a component', async () => {
+      fetchMock.mockResolvedValue(
+        registryResponse({
+          assetBundles: bothPlatforms('complete'),
+          lods: bothPlatforms('pending'),
+        }),
+      );
+
+      await expect(fetchDeploymentStatus(info, identity, true)).resolves.toEqual({
+        catalyst: 'complete',
+        assetBundle: 'complete',
+      });
+    });
+  });
+
+  describe('when the registry does not know the entity yet', () => {
+    let cancelErrorBody: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      cancelErrorBody = vi.fn().mockResolvedValue(undefined);
+      fetchMock.mockResolvedValue({ ok: false, status: 404, body: { cancel: cancelErrorBody } });
+    });
+
+    it('should reject so the caller retries instead of reporting a partial status', async () => {
+      await expect(fetchDeploymentStatus(info, identity, true)).rejects.toThrow(
+        'Error fetching deployment status: 404',
+      );
+    });
+
+    it('should release the error body rather than leave it to the collector', async () => {
+      await fetchDeploymentStatus(info, identity, true).catch(() => undefined);
+
+      expect(cancelErrorBody).toHaveBeenCalled();
+    });
+  });
+});
+
+const MiB = 1024 * 1024;
+
+describe('getGenesisCitySceneSizeLimit', () => {
+  it('should allow 15 MiB per parcel', () => {
+    expect(getGenesisCitySceneSizeLimit(3)).toBe(3 * 15 * MiB);
+  });
+});
+
+describe('fetchWorldSceneSizeLimit', () => {
+  const PARCELS = ['0,0', '0,1', '1,0', '1,1'];
+
+  let limit: number | null;
+
+  beforeEach(() => {
+    fetchWorldLimitsMock.mockReset();
+    fetchReplacedScenesParcelsMock.mockReset();
+  });
+
+  describe('when the scene replaces deployed scenes', () => {
+    beforeEach(async () => {
+      fetchReplacedScenesParcelsMock.mockResolvedValueOnce([
+        ['5,5', '0,1', '0,0'],
+        ['1,1', '2,1'],
+      ]);
+      fetchWorldLimitsMock.mockResolvedValueOnce({ maxSceneSizeInBytes: 200 * MiB });
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
+    });
+
+    it("should look up the scenes overlapping the scene's parcels", () => {
+      expect(fetchReplacedScenesParcelsMock).toHaveBeenCalledWith(
+        'name.dcl.eth',
+        PARCELS,
+        expect.any(AbortSignal),
+      );
+    });
+
+    it('should ask for the limits with one shared parcel per replaced scene', () => {
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith(
+        'name.dcl.eth',
+        ['0,1', '1,1'],
+        expect.any(AbortSignal),
+      );
+    });
+
+    it('should bound both requests with the same deadline', () => {
+      expect(fetchWorldLimitsMock.mock.calls[0][2]).toBe(
+        fetchReplacedScenesParcelsMock.mock.calls[0][2],
+      );
+    });
+
+    it("should use the server's scene size limit", () => {
+      expect(limit).toBe(200 * MiB);
+    });
+  });
+
+  describe('when the scene replaces no deployed scene', () => {
+    beforeEach(async () => {
+      fetchReplacedScenesParcelsMock.mockResolvedValueOnce([]);
+      fetchWorldLimitsMock.mockResolvedValueOnce({ maxSceneSizeInBytes: 200 * MiB });
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
+    });
+
+    it("should ask for the limits with one of the scene's parcels", () => {
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith(
+        'name.dcl.eth',
+        ['0,0'],
+        expect.any(AbortSignal),
+      );
+    });
+  });
+
+  describe('when the world is emptied before deploying', () => {
+    beforeEach(async () => {
+      fetchWorldLimitsMock.mockResolvedValueOnce({ maxSceneSizeInBytes: 200 * MiB });
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS, { replacesWorld: true });
+    });
+
+    it('should not look up the overlapping scenes', () => {
+      expect(fetchReplacedScenesParcelsMock).not.toHaveBeenCalled();
+    });
+
+    it('should ask for the limit without parcels, which credits back the whole world', () => {
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith(
+        'name.dcl.eth',
+        [],
+        expect.any(AbortSignal),
+      );
+    });
+
+    it("should use the server's scene size limit", () => {
+      expect(limit).toBe(200 * MiB);
+    });
+  });
+
+  describe('when the replaced scenes cannot be looked up', () => {
+    beforeEach(async () => {
+      fetchReplacedScenesParcelsMock.mockResolvedValueOnce(null);
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
+    });
+
+    it('should not ask for the limits', () => {
+      expect(fetchWorldLimitsMock).not.toHaveBeenCalled();
+    });
+
+    it('should report the limit as unknown', () => {
+      expect(limit).toBeNull();
+    });
+  });
+
+  describe('when the worlds server cannot report its limits', () => {
+    beforeEach(async () => {
+      fetchReplacedScenesParcelsMock.mockResolvedValueOnce([]);
+      fetchWorldLimitsMock.mockResolvedValueOnce(null);
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
+    });
+
+    it('should report the limit as unknown', () => {
+      expect(limit).toBeNull();
+    });
+  });
+
+  describe('when the lookup uses most of the deadline and the limits request never answers', () => {
+    let limitsSignal: AbortSignal;
+    let request: Promise<number | null>;
+
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      fetchReplacedScenesParcelsMock.mockImplementationOnce(
+        () => new Promise(resolve => setTimeout(() => resolve([]), WORLD_LIMITS_TIMEOUT_MS - 1000)),
+      );
+      fetchWorldLimitsMock.mockImplementationOnce(
+        (_worldName: string, _parcels: string[], signal: AbortSignal) => {
+          limitsSignal = signal;
+          return new Promise(resolve => signal.addEventListener('abort', () => resolve(null)));
+        },
+      );
+      request = fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
+      await vi.advanceTimersByTimeAsync(WORLD_LIMITS_TIMEOUT_MS);
+      limit = await request;
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should abort the limits request when the shared deadline elapses, not 5 s after it started', () => {
+      expect({ aborted: limitsSignal.aborted, limit }).toEqual({ aborted: true, limit: null });
+    });
+  });
+});
+
+describe('deploy', () => {
+  const URL = 'http://localhost:4000/api';
+  const PAYLOAD = { address: '0xabc', authChain: [], chainId: ChainId.ETHEREUM_MAINNET };
+
+  let cancelBody: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    cancelBody = vi.fn(async () => undefined);
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({ ok: true, status: 200, body: { cancel: cancelBody } });
+    await deploy(URL, PAYLOAD);
+  });
+
+  it('should give the blocking request far longer than an upload of a large scene takes', () => {
+    const [, , timeoutMs] = fetchMock.mock.calls[0];
+    expect(timeoutMs).toBeGreaterThanOrEqual(30 * 60 * 1000);
+  });
+
+  it('should release the unread response body', () => {
+    expect(cancelBody).toHaveBeenCalled();
   });
 });

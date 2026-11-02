@@ -45,11 +45,45 @@ class AssetsPageObject {
     await this.waitForRenderer();
   }
 
+  async search(term: string) {
+    await page.fill('.Assets .assets-catalog-header-search input', term);
+    await page.waitForSelector(`.Assets .assets-catalog-asset[data-test-label="${term}"]`);
+  }
+
+  // Hovers the tile and measures where the name tooltip lands: how far above the
+  // tile its bottom edge sits, and how far below the panel header its top edge sits
+  // (negative means it covers the header).
+  async getNameTooltipPlacement(asset: string) {
+    const tile = page.locator(`.Assets .assets-catalog-asset[data-test-label="${asset}"]`).first();
+    await tile.hover();
+    const tooltip = page.locator('.ui.popup.InfoTooltip').first();
+    await tooltip.waitFor({ state: 'visible', timeout: 5_000 });
+    const header = page.locator('.Assets .assets-catalog-header-title').first();
+    const [tileBox, tooltipBox, headerBox] = await Promise.all([
+      tile.boundingBox(),
+      tooltip.boundingBox(),
+      header.boundingBox(),
+    ]);
+    await page.mouse.move(0, 0);
+    return {
+      gapAbove: tileBox!.y - (tooltipBox!.y + tooltipBox!.height),
+      clearsHeaderBy: tooltipBox!.y - (headerBox!.y + headerBox!.height),
+    };
+  }
+
   async openFolder(path: string) {
     const element = await page.$(`.FolderView .Tile[data-test-id="${path}"]`);
     if (element) {
       await element.click({ clickCount: 2 });
     }
+  }
+
+  async addFileSystemAssetFromTree(path: string) {
+    await dragAndDrop(
+      `.editor-assets-tree .Tree[data-test-id="${path}"] .item-area`,
+      '.Renderer canvas',
+    );
+    await this.waitForRenderer();
   }
 
   async addFileSystemAsset(path: string) {

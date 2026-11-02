@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/teal_apartment_building/teal_apartment_building.glb"
+          }
+        }
+      }
+    }
+  ]
+}

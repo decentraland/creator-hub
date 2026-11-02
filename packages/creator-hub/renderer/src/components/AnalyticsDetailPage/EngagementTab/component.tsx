@@ -61,7 +61,7 @@ export function EngagementTab({ engagement }: Props) {
           <ScalarCard
             title={t('analytics.detail.engagement.playtime.title')}
             description={t('analytics.detail.engagement.playtime.description')}
-            value={engagement.avgPlaytime}
+            value={engagement.medianPlaytime}
           />
           <ScalarCard
             title={t('analytics.detail.engagement.afk.title')}

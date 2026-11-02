@@ -17,16 +17,13 @@ export const getPublishButtonText = ({
   }
 
   if (deployment?.status === 'pending') {
-    const { catalyst, assetBundle, lods } = deployment.componentsStatus;
+    const { catalyst, assetBundle } = deployment.componentsStatus;
 
     if (catalyst === 'pending') {
       return t('modal.publish_project.deploy.deploying.step.uploading');
     }
     if (assetBundle === 'pending') {
       return t('modal.publish_project.deploy.deploying.step.converting');
-    }
-    if (lods === 'pending') {
-      return t('modal.publish_project.deploy.deploying.step.optimizing');
     }
 
     return t('modal.publish_project.deploy.deploying.step.loading');

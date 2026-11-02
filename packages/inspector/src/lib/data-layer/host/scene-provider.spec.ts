@@ -8,7 +8,7 @@ import { createEngineContext } from './utils/engine';
 
 async function mockedRpcInit() {
   const callbackFunctions: OnChangeFunction[] = [];
-  const fs = await feededFileSystem();
+  const { fs } = await feededFileSystem();
   const engineContext = createEngineContext({
     onChangeFunction: (entity, operation, component, componentValue) => {
       callbackFunctions.forEach(func => func(entity, operation, component, componentValue));
@@ -23,7 +23,7 @@ async function mockedRpcInit() {
   return { fs, engine, addEngineListener };
 }
 
-async function readSceneJson(fs: Awaited<ReturnType<typeof feededFileSystem>>) {
+async function readSceneJson(fs: Awaited<ReturnType<typeof feededFileSystem>>['fs']) {
   const buffer = await fs.readFile('scene.json');
   return JSON.parse(new TextDecoder().decode(buffer));
 }
@@ -86,6 +86,41 @@ describe('SceneProvider', () => {
 
       const sceneJsonAfter = await readSceneJson(mocked.fs);
       expect(sceneJsonAfter.landscapeTerrain).toBe(true);
+    });
+  });
+
+  describe('when the scene name keeps changing while the previous change is still being saved', () => {
+    it('should persist the last name into scene.json', async () => {
+      const mocked = await mockedRpcInit();
+      // A slow file system keeps the state manager busy persisting the first keystroke while
+      // the next ones land, like the real host writing scene.json + main.composite to disk.
+      const fs = {
+        ...mocked.fs,
+        writeFile: async (path: string, content: Buffer) => {
+          await new Promise(resolve => setTimeout(resolve, 20));
+          return mocked.fs.writeFile(path, content);
+        },
+      };
+      await initRpcMethods(fs, mocked.engine, mocked.addEngineListener);
+
+      const Scene = mocked.engine.getComponent(
+        EditorComponentNames.Scene,
+      ) as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>;
+
+      const typed = ['My s', 'My sc', 'My scene', 'My scene template'];
+      for (const name of typed) {
+        const current = Scene.get(mocked.engine.RootEntity);
+        Scene.createOrReplace(
+          mocked.engine.RootEntity,
+          serializationRoundTrip(Scene, { ...current, name }),
+        );
+        await mocked.engine.update(1);
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const sceneJson = await readSceneJson(mocked.fs);
+      expect(sceneJson.display.title).toBe('My scene template');
     });
   });
 });

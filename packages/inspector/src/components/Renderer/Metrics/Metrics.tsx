@@ -39,6 +39,11 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const entitiesOutOfBoundaries = useAppSelector(getEntitiesOutOfBoundaries);
   const hasCustomCode = useAppSelector(getHasCustomCode);
   const [showMetrics, setShowMetrics] = React.useState(false);
+  // Scene metrics are computed by introspecting the renderer's own scene graph.
+  // Only Babylon exposes that; the Bevy engine runs out-of-process in an iframe,
+  // so its metrics facet reports zeros. Rather than show false 0s, gray the tab
+  // out under any non-Babylon renderer (#1368).
+  const metricsUnavailable = sdk.currentRendererId !== 'babylon';
   const [sceneLayout, setSceneLayout] = React.useState<Layout>({
     base: { x: 0, y: 0 },
     parcels: [],
@@ -122,9 +127,10 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
     (e: React.MouseEvent<HTMLButtonElement> | MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      if (metricsUnavailable) return;
       setShowMetrics(value => !value);
     },
-    [showMetrics, setShowMetrics],
+    [setShowMetrics, metricsUnavailable],
   );
 
   const overlayRef = useOutsideClick(handleToggleMetricsOverlay);
@@ -162,11 +168,22 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
     <div className="Metrics">
       <div className="Buttons">
         <Button
-          className={cx({ Active: showMetrics, LimitExceeded: isAnyLimitExceeded(limitsExceeded) })}
+          className={cx({
+            Active: showMetrics,
+            Disabled: metricsUnavailable,
+            LimitExceeded: !metricsUnavailable && isAnyLimitExceeded(limitsExceeded),
+          })}
+          title={
+            metricsUnavailable
+              ? 'Scene metrics are only available with the Babylon renderer'
+              : undefined
+          }
           onClick={handleToggleMetricsOverlay}
         >
           <SquaresGridIcon size={ICON_SIZE} />
-          {isAnyLimitExceeded(limitsExceeded) && <span className="WarningDot" />}
+          {!metricsUnavailable && isAnyLimitExceeded(limitsExceeded) && (
+            <span className="WarningDot" />
+          )}
         </Button>
       </div>
       {showMetrics && (

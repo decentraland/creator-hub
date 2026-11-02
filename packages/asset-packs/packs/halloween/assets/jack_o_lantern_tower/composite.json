@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/jack_o_lantern_tower/jack_o_lantern_tower.glb"
+          }
+        }
+      }
+    }
+  ]
+}

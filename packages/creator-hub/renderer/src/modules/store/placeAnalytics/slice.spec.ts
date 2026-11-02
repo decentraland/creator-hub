@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MetricsWindow, SortBy } from '../../../../../shared/types/place-analytics';
+import { FilterBy } from '../../../../../shared/types/manage';
 import { AuthServerProvider } from '../../../lib/auth';
 import type { AnalyticsPlace } from '../../../lib/analyticsLocations';
 import type { LocationMetrics } from '../../../lib/metricsApi';
 import { fetchAnalytics as fetchAnalyticsSnapshot } from '../../../lib/placeAnalytics';
-import { actions as managementActions, fetchAllManagedProjectsData } from '../management';
 import { createTestStore } from '../../../../tests/utils/testStore';
+import type * as ManagementUtils from '../management/utils';
+import { fetchAllDeployedWorlds } from '../management/utils';
+import { actions as managementActions } from '../management';
 import { actions, fetchAnalytics, initialState, selectors } from './slice';
 
 const TEST_ADDRESS = '0x123abc';
@@ -56,35 +59,84 @@ vi.mock('../../../lib/auth', () => ({
   AuthServerProvider: { getAccount: vi.fn() },
 }));
 
-vi.mock('/@/modules/store/management', async () => {
-  const actual = await import('../management');
-  return { ...actual, fetchAllManagedProjectsData: vi.fn() };
+vi.mock('../../../lib/worlds', async () => {
+  const actual = await import('../../../lib/worlds');
+  return { ...actual, Worlds: vi.fn() };
 });
 
-/**
- * Stands in for dispatching the management thunk: RTK hands back a promise
- * carrying `unwrap`, which is what the slice awaits.
- */
-const managedProjects = (outcome: Promise<unknown[]>) => () => {
-  const dispatched = outcome as Promise<unknown[]> & { unwrap: () => Promise<unknown[]> };
-  dispatched.unwrap = () => outcome;
-  return dispatched;
-};
+vi.mock('../management/utils', async importOriginal => ({
+  ...(await importOriginal<ManagementUtils>()),
+  fetchAllDeployedWorlds: vi.fn(),
+}));
+
+vi.mock('/@/modules/store/land', async () => {
+  const actual = await import('../land');
+
+  /** What `dispatch(thunk())` resolves to: a promise that also carries `unwrap`. */
+  const asDispatchedThunk = <T>(value: T) =>
+    Object.assign(Promise.resolve(value), { unwrap: () => Promise.resolve(value) });
+
+  return {
+    ...actual,
+    fetchLandList: vi.fn(() => () => asDispatchedThunk({ land: [] as unknown[] })),
+  };
+});
 
 describe('placeAnalytics slice', () => {
   let store: ReturnType<typeof createTestStore>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Re-applied per test: `clearAllMocks` resets calls, not implementations.
-    vi.mocked(fetchAllManagedProjectsData).mockImplementation((() =>
-      managedProjects(Promise.resolve([]))) as any);
+    vi.mocked(fetchAllDeployedWorlds).mockResolvedValue([]);
     store = createTestStore();
+  });
+
+  describe('when the manage page has already narrowed its own list', () => {
+    const OWN_WORLDS = [{ id: 'bananarama.dcl.eth' }] as any;
+
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+      vi.mocked(fetchAllDeployedWorlds).mockResolvedValue(OWN_WORLDS);
+    });
+
+    it('should build the list from its own worlds fetch, not the manage page state', async () => {
+      store.dispatch(managementActions.setSearchQuery('nothing-matches-this'));
+      store.dispatch(managementActions.setPublishFilter(FilterBy.UNPUBLISHED));
+
+      await store.dispatch(fetchAnalytics());
+
+      expect(fetchAllDeployedWorlds).toHaveBeenCalledWith(expect.anything(), TEST_ADDRESS);
+      expect(fetchAnalyticsSnapshot).toHaveBeenCalledWith(OWN_WORLDS, []);
+    });
+
+    it('should not read a management fetch that is still in flight', async () => {
+      store.dispatch(managementActions.setPage(3));
+
+      await store.dispatch(fetchAnalytics());
+
+      expect(fetchAnalyticsSnapshot).toHaveBeenCalledWith(OWN_WORLDS, []);
+    });
+  });
+
+  describe('when a fetch is already in flight', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAllDeployedWorlds).mockResolvedValue([]);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+    });
+
+    it('should not start a second one that could overwrite it with staler data', async () => {
+      await Promise.all([store.dispatch(fetchAnalytics()), store.dispatch(fetchAnalytics())]);
+
+      expect(fetchAnalyticsSnapshot).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('when fetching analytics with a connected account', () => {
     beforeEach(() => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAllDeployedWorlds).mockResolvedValue([]);
       vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
     });
 
@@ -156,42 +208,10 @@ describe('placeAnalytics slice', () => {
     });
   });
 
-  describe('when management data is already in some other state', () => {
-    beforeEach(() => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
-    });
-
-    /*
-     * `management.status` is written by two thunks, one nested in the other, and
-     * `fetchManagedProjectsFiltered` sets it while honouring pagination. So no
-     * value of it proves the project list is complete, and analytics has to load
-     * the list itself rather than trust the flag.
-     */
-    it.each([
-      ['loading', 'pending'],
-      ['succeeded', 'fulfilled'],
-      ['failed', 'rejected'],
-    ])('should still load the project list when management is %s', async (_status, lifecycle) => {
-      store.dispatch({
-        type: `management/fetchAllManagedProjectsData/${lifecycle}`,
-        payload: [],
-        error: { message: 'whatever management did' },
-      });
-
-      await store.dispatch(fetchAnalytics());
-
-      expect(fetchAllManagedProjectsData).toHaveBeenCalledWith({ address: TEST_ADDRESS });
-    });
-  });
-
   describe('when loading the project list fails', () => {
     beforeEach(() => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      const failed = Promise.reject<unknown[]>(new Error('could not load your scenes'));
-      failed.catch(() => {}); // the slice awaits `unwrap`, not this promise
-      vi.mocked(fetchAllManagedProjectsData).mockImplementation((() =>
-        managedProjects(failed)) as any);
+      vi.mocked(fetchAllDeployedWorlds).mockRejectedValue(new Error('could not load your scenes'));
     });
 
     it('should fail rather than report an empty list of places', async () => {
