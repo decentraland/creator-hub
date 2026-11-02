@@ -9,7 +9,8 @@ import { type EditorConfig } from '/shared/types/config';
 import { EditorType } from '/shared/types/code';
 import { track } from './analytics';
 import { getConfigStorage } from './config';
-import { getBundledNodePath, joinEnvPaths } from './path';
+import { resolveNodeRuntime } from './node-runtime';
+import { joinEnvPaths } from './path';
 import { getInjectedPathEntries } from './setup-node';
 
 const exec = promisify(execCallback);
@@ -24,7 +25,7 @@ const execFile = promisify(execFileCallback);
  * it, where `node -v` or `npm install` re-launches Creator Hub — and the single-instance lock
  * turns that into "the Hub took focus", with no output and no error to explain it.
  *
- * The real bundled Node's directory goes in front instead, so `node` and `npm` still resolve
+ * The resolved Node runtime's directory goes in front instead, so `node` and `npm` still resolve
  * to something that works rather than simply disappearing.
  */
 function getEditorPath() {
@@ -34,8 +35,10 @@ function getEditorPath() {
     .split(separator)
     .filter(entry => entry && !injected.has(path.resolve(entry)));
 
-  const bundledNode = getBundledNodePath();
-  return joinEnvPaths(bundledNode ? path.dirname(bundledNode) : undefined, ...inherited);
+  // The Electron fallback's bin dir IS the shim dir, so it must not come back in.
+  const runtime = resolveNodeRuntime();
+  const nodeDir = runtime.source === 'electron' ? undefined : runtime.binDir;
+  return joinEnvPaths(nodeDir, ...inherited);
 }
 
 /**

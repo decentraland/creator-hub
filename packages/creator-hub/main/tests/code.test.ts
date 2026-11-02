@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { EditorConfig } from '/shared/types/config';
 
-import type * as PathModuleType from '../src/modules/path';
-
 import { open } from '../src/modules/code';
 
 // `vi.hoisted` is required here: code.ts imports `child_process` and `electron` at its
@@ -38,16 +36,14 @@ vi.mock('electron', () => ({
 // produced by running the real setup.
 const SHIM_DIR = '/app/../app.asar.unpacked';
 const BUNDLED_NPM_DIR = '/app/node_modules/npm/bin';
-const BUNDLED_NODE = '/resources/node-bin/bin/node';
+const BUNDLED_NODE_DIR = '/resources/node-bin/bin';
 
 vi.mock('../src/modules/setup-node', () => ({
   getInjectedPathEntries: () => [SHIM_DIR, BUNDLED_NPM_DIR],
 }));
 
-vi.mock('../src/modules/path', async importOriginal => ({
-  ...(await importOriginal<typeof PathModuleType>()),
-  getBundledNodePath: () => BUNDLED_NODE,
-}));
+const { resolveNodeRuntimeSpy } = vi.hoisted(() => ({ resolveNodeRuntimeSpy: vi.fn() }));
+vi.mock('../src/modules/node-runtime', () => ({ resolveNodeRuntime: resolveNodeRuntimeSpy }));
 
 vi.mock('electron-log/main', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -80,6 +76,7 @@ const EDITOR_PATH = '/Applications/Visual Studio Code.app/Contents/MacOS/Electro
 describe('code.open', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resolveNodeRuntimeSpy.mockReturnValue({ source: 'bundled', binDir: BUNDLED_NODE_DIR });
     editors = [{ name: 'VSCode', path: EDITOR_PATH, isDefault: true }];
   });
 
@@ -218,7 +215,7 @@ describe('code.open', () => {
       await open('/projects/scene/main.ts');
 
       const entries = (editorEnv().PATH ?? '').split(':');
-      expect(entries[0]).toBe('/resources/node-bin/bin');
+      expect(entries[0]).toBe(BUNDLED_NODE_DIR);
     });
 
     it('should keep the rest of the inherited PATH in order', async () => {
@@ -226,6 +223,18 @@ describe('code.open', () => {
 
       const entries = (editorEnv().PATH ?? '').split(':');
       expect(entries.slice(1)).toEqual(['/usr/bin', '/bin']);
+    });
+
+    describe('and the only Node runtime is Electron itself', () => {
+      beforeEach(() => {
+        resolveNodeRuntimeSpy.mockReturnValue({ source: 'electron', binDir: SHIM_DIR });
+      });
+
+      it('should not put the shim directory back in', async () => {
+        await open('/projects/scene/main.ts');
+
+        expect((editorEnv().PATH ?? '').split(':')).toEqual(['/usr/bin', '/bin']);
+      });
     });
 
     it('should not leak ELECTRON_RUN_AS_NODE into the editor', async () => {
