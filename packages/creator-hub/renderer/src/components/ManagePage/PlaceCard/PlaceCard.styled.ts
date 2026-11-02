@@ -52,6 +52,7 @@ const EmptyThumbnail = styled('div')(({ theme }) => ({
     fontSize: theme.typography.pxToRem(16),
     letterSpacing: 0,
     lineHeight: theme.typography.pxToRem(22),
+    pointerEvents: 'auto',
   },
   '&::before': {
     content: '""',
@@ -150,6 +151,7 @@ const Thumbnail = styled('div')({
   minHeight: 0,
   borderRadius: 16,
   overflow: 'hidden',
+  pointerEvents: 'none',
   '& img': {
     width: '100%',
     height: '100%',

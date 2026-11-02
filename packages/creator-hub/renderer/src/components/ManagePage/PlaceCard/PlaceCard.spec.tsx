@@ -1,4 +1,4 @@
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -17,16 +17,27 @@ function renderCard(props: Partial<CardProps> = {}) {
   render(
     <MemoryRouter>
       <ThemeProvider theme={dark}>
-        <PlaceCard
-          name="Land Name"
-          place={{ kind: 'parcel', x: 96, y: 15 }}
-          status="published"
-          thumbnail="thumb.png"
-          scenesCount={1}
-          menuOptions={[{ text: 'Jump In', handler: () => {} }]}
-          onViewScenes={onViewScenes}
-          {...props}
-        />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <PlaceCard
+                name="Land Name"
+                place={{ kind: 'parcel', x: 96, y: 15 }}
+                status="published"
+                thumbnail="thumb.png"
+                scenesCount={1}
+                menuOptions={[{ text: 'Jump In', handler: () => {} }]}
+                onViewScenes={onViewScenes}
+                {...props}
+              />
+            }
+          />
+          <Route
+            path="*"
+            element={<p>Detail page</p>}
+          />
+        </Routes>
       </ThemeProvider>
     </MemoryRouter>,
   );
@@ -86,12 +97,41 @@ describe('PlaceCard', () => {
   });
 
   describe('when the card links to a detail page', () => {
-    it('should make the name its one link', () => {
-      renderCard({ to: '/manage/land/96%2C15/details' });
+    const to = '/manage/land/96%2C15/details';
 
-      expect(screen.getByRole('link', { name: 'Land Name' }).getAttribute('href')).toBe(
-        '/manage/land/96%2C15/details',
-      );
+    it('should make the name its one link', () => {
+      renderCard({ to });
+
+      expect(screen.getByRole('link', { name: 'Land Name' }).getAttribute('href')).toBe(to);
+    });
+
+    it('should let a click on the thumbnail fall through to the link', () => {
+      renderCard({ to });
+
+      const thumbnail = screen.getByRole('article').querySelector('img')!.parentElement!;
+      expect(getComputedStyle(thumbnail).pointerEvents).toBe('none');
+    });
+
+    it('should open the menu from the kebab without navigating', () => {
+      renderCard({ to });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Options for Land Name' }));
+
+      expect(screen.getByRole('menu')).toBeTruthy();
+      expect(screen.queryByText('Detail page')).toBeNull();
+    });
+
+    describe('and nothing is published on the LAND', () => {
+      it('should keep View Scenes clickable without navigating', () => {
+        const { onViewScenes } = renderCard({ to, status: 'unpublished' });
+
+        const viewScenes = screen.getByRole('button', { name: 'View Scenes' });
+        fireEvent.click(viewScenes);
+
+        expect(getComputedStyle(viewScenes).pointerEvents).toBe('auto');
+        expect(onViewScenes).toHaveBeenCalled();
+        expect(screen.queryByText('Detail page')).toBeNull();
+      });
     });
   });
 
