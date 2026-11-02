@@ -37,8 +37,8 @@ export type IpcError = {
 };
 
 // AI assistant turn events pushed from main to the renderer chat panel while a turn
-// runs. Shared here because preload subscribes to the channel and cannot import from main, so the event name and payload shape
-// need a single home.
+// runs. Shared here because preload subscribes to the channel and cannot import from
+// main, so the event name and payload shape need a single home.
 export const AI_STREAM_EVENT = 'ai.stream';
 
 // The `editor_screenshot` MCP tool lives in main, but only the renderer can capture the

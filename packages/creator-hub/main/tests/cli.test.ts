@@ -505,6 +505,28 @@ describe('cli preview start', () => {
     });
   });
 
+  describe('when a preview spawned with raw GLTFs by an sdk-commands without the passthrough is running', () => {
+    let fake: ReturnType<typeof createFakeChild>;
+
+    beforeEach(async () => {
+      fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+      const promise = start(path, { ...BASE_OPTS, loadRawGltfs: true });
+      // the older sdk-commands ignored everything after `--`, so the param never reached the deeplink
+      fake.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await promise;
+      mocks.run.mockClear();
+    });
+
+    it('should re-focus instead of restarting the preview on every press', async () => {
+      await start(path, { ...BASE_OPTS, loadRawGltfs: true });
+
+      expect(fake.child.kill).not.toHaveBeenCalled();
+      expect(mocks.run).not.toHaveBeenCalled();
+      expect(mocks.dclDeepLink).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('when a second start arrives while a spawn is still booting', () => {
     it('should ride the in-flight spawn instead of racing a second one', async () => {
       const fake = createFakeChild();

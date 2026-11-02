@@ -344,10 +344,11 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     }
 
     // Desktop (Unity): the explorer reads the raw-GLTF opt-out only at startup, so a
-    // refocus deeplink can't switch it — restart when the setting disagrees with the
-    // running preview.
-    const previewLoadsRawGltfs = new URLSearchParams(preview.url).has(RAW_GLTF_PARAM);
-    if (!!opts.loadRawGltfs === previewLoadsRawGltfs) {
+    // refocus deeplink can't switch it — restart when the setting disagrees with the one
+    // the preview was spawned with. Compared against the spawn options, not the captured
+    // deeplink: an sdk-commands without the `--` passthrough drops the param from the
+    // deeplink, and keying off it would then restart the preview on every Play press.
+    if (!!opts.loadRawGltfs === !!preview.opts.loadRawGltfs) {
       // re-focus the already-open client, with the deeplink adjusted to the current options
       await dclDeepLink(updateDeepLinkWithOpts(preview.url, opts));
       return path;
