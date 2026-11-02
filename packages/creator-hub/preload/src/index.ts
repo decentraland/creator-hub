@@ -44,6 +44,7 @@ export * as env from './modules/env';
 export * as analytics from './modules/analytics';
 export * as npm from './services/npm';
 export * as pkg from './services/pkg';
+export * as skills from './services/skills';
 export * as settings from './modules/settings';
 export * as scene from './modules/scene';
 export * as custom from './modules/custom';
