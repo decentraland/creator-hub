@@ -1,3 +1,4 @@
+import '@dcl/sdk';
 import { engine } from '@dcl/ecs';
 import { initAssetPacks } from './scene-entrypoint';
 

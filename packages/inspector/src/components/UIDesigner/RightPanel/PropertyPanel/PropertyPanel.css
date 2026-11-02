@@ -371,7 +371,7 @@
   color: var(--ui-designer-text-muted);
 }
 
-.ui-designer-property-panel .OptionList {
+.OptionList[data-dropdown-scope="ui-designer"] {
   border: 1px solid var(--ui-designer-control-border);
   border-radius: var(--ui-designer-radius-menu);
 }

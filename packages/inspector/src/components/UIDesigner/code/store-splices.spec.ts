@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { YGPT_ABSOLUTE } from '../../../lib/sdk/ui-transform-constants';
 import { applyEdits, insertChild } from './emit-adapter';
 import { codeToUINodes } from './parse-adapter';
-import { parentIsFree, widgetJsx } from './store-splices';
+import { componentWrapperJsx, parentIsFree, widgetJsx } from './store-splices';
 
 const transformOf = (jsx: string): Record<string, unknown> => {
   const source = `export function S() {\n  return ${jsx}\n}`;
@@ -25,6 +25,16 @@ describe('widgetJsx fullscreen preset', () => {
     expect(jsx).toContain("alignSelf: 'stretch'");
     expect(jsx).not.toMatch(/\bwidth:/);
     expect(jsx).not.toMatch(/\bheight:/);
+  });
+
+  it('is an invisible, pointer-transparent frame: no fill, no handlers, no pointerFilter', () => {
+    for (const free of [false, true]) {
+      const jsx = widgetJsx('UiEntity', 'fullscreen', false, free);
+
+      expect(jsx).not.toContain('uiBackground');
+      expect(jsx).not.toContain('pointerFilter');
+      expect(jsx).not.toMatch(/onMouse/);
+    }
   });
 
   it('leaves the plain container fixed-size', () => {
@@ -116,5 +126,28 @@ describe('the add-child emit (widgetJsx(free) → insertChild → reparse)', () 
 
   it('an in-flow child parses back as relative', () => {
     expect(isAbsolute(dropChildInto(PARENT, false))).toBe(false);
+  });
+});
+
+describe('componentWrapperJsx', () => {
+  it('pins the wrapper at the drop point in a free parent, like a palette widget', () => {
+    const jsx = componentWrapperJsx('Card', true, { top: 40.4, left: 60.6 });
+
+    expect(jsx).toContain("positionType: 'absolute'");
+    expect(jsx).toContain('position: { top: 40, left: 61 }');
+    expect(jsx).toContain('<Card />');
+    expect(isAbsolute(transformOf(jsx))).toBe(true);
+  });
+
+  it('defaults a free wrapper to top-left when no drop point is known', () => {
+    expect(componentWrapperJsx('Card', true)).toContain('position: { top: 0, left: 0 }');
+  });
+
+  it('leaves the wrapper in flow inside a flex parent', () => {
+    const jsx = componentWrapperJsx('Card', false);
+
+    expect(jsx).not.toContain('positionType');
+    expect(jsx).toContain('width: 200, height: 120');
+    expect(isAbsolute(transformOf(jsx))).toBe(false);
   });
 });

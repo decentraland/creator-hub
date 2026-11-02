@@ -1,6 +1,7 @@
 import type { ActionRef } from '@dcl/asset-packs';
 
 import { TextField, CheckboxField, RangeField } from '../../../ui';
+import { Dropdown } from '../../../ui/Dropdown';
 import EntityField from '../../../ui/EntityField/EntityField';
 import InfoTooltip from '../../../ui/InfoTooltip/InfoTooltip';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
@@ -8,16 +9,28 @@ import ActionField from './ActionField';
 
 import type { Props } from './types';
 
+// The param's identifier is what the creator sees, so present it readably:
+// camelCase / snake_case / kebab-case -> spaced, first letter capitalized
+// (e.g. `activatedBy` -> "Activated By", `audioClipUrl` -> "Audio Clip Url").
+function formatLabel(name: string): string {
+  const spaced = name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 function labelWithTooltip(name: string, tooltip?: string) {
-  if (!tooltip) return name;
+  const label = formatLabel(name);
+  if (!tooltip) return label;
   return (
     <>
-      {name} <InfoTooltip text={tooltip} />
+      {label} <InfoTooltip text={tooltip} />
     </>
   );
 }
 
-export function ScriptParamField({ name, param, onUpdate }: Props) {
+export function ScriptParamField({ name, param, error, onUpdate }: Props) {
   switch (param.type) {
     case 'number':
       return (
@@ -52,6 +65,16 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
         />
       );
 
+    case 'enum':
+      return (
+        <Dropdown
+          label={labelWithTooltip(name, param.tooltip)}
+          value={param.value}
+          options={param.options.map(option => ({ value: option, label: option }))}
+          onChange={e => onUpdate(String(e.target.value))}
+        />
+      );
+
     case 'entity':
       return (
         <EntityField
@@ -78,6 +101,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
           value={param.value}
           onChange={e => onUpdate(e.target.value)}
           debounceTime={300}
+          error={error}
         />
       );
   }

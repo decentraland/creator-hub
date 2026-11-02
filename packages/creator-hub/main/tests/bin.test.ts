@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getBinPath: vi.fn(),
   fork: vi.fn(),
+  resolveNodeRuntime: vi.fn(),
 }));
 
 vi.mock('electron', () => ({ utilityProcess: { fork: mocks.fork } }));
@@ -18,17 +19,31 @@ vi.mock('../src/modules/path', () => ({
   joinEnvPaths: (...paths: (string | undefined)[]) => paths.filter(Boolean).join(':'),
 }));
 vi.mock('../src/modules/setup-node', () => ({ setupNodeBinary: vi.fn() }));
+vi.mock('../src/modules/node-runtime', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  resolveNodeRuntime: mocks.resolveNodeRuntime,
+}));
 
 import { run } from '../src/modules/bin';
+import type { NodeRuntime } from '../src/modules/node-runtime';
 
-describe('when running a script on a real Node binary instead of an Electron utility process', () => {
+describe('when the resolved runtime is a real Node binary', () => {
   let tmpDir: string;
   let scriptPath: string;
+  let runtime: NodeRuntime;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bin-test-'));
     scriptPath = path.join(tmpDir, 'script.js');
     mocks.getBinPath.mockReturnValue(scriptPath);
+    runtime = {
+      source: 'bundled',
+      node: process.execPath,
+      binDir: path.dirname(process.execPath),
+      npmCli: path.join(tmpDir, 'npm-cli.js'),
+      npxCli: path.join(tmpDir, 'npx-cli.js'),
+    };
+    mocks.resolveNodeRuntime.mockReturnValue(runtime);
   });
 
   afterEach(() => {
@@ -40,7 +55,7 @@ describe('when running a script on a real Node binary instead of an Electron uti
   it('should not fork an Electron utility process', async () => {
     fs.writeFileSync(scriptPath, 'process.exit(0)');
 
-    const child = run('some-pkg', 'some-bin', { cwd: tmpDir, nodePath: process.execPath });
+    const child = run('some-pkg', 'some-bin', { cwd: tmpDir });
     await child.wait();
 
     expect(mocks.fork).not.toHaveBeenCalled();
@@ -49,7 +64,7 @@ describe('when running a script on a real Node binary instead of an Electron uti
   it('should capture output written by the script', async () => {
     fs.writeFileSync(scriptPath, 'console.log("hello from the script")');
 
-    const child = run('some-pkg', 'some-bin', { cwd: tmpDir, nodePath: process.execPath });
+    const child = run('some-pkg', 'some-bin', { cwd: tmpDir });
     const output = await child.wait();
 
     expect(output.toString('utf8')).toContain('hello from the script');
@@ -58,7 +73,7 @@ describe('when running a script on a real Node binary instead of an Electron uti
   it('should resolve waitFor when the script prints a matching line', async () => {
     fs.writeFileSync(scriptPath, 'console.log("server ready on port 1234")');
 
-    const child = run('some-pkg', 'some-bin', { cwd: tmpDir, nodePath: process.execPath });
+    const child = run('some-pkg', 'some-bin', { cwd: tmpDir });
 
     await expect(child.waitFor(/server ready on port (\d+)/)).resolves.toContain('1234');
   });
@@ -66,7 +81,7 @@ describe('when running a script on a real Node binary instead of an Electron uti
   it('should reject with the script output when it exits with a non-zero code', async () => {
     fs.writeFileSync(scriptPath, 'console.error("it broke"); process.exit(1)');
 
-    const child = run('some-pkg', 'some-bin', { cwd: tmpDir, nodePath: process.execPath });
+    const child = run('some-pkg', 'some-bin', { cwd: tmpDir });
 
     await expect(child.wait()).rejects.toThrow(/exited with code=1/);
   });
@@ -79,7 +94,7 @@ describe('when running a script on a real Node binary instead of an Electron uti
       'console.log(JSON.stringify({ electron: process.versions.electron ?? null, execPath: process.execPath }))',
     );
 
-    const child = run('some-pkg', 'some-bin', { cwd: tmpDir, nodePath: process.execPath });
+    const child = run('some-pkg', 'some-bin', { cwd: tmpDir });
     const reported = JSON.parse((await child.wait()).toString('utf8'));
 
     expect(reported.electron).toBeNull();
@@ -95,7 +110,7 @@ describe('when running a script on a real Node binary instead of an Electron uti
     );
     process.env.ELECTRON_RUN_AS_NODE = '1';
 
-    const child = run('some-pkg', 'some-bin', { cwd: tmpDir, nodePath: process.execPath });
+    const child = run('some-pkg', 'some-bin', { cwd: tmpDir });
     const reported = JSON.parse((await child.wait()).toString('utf8'));
 
     expect(reported).toBeNull();
@@ -104,9 +119,76 @@ describe('when running a script on a real Node binary instead of an Electron uti
   it('should put the Node binary directory first on the PATH it passes down', async () => {
     fs.writeFileSync(scriptPath, 'console.log(process.env.PATH)');
 
-    const child = run('some-pkg', 'some-bin', { cwd: tmpDir, nodePath: process.execPath });
+    const child = run('some-pkg', 'some-bin', { cwd: tmpDir });
     const reportedPath = (await child.wait()).toString('utf8').trim();
 
     expect(reportedPath.split(':')[0]).toBe(path.dirname(process.execPath));
+  });
+
+  it('should run the npm package through the runtime npm-cli.js instead of the app bin', async () => {
+    fs.writeFileSync(runtime.npmCli, 'console.log("runtime npm")');
+
+    const child = run('npm', 'npm', { cwd: tmpDir, args: ['install'] });
+    const output = await child.wait();
+
+    expect(output.toString('utf8')).toContain('runtime npm');
+  });
+
+  it('should run the npx bin through the runtime npx-cli.js', async () => {
+    fs.writeFileSync(runtime.npxCli, 'console.log("runtime npx")');
+
+    const child = run('npm', 'npx', { cwd: tmpDir });
+    const output = await child.wait();
+
+    expect(output.toString('utf8')).toContain('runtime npx');
+  });
+});
+
+describe('when the resolved runtime is Electron', () => {
+  let forked: {
+    pid: number;
+    stdout: { on: ReturnType<typeof vi.fn> };
+    stderr: { on: ReturnType<typeof vi.fn> };
+    on: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    mocks.getBinPath.mockReturnValue('/fake/app/node_modules/pkg/bin.js');
+    mocks.resolveNodeRuntime.mockReturnValue({
+      source: 'electron',
+      node: process.execPath,
+      binDir: '/fake/app',
+      npmCli: '/fake/app/node_modules/npm/bin/npm-cli.js',
+      npxCli: '/fake/app/node_modules/npm/bin/npx-cli.js',
+    });
+    forked = {
+      pid: 123,
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      on: vi.fn(),
+    };
+    mocks.fork.mockReturnValue(forked);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should fork an Electron utility process with the script and args', () => {
+    run('some-pkg', 'some-bin', { cwd: '/scene', args: ['start'] });
+
+    expect(mocks.fork).toHaveBeenCalledWith(
+      '/fake/app/node_modules/pkg/bin.js',
+      ['start'],
+      expect.objectContaining({ cwd: '/scene' }),
+    );
+  });
+
+  it('should pass ELECTRON_RUN_AS_NODE and the shim dir first on PATH', () => {
+    run('some-pkg', 'some-bin', { cwd: '/scene' });
+
+    const { env } = mocks.fork.mock.calls[0][2];
+    expect(env.ELECTRON_RUN_AS_NODE).toBe('1');
+    expect(env.PATH.split(':')[0]).toBe('/fake/app');
   });
 });

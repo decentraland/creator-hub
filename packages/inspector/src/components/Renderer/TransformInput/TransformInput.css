@@ -1,0 +1,77 @@
+.TransformInput {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  max-width: calc(100% - 120px);
+  padding: 6px 12px;
+  border: 1px solid var(--base-13);
+  border-radius: 6px;
+  background-color: var(--base-19);
+  color: var(--base-03);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.TransformInput .Entry {
+  font-family: var(--font-monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.TransformInput .Hint {
+  color: var(--neutral-grey-3);
+  font-size: 11px;
+}
+
+.TransformInput .Caret {
+  width: 1px;
+  height: 13px;
+  margin-left: -7px;
+  align-self: center;
+  background-color: var(--base-03);
+  animation: transform-input-caret 1s steps(1, end) infinite;
+}
+
+/* The confirmation lingers a beat, then fades; the live entry never does. */
+.TransformInput:not(.is-editing) {
+  animation: transform-input-fade 2.2s ease forwards;
+}
+
+@keyframes transform-input-caret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes transform-input-fade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .TransformInput .Caret {
+    animation: none;
+  }
+
+  .TransformInput:not(.is-editing) {
+    animation: none;
+  }
+}

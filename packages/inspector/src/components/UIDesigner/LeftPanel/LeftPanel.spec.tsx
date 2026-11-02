@@ -31,7 +31,11 @@ vi.mock('../code/store', () => ({
 
 vi.mock('../shared/useUINodeTree', () => ({ useUINodeTree: () => mocks.tree }));
 
-vi.mock('../../../redux/hooks', () => ({ useAppSelector: () => 1, useAppDispatch: () => vi.fn() }));
+vi.mock('../../../redux/hooks', () => ({
+  useAppSelector: (selector: (state: unknown) => unknown) =>
+    selector({ uiDesigner: { selectedNodes: [1], mobileHudSelected: false } }),
+  useAppDispatch: () => vi.fn(),
+}));
 
 // The two lists are stubbed: what the rail decides is WHICH sections exist and
 // what term they get — the lists' own rendering is covered by their own specs.

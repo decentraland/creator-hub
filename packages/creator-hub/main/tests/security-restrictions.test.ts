@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // electron surface it touches has to exist before the module body runs.
 const mocks = vi.hoisted(() => ({
   appOn: vi.fn(),
-  onBeforeSendHeaders: vi.fn(),
   onHeadersReceived: vi.fn(),
 }));
 
@@ -14,7 +13,6 @@ vi.mock('electron', () => ({
   session: {
     defaultSession: {
       webRequest: {
-        onBeforeSendHeaders: mocks.onBeforeSendHeaders,
         onHeadersReceived: mocks.onHeadersReceived,
       },
     },
@@ -132,14 +130,15 @@ describe('response header rules', () => {
     });
   });
 
-  describe('when the request is for the studios admin API', () => {
-    const url = 'https://studios.decentraland.org/api/scenes';
+  describe('when the request is for the asset-packs content CDN', () => {
+    const url =
+      'https://builder-items.decentraland.org/contents/bafkreic73ieebx4cins2vy26rbyksh3nutvn4ynrit2sfwhzv6qz64zfti';
 
-    it('should allow the app to read it when the response sent no origin of its own', () => {
+    it('should inject an allowed origin so the inspector iframe can fetch Smart Item files when CloudFront served a cached response without one', () => {
       expect(subject.valuesFor(url, 'Access-Control-Allow-Origin')).toEqual(['*']);
     });
 
-    it('should not add a second allowed origin when the response already sent one, since two are rejected outright and would block the request this is meant to allow', () => {
+    it('should not add a second allowed origin when the CDN already sent one', () => {
       expect(
         subject.valuesFor(url, 'Access-Control-Allow-Origin', {
           'access-control-allow-origin': ['*'],

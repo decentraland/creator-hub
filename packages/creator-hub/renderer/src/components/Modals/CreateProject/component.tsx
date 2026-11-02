@@ -27,8 +27,10 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Runs on blur too, so it must never disable the Create button: pressing the
+  // button blurs the input first (mousedown → blur → click), and a button disabled
+  // by that blur swallows the click, forcing a second one (#832).
   const validate = useCallback(async () => {
-    setLoading(true);
     const result = await validateProjectPath(value.path, value.name);
     if (result === 'invalid-dir') {
       // The Path field expects an existing folder (via the picker) — a bare/typed
@@ -37,7 +39,6 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
     } else if (result === 'path-taken') {
       setError(t('modal.create_project.errors.path_exists_or_not_writable'));
     }
-    setLoading(false);
     return result === true;
   }, [value, validateProjectPath]);
 
@@ -58,9 +59,11 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
   }, [value]);
 
   const handleSubmit = useCallback(async () => {
+    setLoading(true);
     const valid = await validate();
+    setLoading(false);
     if (valid) onSubmit(value);
-  }, [onSubmit, value, validate, error]);
+  }, [onSubmit, value, validate]);
 
   return (
     <Modal

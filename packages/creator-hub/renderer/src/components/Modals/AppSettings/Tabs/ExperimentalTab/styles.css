@@ -1,10 +1,10 @@
-.RendererSubField {
+.ExperimentalTab {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 20px;
 }
 
-.GuiEditorField {
+.ExperimentalField {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -12,5 +12,5 @@
 
 .ExperimentalHint {
   margin-left: 44px;
-  max-width: 420px;
+  max-width: 480px;
 }

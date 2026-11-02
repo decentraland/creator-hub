@@ -34,6 +34,8 @@ export const fs = {
   writeFile: fsService.writeFile,
 };
 
+export * as ai from './modules/ai';
+export * as consoleWindow from './modules/console-window';
 export * as auth from './modules/auth';
 export * as editor from './modules/editor';
 export * as metrics from './modules/metrics';
@@ -42,7 +44,9 @@ export * as env from './modules/env';
 export * as analytics from './modules/analytics';
 export * as npm from './services/npm';
 export * as pkg from './services/pkg';
+export * as skills from './services/skills';
 export * as settings from './modules/settings';
 export * as scene from './modules/scene';
 export * as custom from './modules/custom';
 export * as oxc from './modules/oxc';
+export * as optimizer from './modules/optimizer';

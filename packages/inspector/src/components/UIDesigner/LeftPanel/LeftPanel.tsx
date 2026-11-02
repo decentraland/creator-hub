@@ -6,7 +6,7 @@ import { VscClose as ClearIcon } from 'react-icons/vsc';
 
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { useAppSelector } from '../../../redux/hooks';
-import { getSelectedNode } from '../../../redux/ui-designer';
+import { getMobileHudSelected, getSelectedNode } from '../../../redux/ui-designer';
 import { Box } from '../../Box';
 import { TextField } from '../../ui';
 import { createRoot, spliceSetRootChild, useCodeState } from '../code/store';
@@ -43,6 +43,7 @@ const LeftPanel: React.FC = () => {
   }, []);
 
   const parent = useAppSelector(getSelectedNode);
+  const mobileHudSelected = useAppSelector(getMobileHudSelected);
   const { roots, filename, emptyRoot } = useCodeState();
   const tree = useUINodeTree();
 
@@ -51,7 +52,8 @@ const LeftPanel: React.FC = () => {
     () => !term || roots.some(root => root.name.toLowerCase().includes(term)),
     [term, roots],
   );
-  const showNodes = !!filename && (!term || (!!tree && matchesFilter(tree, term)));
+  const showNodes =
+    !mobileHudSelected && !!filename && (!term || (!!tree && matchesFilter(tree, term)));
 
   const [guiRipple, rippleGui] = useClickRipple();
   const [nodeRipple, rippleNode] = useClickRipple();
