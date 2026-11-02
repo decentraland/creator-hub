@@ -9,6 +9,7 @@ import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
+import type { SkillsUpdateStatus } from './skills';
 import type {
   AiMirrorState,
   AiProvider,
@@ -218,6 +219,8 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
+  'skills.getProjectStatus': (path: string) => Promise<SkillsUpdateStatus>;
+  'skills.updateProject': (path: string) => Promise<void>;
 
   // AI scene assistant. `ai.send` streams its result over AI_STREAM_EVENT (payload
   // AiEvent) to the calling WebContents; the returned turnId correlates the stream.
