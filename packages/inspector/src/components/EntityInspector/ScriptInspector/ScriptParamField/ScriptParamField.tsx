@@ -30,7 +30,7 @@ function labelWithTooltip(name: string, tooltip?: string) {
   );
 }
 
-export function ScriptParamField({ name, param, onUpdate }: Props) {
+export function ScriptParamField({ name, param, error, onUpdate }: Props) {
   switch (param.type) {
     case 'number':
       return (
@@ -101,6 +101,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
           value={param.value}
           onChange={e => onUpdate(e.target.value)}
           debounceTime={300}
+          error={error}
         />
       );
   }

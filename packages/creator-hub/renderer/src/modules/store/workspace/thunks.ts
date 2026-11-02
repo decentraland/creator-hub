@@ -3,7 +3,7 @@ import { captureException } from '@sentry/electron/renderer';
 
 import { shouldUpdateDependencies } from './utils';
 import { actions } from './index';
-import { fs, npm, pkg, scene, settings, workspace } from '#preload';
+import { fs, npm, pkg, scene, settings, skills, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -13,7 +13,7 @@ import {
   ProjectError,
   PROJECT_ALREADY_IMPORTED_ERROR_PREFIX,
 } from '/shared/types/projects';
-import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { PACKAGES } from '/shared/types/pkg';
 import { WorkspaceError } from '/shared/types/workspace';
 
@@ -116,6 +116,43 @@ export const updateAvailableDependencyUpdates = createAsyncThunk(
     };
   },
 );
+export const updateSdkSkills = createAsyncThunk(
+  'workspace/updateSdkSkills',
+  async (project: Project) => {
+    try {
+      await skills.updateProject(project.path);
+    } catch (error) {
+      captureException(error, {
+        tags: { source: 'workspace', event: 'update-sdk-skills' },
+        extra: { path: project.path },
+      });
+      throw error;
+    }
+  },
+);
+// What to offer for the scene's AI skills: installing them, updating them, or nothing.
+export type SdkSkillsOffer = 'install' | 'update' | null;
+// Follows the dependency update strategy: the skills are as much a part of keeping a scene
+// current as its packages. Under Notify, a scene without them is asked on every open, on
+// purpose: creators' own AI tools work far better with them.
+export const checkSdkSkillsUpdate = createAsyncThunk(
+  'workspace/checkSdkSkillsUpdate',
+  async (project: Project, { dispatch, getState }) => {
+    const nothing = { project, offer: null as SdkSkillsOffer };
+    const strategy = getState().workspace.settings.dependencyUpdateStrategy;
+    if (strategy === DEPENDENCY_UPDATE_STRATEGY.DO_NOTHING) return nothing;
+
+    const { installed, outdated } = await skills.getProjectStatus(project.path);
+    // The creator may have left or opened another scene meanwhile; this is for this one only.
+    if (getState().editor.openingProjectPath !== project.path) return nothing;
+    if (!outdated) return nothing;
+    if (strategy === DEPENDENCY_UPDATE_STRATEGY.AUTO_UPDATE) {
+      await dispatch(updateSdkSkills(project)).unwrap();
+      return nothing;
+    }
+    return { project, offer: (installed ? 'update' : 'install') as SdkSkillsOffer };
+  },
+);
 export const runProject = createAsyncThunk(
   'workspace/runProject',
   async (project: Project, { dispatch, getState, rejectWithValue }) => {
@@ -156,10 +193,16 @@ export const runProject = createAsyncThunk(
       dependencyAvailableUpdates = {};
     }
 
+    // Not awaited: it hits GitHub and must never hold up opening the scene. Started after the
+    // package install above so an AI skills update doesn't run in the folder alongside it.
+    const checkSdkSkills = () => dispatch(checkSdkSkillsUpdate(project));
+
     if (shouldUpdateDependencies(strategy, dependencyAvailableUpdates)) {
       await dispatch(updatePackages({ ...project, dependencyAvailableUpdates })).unwrap();
+      checkSdkSkills();
       return { ...project, dependencyAvailableUpdates: {} };
     }
+    checkSdkSkills();
 
     const { project: updatedProject } = await dispatch(
       updateAvailableDependencyUpdates({ project, updates: dependencyAvailableUpdates }),

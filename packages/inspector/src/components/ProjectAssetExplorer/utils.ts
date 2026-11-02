@@ -1,5 +1,6 @@
 import type { Asset } from '../../lib/logic/catalog';
 import { getAnimatedPreviewUrl, getBuiltInEmote, getContentsUrl } from '../../lib/logic/catalog';
+import { isProtectedPath } from './file-ops';
 import { Filter } from './Filters/types';
 import type { TreeNode } from './ProjectView';
 import type { AssetNode, AssetNodeFolder, AssetNodeItem, IAsset } from './types';
@@ -122,6 +123,16 @@ export function getFilterFromTree(filters: Set<Filter>): Filter[] {
 }
 
 export const BUILT_IN_ANIMATIONS_FOLDER = 'Built-in animations';
+
+/** The built-in animations folder and its entries, which exist only in the explorer. */
+export function isBuiltInPath(path: string): boolean {
+  return path === BUILT_IN_ANIMATIONS_FOLDER || path.startsWith(BUILT_IN_ANIMATIONS_FOLDER + '/');
+}
+
+/** Paths the explorer never renames, moves, duplicates or deletes, nor accepts drops into. */
+export function isReadOnlyPath(path: string): boolean {
+  return isProtectedPath(path) || isBuiltInPath(path);
+}
 
 // A read-only folder listing the built-in avatar animations from the catalog, so creators see
 // what every scene can already play. Nothing in it exists on disk.

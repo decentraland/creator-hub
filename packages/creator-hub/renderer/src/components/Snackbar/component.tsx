@@ -7,6 +7,7 @@ import { useEditor } from '/@/hooks/useEditor';
 import { MissingScenes } from './MissingScenes';
 import { Generic } from './Generic';
 import { NewDependencyVersion } from './DependencyVersion';
+import { SdkSkills } from './SdkSkills';
 import { Deploy } from './Deploy';
 import { StyledBackdrop } from './component.styled';
 
@@ -31,6 +32,14 @@ export function SnackbarComponent() {
         return <MissingScenes onClose={close(notification.id)} />;
       case 'new-dependency-version':
         return <NewDependencyVersion onClose={close(notification.id)} />;
+      case 'sdk-skills':
+        return (
+          <SdkSkills
+            onClose={close(notification.id)}
+            project={notification.project}
+            installed={notification.installed}
+          />
+        );
       case 'deploy':
         return (
           <Deploy

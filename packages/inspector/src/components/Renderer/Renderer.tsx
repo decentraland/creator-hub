@@ -23,7 +23,12 @@ import type { CustomAsset } from '../../lib/logic/catalog';
 import { getAssetById, isFileOnly, isGround, isSmart, type Asset } from '../../lib/logic/catalog';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { areGizmosDisabled, getHiddenPanels, isGroundGridDisabled } from '../../redux/ui';
+import {
+  areGizmosDisabled,
+  getHiddenPanels,
+  isAssetExplorerActive,
+  isGroundGridDisabled,
+} from '../../redux/ui';
 import { PanelName } from '../../redux/ui/types';
 import type { AssetNodeItem } from '../ProjectAssetExplorer/types';
 import type { TreeNode } from '../ProjectAssetExplorer/ProjectView';
@@ -121,6 +126,7 @@ const Renderer: React.FC = () => {
   }, [sdk, groundGridDisabled]);
 
   const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
+  const assetExplorerActive = useAppSelector(isAssetExplorerActive);
 
   const deleteSelectedEntities = useCallback(() => {
     if (!sdk || isUIDesignerOpen) return;
@@ -196,10 +202,11 @@ const Renderer: React.FC = () => {
     }
   }, [sdk]);
 
-  useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body);
-  useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
-  useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body);
-  useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body);
+  const entityKeys = { enabled: !assetExplorerActive };
+  useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body, entityKeys);
+  useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body, entityKeys);
+  useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body, entityKeys);
+  useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body, entityKeys);
   const cameraKeys = { enabled: !isUIDesignerOpen };
   useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body, cameraKeys);
   useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body, cameraKeys);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cx from 'classnames';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
@@ -13,9 +13,15 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useCounter } from '/@/hooks/useCounter';
+import { useSceneSizeLimit } from '/@/hooks/useSceneSizeLimit';
 
-import { type Deployment } from '/@/modules/store/deployment/slice';
-import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
+import { actions as deploymentActions, type Deployment } from '/@/modules/store/deployment/slice';
+import { isFinalPhase } from '/@/modules/store/deployment/deploy-api';
+import {
+  getInvalidFiles,
+  getTotalSize,
+  MAX_FILE_SIZE_BYTES,
+} from '/@/modules/store/deployment/utils';
 import {
   actions as managementActions,
   selectors as managementSelectors,
@@ -36,6 +42,8 @@ import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
 import { parseCoords } from '/@/components/Modals/PublishProject/utils';
 
+import { DeployProgress, type DeployCancel } from './DeployProgress';
+
 import './styles.css';
 
 const MAX_FILE_PATH_LENGTH = 50;
@@ -49,7 +57,7 @@ function getPath(filename: string) {
 }
 
 export function Deploy(props: Props) {
-  const { project, previousStep, onStep, onBack, deploymentMetadata } = props;
+  const { project, previousStep, onStep, onBack, onClose, deploymentMetadata } = props;
   const { signOut, wallet } = useAuth();
   const dispatch = useDispatch();
   const { updateProjectInfo } = useWorkspace();
@@ -73,7 +81,20 @@ export function Deploy(props: Props) {
       worldScenes.length > 0 &&
       worldScenes.some(scene => scene.parcels.every(parcel => !projectParcelsSet.has(parcel)))
     );
-  }, [isWorld, deploymentMetadata?.isMultiScene, worldScenes]);
+  }, [isWorld, deploymentMetadata?.isMultiScene, worldScenes, project.scene.parcels]);
+
+  /** Publishing empties the world first: the same condition `handlePublish` undeploys on. */
+  const willEmptyWorld = needsUndeploy && !!wallet && !!project.worldConfiguration?.name;
+
+  const { limit: sceneSizeLimit, isLoading: isSceneSizeLimitLoading } = useSceneSizeLimit(
+    deployment && {
+      isWorld,
+      worldName: project.worldConfiguration?.name,
+      parcels: deployment.info.parcels,
+      replacesWorld: willEmptyWorld,
+      deploymentId: deployment.id,
+    },
+  );
 
   /** True if any of the project parcels overlap with any of the existing world scenes parcels */
   const isReplacingWorldContent: boolean = useMemo(() => {
@@ -87,7 +108,7 @@ export function Deploy(props: Props) {
     setShowWarning(false);
     updateProjectInfo(project.path, { skipPublishWarning: skipWarning }); // write skip warning flag
 
-    if (needsUndeploy && wallet && project.worldConfiguration?.name) {
+    if (willEmptyWorld && wallet && project.worldConfiguration?.name) {
       setUndeployStatus('pending');
       try {
         await dispatch(
@@ -106,12 +127,46 @@ export function Deploy(props: Props) {
     }
 
     executeDeployment(project.path);
-  }, [skipWarning, project, needsUndeploy, wallet, executeDeployment, updateProjectInfo]);
+  }, [skipWarning, project, willEmptyWorld, wallet, executeDeployment, updateProjectInfo]);
 
   const handleBack = useCallback(() => {
     setShowWarning(false);
     setSkipWarning(false);
   }, []);
+
+  const canCancel =
+    !!deployment?.supportsDeployResource &&
+    deployment.status === 'pending' &&
+    !!deployment.phase &&
+    !isFinalPhase(deployment.phase);
+
+  const handleCancel = useCallback(
+    async () =>
+      (await dispatch(deploymentActions.cancelDeployment(project.path)).unwrap()).rejection,
+    [dispatch, project.path],
+  );
+
+  const cancel = useMemo<DeployCancel>(() => {
+    if (!canCancel) return { kind: 'hidden' };
+    if (!deployment.hasCancelToken) return { kind: 'unsupported' };
+    if (deployment.cancelRequested) return { kind: 'cancelling' };
+    return { kind: 'available', onCancel: handleCancel };
+  }, [canCancel, deployment?.hasCancelToken, deployment?.cancelRequested, handleCancel]);
+
+  // A cancelled deployment leaves the CLI unable to deploy again, so leave this step: the
+  // previous step starts a fresh one. Only on the transition, as a deployment cancelled
+  // earlier is still in the store when this step mounts again.
+  const previousStatus = useRef(deployment?.status);
+  useEffect(() => {
+    const wasPending = previousStatus.current === 'pending';
+    previousStatus.current = deployment?.status;
+    if (!wasPending || deployment?.status !== 'cancelled') return;
+    if (previousStep && onBack) {
+      onBack();
+    } else {
+      onClose();
+    }
+  }, [deployment?.status, previousStep, onBack, onClose]);
 
   const jumpInLocation = useMemo(() => {
     const [x, y] = parseCoords(project.scene.base);
@@ -298,6 +353,8 @@ export function Deploy(props: Props) {
                   <Idle
                     files={deployment.files}
                     error={deployment.error}
+                    sceneSizeLimit={sceneSizeLimit}
+                    isSceneSizeLimitLoading={isSceneSizeLimitLoading}
                     onClick={() =>
                       skipWarning || !(isReplacingWorldContent || needsUndeploy)
                         ? handlePublish()
@@ -306,7 +363,13 @@ export function Deploy(props: Props) {
                   />
                 )}
                 {(deployment.status === 'pending' || undeployStatus === 'pending') && (
-                  <Deploying steps={steps} />
+                  <Deploying steps={steps}>
+                    <DeployProgress
+                      key={deployment.id}
+                      upload={deployment.upload}
+                      cancel={cancel}
+                    />
+                  </Deploying>
                 )}
                 {deployment.status === 'complete' && (
                   <Success
@@ -327,17 +390,29 @@ export function Deploy(props: Props) {
 type IdleProps = {
   files: File[];
   error?: Deployment['error'];
+  sceneSizeLimit: number | null;
+  isSceneSizeLimitLoading?: boolean;
   onClick: () => void;
 };
 
-function Idle({ files, error, onClick }: IdleProps) {
+export function Idle({
+  files,
+  error,
+  sceneSizeLimit,
+  isSceneSizeLimitLoading = false,
+  onClick,
+}: IdleProps) {
   const invalidFiles = getInvalidFiles(files);
+  const totalSize = getTotalSize(files);
+  const exceedsSceneSize = sceneSizeLimit !== null && totalSize > sceneSizeLimit;
   const errorMessage =
     invalidFiles.length > 0
       ? t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
           maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
         })
-      : error?.message;
+      : exceedsSceneSize
+        ? t('modal.publish_project.deploy.deploying.errors.max_scene_size_exceeded')
+        : error?.message;
 
   return (
     <div className="files">
@@ -345,15 +420,25 @@ function Idle({ files, error, onClick }: IdleProps) {
         <div className="count">
           {t('modal.publish_project.deploy.files.count', { count: files.length })}
         </div>
-        <div className="size">
-          {t('modal.publish_project.deploy.files.size', {
-            size: formatSize(files.reduce((total, file) => total + file.size, 0)),
-            b: (child: string) => (
-              <b>
-                {child}/{MAX_FILE_SIZE_BYTES / 1e6}MB
-              </b>
-            ),
-          })}
+        <div className={cx('size', { invalid: exceedsSceneSize })}>
+          {sceneSizeLimit === null
+            ? t('modal.publish_project.deploy.files.size', {
+                size: formatSize(totalSize),
+                b: (child: string) => <b>{child}</b>,
+              })
+            : t('modal.publish_project.deploy.files.size_with_limit', {
+                size: formatSize(totalSize),
+                limit: formatSize(sceneSizeLimit),
+                b: (child: string) => <b>{child}</b>,
+              })}
+          {isSceneSizeLimitLoading && (
+            <span
+              className="limit-loading"
+              role="status"
+            >
+              {t('modal.publish_project.deploy.files.checking_limit')}
+            </span>
+          )}
         </div>
       </div>
       <div className="list">
@@ -377,7 +462,7 @@ function Idle({ files, error, onClick }: IdleProps) {
         <Button
           size="large"
           onClick={onClick}
-          disabled={!!error}
+          disabled={!!error || exceedsSceneSize || isSceneSizeLimitLoading}
         >
           {t('modal.publish_project.deploy.files.publish')}
           <i className="deploy-icon" />
@@ -389,9 +474,10 @@ function Idle({ files, error, onClick }: IdleProps) {
 
 type DeployingProps = {
   steps: Step[];
+  children?: ReactNode;
 };
 
-function Deploying({ steps }: DeployingProps) {
+function Deploying({ steps, children }: DeployingProps) {
   return (
     <div className="Deploying">
       <div className="header">
@@ -399,6 +485,7 @@ function Deploying({ steps }: DeployingProps) {
         <Typography variant="h5">{t('modal.publish_project.deploy.deploying.publish')}</Typography>
       </div>
       <ConnectedSteps steps={steps} />
+      {children}
     </div>
   );
 }

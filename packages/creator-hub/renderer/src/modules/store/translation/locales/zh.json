@@ -456,6 +456,8 @@
         "files": {
           "count": "{count} {count, plural, one {文件} other {文件}}",
           "size": "总大小 <b>{size}</b>",
+          "size_with_limit": "总大小 <b>{size} / {limit}</b>",
+          "checking_limit": "正在检查限制…",
           "publish": "发布"
         },
         "deploying": {
@@ -468,6 +470,15 @@
             "unpublishing": "取消发布中...",
             "loading": "加载中...",
             "failed": "失败的"
+          },
+          "progress": {
+            "checking": "正在准备上传...",
+            "uploading": "正在上传 {sent} / {total}",
+            "processing": "发布中...",
+            "batches": "已上传第 {completed} 批，共 {total} 批",
+            "cancel_too_early": "正在移除之前的场景，暂时无法取消。请稍后再试。",
+            "cancel_unauthorized": "无法在此处取消发布。退出 Creator Hub 即可停止。",
+            "cancel_unsupported": "请更新此场景的 SDK 以在此处取消发布。"
           },
           "errors": {
             "details": "详细信息",
@@ -483,12 +494,16 @@
             "invalid_identity": "身份验证失败。",
             "max_file_size_exceeded": "一个或多个资产超过了允许的限制（{maxFileSizeInMb}MB）。\n优化或移除大文件并重试。",
             "max_scene_size_exceeded": "您的场景超过了允许的最大大小。\n请减少资产的数量或大小，然后重试。",
+            "deploy_state_lost": "已无法跟踪此次发布，它可能仍会完成。\n再次发布前，请在“管理”部分查看该场景。",
+            "deploy_request_timeout": "发布未在 60 分钟内完成，可能仍在进行中。\n再次发布前，请在“管理”部分查看该场景。",
             "unknown": "出了问题。\n请重试。",
             "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。"
           },
           "actions": {
             "report_issue": "报告问题",
-            "retry": "重试"
+            "retry": "重试",
+            "cancel": "取消",
+            "cancelling": "正在取消..."
           },
           "redirect": {
             "sign_in": "您将在 {seconds} 秒后被重定向到登录步骤……"
@@ -909,6 +924,9 @@
       "delete_scene": "删除场景...",
       "delete_scene_failed": "删除场景失败",
       "dependencies_updated": "場景相依性已更新",
+      "updating_sdk_skills": "正在安裝最新的 AI 技能...",
+      "sdk_skills_updated": "AI 技能已是最新版本",
+      "sdk_skills_update_failed": "無法安裝 AI 技能",
       "installing_dependencies": "安装依赖项",
       "installing_dependencies_failed": "安装依赖项失败",
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
@@ -944,6 +962,16 @@
       "title": "偵測到新的依賴項版本",
       "actions": {
         "update": "更新"
+      }
+    },
+    "sdk_skills": {
+      "outdated": {
+        "title": "此場景的 AI 技能有可用更新",
+        "action": "更新"
+      },
+      "missing": {
+        "title": "此場景尚未安裝 Decentraland AI 技能",
+        "action": "安裝"
       }
     },
     "deploy": {
@@ -986,7 +1014,8 @@
       "init_failed": "無法初始化登入。請檢查您的連接。",
       "identity_not_found": "無法完成登入。請重新登入。",
       "identity_expired": "您的登入請求已過期。請重新登入。",
-      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。"
+      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。",
+      "verifier_mismatch": "無法完成登入：此登入是從其他工作階段發起的。請重新登入。"
     }
   },
   "more": {
@@ -1023,7 +1052,6 @@
     "title": "选择一个模板",
     "results": "{count} {count, plural, one {模板} other {模板}}",
     "actions": {
-      "preview": "预览模板",
       "code": "查看代码"
     },
     "new_scene": {

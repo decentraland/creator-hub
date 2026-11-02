@@ -35,7 +35,7 @@ export function updateSelectedEntity(engine: IEngine) {
     ) as EditorComponents['Selection'];
     const Node = engine.getComponentOrNull(EditorComponentNames.Nodes) as EditorComponents['Nodes'];
 
-    const [_root, { value: nodes }] = Array.from(engine.getEntitiesWith(Node))[0];
+    const nodes = Array.from(engine.getEntitiesWith(Node))[0]?.[1].value ?? [];
 
     for (const [currentlySelectedEntity] of engine.getEntitiesWith(Selection)) {
       if (multiple && isAncestorOf(entity, currentlySelectedEntity, nodes as Node[])) {
