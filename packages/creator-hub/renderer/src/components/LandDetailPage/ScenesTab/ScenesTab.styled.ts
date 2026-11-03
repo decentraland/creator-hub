@@ -145,12 +145,12 @@ const Table = styled('table')(({ theme }) => ({
     color: theme.palette.primary.main,
   },
   '& tbody::before': { content: '""', display: 'table-row', height: 20 },
-  '& th.Select, & td.Select': { width: 60, padding: theme.spacing(0, 2.5) },
+  '& th.SelectCell, & td.SelectCell': { width: 60, padding: theme.spacing(0, 2.5) },
   '& th.Name': { width: 660 },
   '& tr > th.Name:first-child': { width: 720 },
-  '& tr > :first-child:not(.Select)': { paddingLeft: theme.spacing(2.5) },
+  '& tr > :first-child:not(.SelectCell)': { paddingLeft: theme.spacing(2.5) },
   '& th.Actions': { width: 100 },
-  '& td.Select > .MuiCheckbox-root': { display: 'flex' },
+  '& td.SelectCell > .MuiCheckbox-root': { display: 'flex' },
   '& tbody tr:hover, & tbody tr:focus-within, & tbody tr.Selected': {
     backgroundColor: whiteTransparent.subtle,
   },
@@ -159,7 +159,7 @@ const Table = styled('table')(({ theme }) => ({
   },
   [theme.breakpoints.down(1920)]: {
     tableLayout: 'auto',
-    '& th:not(.Select):not(.Name):not(.Actions)': { width: 226 },
+    '& th:not(.SelectCell):not(.Name):not(.Actions)': { width: 226 },
   },
 }));
 
