@@ -13,15 +13,17 @@ type Props = {
 export function ChartCard({ title, description, children }: Props) {
   return (
     <Box className="ChartCard">
-      <Typography variant="h6">{title}</Typography>
-      {description && (
-        <Typography
-          variant="body2"
-          className="Description"
-        >
-          {description}
-        </Typography>
-      )}
+      <Box className="ChartCardHeader">
+        <Typography variant="h6">{title}</Typography>
+        {description && (
+          <Typography
+            variant="body2"
+            className="Description"
+          >
+            {description}
+          </Typography>
+        )}
+      </Box>
       <Box className="ChartCardBody">{children}</Box>
     </Box>
   );

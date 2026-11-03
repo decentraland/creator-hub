@@ -109,8 +109,12 @@ describe('getRetentionColor', () => {
     expect(getRetentionColor(20)).toBe('success.main');
   });
 
-  it('should read as negative below the benchmark', () => {
-    expect(getRetentionColor(12)).toBe('error.main');
+  it('should call out a value below the benchmark in the brand colour', () => {
+    expect(getRetentionColor(12)).toBe('primary.main');
+  });
+
+  it('should hold Day 3 to the same benchmark as Day 7', () => {
+    expect(getRetentionColor(19.99)).toBe('primary.main');
   });
 
   it('should not colour missing data', () => {
