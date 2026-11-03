@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Convert from 'ansi-to-html';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { AnsiLine } from '@dcl/inspector/dist/ansi-entrypoint';
 import { Tooltip } from 'decentraland-ui2';
 
 import { consoleWindow as consolePreload, editor } from '#preload';
@@ -12,9 +12,8 @@ import type { Locale } from '/shared/types/translation';
 
 import { Header, HeaderButton, Logs, Placeholder, Root } from './component.styled';
 
-type LogEntry = { id: number; html: string };
+type LogEntry = { id: number; text: string };
 
-const convert = new Convert({ escapeXML: true });
 const LOG_BATCH_INTERVAL = 100;
 const MAX_ENTRIES = 1000;
 const SCROLL_THRESHOLD = 10;
@@ -66,7 +65,7 @@ export function ConsoleWindow() {
     const lines = Array.isArray(data) ? data : data.split('\n');
     for (const line of lines) {
       if (line.trim() !== '') {
-        pendingRef.current.push({ id: idRef.current++, html: convert.toHtml(line) });
+        pendingRef.current.push({ id: idRef.current++, text: line });
       }
     }
   }, []);
@@ -150,9 +149,9 @@ export function ConsoleWindow() {
           onScroll={handleScroll}
         >
           {entries.map(entry => (
-            <span
+            <AnsiLine
               key={entry.id}
-              dangerouslySetInnerHTML={{ __html: entry.html }}
+              text={entry.text}
             />
           ))}
         </Logs>
