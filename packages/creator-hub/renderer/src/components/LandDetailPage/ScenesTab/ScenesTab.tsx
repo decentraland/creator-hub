@@ -184,7 +184,7 @@ export function ScenesTab({ land, project, mode }: Props) {
           <thead>
             <tr>
               {mode === 'manage' && (
-                <th className="Select">
+                <th className="SelectCell">
                   <SelectCheckbox
                     checked={allSelected}
                     onChange={() =>
