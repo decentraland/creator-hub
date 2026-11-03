@@ -11,6 +11,7 @@ import {
   IconButton,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from 'decentraland-ui2';
 
@@ -146,18 +147,28 @@ function AgentConnect({
         )}
         {info.available ? (
           info.managedSignIn === true && (
-            <button
-              type="button"
-              className="AgentSignLink"
-              disabled={pending}
-              onClick={handleSignOut}
-              title={t('modal.app_settings.fields.ai_connect.sign_out_shared', {
-                agent: info.label,
-              })}
+            <Tooltip
+              title={
+                pending
+                  ? ''
+                  : t('modal.app_settings.fields.ai_connect.sign_out_shared', {
+                      agent: info.label,
+                    })
+              }
+              describeChild
+              enterDelay={150}
+              placement="top"
             >
-              {spinner}
-              {t('modal.app_settings.fields.ai_connect.sign_out')}
-            </button>
+              <button
+                type="button"
+                className="AgentSignLink"
+                disabled={pending}
+                onClick={handleSignOut}
+              >
+                {spinner}
+                {t('modal.app_settings.fields.ai_connect.sign_out')}
+              </button>
+            </Tooltip>
           )
         ) : signIn.busy ? (
           <button
@@ -312,8 +323,15 @@ const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
     [settings.useApiKeyFromEnv],
   );
   useEffect(() => {
-    if (settings.aiAssistant) void recheckProviders();
-    else setProviders([]);
+    if (!settings.aiAssistant) {
+      setProviders([]);
+      return;
+    }
+    void recheckProviders();
+    // Signing in or out in a terminal happens outside the app, so check again on return.
+    const onFocus = () => void recheckProviders();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, [settings.aiAssistant, recheckProviders]);
 
   const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
