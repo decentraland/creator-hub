@@ -1,10 +1,22 @@
 import LandCoordsIcon from '@mui/icons-material/Place';
 import LogoDCLSVG from '/assets/images/logo-dcl.svg';
 import LogoENSSVG from '/assets/images/logo-ens-transparent.svg';
-import { ManagedProjectType } from '/shared/types/manage';
+import { type ManagedProject, ManagedProjectType, WorldSettingsTab } from '/shared/types/manage';
 import { config } from '/@/config';
+import { WorldRoleType } from '/@/lib/worlds';
 
 const WORLDS_STORAGE_SERVICE_URL = config.get('WORLDS_STORAGE_SERVICE_URL');
+
+/**
+ * The tab the world card's settings button opens. Owners and world-wide collaborators get the
+ * full modal from Details; parcel-only collaborators only ever see the Layout tab.
+ */
+export const getWorldSettingsEntryTab = (
+  project: Pick<ManagedProject, 'role' | 'worldWideDeployment'>,
+): WorldSettingsTab =>
+  project.role === WorldRoleType.OWNER || project.worldWideDeployment
+    ? WorldSettingsTab.DETAILS
+    : WorldSettingsTab.LAYOUT;
 
 export const isENSDomain = (name: string) => {
   return name.endsWith('.eth') && !name.endsWith('.dcl.eth');

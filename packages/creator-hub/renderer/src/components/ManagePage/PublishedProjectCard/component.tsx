@@ -18,7 +18,7 @@ import { Image } from '../../Image';
 import { Button } from '../../Button';
 import { Dropdown } from '../../Dropdown';
 import type { Option } from '../../Dropdown';
-import { formatName, getLogo, getStorageUrl, isENSDomain } from './utils';
+import { formatName, getLogo, getStorageUrl, getWorldSettingsEntryTab, isENSDomain } from './utils';
 import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
@@ -48,6 +48,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
     const { pushGeneric } = useSnackbar();
     const { id, displayName, type, role, deployment } = project;
     const roleLabel = isCollaboratorRole(role) ? COLLABORATOR_ROLES_LABELS[role] : null;
+    const settingsEntryTab = getWorldSettingsEntryTab(project);
 
     const handleJumpIn = useCallback(() => {
       const url = getJumpInUrl(id);
@@ -203,15 +204,9 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                   color="secondary"
                   startIcon={<WorldSettingsIcon />}
                   className="WorldSettingsButton"
-                  onClick={() =>
-                    onOpenSettings(
-                      role === WorldRoleType.OWNER
-                        ? WorldSettingsTab.DETAILS
-                        : WorldSettingsTab.LAYOUT,
-                    )
-                  }
+                  onClick={() => onOpenSettings(settingsEntryTab)}
                 >
-                  {role === WorldRoleType.OWNER
+                  {settingsEntryTab === WorldSettingsTab.DETAILS
                     ? t('manage.cards.worlds.world_settings')
                     : t('manage.cards.worlds.layout')}
                 </Button>

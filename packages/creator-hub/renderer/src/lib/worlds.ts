@@ -283,6 +283,16 @@ export type WorldParcelsResponse = {
 const WORLD_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
 
 export const WORLD_LIMITS_TIMEOUT_MS = 5000;
+// Reads behind picking a world. A dropped connection can leave a request pending instead of
+// failing, which would hold the publish flow in its loading state with no way to retry.
+const WORLD_READ_TIMEOUT_MS = 15000;
+
+// Not AbortSignal.timeout: the renderer's test DOM lacks it. Aborting a settled request is a no-op.
+function readTimeoutSignal(): AbortSignal {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), WORLD_READ_TIMEOUT_MS);
+  return controller.signal;
+}
 // POST /world/:name/scenes page size. Deployed scenes never share a parcel, so a chunk of this many
 // coordinates overlaps at most one page of scenes and needs no paging.
 const SCENE_LOOKUP_CHUNK_SIZE = 100;
@@ -348,7 +358,9 @@ export class Worlds {
     try {
       const queryString = formatQueryParams(params);
       const encodedWorldName = encodeURIComponent(worldName);
-      const result = await fetch(`${this.url}/world/${encodedWorldName}/scenes?${queryString}`);
+      const result = await fetch(`${this.url}/world/${encodedWorldName}/scenes?${queryString}`, {
+        signal: readTimeoutSignal(),
+      });
       if (result.ok) {
         const json = await result.json();
         return json as WorldScenes;
@@ -364,7 +376,9 @@ export class Worlds {
 
   public async fetchWorldSettings(worldName: string) {
     const encodedWorldName = encodeURIComponent(worldName);
-    const result = await fetch(`${this.url}/world/${encodedWorldName}/settings`);
+    const result = await fetch(`${this.url}/world/${encodedWorldName}/settings`, {
+      signal: readTimeoutSignal(),
+    });
     if (result.ok) {
       const json = await result.json();
       if (json.thumbnail_hash) {
@@ -678,6 +692,7 @@ export class Worlds {
     const encodedWalletAddress = encodeURIComponent(walletAddress);
     const result = await fetch(
       `${this.url}/world/${encodedWorldName}/permissions/${encodedPermissionName}/address/${encodedWalletAddress}/parcels?${queryString}`,
+      { signal: readTimeoutSignal() },
     );
     if (result.ok) {
       const json = await result.json();

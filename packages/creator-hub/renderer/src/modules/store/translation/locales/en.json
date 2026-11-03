@@ -406,7 +406,7 @@
             "scenes_count": "Your parcel selection already contains <b>{count} {count, plural, one {scene} other {scenes}}</b>:",
             "scene_title_placeholder": "Scene {index}"
           },
-          "permissions_error": "We couldn't check which parcels you can deploy to in this world."
+          "load_error": "We couldn't load this world's details. Check your connection and try again."
         },
         "empty_names": {
           "title": "You don't have any available World",

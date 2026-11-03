@@ -405,7 +405,7 @@
             "scenes_count": "Tu selección de parcelas ya contiene <b>{count} {count, plural, one {escena} other {escenas}}</b>:",
             "scene_title_placeholder": "Escena {index}"
           },
-          "permissions_error": "No pudimos comprobar en qué parcelas de este mundo puedes publicar."
+          "load_error": "No pudimos cargar los datos de este mundo. Revisa tu conexión e inténtalo de nuevo."
         },
         "empty_names": {
           "title": "No tienes ningún mundo disponible",

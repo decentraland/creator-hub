@@ -4,7 +4,7 @@ import { retry } from '/shared/utils';
 
 import { parseCoords } from '/@/lib/land';
 import type { WorldData, WorldScene, Worlds } from '/@/lib/worlds';
-import { WorldRoleType } from '/@/lib/worlds';
+import { WorldPermissionName, WorldRoleType } from '/@/lib/worlds';
 
 import type { ParcelsPermission, WorldPermissionsState, WorldSettingsState } from './slice';
 
@@ -125,6 +125,29 @@ export async function toManagedProject(
 }
 
 /**
+ * Whether `address` may deploy anywhere in the world, read the way the World Settings modal
+ * reads it, so a card offers the same view the modal opens. A failed lookup answers `false`:
+ * the parcel-only view is the one that never promises more than the modal shows.
+ */
+export async function fetchHasWorldWideDeployment(
+  worldsApi: Worlds,
+  worldName: string,
+  address: string,
+): Promise<boolean> {
+  try {
+    const page = await worldsApi.fetchParcelsPermission(
+      worldName,
+      WorldPermissionName.Deployment,
+      address,
+      { limit: 1, offset: 0 },
+    );
+    return !!page && hasWorldWidePermission({ parcels: page.parcels, status: 'succeeded' });
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Every world the wallet has deployed to, whoever is asking and whatever the
  * Manage page is currently showing.
  *
@@ -185,6 +208,7 @@ export const getWorldSettingsInitialState = (): WorldSettingsState => ({
   worldName: '',
   settings: {},
   scenes: [],
+  scenesStatus: 'idle',
   status: 'idle',
   error: null,
 });

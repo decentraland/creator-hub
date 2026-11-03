@@ -23,6 +23,7 @@ import {
   getThumbnailUrlFromDeployment,
   getWorldPermissionsInitialState,
   getWorldSettingsInitialState,
+  fetchHasWorldWideDeployment,
   toManagedProject,
 } from './utils';
 import type {
@@ -40,6 +41,7 @@ export type WorldSettingsState = {
   worldName: string;
   settings: WorldSettings;
   scenes: WorldScene[];
+  scenesStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 };
@@ -157,7 +159,16 @@ export const fetchWorlds = createAsyncThunk(
     }
 
     const worldProjects: ManagedProject[] = await Promise.all(
-      worldsResponse.worlds.map(world => limit(() => toManagedProject(WorldsAPI, world, address))),
+      worldsResponse.worlds.map(world =>
+        limit(async () => {
+          const project = await toManagedProject(WorldsAPI, world, address);
+          if (project.role !== WorldRoleType.COLLABORATOR) return project;
+          return {
+            ...project,
+            worldWideDeployment: await fetchHasWorldWideDeployment(WorldsAPI, world.name, address),
+          };
+        }),
+      ),
     );
 
     return { worlds: worldProjects, total: worldsResponse.total };
@@ -258,8 +269,11 @@ export const fetchWorldScenes = createAsyncThunk(
   async ({ worldName }: { worldName: string }) => {
     const WorldsAPI = new Worlds();
     const worldScenes = await WorldsAPI.fetchWorldScenes(worldName);
+    // A world with nothing deployed still answers with an empty list, so null is a failed
+    // request. Reading it as "no scenes" would offer a single-scene publish over existing ones.
+    if (!worldScenes) throw new Error(`Failed to fetch scenes for world "${worldName}"`);
     return (
-      worldScenes?.scenes.map(scene => ({
+      worldScenes.scenes.map(scene => ({
         ...scene,
         thumbnailUrl: getThumbnailUrlFromDeployment(scene.entity, $ =>
           WorldsAPI.getContentSrcUrl($),
@@ -278,7 +292,8 @@ export const unpublishWorldScene = createAsyncThunk(
     const WorldsAPI = new Worlds();
     const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
     if (success) {
-      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      // The unpublish already happened; a failed refresh reports itself and must not undo that.
+      await dispatch(fetchWorldScenes({ worldName }));
       dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world scene');
@@ -295,7 +310,8 @@ export const unpublishEntireWorld = createAsyncThunk(
     const WorldsAPI = new Worlds();
     const success = await WorldsAPI.unpublishEntireWorld(connectedAccount, worldName);
     if (success) {
-      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      // The unpublish already happened; a failed refresh reports itself and must not undo that.
+      await dispatch(fetchWorldScenes({ worldName }));
       dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
     } else {
       throw new Error('Failed to unpublish world');
@@ -546,17 +562,20 @@ const slice = createSlice({
         state.accountHoldings = action.payload;
       })
       .addCase(fetchWorldScenes.pending, (state, action) => {
-        state.worldSettings.worldName = action.meta.arg.worldName;
+        switchWorldSettings(state.worldSettings, action.meta.arg.worldName);
+        state.worldSettings.scenesStatus = 'loading';
       })
       .addCase(fetchWorldScenes.fulfilled, (state, action) => {
         if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
         state.worldSettings.scenes = action.payload ?? [];
+        state.worldSettings.scenesStatus = 'succeeded';
+      })
+      .addCase(fetchWorldScenes.rejected, (state, action) => {
+        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
+        state.worldSettings.scenesStatus = 'failed';
       })
       .addCase(fetchWorldSettings.pending, (state, action) => {
-        if (state.worldSettings.worldName !== action.meta.arg.worldName) {
-          state.worldSettings.settings = {} as WorldSettings;
-        }
-        state.worldSettings.worldName = action.meta.arg.worldName;
+        switchWorldSettings(state.worldSettings, action.meta.arg.worldName);
         state.worldSettings.status = 'loading';
         state.worldSettings.error = null;
       })
@@ -647,6 +666,15 @@ const slice = createSlice({
       });
   },
 });
+
+// Settings and scenes load separately, and whichever request starts first claims the new
+// world, so each must drop the previous world's data or it shows under the new name.
+function switchWorldSettings(worldSettings: WorldSettingsState, worldName: string) {
+  if (worldSettings.worldName === worldName) return;
+  worldSettings.worldName = worldName;
+  worldSettings.settings = {} as WorldSettings;
+  worldSettings.scenes = [];
+}
 
 // selectors
 const getManagementState = (state: AppState) => state.management;

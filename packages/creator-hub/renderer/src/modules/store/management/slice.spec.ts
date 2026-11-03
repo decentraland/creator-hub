@@ -84,6 +84,9 @@ vi.mock('/@/lib/worlds', () => ({
     OWNER: 'owner',
     COLLABORATOR: 'collaborator',
   },
+  WorldPermissionName: {
+    Deployment: 'deployment',
+  },
   WorldPermissionType: {
     Unrestricted: 'unrestricted',
     AllowList: 'allowlist',
@@ -165,6 +168,7 @@ vi.mock('./utils', async importOriginal => ({
     worldName: '',
     settings: {},
     scenes: [],
+    scenesStatus: 'idle',
     status: 'idle',
     error: null,
   })),
@@ -213,6 +217,7 @@ describe('management slice', () => {
         worldName: '',
         settings: {},
         scenes: [],
+        scenesStatus: 'idle',
         status: 'idle',
         error: null,
       });
@@ -453,6 +458,41 @@ describe('management slice', () => {
 
       const state = store.getState().management;
       expect(state.worldSettings.scenes.length).toBe(mockScenes.length);
+      expect(state.worldSettings.scenesStatus).toBe('succeeded');
+    });
+
+    describe('when the scenes request fails', () => {
+      beforeEach(() => {
+        mockWorldsAPI.fetchWorldScenes.mockResolvedValue(null);
+      });
+
+      it('should reject and mark the scenes as failed instead of reporting an empty world', async () => {
+        const result = await store.dispatch(fetchWorldScenes({ worldName: TEST_WORLD_NAME }));
+
+        expect(result.meta.requestStatus).toBe('rejected');
+        expect(store.getState().management.worldSettings.scenesStatus).toBe('failed');
+      });
+    });
+
+    describe('when another world was loaded before', () => {
+      beforeEach(async () => {
+        mockWorldsAPI.fetchWorldScenes.mockResolvedValueOnce({
+          scenes: [{ entityId: 'other-scene', parcels: ['0,0'] }],
+        });
+        await store.dispatch(fetchWorldScenes({ worldName: 'other-world' }));
+        mockWorldsAPI.fetchWorldSettings.mockReturnValue(new Promise(() => {}));
+        mockWorldsAPI.fetchWorldScenes.mockReturnValue(new Promise(() => {}));
+      });
+
+      it("should drop the other world's scenes as soon as the new world starts loading", () => {
+        store.dispatch(fetchWorldSettings({ worldName: TEST_WORLD_NAME }));
+        store.dispatch(fetchWorldScenes({ worldName: TEST_WORLD_NAME }));
+
+        const { worldSettings } = store.getState().management;
+        expect(worldSettings.worldName).toBe(TEST_WORLD_NAME);
+        expect(worldSettings.scenes).toEqual([]);
+        expect(worldSettings.scenesStatus).toBe('loading');
+      });
     });
   });
 
@@ -1014,6 +1054,16 @@ describe('management slice', () => {
       expect(mockWorldsAPI.fetchWorldScenes).toHaveBeenCalledWith(TEST_WORLD_NAME);
     });
 
+    it('should still resolve when only the scenes refresh after unpublishing fails', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.unpublishEntireWorld.mockResolvedValueOnce(true);
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValueOnce(null);
+
+      await expect(
+        store.dispatch(unpublishEntireWorld({ worldName: TEST_WORLD_NAME })).unwrap(),
+      ).resolves.toBeUndefined();
+    });
+
     it('should throw error when unpublishing fails', async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
       mockWorldsAPI.unpublishEntireWorld.mockResolvedValueOnce(false);
@@ -1059,6 +1109,48 @@ describe('management slice', () => {
   describe('fetchWorlds', () => {
     beforeEach(() => {
       mockWorldsAPI.fetchWorldScenes.mockResolvedValue({ scenes: [], total: 0 });
+    });
+
+    describe('when the wallet collaborates on worlds', () => {
+      const OWNER = '0xowner';
+
+      beforeEach(async () => {
+        mockWorldsAPI.fetchWorlds.mockResolvedValueOnce({
+          worlds: [
+            { name: 'world-wide.dcl.eth', owner: OWNER, deployedScenes: 1 },
+            { name: 'some-parcels.dcl.eth', owner: OWNER, deployedScenes: 1 },
+            { name: 'unreadable.dcl.eth', owner: OWNER, deployedScenes: 1 },
+            { name: 'owned.dcl.eth', owner: TEST_ADDRESS, deployedScenes: 1 },
+          ],
+          total: 4,
+        });
+        mockWorldsAPI.fetchParcelsPermission.mockImplementation(async (worldName: string) => {
+          if (worldName === 'world-wide.dcl.eth') return { parcels: [], total: 0 };
+          if (worldName === 'some-parcels.dcl.eth') return { parcels: ['0,0'], total: 3 };
+          return null;
+        });
+        await store.dispatch(fetchWorlds({ address: TEST_ADDRESS }));
+      });
+
+      it('should mark only the worlds the wallet can deploy anywhere in as world-wide', () => {
+        const byId = Object.fromEntries(
+          store.getState().management.projects.map(project => [project.id, project]),
+        );
+        expect(byId['world-wide.dcl.eth'].worldWideDeployment).toBe(true);
+        expect(byId['some-parcels.dcl.eth'].worldWideDeployment).toBe(false);
+        expect(byId['unreadable.dcl.eth'].worldWideDeployment).toBe(false);
+        expect(byId['owned.dcl.eth'].worldWideDeployment).toBeUndefined();
+      });
+
+      it("should look up the wallet's deployment parcels only for worlds it does not own", () => {
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledTimes(3);
+        expect(mockWorldsAPI.fetchParcelsPermission).toHaveBeenCalledWith(
+          'world-wide.dcl.eth',
+          'deployment',
+          TEST_ADDRESS,
+          { limit: 1, offset: 0 },
+        );
+      });
     });
 
     it('should fetch and transform worlds successfully on first page', async () => {

@@ -99,15 +99,18 @@ export function PublishToWorld(props: Props) {
     }
   }, [step, props.onBack]);
 
-  const fetchParcelsPermission = useCallback(
-    (worldName: string) =>
+  const loadWorld = useCallback(
+    (worldName: string) => {
+      dispatch(managementActions.fetchWorldSettings({ worldName }));
+      dispatch(managementActions.fetchWorldScenes({ worldName }));
       dispatch(
         managementActions.fetchParcelsPermission({
           worldName,
           permissionName: WorldPermissionName.Deployment,
           walletAddress: wallet || '',
         }),
-      ),
+      );
+    },
     [wallet],
   );
 
@@ -115,20 +118,18 @@ export function PublishToWorld(props: Props) {
     (worldName: string) => {
       setIsMultiSceneEnabled(false);
       setName(worldName);
-
-      dispatch(managementActions.fetchWorldSettings({ worldName }));
-      dispatch(managementActions.fetchWorldScenes({ worldName }));
-      fetchParcelsPermission(worldName);
+      loadWorld(worldName);
     },
-    [fetchParcelsPermission],
+    [loadWorld],
   );
 
-  const handleRetryParcelsPermission = useCallback(
-    () => fetchParcelsPermission(name),
-    [fetchParcelsPermission, name],
-  );
+  const handleRetryLoadWorld = useCallback(() => loadWorld(name), [loadWorld, name]);
 
-  const parcelsPermissionFailed = !!name && !isOwner && worldPermissions?.status === 'failed';
+  const worldLoadFailed =
+    !!name &&
+    (worldSettings.status === 'failed' ||
+      worldSettings.scenesStatus === 'failed' ||
+      (!isOwner && worldPermissions?.status === 'failed'));
 
   const handleUpdateProject = useCallback(
     async (projectUpdates: Partial<Project>) => {
@@ -191,19 +192,19 @@ export function PublishToWorld(props: Props) {
           name={name}
           project={project}
         >
-          {parcelsPermissionFailed && (
-            <Box className="ParcelsPermissionError">
+          {worldLoadFailed && (
+            <Box className="WorldLoadError">
               <Typography
                 variant="body2"
                 color="error"
               >
-                {t('modal.publish_project.worlds.select_world.permissions_error')}
+                {t('modal.publish_project.worlds.select_world.load_error')}
               </Typography>
               <Button
                 variant="outlined"
                 color="secondary"
                 size="small"
-                onClick={handleRetryParcelsPermission}
+                onClick={handleRetryLoadWorld}
               >
                 {t('modal.publish_project.worlds.select_world.actions.retry')}
               </Button>
@@ -218,6 +219,7 @@ export function PublishToWorld(props: Props) {
               isMultiSceneEnabled={isMultiSceneEnabled}
               onChangeMultiScene={setIsMultiSceneEnabled}
               hasWorldWidePermissions={hasWorldWidePermissions}
+              worldLoadFailed={worldLoadFailed}
               onChangeName={handleChangeName}
               onSelectLocation={handleSelectLocation}
               onPublish={handlePublish}
@@ -255,6 +257,7 @@ function SelectWorld({
   isOwner,
   worldSettings,
   hasWorldWidePermissions,
+  worldLoadFailed,
   isMultiSceneEnabled,
   onChangeMultiScene,
   onChangeName,
@@ -266,6 +269,7 @@ function SelectWorld({
   isOwner: boolean;
   worldSettings: WorldSettingsState;
   hasWorldWidePermissions: boolean;
+  worldLoadFailed: boolean;
   isMultiSceneEnabled: boolean;
   onChangeMultiScene: (isMultiSceneEnabled: boolean) => void;
   onChangeName: (name: string) => void;
@@ -512,7 +516,7 @@ function SelectWorld({
         <Button
           onClick={handleNext}
           size="large"
-          disabled={!projectIsReady || !name}
+          disabled={!projectIsReady || !name || worldLoadFailed}
           endIcon={<ArrowForwardIcon />}
         >
           {isMultiSceneEnabled && worldSettings.scenes.length > 0

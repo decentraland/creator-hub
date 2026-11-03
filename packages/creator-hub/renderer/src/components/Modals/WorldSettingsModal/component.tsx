@@ -71,6 +71,10 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
     const isEffectivelyLoading =
       isLoading || (!isOwner && userParcelsPermissions?.status === 'loading');
 
+    // The world card picks its entry tab from its own permission lookup; if this one disagrees
+    // (it failed, or access changed since), fall back to the only tab a restricted user has.
+    const shownTab = canEditSettings || isEffectivelyLoading ? activeTab : WorldSettingsTab.LAYOUT;
+
     const handleUpdateSettings = useCallback((newSettings: Partial<WorldSettings>) => {
       setSettingsUpdates(prev => ({ ...prev, ...newSettings }));
     }, []);
@@ -99,7 +103,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
     return (
       <TabsModal
         {...props}
-        activeTab={activeTab}
+        activeTab={shownTab}
         tabs={WORLD_SETTINGS_TABS}
         showTabs={canEditSettings}
         title={t('modal.world_settings.title', { worldName: worldName })}
@@ -112,19 +116,19 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
           <Loader size={40} />
         ) : (
           <>
-            {activeTab === WorldSettingsTab.GENERAL && (
+            {shownTab === WorldSettingsTab.GENERAL && (
               <GeneralTab
                 worldSettings={worldSettingsForm}
                 onChangeSettings={handleUpdateSettings}
               />
             )}
-            {activeTab === WorldSettingsTab.DETAILS && (
+            {shownTab === WorldSettingsTab.DETAILS && (
               <DetailsTab
                 worldSettings={worldSettingsForm}
                 onChangeSettings={handleUpdateSettings}
               />
             )}
-            {activeTab === WorldSettingsTab.LAYOUT && (
+            {shownTab === WorldSettingsTab.LAYOUT && (
               <LayoutTab
                 worldName={worldName}
                 worldSettings={worldSettings}
@@ -133,7 +137,7 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
                 userParcelsPermissions={userParcelsPermissions}
               />
             )}
-            {activeTab !== WorldSettingsTab.LAYOUT && hasChanges && (
+            {shownTab !== WorldSettingsTab.LAYOUT && hasChanges && (
               <Box className="ActionsContainer">
                 <Typography className="UnsavedChangesText">
                   {t('modal.world_settings.discard_confirmation')}

@@ -21,6 +21,11 @@ export type ManagedProject = {
   displayName: string;
   type: ManagedProjectType;
   role: LandRoleType | WorldRoleType;
+  /**
+   * Whether a world collaborator may deploy anywhere in the world rather than to some parcels,
+   * which is what opens the full World Settings modal to them. Unset for owners and LAND.
+   */
+  worldWideDeployment?: boolean;
   deployment?: ProjectDeployment;
   /**
    * Base coordinate of each scene deployed in this world. A world can hold

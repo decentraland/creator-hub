@@ -405,7 +405,7 @@
             "scenes_count": "您选择的地块已包含 <b>{count} {count, plural, one {场景} other {场景}}</b>：",
             "scene_title_placeholder": "场景 {index}"
           },
-          "permissions_error": "无法确认您在此世界中可以部署到哪些地块。"
+          "load_error": "无法加载此世界的信息。请检查您的网络连接后重试。"
         },
         "empty_names": {
           "title": "您沒有任何可用的世界",
