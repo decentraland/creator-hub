@@ -5,7 +5,7 @@ import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 import { captureException } from '@sentry/electron/main';
 import { StreamError } from './bin';
 
-const SENSITIVE_KEY = /auth-chain|authorization|password|token|secret/i;
+const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret/i;
 
 /**
  * Renders IPC arguments for the log. Credential-shaped values are masked because

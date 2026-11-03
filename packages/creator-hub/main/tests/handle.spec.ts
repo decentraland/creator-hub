@@ -18,6 +18,8 @@ describe('formatArgs', () => {
       headers: {
         'x-identity-auth-chain-0': '{"type":"SIGNER","payload":"0xabc"}',
         'x-identity-auth-chain-1': '{"type":"ECDSA_EPHEMERAL","signature":"0xdef"}',
+        'x-identity-timestamp': '1767225600000',
+        'x-identity-metadata': '{"signer":"dcl:creator-hub"}',
       },
       body: { locations: [{ x: 0, y: 0 }] },
     };
@@ -28,6 +30,8 @@ describe('formatArgs', () => {
       expect(line).not.toContain('0xabc');
       expect(line).not.toContain('0xdef');
       expect(line).not.toContain('ECDSA_EPHEMERAL');
+      expect(line).not.toContain('1767225600000');
+      expect(line).not.toContain('dcl:creator-hub');
     });
 
     it('should still log everything else', () => {

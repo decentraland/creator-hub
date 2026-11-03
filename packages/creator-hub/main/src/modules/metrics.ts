@@ -9,8 +9,13 @@ const LOCAL_HOSTS = ['localhost', '127.0.0.1'];
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
-/** The only headers the renderer gets to set: its ADR-44 signature. */
-const FORWARDED_HEADER = /^x-identity-auth-chain-/i;
+/**
+ * The only headers the renderer gets to set: the full ADR-44 signed-fetch set
+ * `signedHeaderFactory` produces. The server rebuilds the signed payload from
+ * the timestamp and metadata headers, so dropping either fails verification
+ * with "Expired signature: signature timestamp: 0".
+ */
+const FORWARDED_HEADER = /^x-identity-(auth-chain-\d+|timestamp|metadata)$/i;
 
 /**
  * Main is not a general-purpose fetch proxy for the renderer: it only reaches
