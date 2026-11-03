@@ -70,6 +70,7 @@ async function main() {
   }
 
   await buildCommonJsDistributable();
+  await buildAnsiDistributable();
   await runTypeChecker();
 }
 
@@ -198,6 +199,31 @@ main().catch(err => {
   console.error(err);
   process.exit(1);
 });
+
+// The debug-console line renderer, as browser ESM for the Creator Hub's detached console
+// window. `packages: 'external'` keeps React out of it: a second React copy inside the file
+// would break hooks in the host app.
+async function buildAnsiDistributable() {
+  const context = await esbuild.context({
+    entryPoints: ['src/ansi-entrypoint.ts'],
+    bundle: true,
+    platform: 'browser',
+    format: 'esm',
+    packages: 'external',
+    outfile: 'dist/ansi-entrypoint.js',
+    sourcemap: 'linked',
+    minify: PRODUCTION,
+  });
+
+  if (WATCH_MODE) {
+    await context.watch();
+  } else {
+    console.time('> Building ANSI line bundle');
+    await context.rebuild();
+    await context.dispose();
+    console.timeEnd('> Building ANSI line bundle');
+  }
+}
 
 function runTypeChecker() {
   const args = [require.resolve('typescript/lib/tsc'), '-p', 'tsconfig.json'];
