@@ -11,6 +11,16 @@
             "statusMessage": "Setting up worktree environment (install, protoc, build, test)..."
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "async": true,
+            "command": "p=$(cat); case \"$p\" in *dcl-*) printf '%s' \"$p\" | python3 \"$CLAUDE_PROJECT_DIR/.ai/hooks/heartbeat/hook.py\" ;; esac"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
