@@ -12,9 +12,10 @@
  * engine's asset-loader worker throwing `SharedArrayBuffer transfer requires
  * self.crossOriginIsolated`.
  *
- * The headers are therefore injected onto the app's own documents (`file://` renderer plus
- * localhost inspector) and nothing else, so external embeds such as YouTube, docs and studios
- * are unaffected — a blanket COEP would block their cross-origin subresources. COEP is
+ * The isolation headers (COOP + COEP + CORP) are therefore injected onto the app's own documents
+ * (`file://` renderer plus localhost inspector) only; external documents such as docs and
+ * studios are left alone, since a blanket COEP would block their cross-origin subresources. The
+ * frames listed under "Frames the app embeds" below get COEP alone, and nothing else. COEP is
  * `credentialless` rather than `require-corp` so the inspector iframe's cross-origin
  * subresources load without needing CORP on every one, matching the inspector http-server and
  * the engine's own service worker.
@@ -22,11 +23,16 @@
  * ## Frames the app embeds
  *
  * A document with COEP set may only embed a cross-origin *frame* whose own response also
- * carries COEP; `credentialless` relaxes that for subresources, not for frames. So once the
- * inspector document became isolated, the wearable-preview that renders GLB and emote previews
- * had to carry COEP or stop loading — and the import dialog waits on its `onLoad`, so the
- * spinner never resolved. All three environments are listed because decentraland-ui picks the
- * origin from its own env config.
+ * carries COEP; `credentialless` relaxes that for subresources, not for frames, and CORP does
+ * not cover frames either. So once the inspector document became isolated, every cross-origin
+ * frame it embeds had to carry COEP or stop loading with `ERR_BLOCKED_BY_RESPONSE`. Two did:
+ * the wearable-preview behind GLB and emote previews, whose `onLoad` the import dialog waits on
+ * (so the spinner never resolved), and the video players a scene's markdown may embed, which
+ * simply rendered nothing. Neither sends an enforced COEP of its own — YouTube sends only
+ * `Cross-Origin-Embedder-Policy-Report-Only`, which does not count — so it is stamped here.
+ * Every wearable-preview environment is listed because decentraland-ui picks the origin from
+ * its own env config; the video origins mirror the inspector's markdown iframe allowlist, and
+ * a test asserts this list keeps covering it.
  *
  * ## One listener, one handler
  *
@@ -106,6 +112,9 @@ app.on('ready', () => {
       'https://wearable-preview.decentraland.org/*',
       'https://wearable-preview.decentraland.today/*',
       'https://wearable-preview.decentraland.zone/*',
+      'https://www.youtube.com/*',
+      'https://youtube.com/*',
+      'https://player.vimeo.com/*',
     ],
   };
 
