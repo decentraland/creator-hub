@@ -177,6 +177,7 @@ async function buildCommonJsDistributable() {
     outfile: 'dist/tooling-entrypoint.js',
     sourcemap: 'both',
     minify: PRODUCTION,
+    define: { INSPECTOR_DEV_PARSER: 'false' },
     external: externalModulesArray,
     loader: {
       '.glb': 'dataurl',
