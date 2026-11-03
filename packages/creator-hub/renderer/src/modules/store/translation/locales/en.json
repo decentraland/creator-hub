@@ -517,19 +517,17 @@
         }
       },
       "place_continuity": {
-        "title": "This publish will change your Place",
-        "land_description": "Your scene is already published in Genesis City, and this publish changes both its base parcel and the set of parcels it occupies. Decentraland will treat it as a new Place instead of an update to the existing one.",
-        "world_description": "Your scene {overlap, plural, =0 {doesn't overlap any existing scene} other {overlaps # existing scenes}} in this World. A publish only keeps its Place when it replaces exactly one existing scene, so Decentraland will treat it as a new Place.",
-        "consequences_title": "Anything tied to the current Place may be lost, including:",
+        "title": "Your scene will lose its Places listing",
+        "land_description": "Your scene already has a listing in the Places directory. This publish changes both its base parcel and the parcels it occupies, so Decentraland will register the result as a new place instead of updating the current listing.",
+        "world_description": "{overlap, plural, =0 {This placement doesn't overlap any existing scene in this World} other {This placement overlaps # existing scenes in this World}}, so Decentraland will register it as a new place instead of updating the current listing. A listing is only kept when the publish replaces exactly one existing scene.",
+        "consequences_title": "What stays with the old listing",
         "consequences": {
-          "storage": "The data stored in your Multiplayer Server storage may be erased.",
-          "analytics": "Your scene analytics will be reset.",
-          "creator_fund": "You may lose money from the Creator Fund.",
-          "badges": "You may lose associated badges (coming soon).",
-          "other": "Any other data, likes, favorites or rankings linked to the current Place."
+          "engagement": "Its likes, favorites and position in the Places rankings.",
+          "analytics": "Its scene analytics. The new listing starts from zero.",
+          "storage": "The data in its Multiplayer Server storage, which may be erased."
         },
-        "tip": "To keep your Place, publish to the same base parcel or to the same set of parcels as before.",
-        "world_tip": "To keep your Place, place the scene so that it replaces exactly one existing scene in this World.",
+        "tip": "To keep the current listing, publish to the same base parcel or to the same set of parcels as before.",
+        "world_tip": "To keep the current listing, place the scene so that it replaces exactly one existing scene in this World.",
         "cancel": "Go back",
         "confirm": "Publish anyway",
         "checking": "Checking…"

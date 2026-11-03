@@ -516,19 +516,17 @@
         }
       },
       "place_continuity": {
-        "title": "Esta publicación cambiará tu Place",
-        "land_description": "Tu escena ya está publicada en Genesis City y esta publicación cambia tanto su parcela base como el conjunto de parcelas que ocupa. Decentraland la tratará como un Place nuevo en lugar de una actualización del existente.",
-        "world_description": "Tu escena {overlap, plural, =0 {no se superpone con ninguna escena existente} other {se superpone con # escenas existentes}} en este World. Una publicación solo conserva su Place cuando reemplaza exactamente una escena existente, por lo que Decentraland la tratará como un Place nuevo.",
-        "consequences_title": "Todo lo asociado al Place actual podría perderse, incluyendo:",
+        "title": "Tu escena perderá su ficha en Places",
+        "land_description": "Tu escena ya tiene una ficha en el directorio Places. Esta publicación cambia tanto su parcela base como las parcelas que ocupa, por lo que Decentraland registrará el resultado como un lugar nuevo en vez de actualizar la ficha actual.",
+        "world_description": "{overlap, plural, =0 {Esta ubicación no se superpone con ninguna escena existente de este World} other {Esta ubicación se superpone con # escenas existentes de este World}}, por lo que Decentraland la registrará como un lugar nuevo en vez de actualizar la ficha actual. La ficha solo se conserva cuando la publicación reemplaza exactamente una escena existente.",
+        "consequences_title": "Lo que se queda en la ficha anterior",
         "consequences": {
-          "storage": "Los datos guardados en el almacenamiento del servidor multijugador podrían borrarse.",
-          "analytics": "Las analíticas de tu escena se reiniciarán.",
-          "creator_fund": "Podrías perder dinero del Creator Fund.",
-          "badges": "Podrías perder las insignias asociadas (próximamente).",
-          "other": "Cualquier otro dato, me gusta, favoritos o rankings vinculados al Place actual."
+          "engagement": "Sus me gusta, favoritos y posición en los rankings de Places.",
+          "analytics": "Sus analíticas de escena. La ficha nueva empieza desde cero.",
+          "storage": "Los datos de su almacenamiento del servidor multijugador, que podrían borrarse."
         },
-        "tip": "Para conservar tu Place, publica en la misma parcela base o en el mismo conjunto de parcelas que antes.",
-        "world_tip": "Para conservar tu Place, ubica la escena de modo que reemplace exactamente una escena existente de este World.",
+        "tip": "Para conservar la ficha actual, publica en la misma parcela base o en el mismo conjunto de parcelas que antes.",
+        "world_tip": "Para conservar la ficha actual, ubica la escena de modo que reemplace exactamente una escena existente de este World.",
         "cancel": "Volver",
         "confirm": "Publicar de todos modos",
         "checking": "Comprobando…"

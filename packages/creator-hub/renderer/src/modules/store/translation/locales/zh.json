@@ -516,19 +516,17 @@
         }
       },
       "place_continuity": {
-        "title": "此次发布将更改您的 Place",
-        "land_description": "您的场景已发布在 Genesis City，此次发布同时更改了其基准地块和所占用的地块集合。Decentraland 会将其视为新的 Place，而不是对现有 Place 的更新。",
-        "world_description": "您的场景在此 World 中{overlap, plural, =0 {不与任何现有场景重叠} other {与 # 个现有场景重叠}}。只有恰好替换一个现有场景时，发布才会保留其 Place，因此 Decentraland 会将其视为新的 Place。",
-        "consequences_title": "与当前 Place 关联的内容可能会丢失，包括：",
+        "title": "您的场景将失去其 Places 条目",
+        "land_description": "您的场景已在 Places 目录中拥有条目。此次发布同时更改了其基准地块和所占用的地块，因此 Decentraland 会将结果登记为一个新的地点，而不是更新当前条目。",
+        "world_description": "{overlap, plural, =0 {此位置不与此 World 中任何现有场景重叠} other {此位置与此 World 中 # 个现有场景重叠}}，因此 Decentraland 会将其登记为一个新的地点，而不是更新当前条目。只有当发布恰好替换一个现有场景时，条目才会保留。",
+        "consequences_title": "留在旧条目中的内容",
         "consequences": {
-          "storage": "存储在多人服务器存储中的数据可能会被清除。",
-          "analytics": "您的场景分析数据将被重置。",
-          "creator_fund": "您可能会失去来自 Creator Fund 的收益。",
-          "badges": "您可能会失去相关徽章（即将推出）。",
-          "other": "与当前 Place 关联的任何其他数据、点赞、收藏或排名。"
+          "engagement": "它的点赞、收藏以及在 Places 排名中的位置。",
+          "analytics": "它的场景分析数据。新条目将从零开始。",
+          "storage": "它的多人服务器存储中的数据，这些数据可能会被清除。"
         },
-        "tip": "若要保留您的 Place，请发布到与之前相同的基准地块或相同的地块集合。",
-        "world_tip": "若要保留您的 Place，请将场景放置在恰好替换此 World 中一个现有场景的位置。",
+        "tip": "若要保留当前条目，请发布到与之前相同的基准地块或相同的地块集合。",
+        "world_tip": "若要保留当前条目，请将场景放置在恰好替换此 World 中一个现有场景的位置。",
         "cancel": "返回",
         "confirm": "仍然发布",
         "checking": "检查中…"

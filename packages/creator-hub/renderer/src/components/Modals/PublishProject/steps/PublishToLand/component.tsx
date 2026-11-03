@@ -214,8 +214,12 @@ export function PublishToLand(props: Props) {
         <Box
           display="flex"
           flexDirection="column"
-          gap={2}
-          padding={2}
+          gap={3}
+          padding={4}
+          margin="auto"
+          maxWidth={640}
+          borderRadius={2}
+          sx={{ backgroundColor: 'var(--black)' }}
         >
           <PlaceContinuityWarning kind="land" />
           <Box
@@ -224,6 +228,7 @@ export function PublishToLand(props: Props) {
           >
             <Button
               color="secondary"
+              variant="outlined"
               size="large"
               fullWidth
               onClick={handleCancelWarning}
@@ -231,6 +236,7 @@ export function PublishToLand(props: Props) {
               {t('modal.publish_project.place_continuity.cancel')}
             </Button>
             <Button
+              variant="contained"
               size="large"
               fullWidth
               onClick={handleConfirmWarning}
