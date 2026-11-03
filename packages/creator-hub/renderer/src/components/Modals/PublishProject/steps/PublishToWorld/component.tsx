@@ -85,6 +85,12 @@ export function PublishToWorld(props: Props) {
   const [step, setStep] = useState<Step>(Step.SELECTION);
   /** Step the confirmation was reached from, so going back returns to it. */
   const [confirmOrigin, setConfirmOrigin] = useState<Step>(Step.LOCATION);
+  /**
+   * Parcels of the deployment awaiting confirmation. Kept apart from the store project: the
+   * inspector re-sends its own (older) scene metadata after scene.json is written, which would
+   * make the confirmation describe the wrong parcels.
+   */
+  const [pendingScene, setPendingScene] = useState<SceneParcels | null>(null);
   const emptyNames = Object.keys(names).length === 0;
 
   const isOwner: boolean = useMemo(() => {
@@ -154,6 +160,7 @@ export function PublishToWorld(props: Props) {
 
   const handleShowConfirmation = useCallback(
     async (projectUpdates: Partial<Project>, origin: Step = Step.LOCATION) => {
+      setPendingScene(projectUpdates.scene ?? null);
       if (projectUpdates) await handleUpdateProject(projectUpdates);
       setConfirmOrigin(origin);
       setStep(Step.CONFIRM_OVERWRITE);
@@ -215,7 +222,7 @@ export function PublishToWorld(props: Props) {
           )}
           {step === Step.CONFIRM_OVERWRITE && (
             <ConfirmOverwrite
-              project={project}
+              parcels={pendingScene?.parcels ?? project.scene.parcels}
               worldScenes={worldSettings.scenes}
               onCancel={handleBack}
               onConfirm={handlePublish}
@@ -794,30 +801,28 @@ function SelectLocation({
 }
 
 function ConfirmOverwrite({
-  project,
+  parcels,
   worldScenes,
   onCancel,
   onConfirm,
 }: {
-  project: Project;
+  parcels: string[];
   worldScenes: WorldScene[];
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   const replacedScenes = useMemo(() => {
-    // Filter scenes that have parcels colliding with the project parcels
-    const projectParcels = project.scene.parcels;
     return worldScenes.filter(scene => {
       const sceneParcels = new Set(scene.parcels);
-      return projectParcels.some(parcel => sceneParcels.has(parcel));
+      return parcels.some(parcel => sceneParcels.has(parcel));
     });
-  }, [worldScenes, project.scene.parcels]);
+  }, [worldScenes, parcels]);
 
   const overlap = useMemo(
-    () => countOverlappedWorldScenes(worldScenes, project.scene.parcels),
-    [worldScenes, project.scene.parcels],
+    () => countOverlappedWorldScenes(worldScenes, parcels),
+    [worldScenes, parcels],
   );
-  const breaksContinuity = breaksWorldPlaceContinuity(worldScenes, project.scene.parcels);
+  const breaksContinuity = breaksWorldPlaceContinuity(worldScenes, parcels);
   const hasReplacedScenes = replacedScenes.length > 0;
 
   return (

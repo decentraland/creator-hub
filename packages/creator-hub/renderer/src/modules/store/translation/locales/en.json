@@ -529,6 +529,7 @@
           "other": "Any other data, likes, favorites or rankings linked to the current Place."
         },
         "tip": "To keep your Place, publish to the same base parcel or to the same set of parcels as before.",
+        "world_tip": "To keep your Place, place the scene so that it replaces exactly one existing scene in this World.",
         "cancel": "Go back",
         "confirm": "Publish anyway",
         "checking": "Checking…"

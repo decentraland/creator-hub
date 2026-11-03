@@ -53,7 +53,13 @@ export function PlaceContinuityWarning(props: Props) {
           </li>
         ))}
       </ul>
-      <Typography variant="body2">{t('modal.publish_project.place_continuity.tip')}</Typography>
+      <Typography variant="body2">
+        {t(
+          props.kind === 'land'
+            ? 'modal.publish_project.place_continuity.tip'
+            : 'modal.publish_project.place_continuity.world_tip',
+        )}
+      </Typography>
     </Alert>
   );
 }

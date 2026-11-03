@@ -528,6 +528,7 @@
           "other": "Cualquier otro dato, me gusta, favoritos o rankings vinculados al Place actual."
         },
         "tip": "Para conservar tu Place, publica en la misma parcela base o en el mismo conjunto de parcelas que antes.",
+        "world_tip": "Para conservar tu Place, ubica la escena de modo que reemplace exactamente una escena existente de este World.",
         "cancel": "Volver",
         "confirm": "Publicar de todos modos",
         "checking": "Comprobando…"
