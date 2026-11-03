@@ -198,6 +198,15 @@ describe('when Codex is installed', () => {
     expect(codex).toMatchObject({ available: true });
   });
 
+  it('should be available when installed by the app, never signed in, and turns bill to an API key', async () => {
+    fs.rmSync(path.join(binDir, 'codex'), { force: true });
+    writeBin(getManagedBinDir(), 'codex');
+    process.env.OPENAI_API_KEY = 'sk-example123';
+    statusReplies(1, 'Not logged in\n');
+    const codex = (await detectProviders(true)).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: true, managedSignIn: true });
+  });
+
   it('should not be available when an API key is set but turns bill to the subscription', async () => {
     process.env.OPENAI_API_KEY = 'sk-example123';
     statusReplies(1, 'Not logged in\n');

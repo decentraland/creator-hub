@@ -795,6 +795,27 @@ describe('when building the env for an AI CLI turn', () => {
   });
 });
 
+describe('when building the env for a turn billed to an API key', () => {
+  it('should hand OPENAI_API_KEY to Codex as CODEX_API_KEY, the only key `codex exec` reads', () => {
+    runtimeMocks.getChildEnv.mockReturnValue({ PATH: '/usr/bin', OPENAI_API_KEY: 'sk-example123' });
+    expect(childEnv(true).CODEX_API_KEY).toBe('sk-example123');
+  });
+
+  it('should keep a CODEX_API_KEY the user set', () => {
+    runtimeMocks.getChildEnv.mockReturnValue({
+      PATH: '/usr/bin',
+      OPENAI_API_KEY: 'sk-example123',
+      CODEX_API_KEY: 'sk-example456',
+    });
+    expect(childEnv(true).CODEX_API_KEY).toBe('sk-example456');
+  });
+
+  it('should not add a key when turns bill to the subscription', () => {
+    runtimeMocks.getChildEnv.mockReturnValue({ PATH: '/usr/bin', OPENAI_API_KEY: 'sk-example123' });
+    expect(childEnv(false).CODEX_API_KEY).toBeUndefined();
+  });
+});
+
 describe('when probing an AI CLI version', () => {
   beforeEach(() => {
     runtimeMocks.getChildEnv.mockReturnValue({ PATH: '/bundle/bin' });

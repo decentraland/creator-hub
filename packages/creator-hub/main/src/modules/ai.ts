@@ -126,7 +126,7 @@ async function runShellProbe(): Promise<void> {
         shell,
         [
           '-ilc',
-          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
+          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@X=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CODEX_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
         ],
         { stdio: ['ignore', 'pipe', 'ignore'], detached: true },
       );
@@ -156,6 +156,7 @@ async function runShellProbe(): Promise<void> {
   // Capture the shell's API keys for API-key billing (in memory only; never logged).
   shellApiKeys.ANTHROPIC_API_KEY = /@@A=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.OPENAI_API_KEY = /@@O=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.CODEX_API_KEY = /@@X=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.CURSOR_API_KEY = /@@C=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.GEMINI_API_KEY = /@@G=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.GOOGLE_API_KEY = /@@GA=(.*?)@@/s.exec(out)?.[1] || undefined;
@@ -320,6 +321,8 @@ function isCliSignedIn(
   managed: boolean,
   apiKeyFromEnv: boolean,
 ): boolean {
+  // Turns billed to an API key need no sign-in, whoever installed the CLI.
+  if (billsToApiKey(provider, apiKeyFromEnv)) return true;
   if (statusChecked(provider, apiKeyFromEnv)) {
     return signedOutCache.get(bin) !== true;
   }
@@ -377,6 +380,7 @@ const API_KEY_ENV = new Set([
 const shellApiKeys: {
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
+  CODEX_API_KEY?: string;
   CURSOR_API_KEY?: string;
   GEMINI_API_KEY?: string;
   GOOGLE_API_KEY?: string;
@@ -411,6 +415,8 @@ export function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
     for (const [k, v] of Object.entries(shellApiKeys)) {
       if (v !== undefined && v !== '' && env[k] === undefined) env[k] = v;
     }
+    // `codex exec` reads only CODEX_API_KEY; with OPENAI_API_KEY alone it sends no key at all.
+    if (!env.CODEX_API_KEY && env.OPENAI_API_KEY) env.CODEX_API_KEY = env.OPENAI_API_KEY;
   }
   env.PATH = [...(env.PATH ?? '').split(path.delimiter), ...searchDirs()]
     .filter(Boolean)
