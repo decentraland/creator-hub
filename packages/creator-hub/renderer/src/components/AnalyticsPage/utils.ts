@@ -76,8 +76,8 @@ export function formatMinutesDelta(value: number | null) {
   return t('analytics.detail.engagement.delta', { value: decimalNumber.format(Math.abs(value)) });
 }
 
-/** Retention below the Day 7 benchmark is called out as negative. */
+/** Day 3 or Day 7 retention: at or above the benchmark reads as positive, below it is called out in the brand colour. */
 export function getRetentionColor(value: number | null) {
   if (value === null) return undefined;
-  return value >= DAY_7_RETENTION_BENCHMARK ? 'success.main' : 'error.main';
+  return value >= DAY_7_RETENTION_BENCHMARK ? 'success.main' : 'primary.main';
 }

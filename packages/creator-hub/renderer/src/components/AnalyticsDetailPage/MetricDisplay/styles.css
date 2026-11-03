@@ -1,0 +1,73 @@
+.MetricDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.MetricDisplay .MetricLabel {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 28px;
+}
+
+.MetricDisplay .MetricLabel .Label {
+  color: var(--dcl-silver);
+  font-size: var(--type-h6-regular-size);
+  font-weight: var(--type-h6-regular-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h6-regular-letter-spacing);
+}
+
+.MetricDisplay .MetricInfo {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 100px;
+  color: var(--dcl-silver);
+}
+
+.MetricDisplay .MetricInfo:hover {
+  background: var(--palette-whiteTransparent-subtle);
+}
+
+.MetricDisplay .MetricInfo:focus-visible {
+  outline: 2px solid var(--mui-palette-info-light);
+  outline-offset: 2px;
+}
+
+.MetricDisplay .MetricInfo svg {
+  font-size: 18px;
+}
+
+.MetricDisplay .MetricValue {
+  font-size: var(--type-h1-semi-size);
+  font-weight: var(--type-h1-semi-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h1-semi-letter-spacing);
+  font-variant-numeric: tabular-nums;
+}
+
+.MetricDisplay .MetricUnit {
+  font-weight: var(--type-h6-regular-weight);
+}
+
+.MetricTooltip.MuiTooltip-tooltip {
+  max-width: 300px;
+  padding: 16px 20px;
+  border-radius: var(--shape-borderRadiusLarge);
+  background: var(--menu-bg);
+  box-shadow: var(--shadow-tooltip);
+  color: var(--palette-neutral-softWhite);
+  font-size: var(--type-h7-regular-size);
+  font-weight: var(--type-h7-regular-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h7-regular-letter-spacing);
+  text-align: left;
+}
+
+.MetricTooltipArrow.MuiTooltip-arrow {
+  color: var(--menu-bg);
+  font-size: 22px;
+}
