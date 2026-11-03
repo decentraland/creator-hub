@@ -64,7 +64,8 @@
 }
 
 .ProjectView-resizer:hover,
-.ProjectView-resizer:active {
+.ProjectView-resizer:active,
+.ProjectView-resizer:focus-visible {
   background: linear-gradient(
     to right,
     transparent 2px,

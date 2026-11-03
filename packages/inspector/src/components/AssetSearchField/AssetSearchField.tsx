@@ -26,6 +26,8 @@ export function AssetSearchField({
   // Adopt resets coming from outside (breadcrumb clicks, "Clear") without fighting typing.
   useEffect(() => {
     if (value !== lastReported.current) {
+      // A keystroke still waiting on the debounce would otherwise land after the reset and undo it.
+      clearTimeout(timer.current);
       lastReported.current = value;
       setText(value);
     }

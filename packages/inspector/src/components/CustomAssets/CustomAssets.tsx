@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import cx from 'classnames';
 
@@ -106,6 +106,13 @@ export function CustomAssets({ onAddToFilesystem }: CustomAssetsProps) {
   const customAssets = useAppSelector(selectCustomAssets);
   const [search, setSearch] = useState('');
   const dispatch = useAppDispatch();
+  const { selection, select } = useAssetSelection();
+
+  // Deleting happens in place, so the pane would otherwise keep previewing an item that is gone.
+  useEffect(() => {
+    if (selection?.source !== 'custom') return;
+    if (!customAssets.some(asset => asset.id === selection.id)) select(undefined);
+  }, [customAssets, selection, select]);
 
   const handleDelete = useCallback((assetId: string) => {
     dispatch(deleteCustomAsset({ assetId }));

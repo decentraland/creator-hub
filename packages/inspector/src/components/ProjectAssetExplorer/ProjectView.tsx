@@ -941,6 +941,21 @@ function ProjectView({ folders, thumbnails }: Props) {
     [treeWidth],
   );
 
+  const handleResizeKey = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = event.key === 'ArrowLeft' ? -16 : event.key === 'ArrowRight' ? 16 : 0;
+    if (!step) return;
+    event.preventDefault();
+    setTreeWidth(width => {
+      const next = Math.min(MAX_TREE_WIDTH, Math.max(MIN_TREE_WIDTH, width + step));
+      try {
+        localStorage.setItem(TREE_WIDTH_KEY, String(next));
+      } catch {
+        // the width just won't be remembered
+      }
+      return next;
+    });
+  }, []);
+
   // While filtering, folders show how many results they hold and nodes without any fade back.
   const renderTreeDecoration = (val: string) => {
     if (!isFiltering) return null;
@@ -1040,6 +1055,11 @@ function ProjectView({ folders, thumbnails }: Props) {
             role="separator"
             aria-orientation="vertical"
             aria-label="Resize folder tree"
+            aria-valuenow={treeWidth}
+            aria-valuemin={MIN_TREE_WIDTH}
+            aria-valuemax={MAX_TREE_WIDTH}
+            tabIndex={0}
+            onKeyDown={handleResizeKey}
             onPointerDown={handleResizeStart}
             onDoubleClick={() => setTreeWidth(DEFAULT_TREE_WIDTH)}
           />

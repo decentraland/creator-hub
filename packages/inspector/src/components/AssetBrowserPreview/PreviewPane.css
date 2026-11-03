@@ -157,6 +157,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .PreviewPane-spinner {
+    animation-duration: 2.4s;
+  }
+}
+
 .ModelViewer {
   position: relative;
   flex: 1;
@@ -227,6 +233,11 @@
   width: 100%;
   height: 100%;
   border: none;
+}
+
+.EmoteViewer-failed {
+  position: absolute;
+  inset: 0;
 }
 
 .EmoteViewer-badge {
@@ -390,4 +401,10 @@
   color: var(--neutral-grey-3);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+}
+
+.EmoteViewer-timeline input[type="range"]:focus-visible,
+.ImageViewer img:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 2px;
 }

@@ -31,6 +31,10 @@ type EmoteEntity = {
   };
 };
 
+// A request that never answers would hold the pane's spinner up and, being cached, every later pick
+// of the same animation too.
+const REQUEST_TIMEOUT_MS = 15_000;
+
 const cache = new Map<string, Promise<File | undefined>>();
 
 async function resolve(name: string): Promise<File | undefined> {
@@ -38,6 +42,7 @@ async function resolve(name: string): Promise<File | undefined> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ pointers: [`${BASE_EMOTE_URN}${name.toLowerCase()}`] }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) throw new Error(`Content server replied ${response.status}`);
   const [entity] = (await response.json()) as EmoteEntity[];
@@ -47,7 +52,9 @@ async function resolve(name: string): Promise<File | undefined> {
     representations[0];
   const hash = entity?.content.find(item => item.file === representation?.mainFile)?.hash;
   if (!representation || !hash) return undefined;
-  const file = await fetch(`${CONTENT_SERVER}/contents/${hash}`);
+  const file = await fetch(`${CONTENT_SERVER}/contents/${hash}`, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
   if (!file.ok) throw new Error(`Could not fetch ${representation.mainFile} (${file.status})`);
   return new File([await file.arrayBuffer()], representation.mainFile);
 }

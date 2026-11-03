@@ -42,6 +42,10 @@ function computeStats(container: AssetContainer): ModelStats {
   };
 }
 
+// A fetch or texture request that never answers would otherwise leave the spinner up forever; past
+// this the viewer gives up and the pane falls back to the thumbnail.
+const LOAD_TIMEOUT_MS = 30_000;
+
 async function loadBytes(source: PreviewSource): Promise<Blob> {
   if (source.file) return source.file;
   const response = await fetch(source.url!);
@@ -51,6 +55,7 @@ async function loadBytes(source: PreviewSource): Promise<Blob> {
 
 export function ModelViewer({ source, onStats, onEmote, onDuration, onFailed }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const engineRef = useRef<Engine>();
   const sceneRef = useRef<Scene>();
   const cameraRef = useRef<ArcRotateCamera>();
   const containerRef = useRef<AssetContainer>();
@@ -67,11 +72,19 @@ export function ModelViewer({ source, onStats, onEmote, onDuration, onFailed }: 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false });
+    // Each selection mounts a fresh viewer. Without an explicit context loss the old contexts wait
+    // for GC, and once the browser's live-context cap is hit it drops the OLDEST one: the editor's
+    // own viewport.
+    const engine = new Engine(canvas, true, {
+      preserveDrawingBuffer: false,
+      stencil: false,
+      loseContextOnDispose: true,
+    });
     const { scene, camera } = createPreviewScene(engine);
     camera.attachControl(canvas, true);
     camera.useAutoRotationBehavior = true;
 
+    engineRef.current = engine;
     sceneRef.current = scene;
     cameraRef.current = camera;
     engine.runRenderLoop(() => scene.render());
@@ -83,6 +96,7 @@ export function ModelViewer({ source, onStats, onEmote, onDuration, onFailed }: 
       engine.stopRenderLoop();
       scene.dispose();
       engine.dispose();
+      engineRef.current = undefined;
       sceneRef.current = undefined;
       cameraRef.current = undefined;
     };
@@ -102,6 +116,12 @@ export function ModelViewer({ source, onStats, onEmote, onDuration, onFailed }: 
     containerRef.current?.dispose();
     containerRef.current = undefined;
 
+    const giveUp = setTimeout(() => {
+      cancelled = true;
+      console.error(`Model preview gave up after ${LOAD_TIMEOUT_MS}ms: ${source.name}`);
+      onFailed();
+    }, LOAD_TIMEOUT_MS);
+
     let bytes: Blob | undefined;
     loadBytes(source)
       .then(loaded => {
@@ -113,8 +133,11 @@ export function ModelViewer({ source, onStats, onEmote, onDuration, onFailed }: 
           container.dispose();
           return;
         }
+        clearTimeout(giveUp);
         if (isEmoteContainer(container)) {
           container.dispose();
+          // The canvas unmounts in favour of the avatar; nothing is left to draw.
+          engineRef.current?.stopRenderLoop();
           // The avatar viewer takes a file; catalog emotes arrive as plain bytes.
           setEmoteFile(source.file ?? new File([bytes!], `${source.name}.${source.extension}`));
           setLoading(false);
@@ -136,12 +159,14 @@ export function ModelViewer({ source, onStats, onEmote, onDuration, onFailed }: 
       })
       .catch(error => {
         if (cancelled) return;
+        clearTimeout(giveUp);
         console.error('Could not render model preview:', error);
         onFailed();
       });
 
     return () => {
       cancelled = true;
+      clearTimeout(giveUp);
     };
   }, [source.url, source.extension]);
 
@@ -191,6 +216,7 @@ export function ModelViewer({ source, onStats, onEmote, onDuration, onFailed }: 
           onClick={() => setAutoRotate(value => !value)}
           title="Auto-rotate"
           aria-label="Toggle auto-rotate"
+          aria-pressed={autoRotate}
         >
           <MdAutorenew />
         </button>

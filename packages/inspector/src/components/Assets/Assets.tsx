@@ -532,7 +532,9 @@ function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
               )}
               {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
             </div>
-            {isBrowsing && showPreview && <PreviewPane />}
+            {/* Collapsing only hides the body, so a mounted pane would keep its render loop and
+                avatar frame running out of sight. The selection lives above, so it comes back. */}
+            {isBrowsing && showPreview && !isAssetsPanelCollapsed && <PreviewPane />}
           </div>
         </ImportAsset>
       )}

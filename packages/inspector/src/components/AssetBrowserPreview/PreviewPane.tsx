@@ -65,12 +65,21 @@ function ImageViewer({
   onDimensions?: (value: string) => void;
 }) {
   const [actualSize, setActualSize] = useState(false);
+  const toggleSize = () => setActualSize(value => !value);
   return (
     <div className={`ImageViewer ${actualSize ? 'actual' : ''}`}>
       <img
         src={source.url}
         alt={source.name}
-        onClick={() => setActualSize(value => !value)}
+        role="button"
+        tabIndex={0}
+        aria-pressed={actualSize}
+        onClick={toggleSize}
+        onKeyDown={event => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          toggleSize();
+        }}
         onLoad={event =>
           onDimensions?.(
             `${event.currentTarget.naturalWidth} × ${event.currentTarget.naturalHeight}`,

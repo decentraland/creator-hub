@@ -24,6 +24,10 @@ function readLoop(): boolean {
   }
 }
 
+// A frame the browser refuses to load (a COEP mismatch, #1485) reports nothing at all, so a
+// deadline is the only way to stop the spinner.
+const LOAD_TIMEOUT_MS = 30_000;
+
 const formatSeconds = (seconds: number) => `${seconds.toFixed(1)}s`;
 
 /**
@@ -35,6 +39,7 @@ export function EmoteViewer({ file, previewEmote, onDuration }: Props) {
   const id = `emote-${file?.name ?? previewEmote}`;
   // The avatar comes from an external service and can take a while to appear.
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [length, setLength] = useState(0);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -73,6 +78,20 @@ export function EmoteViewer({ file, previewEmote, onDuration }: Props) {
       console.warn('Could not control the emote preview:', error);
     }
   }, [id, updateLength]);
+
+  const handleError = useCallback((error: unknown) => {
+    console.error('Avatar preview failed to load:', error);
+    setFailed(true);
+  }, []);
+
+  useEffect(() => {
+    if (loaded) return;
+    const giveUp = setTimeout(
+      () => handleError(`no avatar preview after ${LOAD_TIMEOUT_MS}ms`),
+      LOAD_TIMEOUT_MS,
+    );
+    return () => clearTimeout(giveUp);
+  }, [loaded, handleError]);
 
   // Listen to the preview's own events: they carry the playhead and tell us when a clip ends.
   useEffect(() => {
@@ -190,8 +209,14 @@ export function EmoteViewer({ file, previewEmote, onDuration }: Props) {
         disableAutoRotate
         wheelZoom={2}
         onLoad={handleLoad}
+        onError={handleError}
       />
-      {!loaded && <div className="PreviewPane-spinner" />}
+      {!loaded && !failed && <div className="PreviewPane-spinner" />}
+      {failed && !loaded && (
+        <div className="PreviewPane-placeholder EmoteViewer-failed">
+          <span>Avatar preview unavailable</span>
+        </div>
+      )}
       <span className="EmoteViewer-badge">Emote · previewed on avatar</span>
       {loaded && length > 0 && (
         <div className="EmoteViewer-timeline">
