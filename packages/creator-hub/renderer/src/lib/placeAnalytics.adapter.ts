@@ -14,7 +14,7 @@ import type { LocationMetrics, MetricRow } from './metricsApi';
 /**
  * Projects the analytics API's flat metric bag onto the shapes the tabs render.
  *
- * `metrics[name]` is a list of `{ series, period, value }` rows. Fourteen metrics
+ * `metrics[name]` is a list of `{ series, period, value }` rows. Twenty-one metrics
  * split three ways by platform; five carry no series at all. Reading a split
  * metric without picking a series returns three rows and silently yields the
  * wrong number, so the two readers below are deliberately separate: a call site
@@ -22,7 +22,7 @@ import type { LocationMetrics, MetricRow } from './metricsApi';
  *
  * Anything the API does not carry stays `null` or empty, which the UI renders as
  * "-" or "no data yet". Partial bags are the norm — most locations carry only
- * some of the 19 — so every field falls back on its own.
+ * some of the 26 — so every field falls back on its own.
  */
 
 /** Every metric the service exports. */
@@ -31,13 +31,20 @@ export const METRIC_NAMES = [
   'avg_afk_seconds_per_user_60d',
   'avg_playtime_seconds_30d',
   'avg_playtime_seconds_60d',
+  'churn_rate_weekly',
   'concurrent_users_avg_30d',
   'concurrent_users_avg_60d',
   'concurrent_users_peak_30d',
   'concurrent_users_peak_60d',
+  'd3_retention_rate_30d',
+  'd3_retention_rate_60d',
+  'd3_retention_rate_weekly',
   'd7_retention_rate_30d',
   'd7_retention_rate_60d',
   'd7_retention_rate_weekly',
+  'new_decentraland_players_30d',
+  'new_decentraland_players_60d',
+  'new_decentraland_players_weekly',
   'playtime_seconds_p50_30d',
   'playtime_seconds_p50_60d',
   'socially_engaged_ratio_weekly',
@@ -66,6 +73,8 @@ type Platform = 'all' | 'desktop' | 'mobile';
 type Bag = LocationMetrics['metrics'];
 
 const SECONDS_PER_MINUTE = 60;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const COHORT_SETTLING_DAYS = 14;
 
 const rowsOf = (bag: Bag, name: MetricName): MetricRow[] => bag[name] ?? [];
 
@@ -108,6 +117,24 @@ function weeklySeries(
     .sort((a, b) => a.date - b.date);
 }
 
+const utcDay = (ms: number) => Math.floor(ms / MS_PER_DAY);
+
+/**
+ * Marks each cohort whose Monday is under 14 whole UTC days before the export.
+ * A missing or unparseable `exportedAt` leaves every cohort final.
+ */
+function markSettling(points: TimeSeriesPoint[], exportedAt?: string): TimeSeriesPoint[] {
+  const exportDay = utcDay(Date.parse(exportedAt ?? ''));
+  return points.map(point => {
+    const date = new Date(point.date);
+    const cohortDay = utcDay(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    return {
+      ...point,
+      settling: Number.isFinite(exportDay) && exportDay - cohortDay < COHORT_SETTLING_DAYS,
+    };
+  });
+}
+
 /** Rates arrive as fractions (`0.1216`); every percentage in the UI is 0-100. */
 const toPercentage = (value: number | null): number | null => (value === null ? null : value * 100);
 
@@ -141,6 +168,8 @@ export function toOverview(
     uniqueVisits: platformValue(metrics, `unique_visitors_${window}`, 'all'),
     concurrentUsers: singleValue(metrics, `concurrent_users_avg_${window}`),
     peakConcurrentUsers: singleValue(metrics, `concurrent_users_peak_${window}`),
+    newPlayers: platformValue(metrics, `new_decentraland_players_${window}`, 'all'),
+    day3Retention: toPercentage(platformValue(metrics, `d3_retention_rate_${window}`, 'all')),
     day7Retention: toPercentage(platformValue(metrics, `d7_retention_rate_${window}`, 'all')),
     medianPlaytime: toMinutes(platformValue(metrics, `playtime_seconds_p50_${window}`, 'all')),
     afkTime: toMinutes(platformValue(metrics, `avg_afk_seconds_per_user_${window}`, 'all')),
@@ -156,18 +185,26 @@ export function toVisits({ metrics }: LocationMetrics, window: MetricsWindow): P
   };
 }
 
+/** `exportedAt` is the snapshot's export stamp, which decides which Day 7 cohorts are still settling. */
 export function toRetention(
   { metrics }: LocationMetrics,
   window: MetricsWindow,
+  exportedAt?: string,
 ): PlaceRetentionMetrics {
   return {
     platforms: platforms(metrics, `d7_retention_rate_${window}`, toPercentage),
-    day7ByCohortWeek: weeklySeries(
+    day7ByCohortWeek: markSettling(
+      weeklySeries(metrics, 'd7_retention_rate_weekly', 'all', value => value * 100),
+      exportedAt,
+    ),
+    day3Platforms: platforms(metrics, `d3_retention_rate_${window}`, toPercentage),
+    day3ByCohortWeek: weeklySeries(
       metrics,
-      'd7_retention_rate_weekly',
+      'd3_retention_rate_weekly',
       'all',
       value => value * 100,
     ),
+    weeklyChurnRate: weeklySeries(metrics, 'churn_rate_weekly', 'all', value => value * 100),
   };
 }
 
