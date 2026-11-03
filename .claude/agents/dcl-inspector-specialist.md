@@ -60,7 +60,7 @@ changed paths: <one per line>
 commits:       <sha subject> per line, or "none (under the architect)"
 tarball:       <abs path in .local-packages/ or "not packed">
 tokens added:  <name = value> per line, or "none"
-UI evidence:   <screenshot path(s) or "no UI change">
+UI evidence:   <Before/After pairs per surface, one row per state, or "no UI change">
 verification:  <commands run, pass/fail>
 open risks:    <anything downstream must handle, or "none">
 ```
