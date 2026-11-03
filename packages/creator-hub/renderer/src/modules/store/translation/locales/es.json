@@ -1326,12 +1326,35 @@
         "description": "Entendé qué porcentaje de usuarios vuelve después de su primera sesión.",
         "platforms": {
           "title": "Plataformas",
-          "description": "Tu promedio móvil de 60 días, comparado entre mobile y escritorio."
+          "description": "Tu promedio móvil de {days} días, comparado entre móvil y escritorio.",
+          "tooltips": {
+            "all": "Retención Día 7 de todos los usuarios nuevos, sin importar el cliente que usaron.",
+            "desktop": "Retención Día 7 de los usuarios nuevos que visitaron por primera vez desde un cliente de escritorio.",
+            "mobile": "Retención Día 7 de los usuarios nuevos que visitaron por primera vez desde un cliente móvil."
+          }
+        },
+        "day_3": {
+          "title": "Retención Día 3",
+          "description": "Porcentaje de usuarios nuevos que volvieron dentro de los 3 días posteriores a su primera visita, comparado entre móvil y escritorio.",
+          "tooltips": {
+            "all": "Retención Día 3 de todos los usuarios nuevos, sin importar el cliente que usaron.",
+            "desktop": "Retención Día 3 de los usuarios nuevos que visitaron por primera vez desde un cliente de escritorio.",
+            "mobile": "Retención Día 3 de los usuarios nuevos que visitaron por primera vez desde un cliente móvil."
+          }
+        },
+        "day_3_cohort": {
+          "title": "Retención Día 3 por Semana de Cohorte",
+          "description": "Porcentaje de usuarios nuevos que volvieron al menos una vez durante los 3 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
+          "benchmark": "{value}% Día 3 KR"
         },
         "day_7_cohort": {
           "title": "Retención Día 7 por Semana de Cohorte",
-          "description": "Porcentaje de usuarios que volvieron al menos una vez durante los 7 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
-          "benchmark": "{value}% Día 7 KR"
+          "description": "Porcentaje de usuarios nuevos que volvieron al menos una vez durante los 7 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
+          "benchmark": "{value}% Día 7 KR",
+          "settling": {
+            "tooltip": "Todavía en curso: esta cohorte empezó hace menos de 14 días, así que sus regresos se siguen contando.",
+            "caption": "Línea punteada: cohortes de los últimos 14 días, cuyos regresos se siguen contando."
+          }
         },
         "churn": {
           "title": "Tasa de Abandono Semanal",
@@ -1418,6 +1441,10 @@
         "label": "Visitas Únicas",
         "tooltip": "Usuarios distintos que visitaron tu place, contados una sola vez."
       },
+      "new_players": {
+        "label": "Nuevos Jugadores de Decentraland",
+        "tooltip": "Wallets nuevas en Decentraland cuyo primer día transcurrió mayormente en tu place."
+      },
       "new_users": {
         "label": "Usuarios Nuevos",
         "tooltip": "Usuarios que visitaron tu place por primera vez."
@@ -1430,9 +1457,13 @@
         "label": "Ingresos",
         "tooltip": "MANA ganado en tu place."
       },
+      "day_3_retention": {
+        "label": "Retención Día 3",
+        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place dentro de los 3 días posteriores a su primera visita."
+      },
       "day_7_retention": {
         "label": "Retención Día 7",
-        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place al menos una vez durante los 7 días posteriores a su primera visita."
+        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place dentro de los 7 días posteriores a su primera visita."
       },
       "median_playtime": {
         "label": "Mediana de Tiempo de Juego",
