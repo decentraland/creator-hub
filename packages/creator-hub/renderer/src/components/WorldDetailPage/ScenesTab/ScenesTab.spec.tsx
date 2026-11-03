@@ -162,7 +162,7 @@ async function renderTab(scenes: WorldScene[], access: Access = 'owner') {
 const rows = () => screen.getAllByRole('row').slice(1);
 const rowNames = () =>
   rows().map(
-    row => within(row).getAllByRole('cell')[row.querySelector('.Select') ? 1 : 0].textContent,
+    row => within(row).getAllByRole('cell')[row.querySelector('.SelectCell') ? 1 : 0].textContent,
   );
 
 describe('World ScenesTab', () => {

@@ -37,7 +37,7 @@ export function SceneRow(props: Props) {
   return (
     <tr className={selected ? 'Selected' : undefined}>
       {mode === 'manage' && (
-        <td className="Select">
+        <td className="SelectCell">
           <SelectCheckbox
             checked={selected}
             onChange={props.onSelect}

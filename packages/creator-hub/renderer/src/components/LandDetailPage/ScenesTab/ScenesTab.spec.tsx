@@ -1,4 +1,7 @@
 import type { ButtonHTMLAttributes } from 'react';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -123,6 +126,15 @@ function renderTab(
 
 const twoScenes = [deployment('a', 'Scene A', 1000), deployment('b', 'Scene B', 2000)];
 
+const selectStylesheetSelectors = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '../../Select/styles.css'),
+  'utf8',
+)
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .match(/[^{}]+(?=\{)/g)!
+  .flatMap(group => group.split(','))
+  .map(selector => selector.trim().replace(/::?[\w-]+/g, ''));
+
 describe('ScenesTab', () => {
   beforeAll(() => {
     setCurrentLocale('en', flatten(en));
@@ -154,6 +166,14 @@ describe('ScenesTab', () => {
 
       expect(screen.getByText('1 selected')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Unpublish selected' })).toBeTruthy();
+    });
+
+    it('should leave the table out of the global Select stylesheet', () => {
+      const table = screen.getByRole('table');
+
+      expect(
+        selectStylesheetSelectors.filter(selector => table.querySelector(selector) !== null),
+      ).toEqual([]);
     });
 
     it('should keep every column header on one line', () => {

@@ -136,7 +136,7 @@ export function ScenesView({
       <thead>
         <tr>
           {mode === 'manage' && (
-            <th className="Select">
+            <th className="SelectCell">
               <SelectCheckbox
                 checked={allSelected}
                 onChange={() =>
