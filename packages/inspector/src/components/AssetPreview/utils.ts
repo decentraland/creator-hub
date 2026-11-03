@@ -74,28 +74,51 @@ export function toEmoteWithBlobs(file: File, resources: File[] = []): EmoteWithB
   };
 }
 
+const DETECTION_TIMEOUT = 30_000;
+
+/**
+ * Whether a file is an emote, by loading it and inspecting its rig.
+ *
+ * The import dialog awaits one of these per selected file before it renders anything, so a load
+ * that never settles would leave the modal permanently empty with nothing logged. The loader has
+ * no timeout of its own, so it races one that rejects into the catch below — `false` is the safe
+ * default either way, since it only means the file is treated as an ordinary model.
+ */
 export async function isEmote(file: File): Promise<boolean> {
   const url = URL.createObjectURL(file);
-  const canvas = document.createElement('canvas');
-  const engine = new Engine(canvas, false);
-  const scene = new Scene(engine);
+  let engine: Engine | undefined;
+  let scene: Scene | undefined;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
 
   try {
-    const result = await SceneLoader.LoadAssetContainerAsync(
-      '',
-      url,
-      scene,
-      undefined,
-      file.name.endsWith('.gltf') ? '.gltf' : '.glb',
-    );
+    // Inside the try: `new Engine` throws synchronously when no WebGL context can be created,
+    // which would otherwise reject the whole import dialog's detection and leave it empty.
+    engine = new Engine(document.createElement('canvas'), false);
+    scene = new Scene(engine);
+    const result = await Promise.race([
+      SceneLoader.LoadAssetContainerAsync(
+        '',
+        url,
+        scene,
+        undefined,
+        file.name.endsWith('.gltf') ? '.gltf' : '.glb',
+      ),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error(`Timed out after ${DETECTION_TIMEOUT}ms`)),
+          DETECTION_TIMEOUT,
+        );
+      }),
+    ]);
 
     return isEmoteContainer(result);
   } catch (err) {
     console.error('Error checking if file is emote:', err);
     return false;
   } finally {
+    clearTimeout(timeout);
     URL.revokeObjectURL(url);
-    scene.dispose();
-    engine.dispose();
+    scene?.dispose();
+    engine?.dispose();
   }
 }
