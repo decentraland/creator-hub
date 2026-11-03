@@ -64,7 +64,7 @@ export function StackedBarChart({ dates, series, formatValue }: Props) {
       className="StackedBars"
       height={CHART_HEIGHT}
       margin={CHART_MARGIN}
-      sx={chartSx}
+      sx={chartSx()}
       grid={{ horizontal: true }}
       skipAnimation
       borderRadius={4}

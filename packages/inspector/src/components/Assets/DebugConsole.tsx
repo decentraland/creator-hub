@@ -5,6 +5,7 @@ import { subscribe, getSnapshot, clear, type DebugLogEntry } from '../../lib/log
 import { getSceneClient } from '../../lib/rpc/scene';
 import { useAppSelector } from '../../redux/hooks';
 import { getDebugConsoleEnabled, getDebugConsoleDetached } from '../../redux/ui';
+import { AnsiLine } from '../AnsiLine';
 
 import './DebugConsole.css';
 
@@ -117,9 +118,9 @@ function DebugConsole() {
       >
         {logs.length > 0 ? (
           logs.map((entry: DebugLogEntry) => (
-            <span
+            <AnsiLine
               key={entry.id}
-              dangerouslySetInnerHTML={{ __html: entry.html }}
+              text={entry.text}
             />
           ))
         ) : (
