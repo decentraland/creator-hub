@@ -18,11 +18,7 @@ Each value names its token. A value that differs from the token file carries its
 
 ### Open token PRs
 
-One token-value PR is open; every other block describes `main`. A `ships in #1731` marker names it.
-
-| Unit | PR | Base | Blocks it changes |
-| --- | --- | --- | --- |
-| Token sync: `--modal` and the AI panel | #1731 | `main` | `--modal`, `--modal-content-bg-color`, `--ai-menu-bg`, `--ai-input-bg`, `--ai-warning-bg`: DefaultModal, AiChat, Menu (AI Assistant), ChatInput |
+No token-value PR is open; every block describes `main`. When one opens, list it here (unit, PR, base, the blocks it changes) and mark its rows `ships in #<PR>`.
 
 ### Sections index
 
@@ -201,7 +197,7 @@ Where our CSS already used a ui3 name, the row says how the user settled it. New
 
 Read October 27, 2026 from the Colors page ([node `20752:6024`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20752-6024), frame "Colors Dark" [`20755:6429`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20755-6429), 12 columns). Variable names come from the frame's variable definitions; fills and alphas come from the swatches, since INFO and three Neutrals swatches are raw fills with no variable. One table per Figma column group, in Figma's order.
 
-Status: **match** (same value), **ships in #1731** (the spoke `feat/design-token-sync` sets it; the table shows that value), **drift → X (pending spoke)** (a token holds another value; a later spoke changes it), **missing** (no token in that world), **✱ deviation** (documented and kept on purpose), **PROPOSED** (a new token; the name is the user's call). A `—` means the world has no token for it and needs none yet. ui2 paths name `decentraland-ui2`'s dark theme (`theme/colorSchemes.js`, `theme/colors.js`); ui2 reads none of these through a `--mui-*` variable except `--mui-palette-action-disabled` and `--mui-palette-secondary-contrast`, so a ui2 drift is fixed upstream.
+Status: **match** (same value), **ships in #<PR>** (an open spoke sets it; the table shows that value), **drift → X (pending spoke)** (a token holds another value; a later spoke changes it), **missing** (no token in that world), **✱ deviation** (documented and kept on purpose), **PROPOSED** (a new token; the name is the user's call). A `—` means the world has no token for it and needs none yet. ui2 paths name `decentraland-ui2`'s dark theme (`theme/colorSchemes.js`, `theme/colors.js`); ui2 reads none of these through a `--mui-*` variable except `--mui-palette-action-disabled` and `--mui-palette-secondary-contrast`, so a ui2 drift is fixed upstream.
 
 Swatch chrome on the page (not tokens): radius 8px, a 312 × 82 fill, the name in Inter Bold 16 / 1.75 / 0.15px, the value in `Body/Body - 14`, a 4px gap, and the column heading in `Other/Overline`. Light swatches carry a 1px Black 10 border; Pale Black a 1px White 20.
 
@@ -404,7 +400,7 @@ Inspector tokens that name a role rather than a Figma variable: surfaces, foregr
 | --- | --- | --- | --- |
 | `--main-bg-color` | `--vscode-editor-background` → `--background` | — | App/editor background |
 | `--panel` (legacy `--tree-bg-color`) | `--base-20` `#161518` | Neutrals/Shadow | Panels, trees, **dropdown/popover surfaces** |
-| `--modal-content-bg-color` | `--panel` (legacy `--tree-bg-color`) on `main`; `#181225` ships in #1731 | Modal shell `#181225` (a raw fill, no variable) | Modals |
+| `--modal-content-bg-color` | `#181225` | Modal shell `#181225` (a raw fill, no variable) | Modals |
 | `--panel-2` (legacy `--ui-designer-panel-bg`) | `--base-19` `#242129` | Charcoal `#25212a` (**✱ deviation**, within 1/255) | UI Designer panel frame |
 | `--ui-designer-control-bg` | `#35333b` | Neutrals/Onix | Inputs/selects/textarea chrome, and UI Designer menus |
 | `--disabled-bg-color` | `#323036` | — | Disabled control fill |
@@ -958,7 +954,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Modals
 | 6px radius (attach button, location row) | — | `--shape-borderRadius` (aliased by `--ui-designer-radius-field`) | `--mui-shape-borderRadius` |
 | `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | `--menu-shadow` (`--contexify-menu-shadow` holds `2px 2px 10px rgba(0,0,0,.5)`: drift → `--menu-shadow`) | `--menu-shadow` (ui2 `MuiPaper` elevation paints the menus) |
 | `0 4px 4px rgba(0,0,0,.1)` title-bar toast shadow | — | `--shadow-toast` | `--shadow-toast` (ui2 `Tooltip` paints it) |
-| `#181225` modal fill | — (a raw hex on every modal, not a variable) | `--modal-content-bg-color` `#181225` (ships in #1731) | `--modal` `#181225` (ships in #1731); ui2's `Modal` paper does not read `--modal` |
+| `#181225` modal fill | — (a raw hex on every modal, not a variable) | `--modal-content-bg-color` `#181225` | `--modal` `#181225`; ui2's `Modal` paper does not read `--modal` |
 | `#000000` title-bar fill | Neutrals/Black | `--black`, `--base-21` | `--bg-inspector` |
 | `#2D2A33` toolbar icon and split buttons, title-bar toast | Neutrals/Onix Dark 1 | `--palette-neutral-onyxDark1` | `--title-bar-button` |
 | `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — ✱ deviation (1/255) | `--darker-gray`, `--card` `#242129` — same ✱ deviation |
@@ -1329,13 +1325,13 @@ Variants of the same menus:
 
 ### DefaultModal (Modals)
 
-Component `DefaultModalButtonsHorizontal` [`21183:30733`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21183-30733), 1 variant, placed twice on the page: under `<DefaultModal> | Horizontal Stack Buttons` (the component) and `| Vertical Stack Buttons` (instance [`21196:31147`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21196-31147)). Size Hug 700 × 413 (horizontal), 479 (vertical). Read October 27, 2026. Code: main; the `#181225` fill ships in #1731 · inspector `components/Modal` · Creator Hub ui2 `Modal` (`Modals/index.ts`), `Modals/WarningModal`.
+Component `DefaultModalButtonsHorizontal` [`21183:30733`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21183-30733), 1 variant, placed twice on the page: under `<DefaultModal> | Horizontal Stack Buttons` (the component) and `| Vertical Stack Buttons` (instance [`21196:31147`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21196-31147)). Size Hug 700 × 413 (horizontal), 479 (vertical). Read October 27, 2026. Code: main · inspector `components/Modal` · Creator Hub ui2 `Modal` (`Modals/index.ts`), `Modals/WarningModal`.
 
 Shared: row, Hug 700 × Hug, fill `#181225` (a raw hex, no variable), 1px White 10 border, 24px radius, clips, padding 100, gap 100; `Glow` 1037 × 513 Mythic `#FF4BED` @ 30% with layer blur 500, flipped vertically, centred horizontally, its centre 437 below the panel's centre (drawn box y 387–900 in the 413-tall component), so in CSS `top: calc(50% + 180.5px)`, with the ellipse's top edge as the anchor (decorative); `Content` column Fixed 500 × Hug, gap 50: title `H2 Semi` Snow ("Delete Mobile Variant"), body `H6 Regular` Gray ("Deleting the Mobile layout will delete its device specific settings. Your Desktop layout will remain unchanged."), `CTAs` gap 20 of two `Button-Contained-Text` 46 tall, 12px radius, padding 12 / 24, label Inter 16 / 600 / 22 uppercase Snow; `close-button` 36 × 36, 100px pill, White 10 fill, at right 19 / top 19, its X at inset 20% (a 14.4 box). Code detail: Creator Hub `Modals/index.ts` `Modal` = ui2 `Modal` (paper `--modal` `#242129`, 12px radius, padding 24, widths 540 / 720 / 900, no border, no glow) and `Modals/WarningModal` (centred `--dcl-silver` message, 150px-min buttons, gap 16) — drift on fill, radius, border, padding, close button and button size; inspector `components/Modal` (`--modal-content-bg-color` → `#161518`, `--tree-border-color` border, 3px radius, padding 20, min 500 × 200, overlay `--modal-overlay-bg-color`) — drift.
 
 | Variant | State | Fill | Border | CTAs | Close | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Horizontal | default | `#181225` + glow | 1px White 10 | row, gap 20: `Secondary` (White 10 fill) "CANCEL" then `PrimaryBlocked` (Primary fill) "DELETE MOBILE", each Fill 240 × 46 | White 10 pill, 36 × 36 | title 17.77:1, body 11.58:1 on `#181225`; CANCEL 13.51:1 over White 10; **DELETE 3.55:1 Snow on Primary — fails 4.5:1** (16px / 600 is not large text); modal vs page `#16141a` 1.00:1 — only the 1.32:1 border and the glow separate it; close pill vs modal 1.32:1, a Gray glyph on it 8.80:1, a Snow one 13.51:1 | `role="dialog" aria-modal="true" aria-labelledby` the title, `aria-describedby` the body; focus trapped, Escape closes; close is `<button aria-label="Close">`, 36px target; Cancel first in DOM order | fill `--modal-content-bg-color` `#181225` (ships in #1731); `--palette-whiteTransparent-subtle` (border, Secondary, close); `--primary-main`; radius `--shape-borderRadiusXXLarge`; glow missing (asset) | fill `--modal` `#181225` (ships in #1731; ui2's `Modal` paper does not read it); `--primary`; the rest missing |
+| Horizontal | default | `#181225` + glow | 1px White 10 | row, gap 20: `Secondary` (White 10 fill) "CANCEL" then `PrimaryBlocked` (Primary fill) "DELETE MOBILE", each Fill 240 × 46 | White 10 pill, 36 × 36 | title 17.77:1, body 11.58:1 on `#181225`; CANCEL 13.51:1 over White 10; **DELETE 3.55:1 Snow on Primary — fails 4.5:1** (16px / 600 is not large text); modal vs page `#16141a` 1.00:1 — only the 1.32:1 border and the glow separate it; close pill vs modal 1.32:1, a Gray glyph on it 8.80:1, a Snow one 13.51:1 | `role="dialog" aria-modal="true" aria-labelledby` the title, `aria-describedby` the body; focus trapped, Escape closes; close is `<button aria-label="Close">`, 36px target; Cancel first in DOM order | fill `--modal-content-bg-color` `#181225`; `--palette-whiteTransparent-subtle` (border, Secondary, close); `--primary-main`; radius `--shape-borderRadiusXXLarge`; glow missing (asset) | fill `--modal` `#181225` (ui2's `Modal` paper does not read it); `--primary`; the rest missing |
 | Vertical | default | same | same | column, gap 20: `PrimaryBlocked` "DELETE MOBILE" above `Secondary` "CANCEL", each Fill 500 × 46 | same | as Horizontal | primary action first in DOM order here: each variant follows its own drawn order (Horizontal Cancel first, Vertical Delete first) | as Horizontal | as Horizontal |
 | any | ✱ hover / press | — | — | per the Buttons page | ✱ not drawn on this page (`Hover Style` True appears nowhere); the nearest drawn rule is one step up the White ramp on hover: the Close-Button set `20768:59567` (Search Bar page) draws White 5 → White 10, and the Buttons page's Secondary draws the same step from a White 10 rest, White 10 → White 20. Hover White 20 `--palette-whiteTransparent-soft`; press returns to the White 10 rest, as Secondary's press | — | — | — | — |
 | any | ✱ focus | — | — | — | — | ring on `#181225`: `--focus-ring` 17.77:1 (the design; `Button` draws none on `main`: drift), `--ui-designer-control-accent` 8.15:1 in UI Designer modals; Creator Hub ui2 `palette.info.light` 8.15:1 | `:focus-visible` outline 2px on every button; initial focus on Cancel | — | — |
@@ -2070,8 +2066,8 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | Figma swatch | Value | Inspector (UI Designer) | Creator Hub | Status |
 | --- | --- | --- | --- | --- |
 | Neutrals/Charcoal | `#25212A` | `--ui-designer-panel-bg` (`#242129`, deviation within 1/255) | AI panel `palette.background.paper` (value not verified) | match / documented deviation |
-| Neutrals/Onix | `#35333B` | `--ui-designer-control-bg`, `--palette-neutral-onyx` | `--ai-menu-bg` `#35333b` (the AI chat-history menu) | inspector match; `--ai-menu-bg` ships in #1731 |
-| Neutrals/Onix Dark 1 | `#2D2A33` | `--palette-neutral-onyxDark1` | `--title-bar-button` `#2d2a33`; `--ai-input-bg` `#2d2a33` (the ChatInput container) | match in inspector; `--ai-input-bg` ships in #1731. Fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
+| Neutrals/Onix | `#35333B` | `--ui-designer-control-bg`, `--palette-neutral-onyx` | `--ai-menu-bg` `#35333b` (the AI chat-history menu) | match |
+| Neutrals/Onix Dark 1 | `#2D2A33` | `--palette-neutral-onyxDark1` | `--title-bar-button` `#2d2a33`; `--ai-input-bg` `#2d2a33` (the ChatInput container) | match. Fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` (legacy) | `--dark-gray` | match: `InputAction` hover fill, the `ColourPanel` hex cells, the AI menu's hover row |
 | Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph` (→ `--palette-neutral-gray2`); `--ui-designer-text-muted` is Silver | `--dropdown` | match: idle glyphs, the `Position` / `Size` icons, the Logic placeholders and empty lines |
 | Neutrals/Black | `#000000` | `--black` | — | match: the `BottomPanel3D` surface behind its 1px gaps |
@@ -2081,7 +2077,7 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | White 40 / 60 | `rgba(255,255,255,.4 / .6)` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | match: placeholders, the Scale Slider hover track, scrollbar-handle borders, bound-input borders |
 | White 8 (raw alpha, no variable) | `rgba(255,255,255,.08)` | `--palette-whiteTransparent-hint` | — | match: the `InputAction` and MobileHUD `TextureInput` fill (code paints `--ui-designer-control-bg`) |
 | Black 40 | `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` | `--palette-blackTransparent-blurry` | match: scrollbar handles in the bottom panels and the MobileHUD list |
-| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(254,156,42,.1)` | `--warning-main` match; `--ai-warning-bg` ships in #1731, Figma's banner is `#FE9C2A` at 10% |
+| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(254,156,42,.1)` | match; Figma's banner is `#FE9C2A` at 10% |
 | System/Blue · Rarities/Epic Light | `#2196F3` · `#81E1FF` | `--palette-info-main` · `--palette-rarity-epic-light` | `--palette-rarity-epic-light` · ui2 `palette.info.main` | match: pinned-edge colours in `ConstraintsIcons` |
 | Brand/Lavender | `#C640CD` | — | `--lavender` | demo colour in `ColourPanel` and `AspectRatio/Colour`, not a UI token |
 | Menu shadow | `0 4px 8px rgba(0,0,0,.4)` | `--menu-shadow` | `--menu-shadow` | match: `EventsMenu`, `VariableMenu`, the AI chat-history `Menu` |
@@ -2092,11 +2088,11 @@ Declared for the Editor pages: `--palette-neutral-onyxDark1` (`#2D2A33`), `--pal
 
 ### AI Assistant (page lead)
 
-Page `21206:31202`. The page is a screen plus a component row, not a library: board `Frame 3112` `21206:31203` holds the title "AI Chat", `<AIAssistantPanel>` with the `AiChat` instance `21206:31298` (Fixed 342 × 1028, vertical, fill Charcoal; a component with a `Messages` = Default property) and `<Components>` `21206:31533` with `Menu` `21206:31885` (chat history), `Header`, `TitleBar` and the `ChatInput` set. Code: ships in #1731 (the `--ai-*` values) · Creator Hub `components/AiChatPanel` (`component.styled.ts` `Panel`, `PanelHeader`, `IntroMessage`, `ErrorRow`, `Composer`, `AttachmentChip`; `ChatView.tsx`) and `AiChatWindow` (the detached window); inspector none.
+Page `21206:31202`. The page is a screen plus a component row, not a library: board `Frame 3112` `21206:31203` holds the title "AI Chat", `<AIAssistantPanel>` with the `AiChat` instance `21206:31298` (Fixed 342 × 1028, vertical, fill Charcoal; a component with a `Messages` = Default property) and `<Components>` `21206:31533` with `Menu` `21206:31885` (chat history), `Header`, `TitleBar` and the `ChatInput` set. Code: main · Creator Hub `components/AiChatPanel` (`component.styled.ts` `Panel`, `PanelHeader`, `IntroMessage`, `ErrorRow`, `Composer`, `AttachmentChip`; `ChatView.tsx`) and `AiChatWindow` (the detached window); inspector none.
 
 ### AiChat (AI Assistant)
 
-Component [`21206:31298`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21206-31298), 1 variant (`Messages` = Default). Size 342 × 1028. Read October 27, 2026. Code: ships in #1731 (the `--ai-*` values) · inspector none · Creator Hub `components/AiChatPanel` (`Panel`, `PanelHeader`, `IntroMessage`, `ErrorRow`, `Composer`) and `AiChatWindow`.
+Component [`21206:31298`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21206-31298), 1 variant (`Messages` = Default). Size 342 × 1028. Read October 27, 2026. Code: main · inspector none · Creator Hub `components/AiChatPanel` (`Panel`, `PanelHeader`, `IntroMessage`, `ErrorRow`, `Composer`) and `AiChatWindow`.
 
 The usage card and the outdated-CLI banner are absolutely anchored (usage card at bottom 0, banner at bottom 176), so their stacking is a fixture, not a layout spec.
 
@@ -2110,18 +2106,18 @@ The usage card and the outdated-CLI banner are absolutely anchored (usage card a
 | Intro message | none | none | 0 | Inter 400 12 (`H8`), White `#FFFFFF`, 310 wide | — | 310 × 60 | — | 15.79:1 |
 | Usage card | Onix `#35333B` | none | 12 | title "About AI usage" Inter 600 14 (`H7 Semi`) White; body Inter 400 12 White | — | 322 wide, padding 20, gap 16 | — | body 12.44:1 on Onix |
 | "Got It" button | White 10 `rgba(255,255,255,0.1)` | none | 8 | "Got It" Inter 600 12 (`H8 Semi`) Snow | — | Hug × 32, padding 10 / 20 | `Button-Contained-Text` Secondary | — |
-| Outdated-CLI banner | System/Orange at 10% `rgba(254,156,42,0.1)` | none | 12 | Inter 400 12, System/Orange `#FE9C2A` | `ErrorOutline` 24 | 322 × Hug 65, padding 10 / 20, gap 16 | `--ai-warning-bg` `rgba(254,156,42,.1)` (ships in #1731) | text 6.27:1 on its tint; tint vs panel 1.20:1 |
+| Outdated-CLI banner | System/Orange at 10% `rgba(254,156,42,0.1)` | none | 12 | Inter 400 12, System/Orange `#FE9C2A` | `ErrorOutline` 24 | 322 × Hug 65, padding 10 / 20, gap 16 | `--ai-warning-bg` `rgba(254,156,42,.1)` | text 6.27:1 on its tint; tint vs panel 1.20:1 |
 | ChatInput | see ChatInput | — | — | — | — | h 70 | — | — |
 
 Messages are `#FFFFFF` (not Snow) at 15.79:1; the usage card body is 12.44:1 on Onix; the banner text is 6.27:1 on its tint, and the tint is 1.20:1 against the panel — the icon and the words carry the warning. The hex typed into the page copy ("Claude CLI v…") is placeholder, not spec.
 
 ### Menu (AI Assistant)
 
-Component [`21206:31885`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21206-31885), 1 variant: the chat-history menu, an instance of the shared `Menu` (Menu page `20749:386`) at 248 wide. Size 248 × 182. Read October 27, 2026. Code: ships in #1731 (`--ai-menu-bg`) · inspector none · Creator Hub `components/AiChatPanel` session menu; the selected chat row takes `--ai-session-selected` / `--ai-session-selected-hover` (Blue Dark 2 / 3, match).
+Component [`21206:31885`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21206-31885), 1 variant: the chat-history menu, an instance of the shared `Menu` (Menu page `20749:386`) at 248 wide. Size 248 × 182. Read October 27, 2026. Code: main · inspector none · Creator Hub `components/AiChatPanel` session menu; the selected chat row takes `--ai-session-selected` / `--ai-session-selected-hover` (Blue Dark 2 / 3, match).
 
 | Part | Fill | Border | Radius | Text | Glyph | Padding / gap / size | Shadow | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Container | Onix `#35333B` | 1px White 10 `rgba(255,255,255,0.1)` | 12 | — | — | 248 wide, padding 10 / 0, gap 10, slots padding 0 / 10 | `0 4px 8px rgba(0,0,0,0.4)` | `--ai-menu-bg` `#35333b` (ships in #1731) |
+| Container | Onix `#35333B` | 1px White 10 `rgba(255,255,255,0.1)` | 12 | — | — | 248 wide, padding 10 / 0, gap 10, slots padding 0 / 10 | `0 4px 8px rgba(0,0,0,0.4)` | `--ai-menu-bg` `#35333b` |
 | Div | White 10 | none | 0 | — | — | h 1, full width | none | — |
 | Menu-Entry | none | none | 8 | Inter 400 12 (`H8 Regular`), Snow `#FCFCFC` | `NewChat` 16 (flipped vertically); `Delete` 14 × 14 | h 38, padding 0 / 10, gap 10 | none | — |
 | Section label "CHAT HISTORY" | none | none | 8 | Inter 400 12, Silver `#A09BA8`, typed in capitals | none | h 27, padding 0 / 10 | none | — |
@@ -2146,7 +2142,7 @@ Component [`21206:31412`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?n
 
 ### ChatInput (AI Assistant)
 
-Set [`21206:31455`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21206-31455), 2 variants (Default `21206:31453`, Input `21206:31454`). Size 701 × 110 (dashed `#8A38F5` chrome); each variant 310 × 70. Read October 27, 2026. Code: ships in #1731 (`--ai-input-bg`) · inspector none · Creator Hub `components/AiChatPanel` (`Composer`, `AttachmentChip`).
+Set [`21206:31455`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21206-31455), 2 variants (Default `21206:31453`, Input `21206:31454`). Size 701 × 110 (dashed `#8A38F5` chrome); each variant 310 × 70. Read October 27, 2026. Code: main · inspector none · Creator Hub `components/AiChatPanel` (`Composer`, `AttachmentChip`).
 
 - **Caret:** drawn as a 1px Snow border line 15 tall, at the empty position in Default and after the typed text in Input; not a separate glyph.
 - **Selection row:** a separate 30-tall block above the container in both variants; its `Close-Button` (Search Bar) is 12 × 12 with an 8 × 8 glyph.
@@ -2154,7 +2150,7 @@ Set [`21206:31455`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Variant | State | Fill | Border | Radius | Text | Glyph | Padding / gap / size | Creator Hub token | Contrast (on `#25212A`) | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Root (both) | — | none | 1px White 10 `rgba(255,255,255,0.1)` top | 0 | — | — | 310 × 70 | — | — | — |
-| Default | empty | Onix Dark 1 `#2D2A33` | 1px Snow `#FCFCFC` | 10 | "Ask Assistant" Inter 400 12 (`H8 Regular`), Silver `#A09BA8` | send `Button-Contained-Icon` 26 × 26, 100px radius, padding 12, Primary `#FF2D55` | container Fixed 310 × Hug 40, padding 6 / 10, gap 187 | `--ai-input-bg` `#2d2a33` (ships in #1731); `--title-bar-button` `#2d2a33`; send ui2 `palette.primary.main` | border 15.39:1; placeholder 5.20:1 on the container; send glyph Snow on Primary 3.55:1 (non-text ≥ 3:1) | `<textarea aria-label="Ask Assistant">`; send `<button aria-label="Send">`, disabled while empty ✱ |
+| Default | empty | Onix Dark 1 `#2D2A33` | 1px Snow `#FCFCFC` | 10 | "Ask Assistant" Inter 400 12 (`H8 Regular`), Silver `#A09BA8` | send `Button-Contained-Icon` 26 × 26, 100px radius, padding 12, Primary `#FF2D55` | container Fixed 310 × Hug 40, padding 6 / 10, gap 187 | `--ai-input-bg` `#2d2a33`; `--title-bar-button` `#2d2a33`; send ui2 `palette.primary.main` | border 15.39:1; placeholder 5.20:1 on the container; send glyph Snow on Primary 3.55:1 (non-text ≥ 3:1) | `<textarea aria-label="Ask Assistant">`; send `<button aria-label="Send">`, disabled while empty ✱ |
 | Input | typed | same | same | 10 | typed text Inter 400 12 Snow | same | same, padding right 8 | as Default | text 13.73:1; Primary vs container 3.86:1 | `Enter` sends, `Shift+Enter` newline ✱ |
 | any | `Selection` row present | none | none | 12 | "Selection: Player" Inter 400 10, White 60 `rgba(255,255,255,0.6)` | `highlight_alt` 14 × 14; `Close-Button` 12 × 12, White 5, 100px radius | 310 × 30, padding 9, gap 6 | — | chip text 6.54:1; Onix vs panel 1.27:1 | the chip is removable by `Close-Button` named "Remove selection" ✱ |
 | any | ✱ focus / disabled / sending | — | — | — | — | — | — | — | ring `--ui-designer-control-accent` 8.15:1 on Charcoal (the Snow border is a rest state) | not drawn; the page shows no streaming or error state either |
@@ -3037,13 +3033,13 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 
 | Role | Tokens | Status |
 | --- | --- | --- |
-| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--secondary` `#242129`, `--modal` `#181225`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` | `--modal` ships in #1731 (`#242129` on `main`); `#242129` is the Charcoal **✱ deviation** |
+| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--secondary` `#242129`, `--modal` `#181225`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` | `#242129` is the Charcoal **✱ deviation** |
 | Text | `--text` `#ffffff`, `--palette-neutral-softWhite` `#fcfcfc` (Snow), `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` | match |
 | Charts | `--chart-reference` `#a99afe` (benchmark lines on the Analytics detail charts) | raw Figma fill, no variable |
 | Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) | match |
 | Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` | match |
 | Lines | `--divider` `#67637033`, `--text-area-border` `#676370`, `--clear-divider` `#a09ba8` | match |
-| AI assistant | `--ai-selected` `#214272`, `--ai-selected-hover` `#2e4a7a`, `--ai-session-selected` `#244b7d`, `--ai-session-selected-hover` `#243852`, `--ai-menu-bg` `#35333b`, `--ai-input-bg` `#2d2a33`, `--ai-warning-bg` `rgba(254,156,42,.1)` | `--ai-menu-bg` ships in #1731, `--ai-input-bg` ships in #1731, `--ai-warning-bg` ships in #1731 |
+| AI assistant | `--ai-selected` `#214272`, `--ai-selected-hover` `#2e4a7a`, `--ai-session-selected` `#244b7d`, `--ai-session-selected-hover` `#243852`, `--ai-menu-bg` `#35333b`, `--ai-input-bg` `#2d2a33`, `--ai-warning-bg` `rgba(254,156,42,.1)` | match |
 | Palette (the inspector's names) | `--palette-neutral-softWhite` `#fcfcfc` (Snow: the navbar's active label and underline), `--palette-info-light` `#63b4f6` (System/Blue Light 1: the navbar focus ring, 8.13:1 on `#161518`) | match |
 | Page | `--page-shade` `linear-gradient(180deg, rgb(0 0 0 / 52%) 0%, rgb(0 0 0 / 51%) 25%, rgb(0 0 0 / 46%) 37%, rgb(0 0 0 / 20%) 100%)` (the page wash, first layer of `.Main`; see [Background (Background)](#background-background)) | `--page-shade` ✱ measured, no Figma variable |
 | ui2 overrides | `--mui-shape-borderRadius` `6px`, `--mui-palette-action-disabled`, `--mui-palette-secondary-contrast` | match |
