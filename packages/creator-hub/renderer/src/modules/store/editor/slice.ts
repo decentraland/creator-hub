@@ -45,6 +45,11 @@ export const runScene = createAsyncThunk(
 // Cancels a preview that's still converting: the spawn is killed and the pending
 // runScene settles without opening the client.
 export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.cancelPreview);
+
+function isSaveSceneUnsupported(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('"save_scene" not implemented');
+}
+
 /**
  * Pushes the open editor's queued writes to disk before a deploy reads the project back.
  *
@@ -55,10 +60,6 @@ export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.can
  *
  * A closed editor (no iframe mounted) has nothing to flush and is not an error.
  */
-function isSaveSceneUnsupported(error: unknown): boolean {
-  return error instanceof Error && error.message.includes('"save_scene" not implemented');
-}
-
 async function flushEditorToDisk() {
   const scene = getActiveSceneClient();
   if (!scene) return;
