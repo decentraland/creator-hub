@@ -232,9 +232,9 @@ The optimizer's shared sidecar folder makes GLBs reference textures through `../
 
 `consumeMessages({ topic })` resolves to a **bare array** of `{ sender, data }`, not the `{ messages: [...] }` wrapper its TypeScript type implies (the explorer's `CommsApiWrap.ConsumeMessages` serializes a raw JSON array). Destructuring `const { messages } = await consumeMessages(...)` yields `undefined` and throws on `.length` — and inside a `try/catch` that silently drops every message with no error. Read it as an array, tolerating both shapes: `Array.isArray(res) ? res : (res?.messages ?? [])`.
 
-### Some branches track `origin/main`, so `git push` needs an explicit refspec
+### A branch can track `origin/main`, so `git push` needs an explicit refspec
 
-Several local branches have their upstream set to `origin/main` rather than their own remote branch (`feat/e2e-playwright-suite`, `fix/inspector-dev-server-bevy-agent-origin`, `worktree-improve-linting-speed` at time of writing). `git status -sb` shows it as `## <branch>...origin/main`, which reads like ordinary ahead/behind info. A bare `git push` — and especially `git push --force-with-lease` — resolves that upstream and targets **main**. Push these with an explicit refspec (`git push origin <branch>`), and pin the lease to a known SHA (`--force-with-lease=<branch>:<sha>`) rather than the bare form, which trusts a remote-tracking ref that a background fetch can silently advance.
+If `git status -sb` shows `## <branch>...origin/main`, the branch's upstream is main, and a bare `git push` — especially `git push --force-with-lease` — targets **main**. Push with `git push origin <branch>`, and pin a lease to a known SHA (`--force-with-lease=<branch>:<sha>`): the bare form trusts a remote-tracking ref that a background fetch can silently advance.
 
 ## Design handoff
 
