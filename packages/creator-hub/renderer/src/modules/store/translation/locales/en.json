@@ -131,6 +131,8 @@
       },
       "retry": "Retry",
       "revert": "Undo AI changes",
+      "revert_blocked": "Couldn't undo: another AI app changed the scene after this, and undoing now would remove its changes too. Use Undo in the editor instead.",
+      "revert_failed": "Couldn't undo the AI changes. Use Undo in the editor instead.",
       "selection": "Selection: {names}",
       "selection_clear": "Clear",
       "asset_mention": "Asset: {name}",
@@ -163,6 +165,7 @@
         "alt_copy": "Copy configuration",
         "alt_copied": "Copied",
         "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts.",
+        "alt_access_off": "To connect one, turn on “Allow other AI apps to edit your scenes” in Settings → AI.",
         "install_guide": "If that doesn't work, follow the {provider} install guide",
         "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so sign in to Claude Code once.",
         "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license.",
@@ -602,16 +605,20 @@
         "experimental": {
           "label": "Experimental features"
         },
+        "dev_asset_catalog": {
+          "toggle": "Use development asset CDN",
+          "help": "Load smart items from the development CDN instead of production, so assets uploaded from a pull request can be tested before release. Restart the editor and re-add items after changing this. Development builds only."
+        },
         "ai_assistant": {
           "label": "Enable AI Assistant",
           "help": "Runs your installed Claude, Codex, Cursor, or Gemini CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."
         },
         "mcp_server": {
-          "label": "Expose AI assistant MCP server",
-          "help": "Let an AI agent running outside Creator Hub control the open scene. Paste this into the agent's MCP configuration.",
+          "label": "Allow other AI apps to edit your scenes",
+          "help": "Lets AI apps you use on this computer, like Claude Code or Codex, see and change the scene you have open. Claude Code started in your scene's folder connects on its own. Turning this off disconnects them right away. The AI Assistant above doesn't need this.",
           "copy": "Copy configuration",
           "copied": "Copied!",
-          "note": "Localhost only. The URL and token change each time Creator Hub restarts."
+          "note": "Only apps on this computer can connect. These details change each time Creator Hub restarts or this is turned off."
         },
         "ai_api_key": {
           "label": "Bill this to an API key instead",
@@ -968,6 +975,13 @@
         "discard_all": "Discard all"
       }
     },
+    "external_agent_access": {
+      "title": "An AI app on this computer wants to see and change your open scene.",
+      "actions": {
+        "allow": "Allow",
+        "deny": "Don't allow"
+      }
+    },
     "new_dependency_version": {
       "title": "New dependencies version detected",
       "actions": {
@@ -1190,6 +1204,9 @@
   "analytics": {
     "header": {
       "title": "Analytics"
+    },
+    "sign_in": {
+      "title": "Sign in to see your Places analytics"
     },
     "empty_list": {
       "title": "No Places to analyse yet",

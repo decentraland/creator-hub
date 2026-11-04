@@ -52,6 +52,7 @@ export const DEFAULT_CONFIG: Config = {
     aiAssistant: true,
     exposeMcpServer: false,
     useApiKeyFromEnv: false,
+    useDevAssetCatalog: false,
   },
   editors: [],
 };
