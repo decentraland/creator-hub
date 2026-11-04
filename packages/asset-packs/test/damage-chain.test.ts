@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { engine, Transform } from '@dcl/sdk/ecs';
+import { engine, getComponentEntityTree, Transform } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
 import { Vector3 } from '@dcl/sdk/math';
 import { createInputSystem, createPointerEventsSystem, createTweenSystem } from '@dcl/ecs';
@@ -44,8 +44,9 @@ function dealDamage(
   target: 'all' | 'player' | 'non_player',
 ) {
   const origin = getWorldPosition(from);
+  const ownTree = new Set(getComponentEntityTree(engine, from, Transform));
   for (const entity of damageTargets) {
-    if (entity === from) continue;
+    if (ownTree.has(entity)) continue;
     if (target !== 'all') {
       let root = entity;
       for (let parent = getEntityParent(root); parent; parent = getEntityParent(root))

@@ -5,6 +5,7 @@ import {
   inputSystem,
   PointerEventType,
   pointerEventsSystem,
+  getComponentEntityTree,
 } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
 import { Vector3 } from '@dcl/sdk/math';
@@ -29,10 +30,12 @@ function dealDamage(
   hits: number,
   target: 'all' | 'player' | 'non_player',
 ) {
-  const { AvatarAttach: AvatarAttachComponent } = getExplorerComponents(engine);
+  const { AvatarAttach: AvatarAttachComponent, Transform: TransformComponent } =
+    getExplorerComponents(engine);
   const origin = AvatarAttachComponent.has(from) ? getPlayerPosition() : getWorldPosition(from);
+  const ownTree = new Set(getComponentEntityTree(engine, from, TransformComponent));
   for (const entity of damageTargets) {
-    if (entity === from) continue; // never damage ourselves
+    if (ownTree.has(entity)) continue; // never damage ourselves or anything parented to us
     if (target !== 'all') {
       let root = entity;
       for (let parent = getEntityParent(root); parent; parent = getEntityParent(root))
