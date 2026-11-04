@@ -184,13 +184,13 @@ const getLandQuery = (skip = 0) => `
     updateOperatorEstates: estates(first: ${MAX_RESULTS}, skip: ${skip}, where: { updateOperator: $address }) {
       ...estateFields
     }
-    ownerAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, where: { owner: $address, type: "UpdateManager" }) {
+    ownerAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, orderBy: timestamp, orderDirection: desc, where: { owner: $address, type: "UpdateManager" }) {
       operator
       isApproved
       tokenAddress
       timestamp
     }
-    operatorAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, where: { operator: $address, type: "UpdateManager" }) {
+    operatorAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, orderBy: timestamp, orderDirection: desc, where: { operator: $address, type: "UpdateManager" }) {
       owner {
         address
         parcels(first: ${MAX_RESULTS}, skip: ${skip}, where: { estate: null }) {
