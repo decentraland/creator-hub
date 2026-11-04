@@ -24,7 +24,15 @@ export class SceneProvider implements StateProvider {
   private scene: SceneWithDefaults;
   private readonly fs: FileSystemInterface;
   private pendingSceneUpdates = new Map<string, Partial<Scene>>();
-  private savePromise: Promise<void> | null = null;
+  /**
+   * Serializes writes. Never rejects: a failed write is recorded on `saveError` and leaves
+   * `dirty` set, so a rejection can never end up unobserved — an unobserved one is a failed
+   * save that reaches nobody.
+   */
+  private saveQueue: Promise<void> = Promise.resolve();
+  /** The in-memory scene has edits that are not on disk yet — or whose write failed. */
+  private dirty = false;
+  private saveError: Error | null = null;
 
   constructor(fs: FileSystemInterface, initialScene: SceneWithDefaults) {
     this.fs = fs;
@@ -96,28 +104,43 @@ export class SceneProvider implements StateProvider {
       const merged = merge.withOptions({ mergeArrays: false }, this.scene, pendingUpdate) as Scene;
 
       this.scene = SceneProvider.augmentDefaults(merged);
+      this.dirty = true;
       this.pendingSceneUpdates.delete(transaction.id);
-
-      if (this.savePromise) {
-        await this.savePromise;
-      }
-
-      this.savePromise = this.saveScene();
     } catch (error) {
       console.error('Failed to complete scene transaction:', error);
       this.pendingSceneUpdates.delete(transaction.id);
+      return;
     }
+
+    // Awaited on purpose: an unawaited write means a failure has nobody to reject to, and
+    // the transaction reports success while scene.json still holds the previous content.
+    await this.enqueueSave();
+    if (this.saveError) throw this.saveError;
   }
 
-  private async saveScene(): Promise<void> {
+  /**
+   * Queues a write of the current in-memory scene. Resolves once that write has been
+   * attempted; check `saveError` for the outcome.
+   */
+  private enqueueSave(): Promise<void> {
+    this.saveQueue = this.saveQueue.then(() => this.writeScene());
+    return this.saveQueue;
+  }
+
+  private async writeScene(): Promise<void> {
+    if (!this.dirty) return;
+
+    const snapshot = this.scene;
     try {
-      const buffer = Buffer.from(JSON.stringify(this.scene, null, 2), 'utf-8');
+      const buffer = Buffer.from(JSON.stringify(snapshot, null, 2), 'utf-8');
       await this.fs.writeFile('scene.json', buffer);
+      // An edit that landed while the write was in flight is not on disk yet, so it keeps
+      // the provider dirty and the next flush writes it.
+      if (this.scene === snapshot) this.dirty = false;
+      this.saveError = null;
     } catch (error) {
+      this.saveError = error instanceof Error ? error : new Error(String(error));
       console.error('Failed to save scene.json:', error);
-      throw error;
-    } finally {
-      this.savePromise = null;
     }
   }
 
@@ -133,16 +156,27 @@ export class SceneProvider implements StateProvider {
       const merged = merge.withOptions({ mergeArrays: false }, this.scene, partialScene) as Scene;
 
       this.scene = SceneProvider.augmentDefaults(merged);
-
-      if (this.savePromise) {
-        await this.savePromise;
-      }
-
-      this.savePromise = this.saveScene();
-      await this.savePromise;
+      this.dirty = true;
     } catch (error) {
       console.error('Failed to sync scene from engine:', error);
+      return;
     }
+
+    await this.enqueueSave();
+  }
+
+  /**
+   * Waits for every queued write and guarantees the in-memory scene reached disk, retrying
+   * once when the last attempt failed or was superseded. Rejects when it still cannot be
+   * written, so callers that must not proceed on stale content — publishing, above all —
+   * can stop instead of shipping the previous scene.json.
+   */
+  async flush(): Promise<void> {
+    await this.saveQueue;
+    if (this.dirty) await this.enqueueSave();
+    // Still dirty after a fresh attempt means that attempt failed — a write that only got
+    // superseded by a newer edit leaves `dirty` set but clears the error.
+    if (this.dirty && this.saveError) throw this.saveError;
   }
 
   getScene(): SceneWithDefaults {
@@ -150,18 +184,15 @@ export class SceneProvider implements StateProvider {
   }
 
   async forceReload(): Promise<void> {
+    await this.saveQueue;
     this.scene = await SceneProvider.loadScene(this.fs);
     this.pendingSceneUpdates.clear();
-
-    if (this.savePromise) {
-      await this.savePromise;
-    }
+    this.dirty = false;
+    this.saveError = null;
   }
 
   async dispose(): Promise<void> {
-    if (this.savePromise) {
-      await this.savePromise;
-    }
+    await this.saveQueue;
     this.pendingSceneUpdates.clear();
   }
 }
