@@ -9,6 +9,7 @@
 // This is the raw-spawn transport (proven in the Bevy editor). It lives behind the
 // `ai.*` IPC surface so it can later be swapped for an ACP client without touching the
 // renderer panel or the IPC contract.
+import { randomUUID } from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -20,10 +21,18 @@ import type { ChildProcess } from 'child_process';
 // handles the `.cmd` + quoting correctly and is a transparent drop-in for spawn on macOS/Linux.
 import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
-import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
+import treeKill from 'tree-kill';
+import { AI_CLI_COMMANDS, apiKeyAlternative } from '/shared/types/ai';
+import type {
+  AiAttachmentKind,
+  AiEvent,
+  AiProvider,
+  AiProviderInfo,
+  AiSendParams,
+} from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
 import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
-import { getUserDataPath } from './electron';
+import { getAppDataPath, getUserDataPath } from './electron';
 import { getChildEnv, resolveNodeRuntime } from './node-runtime';
 import { getProjectId, track } from './analytics';
 import {
@@ -78,6 +87,18 @@ const SHELL_PATH_TIMEOUT_MS = 5_000;
 // Keep only the tail of a child's stderr — enough to surface a real error, bounded so a chatty
 // process can't grow the buffer without limit.
 const MAX_STDERR_BYTES = 8_000;
+const RESULT_EXIT_GRACE_MS = 5_000;
+const OUTPUT_CLOSE_GRACE_MS = 2_000;
+
+function parseResult(line: string): { failed: boolean } | undefined {
+  try {
+    const obj = JSON.parse(line) as { type?: unknown; is_error?: unknown; status?: unknown };
+    if (obj.type !== 'result') return undefined;
+    return { failed: obj.is_error === true || obj.status === 'error' };
+  } catch {
+    return undefined;
+  }
+}
 let shellDirs: string[] = [];
 let probing: Promise<void> | null = null;
 
@@ -105,7 +126,7 @@ async function runShellProbe(): Promise<void> {
         shell,
         [
           '-ilc',
-          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
+          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@X=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CODEX_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
         ],
         { stdio: ['ignore', 'pipe', 'ignore'], detached: true },
       );
@@ -135,6 +156,7 @@ async function runShellProbe(): Promise<void> {
   // Capture the shell's API keys for API-key billing (in memory only; never logged).
   shellApiKeys.ANTHROPIC_API_KEY = /@@A=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.OPENAI_API_KEY = /@@O=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.CODEX_API_KEY = /@@X=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.CURSOR_API_KEY = /@@C=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.GEMINI_API_KEY = /@@G=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.GOOGLE_API_KEY = /@@GA=(.*?)@@/s.exec(out)?.[1] || undefined;
@@ -153,9 +175,26 @@ function searchDirs(): string[] {
     const nvmRoot = path.join(process.env.NVM_DIR ?? path.join(HOME, '.nvm'), 'versions', 'node');
     // Include the app-managed CLI dir (#1531) so a CLI we installed on demand resolves
     // like a PATH install. Static path — fine to keep listed before anything is installed.
-    cachedDirs = [...shellDirs, ...EXTRA_BIN_DIRS, ...nvmBinDirs(nvmRoot), getManagedBinDir()];
+    cachedDirs = [
+      ...windowsInstallerDirs(),
+      ...shellDirs,
+      ...EXTRA_BIN_DIRS,
+      ...nvmBinDirs(nvmRoot),
+      getManagedBinDir(),
+    ];
   }
   return cachedDirs;
+}
+
+/** Folders the agents' Windows installers add to the user PATH, which a running app never sees. */
+function windowsInstallerDirs(): string[] {
+  if (process.platform !== 'win32') return [];
+  const localAppData = process.env.LOCALAPPDATA ?? path.join(HOME, 'AppData', 'Local');
+  return [
+    path.join(localAppData, 'Microsoft', 'WinGet', 'Links'),
+    path.join(localAppData, 'cursor-agent'),
+    path.join(localAppData, 'Programs', 'OpenAI', 'Codex', 'bin'),
+  ];
 }
 
 // Split on ':', not path.delimiter: this is a POSIX shell's $PATH, and the probe that
@@ -216,6 +255,80 @@ export function getCliVersion(bin: string): string | undefined {
   return version;
 }
 
+const signedOutCache = new Map<string, boolean>();
+const STATUS_TIMEOUT_MS = 5000;
+
+/** Whether `provider`'s CLI at `bin` reports itself signed out. Only a clear signed-out answer
+ *  counts, so a probe that times out, or an older CLI without the subcommand, leaves the agent
+ *  usable. Async, unlike the version probe, so a slow credential store can't freeze the main
+ *  process. */
+export async function cliReportsSignedOut(bin: string, provider: AiProvider): Promise<boolean> {
+  const cached = signedOutCache.get(bin);
+  if (cached !== undefined) return cached;
+  const { statusArgs, signedOutPattern } = CLI_SPECS[provider];
+  if (statusArgs === undefined || signedOutPattern === undefined) return false;
+  const signedOut = await new Promise<boolean>(resolve => {
+    let out = '';
+    let child: ChildProcess;
+    try {
+      // Same env as a subscription turn, so the probe reads the credentials the turn will use.
+      child = crossSpawn(bin, statusArgs, { env: childEnv(false) });
+    } catch {
+      resolve(false);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      child.kill();
+      resolve(false);
+    }, STATUS_TIMEOUT_MS);
+    child.stdout?.on('data', chunk => (out += String(chunk)));
+    child.stderr?.on('data', chunk => (out += String(chunk)));
+    child.on('error', () => {
+      clearTimeout(timeout);
+      resolve(false);
+    });
+    child.on('close', code => {
+      clearTimeout(timeout);
+      resolve(code !== 0 && signedOutPattern.test(out));
+    });
+  });
+  signedOutCache.set(bin, signedOut);
+  return signedOut;
+}
+
+// Codex also bills to CODEX_API_KEY, which the turn keeps alongside OPENAI_API_KEY.
+const EXTRA_API_KEY_ENV: Partial<Record<AiProvider, string[]>> = { codex: ['CODEX_API_KEY'] };
+
+/** Whether turns will bill to an API key: the user chose it AND a key is set, as aiSend decides. */
+function billsToApiKey(provider: AiProvider, apiKeyFromEnv: boolean): boolean {
+  if (!apiKeyFromEnv) return false;
+  const names = [AI_CLI_COMMANDS[provider].apiKeyEnv, ...(EXTRA_API_KEY_ENV[provider] ?? [])];
+  const fromShell = shellApiKeys as Record<string, string | undefined>;
+  return names.some(name => (process.env[name] ?? fromShell[name] ?? '') !== '');
+}
+
+function statusChecked(provider: AiProvider, apiKeyFromEnv: boolean): boolean {
+  // A signed-out CLI can still run turns billed to an API key, so don't block on it then.
+  return CLI_SPECS[provider].statusArgs !== undefined && !billsToApiKey(provider, apiKeyFromEnv);
+}
+
+/** Signed in per the CLI's own status command where it has one (probed beforehand by
+ *  probeSignIn); otherwise a PATH install is trusted and an app-managed one needs the marker
+ *  our sign-in flow wrote. */
+function isCliSignedIn(
+  bin: string,
+  provider: AiProvider,
+  managed: boolean,
+  apiKeyFromEnv: boolean,
+): boolean {
+  // Turns billed to an API key need no sign-in, whoever installed the CLI.
+  if (billsToApiKey(provider, apiKeyFromEnv)) return true;
+  if (statusChecked(provider, apiKeyFromEnv)) {
+    return signedOutCache.get(bin) !== true;
+  }
+  return managed ? isManagedSignedIn(provider) : true;
+}
+
 // The CLI relays an API 400 as a raw JSON blob when the installed version is too old for the
 // requested model (a Fable/newer model set as the user's own CLI default — the Creator Hub
 // never selects it, it only omits `--model` and lets the CLI use its default). Swap that blob
@@ -267,6 +380,7 @@ const API_KEY_ENV = new Set([
 const shellApiKeys: {
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
+  CODEX_API_KEY?: string;
   CURSOR_API_KEY?: string;
   GEMINI_API_KEY?: string;
   GOOGLE_API_KEY?: string;
@@ -301,6 +415,8 @@ export function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
     for (const [k, v] of Object.entries(shellApiKeys)) {
       if (v !== undefined && v !== '' && env[k] === undefined) env[k] = v;
     }
+    // `codex exec` reads only CODEX_API_KEY; with OPENAI_API_KEY alone it sends no key at all.
+    if (!env.CODEX_API_KEY && env.OPENAI_API_KEY) env.CODEX_API_KEY = env.OPENAI_API_KEY;
   }
   env.PATH = [...(env.PATH ?? '').split(path.delimiter), ...searchDirs()]
     .filter(Boolean)
@@ -308,12 +424,20 @@ export function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
   return env;
 }
 
+// An attachment resolved to a concrete on-disk path (a file the user dropped/picked, or a
+// temp file main wrote from a pasted data URL) plus its kind, so a provider can treat images
+// differently from other files (codex's -i is image-only).
+interface ResolvedAttachment {
+  path: string;
+  kind: AiAttachmentKind;
+}
+
 interface TurnCtx {
   text: string;
   model?: string;
   projectDir: string;
   resume?: string;
-  images: string[]; // temp-file paths of attached images (already written to disk)
+  attachments: ResolvedAttachment[]; // on-disk paths of the user's attachments for this turn
   mcp?: SceneMcpInfo; // CH MCP server (scene + gateway tools); each provider wires it its own way
 }
 
@@ -350,7 +474,21 @@ interface ProviderDef {
     projectDir: string,
     emit: (text: string, tool?: [string, string], image?: string) => void,
   ) => string | undefined;
+  needsLogin: (output: string) => boolean;
 }
+
+function jsonLine(line: string): Record<string, unknown> | null {
+  try {
+    const parsed: unknown = JSON.parse(line);
+    return typeof parsed === 'object' && parsed !== null
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+const isPlainText = (line: string): boolean => !line.trimStart().startsWith('{');
 
 // Pull data-URL images out of a tool result's content blocks, for inline display in the
 // chat (#1506). Claude relays an MCP image result as an Anthropic image block
@@ -537,10 +675,11 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       // MCP config, not strict — their servers stay available too. bypassPermissions
       // auto-allows the tool calls.
       if (ctx.mcp !== undefined) args.push('--mcp-config', writeSceneMcpConfigFile(ctx.mcp));
-      // images travel as paths inside the prompt — claude's Read tool renders image
-      // files natively, no dedicated flag exists (or is needed). The user prompt rides on
-      // stdin (`claude -p` reads it there when no prompt arg is given), keeping it off argv
-      // for the same cmd.exe-length reason as the system prompt.
+      // attachments travel as paths inside the prompt (aiSend listed them) — claude's Read
+      // tool renders image files natively and reads any other file by path, so no dedicated
+      // flag exists (or is needed). The user prompt rides on stdin (`claude -p` reads it there
+      // when no prompt arg is given), keeping it off argv for the same cmd.exe-length reason as
+      // the system prompt.
       return { args, stdin: ctx.text };
     },
     parseLine: (line, projectDir, emit) => {
@@ -586,6 +725,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       if (obj.type === 'result') return obj.session_id;
       return undefined;
     },
+    needsLogin: line => {
+      const obj = jsonLine(line);
+      return obj?.type === 'assistant' && obj.error === 'authentication_failed';
+    },
   },
   // Codex, wired against `codex exec --json` (its non-interactive JSONL mode). Resume is
   // a SUBCOMMAND (`codex exec resume <threadId>`), not a flag; the thread id comes from
@@ -627,7 +770,9 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
         args.push('-c', `mcp_servers.creator-hub.bearer_token_env_var="${MCP_TOKEN_ENV}"`);
       }
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
-      for (const img of ctx.images) args.push('-i', img); // codex's native image flag
+      // codex's native image flag is image-only; models/audio/other files ride as paths in the
+      // prompt text (aiSend already listed every attachment there, so codex reads them by path).
+      for (const a of ctx.attachments) if (a.kind === 'image') args.push('-i', a.path);
       // `codex exec` has no system-prompt flag, so the rules ride in front of the prompt on
       // every turn, matching claude's --append-system-prompt. The whole thing goes on STDIN
       // (the `-` prompt token tells `codex exec` / `exec resume <id>` to read instructions
@@ -687,6 +832,15 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
         } else if (item.type === 'web_search') emit('', ['WebSearch', item.query ?? '']);
       }
       return undefined;
+    },
+    needsLogin: line => {
+      const obj = jsonLine(line);
+      const error = obj?.error as { message?: unknown } | undefined;
+      return (
+        obj?.type === 'turn.failed' &&
+        typeof error?.message === 'string' &&
+        /\b401\b/.test(error.message)
+      );
     },
   },
   // Cursor's CLI agent (`cursor-agent`), wired against `-p --output-format stream-json`. Very
@@ -765,6 +919,8 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       if (obj.type === 'result') return obj.session_id;
       return undefined;
     },
+    needsLogin: line =>
+      isPlainText(line) && /agent login|not authenticated|authentication required/i.test(line),
   },
   // Google's Gemini CLI (`gemini`), wired against `-o stream-json`. Notable differences:
   //  - No login subcommand: auth is the CLI's own interactive Google sign-in or GEMINI_API_KEY
@@ -839,27 +995,80 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       }
       return undefined;
     },
+    needsLogin: line => isPlainText(line) && /Please set an Auth method/.test(line),
   },
 };
 
-const scan = (): AiProviderInfo[] =>
+const providersNeedingLogin = new Set<AiProvider>();
+
+/** Forgets that `provider` asked the user to sign in, once the app has signed it in again. */
+export function clearNeedsLogin(provider: AiProvider): void {
+  providersNeedingLogin.delete(provider);
+}
+
+/** What to tell the user when `provider` rejected its credentials: a terminal sign-in, the app's own copy, or an API key. */
+export function signInRequiredMessage(
+  provider: AiProvider,
+  cause: 'signin' | 'managed' | 'apiKey',
+): string {
+  const { label } = PROVIDERS[provider];
+  const { apiKeyEnv, relogin } = AI_CLI_COMMANDS[provider];
+  if (cause === 'apiKey') {
+    return `${label} rejected the API key in \`${apiKeyEnv}\`. Check the key, or turn off "Bill this to an API key instead" in Settings → AI to use your sign-in.`;
+  }
+  if (cause === 'managed') {
+    return `${label} isn't signed in, or its sign-in expired. In Settings → AI, click Sign out, then Sign in, then send your message again.`;
+  }
+  const steps = relogin.map(step => `\`${step}\``).join(', then ');
+  return `${label} isn't signed in, or its sign-in expired. In a terminal, run ${steps}, then send your message again. Or ${apiKeyAlternative(provider)}.`;
+}
+
+/** `text` with anything that looks like an API key or bearer token masked, for the log. */
+export function redactSecrets(text: string): string {
+  return text
+    .replace(/\b(sk-|AIza)[\w-]{8,}/g, '$1<redacted>')
+    .replace(/(Bearer\s+)[\w.~+/=-]+/gi, '$1<redacted>');
+}
+
+/** `bin`, or null when it is a managed install of a CLI the app no longer signs in to. */
+export function usableBin(bin: string | null, provider: AiProvider): string | null {
+  if (bin === null) return null;
+  if (!CLI_SPECS[provider].managedSignIn && bin.startsWith(getManagedBinDir())) return null;
+  return bin;
+}
+
+/** Whether Claude Desktop has run on this machine (it keeps its data in `<appData>/Claude`). */
+export function isClaudeDesktopInstalled(appDataDir: string): boolean {
+  return fs.existsSync(path.join(appDataDir, 'Claude'));
+}
+
+/** Run each found CLI's status command ahead of the scan, which reads the results. */
+async function probeSignIn(apiKeyFromEnv: boolean): Promise<void> {
+  await Promise.all(
+    (Object.keys(PROVIDERS) as AiProvider[]).map(async id => {
+      const bin = usableBin(findExecutable(PROVIDERS[id].binNames), id);
+      if (statusChecked(id, apiKeyFromEnv) && bin !== null) await cliReportsSignedOut(bin, id);
+    }),
+  );
+}
+
+const scan = (apiKeyFromEnv: boolean): AiProviderInfo[] =>
   (Object.keys(PROVIDERS) as AiProvider[]).map(id => {
     const def = PROVIDERS[id];
-    const bin = findExecutable(def.binNames);
-    // A CLI we installed on demand (#1531) lives under the managed bin dir; unlike a
-    // user-PATH install (which we assume is already logged in), it's only usable once its
-    // subscription login completed, so gate its availability on the signed-in marker.
+    const bin = usableBin(findExecutable(def.binNames), id);
     const managed = bin !== null && bin.startsWith(getManagedBinDir());
-    const signedIn = managed ? isManagedSignedIn(id) : true;
-    const available = bin !== null && signedIn;
+    const available = bin !== null && isCliSignedIn(bin, id, managed, apiKeyFromEnv);
     return {
       id: def.id,
       label: def.label,
       models: def.models,
       defaultModel: def.defaultModel,
       available,
-      managedSignIn: CLI_SPECS[id].managedSignIn,
+      managedSignIn: CLI_SPECS[id].managedSignIn && (bin === null || managed),
       version: bin !== null ? getCliVersion(bin) : undefined,
+      desktopInstalled:
+        id === 'claude' && !available ? isClaudeDesktopInstalled(getAppDataPath()) : undefined,
+      needsLogin: providersNeedingLogin.has(id) || undefined,
       reason: available
         ? undefined
         : bin === null
@@ -872,18 +1081,19 @@ const scan = (): AiProviderInfo[] =>
 
 // Cheap scan first; only pay for the login shell when something is missing — which is
 // also exactly when the user presses Recheck after installing.
-export async function detectProviders(): Promise<AiProviderInfo[]> {
+export async function detectProviders(apiKeyFromEnv = false): Promise<AiProviderInfo[]> {
   cachedDirs = null; // an explicit check re-reads the disk: they may have just installed
   cliVersionCache.clear(); // ...and may have just updated the CLI — re-probe its version
-  const first = scan();
+  signedOutCache.clear(); // ...or signed in or out since the last check
+  await probeSignIn(apiKeyFromEnv);
+  const first = scan(apiKeyFromEnv);
   if (first.every(p => p.available)) return first;
   await loadShellDirs();
-  return scan();
+  await probeSignIn(apiKeyFromEnv); // the shell may have revealed a different binary or a key
+  return scan(apiKeyFromEnv);
 }
 
-// One turn at a time.
 let current: { child: ChildProcess; turnId: string; done: boolean } | null = null;
-let turnSeq = 0;
 
 // Each provider's resume id, per project AND per local session, so consecutive turns chain
 // into one conversation, each saved session resumes its own CLI thread, and it all survives
@@ -927,15 +1137,25 @@ function killTree(child: ChildProcess): void {
   child.stdout?.removeAllListeners('data');
   child.stderr?.removeAllListeners('data');
   if (child.pid === undefined) return;
-  try {
-    if (process.platform === 'win32') child.kill();
-    else process.kill(-child.pid, 'SIGKILL'); // whole detached group
-  } catch {
+  const killChild = (): void => {
     try {
       child.kill('SIGKILL');
     } catch {
       /* already gone */
     }
+  };
+  if (process.platform === 'win32') {
+    treeKill(child.pid, 'SIGKILL', err => {
+      if (!err) return;
+      log.warn(`[AI] could not kill the CLI process tree: ${err.message}`);
+      killChild();
+    });
+    return;
+  }
+  try {
+    process.kill(-child.pid, 'SIGKILL');
+  } catch {
+    killChild();
   }
 }
 
@@ -954,6 +1174,7 @@ export function aiStop(): void {
   current = null;
   if (!c.done) {
     c.done = true;
+    log.info(`[AI] Stopped turn ${c.turnId} before it finished`);
     killTree(c.child);
   }
 }
@@ -979,11 +1200,11 @@ export function aiDeleteSession(projectDir: string, sessionId: string): void {
   }
 }
 
-// Attached images, written to one temp dir per turn. Kept for the whole app session
-// (not deleted when the turn ends): with --resume the conversation can come back to an
-// image several turns later, and the CLI re-reads it from the same path.
-const MAX_IMAGES = 4;
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+// How many attachments a single turn may carry, and the byte ceiling for a pasted (data-URL)
+// one — pasted images are decoded into memory and written to disk here, so they're bounded.
+// Dropped/picked files come in as a path and aren't read or copied, so no byte cap applies.
+const MAX_ATTACHMENTS = 8;
+const MAX_DATA_URL_BYTES = 8 * 1024 * 1024;
 const IMG_EXT: Record<string, string> = {
   'image/png': '.png',
   'image/jpeg': '.jpg',
@@ -1116,20 +1337,83 @@ function ensureCursorMcpGitignored(projectDir: string): void {
   );
 }
 
-function writeAttachments(images: AiSendParams['images']): string[] {
-  if (images === undefined || images.length === 0) return [];
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
-  const out: string[] = [];
-  for (const [i, img] of images.slice(0, MAX_IMAGES).entries()) {
-    const m = /^data:(image\/[\w.+-]+);base64,(.+)$/.exec(img.dataUrl);
+// A filesystem-safe basename for a data-URL attachment (no dir, no odd chars), keeping the
+// original name's extension when it looks sane so the CLI's Read tool infers the type.
+function safeBaseName(name: string, fallbackExt: string): string {
+  const base = path.basename(name).replace(/[^\w.-]+/g, '_');
+  return base !== '' && /\.[\w]+$/.test(base) ? base : `attachment${fallbackExt}`;
+}
+
+// Resolve each user attachment to a concrete on-disk path for this turn:
+//   • `path` set → the user's own file, used in place (existence-checked, never copied).
+//   • `dataUrl` set → a pasted/in-memory blob, decoded and written to a per-turn temp dir.
+// The temp dir is kept for the whole app session (not deleted on turn end): with --resume the
+// conversation can come back to an attachment several turns later and the CLI re-reads its path.
+function resolveAttachments(attachments: AiSendParams['attachments']): ResolvedAttachment[] {
+  if (attachments === undefined || attachments.length === 0) return [];
+  const out: ResolvedAttachment[] = [];
+  let tempDir: string | null = null;
+  for (const [i, att] of attachments.slice(0, MAX_ATTACHMENTS).entries()) {
+    if (att.path !== undefined && att.path !== '') {
+      try {
+        if (fs.statSync(att.path).isFile()) out.push({ path: att.path, kind: att.kind });
+      } catch {
+        /* the file moved or is unreadable — skip it rather than fail the turn */
+      }
+      continue;
+    }
+    if (att.dataUrl === undefined) continue;
+    const m = /^data:([\w.+-]+\/[\w.+-]+);base64,(.+)$/.exec(att.dataUrl);
     if (m === null) continue;
     const buf = Buffer.from(m[2], 'base64');
-    if (buf.length === 0 || buf.length > MAX_IMAGE_BYTES) continue;
-    const p = path.join(dir, `image-${i + 1}${IMG_EXT[m[1]] ?? '.png'}`);
+    if (buf.length === 0 || buf.length > MAX_DATA_URL_BYTES) continue;
+    if (tempDir === null) tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
+    const ext = IMG_EXT[m[1]] ?? path.extname(att.name) ?? '';
+    const p = path.join(tempDir, `attachment-${i + 1}-${safeBaseName(att.name, ext)}`);
     fs.writeFileSync(p, buf);
-    out.push(p);
+    out.push({ path: p, kind: att.kind });
   }
   return out;
+}
+
+// How a turn's CLI child ended, decided from what it produced. Exported for the tests.
+//  - logLine: one line for main.log, so a report of "the assistant doesn't answer" can be traced
+//    from the log alone (exit code or signal, duration, output counts, the tail of its stderr).
+//  - ok/message: what the turn reports to the chat. A clean exit that produced nothing would
+//    leave an empty bubble that reads as a hang, so it reports an error instead. A null code
+//    means a signal killed the child: an intentional aiStop() already marked the turn done (so
+//    finish() no-ops there), so reaching it means an unsolicited kill (OOM, external SIGKILL),
+//    reported as an interruption, never as a successful turn.
+export function turnOutcome(turn: {
+  label: string;
+  turnId: string;
+  code: number | null;
+  signal: NodeJS.Signals | null;
+  durationMs: number;
+  textCount: number;
+  toolCount: number;
+  imageCount: number;
+  stderr: string;
+}): { logLine: string; ok: boolean; message?: string } {
+  const { label, turnId, code, signal, textCount, toolCount, imageCount } = turn;
+  const stderr = turn.stderr.trim();
+  const tail = stderr.slice(-500).replace(/\s+/g, ' ');
+  const logLine =
+    `[AI] ${label} turn ${turnId} exited code=${code} signal=${signal ?? 'none'} after ` +
+    `${(turn.durationMs / 1000).toFixed(1)}s: ${textCount} text, ${toolCount} tools, ${imageCount} images` +
+    (tail !== '' ? `; stderr: ${tail}` : '');
+  if (code === 0 && textCount + toolCount + imageCount === 0) {
+    return {
+      logLine,
+      ok: false,
+      message: `${label} finished without replying. Try again; if it keeps happening, check that the ${label} CLI is signed in.`,
+    };
+  }
+  if (code === 0) return { logLine, ok: true };
+  if (code === null) {
+    return { logLine, ok: false, message: `assistant was interrupted (${signal ?? 'signal'})` };
+  }
+  return { logLine, ok: false, message: stderr || `assistant exited with code ${code}` };
 }
 
 // Spawn one turn and stream its events through `emit`. Returns as soon as the child is
@@ -1144,7 +1428,7 @@ export async function aiSend(
     throw new Error('Open a scene before using the assistant.');
   const def = PROVIDERS[params.provider];
   if (def === undefined) throw new Error(`Unknown assistant "${params.provider}".`);
-  const bin = findExecutable(def.binNames);
+  const bin = usableBin(findExecutable(def.binNames), params.provider);
   if (bin === null) throw new Error(`${def.label} CLI not found — install it and sign in.`);
 
   // Link the Decentraland SDK7 skills into the project so the CLI finds them in its
@@ -1163,25 +1447,30 @@ export async function aiSend(
   let mcp: SceneMcpInfo | undefined;
   try {
     mcp = await ensureSceneMcpServer();
-    setSceneMcpProject(projectDir);
   } catch (e) {
     log.warn('[AI] MCP server unavailable, continuing without scene tools:', e);
   }
 
-  aiStop(); // supersede any in-flight turn
+  if (current !== null)
+    throw new Error(
+      'The assistant is still working on your previous message. Wait for it to finish, or stop it first.',
+    );
+  if (mcp !== undefined) setSceneMcpProject(projectDir);
   resetTurnMutations(); // start counting this turn's scene-graph changes for "revert turn"
-  const turnId = `t${++turnSeq}`;
+  const turnId = `t-${randomUUID()}`;
   // Prepend editor context (when present) to the prompt so the assistant sees editor
   // state without the user retyping it. Not shown in the chat bubble.
   let prompt =
     params.context !== undefined && params.context !== ''
       ? `${params.context}\n\n---\n\n${params.text}`
       : params.text;
-  const images = writeAttachments(params.images);
-  if (images.length > 0) {
-    prompt += `\n\n[The user attached ${
-      images.length === 1 ? 'an image' : `${images.length} images`
-    } to this message — view ${images.length === 1 ? 'it' : 'them'} before answering:\n${images.join('\n')}]`;
+  const attachments = resolveAttachments(params.attachments);
+  if (attachments.length > 0) {
+    const n = attachments.length;
+    const lines = attachments.map(a => `- ${a.path} (${a.kind})`).join('\n');
+    prompt += `\n\n[The user attached ${n === 1 ? 'a file' : `${n} files`} to this message. Inspect ${
+      n === 1 ? 'it' : 'them'
+    } as needed before answering — you can view images directly with your Read tool, and reference any file by its path when building or editing the scene:\n${lines}]`;
   }
   // Resume the CLI thread saved for THIS session (empty id = a default single bucket).
   const sessionId = params.sessionId ?? '';
@@ -1190,7 +1479,7 @@ export async function aiSend(
     model: params.model,
     projectDir,
     resume: getSessions()[projectDir]?.[sessionId]?.[params.provider],
-    images,
+    attachments,
     mcp,
   };
   // On-disk setup for a file-configured CLI (Cursor writes its rules into the project). Best-
@@ -1242,6 +1531,9 @@ export async function aiSend(
   // and reuse it for both the start and completion events.
   const startedAt = Date.now();
   let toolCount = 0;
+  // Text blocks and images shown; with toolCount, they tell a turn that replied from a silent one.
+  let textCount = 0;
+  let imageCount = 0;
   const projectIdPromise = getProjectId(projectDir).catch((): string => '');
   void projectIdPromise.then(project_id =>
     track('AI Turn Started', {
@@ -1254,6 +1546,7 @@ export async function aiSend(
   const finish = (ok: boolean, message?: string): void => {
     if (turn.done) return;
     turn.done = true;
+    if (ok) providersNeedingLogin.delete(params.provider);
     if (message !== undefined) emit({ kind: 'error', turnId, message });
     emit({ kind: 'done', turnId, ok, mutations: getTurnMutations() });
     if (current === turn) current = null;
@@ -1272,20 +1565,45 @@ export async function aiSend(
 
   let stderr = '';
   let buf = '';
+  let loginRequested = false;
   // StringDecoder buffers a multibyte UTF-8 codepoint split across two stdout chunks; a
   // plain buf += d.toString() would decode each half alone and emit U+FFFD, corrupting
   // emoji/i18n text mid-stream.
   const outDec = new StringDecoder('utf8');
   const errDec = new StringDecoder('utf8');
+  let resultTimer: NodeJS.Timeout | undefined;
+  let resultFailed = false;
+  let killedAfterResult = false;
   const onLine = (line: string): void => {
     if (line === '') return;
+    const result = resultTimer === undefined ? parseResult(line) : undefined;
+    if (result !== undefined) {
+      resultFailed = result.failed;
+      resultTimer = setTimeout(() => {
+        if (!turn.done) {
+          log.info(`[AI] ${def.label} turn ${turnId} still running after its result; killing it`);
+          killedAfterResult = true;
+          killTree(child);
+        }
+      }, RESULT_EXIT_GRACE_MS);
+    }
+    if (def.needsLogin(line)) {
+      loginRequested = true;
+      return;
+    }
     const session = def.parseLine(line, projectDir, (text, tool, image) => {
-      if (text !== '') emit({ kind: 'text', turnId, text: friendlyCliError(text) });
+      if (text !== '') {
+        textCount++;
+        emit({ kind: 'text', turnId, text: friendlyCliError(text) });
+      }
       if (tool !== undefined) {
         toolCount++;
         emit({ kind: 'tool', turnId, tool: tool[0], detail: tool[1] });
       }
-      if (image !== undefined) emit({ kind: 'image', turnId, dataUrl: image });
+      if (image !== undefined) {
+        imageCount++;
+        emit({ kind: 'image', turnId, dataUrl: image });
+      }
     });
     if (session !== undefined) {
       const store = getSessions();
@@ -1307,18 +1625,51 @@ export async function aiSend(
     stderr += errDec.write(d);
     if (stderr.length > MAX_STDERR_BYTES) stderr = stderr.slice(-MAX_STDERR_BYTES);
   });
-  child.on('error', e => finish(false, `assistant failed to start: ${e.message}`));
-  child.on('exit', (code, signal) => {
-    buf += outDec.end();
-    if (buf.trim() !== '') onLine(buf.trim()); // flush a trailing partial line
-    if (code === 0) finish(true);
-    // code === null means a signal killed the child. An intentional `aiStop()` already marked
-    // the turn done (so finish() no-ops there); reaching here means an UNsolicited kill (OOM,
-    // external SIGKILL) — report it as an interruption, never as a successful turn.
-    else if (code === null) finish(false, `assistant was interrupted (${signal ?? 'signal'})`);
-    else finish(false, (stderr + errDec.end()).trim() || `assistant exited with code ${code}`);
+  child.on('error', e => {
+    log.warn(`[AI] ${def.label} turn ${turnId} failed to start: ${e.message}`);
+    finish(false, `assistant failed to start: ${e.message}`);
   });
+  let closeTimer: NodeJS.Timeout | undefined;
+  let settled = false;
+  const settle = (code: number | null, signal: NodeJS.Signals | null): void => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(resultTimer);
+    clearTimeout(closeTimer);
+    buf += outDec.end();
+    if (buf.trim() !== '') onLine(buf.trim());
+    stderr += errDec.end();
+    const outcome = turnOutcome({
+      label: def.label,
+      turnId,
+      code: killedAfterResult ? (resultFailed ? 1 : 0) : code,
+      signal: killedAfterResult ? null : signal,
+      durationMs: Date.now() - startedAt,
+      textCount,
+      toolCount,
+      imageCount,
+      stderr,
+    });
+    log.info(redactSecrets(outcome.logLine));
+    if (loginRequested || (!outcome.ok && stderr.split('\n').some(def.needsLogin))) {
+      providersNeedingLogin.add(params.provider);
+      const cause =
+        params.apiKeyFromEnv === true &&
+        (env[AI_CLI_COMMANDS[params.provider].apiKeyEnv] ?? '') !== ''
+          ? 'apiKey'
+          : bin.startsWith(getManagedBinDir())
+            ? 'managed'
+            : 'signin';
+      finish(false, signInRequiredMessage(params.provider, cause));
+      return;
+    }
+    finish(outcome.ok, outcome.message);
+  };
+  child.on('exit', (code, signal) => {
+    closeTimer = setTimeout(() => settle(code, signal), OUTPUT_CLOSE_GRACE_MS);
+  });
+  child.on('close', settle);
 
-  log.info(`[AI] Started ${def.label} turn ${turnId} in ${projectDir}`);
+  log.info(`[AI] Started ${def.label} turn ${turnId} with ${bin} in ${projectDir}`);
   return { turnId };
 }

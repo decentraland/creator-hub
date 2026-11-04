@@ -1,4 +1,4 @@
-import { Box, Typography } from 'decentraland-ui2';
+import { Box } from 'decentraland-ui2';
 
 import type { PlaceEngagementMetrics } from '/shared/types/place-analytics';
 
@@ -7,6 +7,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { formatDecimal, formatPercentage } from '../../AnalyticsPage/utils';
 import { ChartCard } from '../ChartCard';
 import { HeroStat } from '../HeroStat';
+import { TabHeading } from '../TabHeading';
 import { MultiLineChart } from '../charts';
 
 import './styles.css';
@@ -37,7 +38,6 @@ function ScalarCard({
       title={title}
       description={description}
     >
-      {/* The unit is the HeroStat's own, so the value must not carry one too. */}
       <HeroStat
         value={formatDecimal(value)}
         unit={value === null ? undefined : t('analytics.detail.engagement.minutes')}
@@ -49,13 +49,10 @@ function ScalarCard({
 export function EngagementTab({ engagement }: Props) {
   return (
     <Box className="EngagementTab">
-      <Typography variant="h5">{t('analytics.detail.engagement.title')}</Typography>
-      <Typography
-        variant="body1"
-        className="Description"
-      >
-        {t('analytics.detail.engagement.description')}
-      </Typography>
+      <TabHeading
+        title={t('analytics.detail.engagement.title')}
+        description={t('analytics.detail.engagement.description')}
+      />
       <Box className="Cards">
         <Box className="PlaytimeCards">
           <ScalarCard
@@ -84,7 +81,6 @@ export function EngagementTab({ engagement }: Props) {
             formatValue={formatPercentage}
             maxValue={100}
             height={SOCIAL_CHART_HEIGHT}
-            compact
           />
         </ChartCard>
         {/*

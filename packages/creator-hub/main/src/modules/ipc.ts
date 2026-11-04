@@ -10,6 +10,7 @@ import * as bin from './bin';
 import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
+import * as skills from './skills';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as oxc from './oxc';
@@ -79,7 +80,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
   handle('cli.start', (_event, path, opts, mobile) => cli.start(path, { ...opts, mobile }));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
-  handle('cli.killPreview', (_event, path) => cli.killPreview(path));
+  handle('cli.killPreview', (_event, path) => cli.stopPreview(path));
   handle('cli.cancelPreview', (_event, path) => cli.cancelPreview(path));
   handle('cli.supportsAssetBundles', (_event, path) => cli.supportsAssetBundles(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
@@ -135,17 +136,25 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
+  handle('skills.getProjectStatus', (_event, path) => skills.getProjectSkillsStatus(path));
+  handle('skills.updateProject', (_event, path) => skills.updateProjectSkills(path));
 
   handle('oxc.parse', (_event, filename, source) => oxc.parse(filename, source));
 
   // ai assistant — `ai.send` streams AiEvents back to the calling WebContents over
   // AI_STREAM_EVENT; the returned turnId lets the renderer correlate the stream.
-  handle('ai.detectProviders', () => ai.detectProviders());
+  // Scans and turns wait out a running update of an app-installed CLI (npm removes the binary
+  // before linking the new one); see detectThenUpdate / startTurnWhenIdle.
+  handle('ai.detectProviders', (_event, apiKeyFromEnv) =>
+    aiCli.detectThenUpdate(() => ai.detectProviders(apiKeyFromEnv), ai.aiBusy),
+  );
   handle('ai.send', async (event, path, params) => {
     const sender = event.sender;
-    return ai.aiSend(params, path, e => {
-      if (!sender.isDestroyed()) sender.send(AI_STREAM_EVENT, e);
-    });
+    return aiCli.startTurnWhenIdle(() =>
+      ai.aiSend(params, path, e => {
+        if (!sender.isDestroyed()) sender.send(AI_STREAM_EVENT, e);
+      }),
+    );
   });
   handle('ai.stop', async () => ai.aiStop());
   handle('ai.reset', async (_event, path) => ai.aiReset(path));
@@ -155,7 +164,10 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.isBusy', async () => ai.aiBusy());
   // AI sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login; steps stream over AI_CLI_LOGIN_EVENTS.
-  handle('ai.signInCli', (_event, provider) => aiCli.signInCli(provider));
+  handle('ai.signInCli', (_event, provider) =>
+    aiCli.signInCli(provider).then(() => ai.clearNeedsLogin(provider)),
+  );
+  handle('ai.submitSignInCode', (_event, code) => aiCli.submitSignInCode(code));
   handle('ai.cancelSignInCli', () => aiCli.cancelSignInCli());
   handle('ai.signOutCli', (_event, provider) => aiCli.signOutCli(provider));
   handle('ai.getCliState', async () => aiCli.getCliState());

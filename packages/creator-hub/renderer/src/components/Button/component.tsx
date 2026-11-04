@@ -1,8 +1,8 @@
 import { forwardRef, useCallback, useImperativeHandle, useState } from 'react';
 import cx from 'classnames';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Button as DclButton, ButtonGroup as DclButtonGroup, Tooltip } from 'decentraland-ui2';
 
+import { ChevronDownIcon } from '../Icons';
 import { Popper } from '../Popper';
 
 import type { ButtonGroupHandle, ButtonProps, GroupProps } from './types';
@@ -70,7 +70,7 @@ export const ButtonGroup = forwardRef<ButtonGroupHandle, GroupProps>(function Bu
             disabled={props.disabled}
             onClick={handleToggle}
           >
-            <ArrowDropDownIcon />
+            <ChevronDownIcon />
           </Button>,
         )}
         {open && (

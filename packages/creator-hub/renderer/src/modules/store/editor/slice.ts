@@ -12,6 +12,7 @@ import { isWorkspaceError } from '/shared/types/workspace';
 import { editor } from '#preload';
 
 import { actions as deploymentActions } from '../deployment';
+import { registerDeployServer } from '../deployment/deploy-api';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
@@ -23,7 +24,7 @@ export const runScene = createAsyncThunk(
   'editor/runScene',
   async (
     { path, mobile, ...opts }: PreviewOptions & { path: string; mobile?: boolean },
-    { dispatch },
+    { dispatch, getState, requestId },
   ) => {
     // Surfaces the sidecar's asset-conversion progress (a large scene's first
     // conversion can take minutes before the preview is ready)
@@ -34,7 +35,9 @@ export const runScene = createAsyncThunk(
       await editor.runScene({ path, opts, mobile });
     } finally {
       subscription.cleanup();
-      dispatch(setPreviewProgress(null));
+      // a run that was superseded or left behind must not wipe the current run's progress
+      const { previewRun } = getState().editor;
+      if (!previewRun || previewRun.requestId === requestId) dispatch(setPreviewProgress(null));
     }
   },
 );
@@ -45,10 +48,21 @@ export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
-    const port = await editor.publishScene({ ...opts, language: translation.locale });
-    const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
-    await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
-    return port;
+    // Main stops the previous CLI, so a retry of the previous deployment must not start another.
+    dispatch(deploymentActions.markDeploymentReplaced({ path: opts.path }));
+    const server = await editor.publishScene({ ...opts, language: translation.locale });
+    const { supportsDeployResource, hasCancelToken } = registerDeployServer(server);
+    await dispatch(
+      deploymentActions.initializeDeployment({
+        path: opts.path,
+        port: server.port,
+        supportsDeployResource,
+        hasCancelToken,
+        chainId: opts.chainId,
+        wallet: opts.wallet,
+      }),
+    ).unwrap();
+    return server.port;
   },
 );
 export const killPreviewScene = createAsyncThunk(
@@ -84,6 +98,8 @@ export type EditorState = {
   supportsAuthServer: boolean;
   project?: Project;
   capabilityPath: string | null;
+  // The scene last asked to open. Set as soon as it starts opening, unlike `project`.
+  openingProjectPath?: string;
   inspectorPort: number;
   publishPort: number;
   loadingPublish: boolean;
@@ -92,7 +108,13 @@ export type EditorState = {
   loadingPreview: boolean;
   previewProgress: PreviewProgress | null;
   previewCancelled: boolean;
+  // The run that owns `loadingPreview`. A run that settles after the user left its scene
+  // (or after a newer run took over) must not touch the state of the scene now open.
+  previewRun: { requestId: string; path: string } | null;
   isPreviewRunning: boolean;
+  // The scene whose preview `isPreviewRunning` describes, so a late stop of a scene the
+  // user already left can't clear the flag for the preview of the scene now open.
+  runningPreviewPath: string | null;
   isInstalling: boolean;
   isInstalled: boolean;
   isInstallingProject: boolean;
@@ -116,7 +138,9 @@ const initialState: EditorState = {
   loadingPreview: false,
   previewProgress: null,
   previewCancelled: false,
+  previewRun: null,
   isPreviewRunning: false,
+  runningPreviewPath: null,
   isInstalling: false,
   isInstallingProject: false,
   isInstalledProject: false,
@@ -129,13 +153,19 @@ const initialState: EditorState = {
 export const slice = createSlice({
   name: 'editor',
   initialState,
-  reducers: {},
+  reducers: {
+    // The editor was closed: a scene that was still opening no longer is.
+    leaveProject: state => {
+      state.openingProjectPath = undefined;
+    },
+  },
   extraReducers: builder => {
     builder.addCase(setPreviewProgress, (state, action) => {
       state.previewProgress = action.payload;
     });
     builder.addCase(workspaceActions.runProject.pending, (state, action) => {
       state.project = undefined;
+      state.openingProjectPath = action.meta.arg.path;
       state.supportsMultiInstance = false;
       state.supportsMcp = false;
       state.supportsUiDesigner = false;
@@ -164,6 +194,7 @@ export const slice = createSlice({
         });
       }
       state.project = undefined;
+      state.openingProjectPath = undefined;
     });
     builder.addCase(startInspector.pending, state => {
       state.inspectorPort = 0;
@@ -241,22 +272,30 @@ export const slice = createSlice({
       state.error = action.error.message ? new Error(action.error.message) : null;
       state.isFetchingVersion = false;
     });
-    builder.addCase(runScene.pending, state => {
+    builder.addCase(runScene.pending, (state, action) => {
       state.loadingPreview = true;
       state.previewCancelled = false;
+      state.previewRun = { requestId: action.meta.requestId, path: action.meta.arg.path };
     });
-    builder.addCase(runScene.fulfilled, state => {
+    builder.addCase(runScene.fulfilled, (state, action) => {
+      if (state.previewRun?.requestId !== action.meta.requestId) return;
+      state.previewRun = null;
       state.loadingPreview = false;
       // a cancelled run settles quietly with no client opened, so it isn't "running"
-      if (!state.previewCancelled) state.isPreviewRunning = true;
+      if (!state.previewCancelled) {
+        state.isPreviewRunning = true;
+        state.runningPreviewPath = action.meta.arg.path;
+      }
       state.previewCancelled = false;
     });
     builder.addCase(runScene.rejected, (state, action) => {
-      state.loadingPreview = false;
-      state.previewCancelled = false;
       captureException(action.error, {
         tags: { source: 'editor-page', event: 'run-scene' },
       });
+      if (state.previewRun?.requestId !== action.meta.requestId) return;
+      state.previewRun = null;
+      state.loadingPreview = false;
+      state.previewCancelled = false;
     });
     // The button stays blocked until the cancel completes: killPreview resolves only once
     // the process is confirmed dead (up to the force-kill timeout), and unblocking earlier
@@ -273,8 +312,20 @@ export const slice = createSlice({
     builder.addCase(cancelPreview.rejected, state => {
       if (state.previewCancelled) state.loadingPreview = false;
     });
-    builder.addCase(killPreviewScene.fulfilled, state => {
-      state.isPreviewRunning = false;
+    // On pending, not fulfilled: killing waits for the process to die (up to the force-kill
+    // timeout), and the scene the user moved to may start its own preview meanwhile.
+    builder.addCase(killPreviewScene.pending, (state, action) => {
+      const path = action.meta.arg;
+      if (state.previewRun?.path === path) {
+        state.previewRun = null;
+        state.loadingPreview = false;
+        state.previewCancelled = false;
+        state.previewProgress = null;
+      }
+      if (state.runningPreviewPath === path) {
+        state.isPreviewRunning = false;
+        state.runningPreviewPath = null;
+      }
     });
     builder.addCase(workspaceActions.saveAndGetThumbnail.pending, state => {
       if (state.project) state.project.status = 'loading';

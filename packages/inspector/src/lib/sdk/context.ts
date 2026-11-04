@@ -15,6 +15,7 @@ import type { InspectorPreferences } from '../logic/preferences/types';
 import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
 import { SceneServer } from '../rpc/scene/server';
 import { createIframeScene, getSceneClient } from '../rpc/scene';
+import { createSceneMetadataNotifier } from '../rpc/scene/scene-metadata-notifier';
 import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
 import { store } from '../../redux/store';
@@ -136,6 +137,21 @@ export async function createSdkContext(
       .catch(() => {
         // The host may not implement get_feature_flags (older creator-hub); the
         // push path still delivers flags, so this is a non-fatal best-effort pull.
+      });
+
+    const stopMetadataNotifier = createSceneMetadataNotifier(events, engine.RootEntity, metadata =>
+      getSceneClient()?.notifySceneMetadata(metadata),
+    );
+    events.on('dispose', stopMetadataNotifier);
+
+    // Let the host (re)apply everything it pushes to a fresh iframe — debug console
+    // state, selected tabs — now that the server can receive it. Matters most after
+    // the host's "reload scene" (a new iframe with a fresh store) while a preview is
+    // running: the host's own state didn't change, so nothing else would re-send.
+    void getSceneClient()
+      ?.notifyReady()
+      .catch(() => {
+        // Older hosts don't implement notify_ready; their initial pushes still apply.
       });
 
     if (babylonInternals) {

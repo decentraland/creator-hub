@@ -46,6 +46,8 @@ const WINDOW_OPTIONS: Array<{ label: string; value: MetricsWindow }> = [
   { label: t('analytics.detail.window.last_60_days'), value: MetricsWindow.LAST_60_DAYS },
 ];
 
+const WINDOW_LABEL_ID = 'analytics-window-label';
+
 const TABS = [
   { value: 'overview', label: t('analytics.detail.tabs.overview') },
   { value: 'retention', label: t('analytics.detail.tabs.retention') },
@@ -93,13 +95,13 @@ export function AnalyticsDetailPage() {
       metrics
         ? {
             overview: toOverview(metrics, metricsWindow),
-            retention: toRetention(metrics, metricsWindow),
+            retention: toRetention(metrics, metricsWindow, exportedAt),
             visits: toVisits(metrics, metricsWindow),
             engagement: toEngagement(metrics, metricsWindow),
             isEmpty: hasNoData(metrics),
           }
         : null,
-    [metrics, metricsWindow],
+    [metrics, metricsWindow, exportedAt],
   );
 
   const title = place
@@ -110,14 +112,24 @@ export function AnalyticsDetailPage() {
     <main className="AnalyticsDetailPage">
       <Navbar active={NavbarItem.ANALYTICS} />
       <Container>
-        <Box className="Header">
-          <Title
-            value={title}
-            onBack={handleBack}
-          />
+        <Box className="DetailHeader">
+          <Box className="HeaderTitle">
+            <Title
+              value={title}
+              onBack={handleBack}
+            />
+            {exportedAt && (
+              <Typography
+                variant="body2"
+                className="ExportedAt"
+              >
+                {t('analytics.exported_at', { date: formatExportDate(exportedAt) })}
+              </Typography>
+            )}
+          </Box>
           {/* Enabled once there is an analytics API to export from. */}
           <Tooltip title={t('analytics.actions.export_unavailable')}>
-            <span>
+            <span className="ExportAction">
               <Button
                 variant="outlined"
                 color="secondary"
@@ -164,6 +176,7 @@ export function AnalyticsDetailPage() {
                 >
                   {TABS.map(option => (
                     <Tab
+                      disableFocusRipple
                       key={option.value}
                       value={option.value}
                       label={option.label}
@@ -171,8 +184,14 @@ export function AnalyticsDetailPage() {
                   ))}
                 </Tabs>
                 <Box className="DateRange">
-                  <Typography variant="body1">{t('analytics.detail.window.title')}</Typography>
+                  <Typography
+                    variant="body1"
+                    id={WINDOW_LABEL_ID}
+                  >
+                    {t('analytics.detail.window.title')}
+                  </Typography>
                   <Select
+                    labelId={WINDOW_LABEL_ID}
                     value={metricsWindow}
                     onChange={handleWindowChange}
                   >
@@ -200,18 +219,15 @@ export function AnalyticsDetailPage() {
               ) : (
                 <>
                   {tab === 'overview' && <OverviewTab overview={projections.overview} />}
-                  {tab === 'retention' && <RetentionTab retention={projections.retention} />}
+                  {tab === 'retention' && (
+                    <RetentionTab
+                      retention={projections.retention}
+                      window={metricsWindow}
+                    />
+                  )}
                   {tab === 'visits' && <VisitsTab visits={projections.visits} />}
                   {tab === 'engagement' && <EngagementTab engagement={projections.engagement} />}
                 </>
-              )}
-              {exportedAt && (
-                <Typography
-                  variant="body2"
-                  className="ExportedAt"
-                >
-                  {t('analytics.exported_at', { date: formatExportDate(exportedAt) })}
-                </Typography>
               )}
             </Box>
           </Box>

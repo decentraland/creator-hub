@@ -23,7 +23,13 @@ import { type EnumEntity } from '../../sdk/enum-entity';
 import { EditorComponentNames, type EditorComponents } from '../../sdk/components';
 import { resolveActiveSceneComponent } from '../../sdk/components/scene-metadata-version';
 import { getViewportRect, type ViewportRect } from '../../logic/viewport-rect';
-import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
+import {
+  ANIMATED_PREVIEW_PATH,
+  fetchLatestCatalog,
+  getAssetById,
+  getBuiltInEmote,
+  isFileOnly,
+} from '../../logic/catalog';
 import {
   getAssetCatalog,
   getDataLayerInterface,
@@ -79,7 +85,14 @@ enum Method {
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
-type CatalogHit = { id: string; name: string; category: string; tags: string[] };
+// `builtInEmote` marks a built-in avatar animation: played by that name, never placed.
+type CatalogHit = {
+  id: string;
+  name: string;
+  category: string;
+  tags: string[];
+  builtInEmote?: string;
+};
 
 type Params = {
   [Method.TOGGLE_COMPONENT]: { component: string; enabled: boolean };
@@ -437,6 +450,7 @@ export class SceneServer extends RPC<Method, Params, Result> {
             name: a.name,
             category: a.category,
             tags: a.tags ?? [],
+            ...(a.builtInEmote ? { builtInEmote: a.builtInEmote } : {}),
           })),
         );
         const q = (query ?? '').trim().toLowerCase();
@@ -469,6 +483,17 @@ export class SceneServer extends RPC<Method, Params, Result> {
           throw new Error(`No catalog asset with id "${assetId}". Use search_catalog first.`);
         }
         const asset = found;
+        const builtInEmote = getBuiltInEmote(asset);
+        if (builtInEmote) {
+          throw new Error(
+            `"${asset.name}" is a built-in avatar animation that every scene can already play, so there is nothing to place. Play it from scene code with triggerEmote({ predefinedEmote: '${builtInEmote}' }) from '~system/RestrictedActions'.`,
+          );
+        }
+        if (isFileOnly(asset)) {
+          throw new Error(
+            `"${asset.name}" is a file-only asset (e.g. an avatar animation) with no entity to place. Ask the user to drag it into the scene, which adds its files to the local assets, then reference the file from scene code.`,
+          );
+        }
         const dataLayer = getDataLayerInterface();
         if (dataLayer === undefined) throw new Error('The data layer is not connected.');
 
@@ -478,6 +503,7 @@ export class SceneServer extends RPC<Method, Params, Result> {
         const contentBase = getConfig().contentUrl;
         const content = new Map<string, Uint8Array>();
         for (const [rel, hash] of Object.entries(asset.contents)) {
+          if (rel === ANIMATED_PREVIEW_PATH) continue;
           const res = await fetch(`${contentBase}/contents/${hash}`);
           if (!res.ok) throw new Error(`Failed to fetch "${rel}" (HTTP ${res.status}).`);
           content.set(rel, new Uint8Array(await res.arrayBuffer()));
@@ -527,13 +553,15 @@ export class SceneServer extends RPC<Method, Params, Result> {
         ) as EditorComponents['Selection'];
         const Name = engine.getComponent(NameEngine.componentName) as typeof NameEngine;
         const label = (entity: Entity): string => {
-          if (entity === engine.RootEntity) return 'Scene';
           if (entity === engine.PlayerEntity) return 'Player';
           if (entity === engine.CameraEntity) return 'Camera';
           return Name.getOrNull(entity)?.value ?? '';
         };
         const selected: { id: number; name: string }[] = [];
         for (const [entity] of engine.getEntitiesWith(Selection)) {
+          // The scene root says nothing about what the user means, so selecting it counts as
+          // having nothing selected.
+          if (entity === engine.RootEntity) continue;
           selected.push({ id: entity as number, name: label(entity) });
         }
         return { selected };

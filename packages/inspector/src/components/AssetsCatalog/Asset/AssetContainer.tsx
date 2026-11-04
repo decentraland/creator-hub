@@ -1,8 +1,13 @@
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 
-import { Popup, PopupContent } from 'decentraland-ui';
+import { Logo, Popup, PopupContent } from 'decentraland-ui';
 
-import { getContentsUrl, isSmart, type Asset as AssetType } from '../../../lib/logic/catalog';
+import {
+  getBuiltInEmote,
+  getContentsUrl,
+  isSmart,
+  type Asset as AssetType,
+} from '../../../lib/logic/catalog';
 import { getConfig } from '../../../lib/logic/config';
 import { InfoTooltip } from '../../ui';
 import Asset from './Asset';
@@ -18,11 +23,10 @@ interface AuthorData {
 // Cache to store fetched author data
 const authorDataCache = new Map<string, AuthorData>();
 
-// Constants
 const DECENTRALAND_FOUNDATION_KEY = 'decentraland foundation';
 const DECENTRALAND_FOUNDATION_DATA: AuthorData = {
   name: 'Decentraland Foundation',
-  avatar: 'https://decentraland.org/images/logo.png',
+  avatar: null,
   isLoading: false,
 };
 
@@ -122,6 +126,7 @@ const SmartItemTooltipContent: React.FC<{ asset: AssetType }> = ({ asset }) => {
   const imgSrc =
     'preview.png' in asset.contents ? getContentsUrl(asset.contents['preview.png']) : null;
   const author = useAuthorData(asset.author || null);
+  const isFoundationAuthor = asset.author?.toLowerCase() === DECENTRALAND_FOUNDATION_KEY;
 
   const hasContent = asset.description || asset.author || imgSrc;
 
@@ -149,13 +154,17 @@ const SmartItemTooltipContent: React.FC<{ asset: AssetType }> = ({ asset }) => {
           {asset.author && (
             <div className="SmartItemTooltipAuthor">
               <span>Created by</span>{' '}
-              {author?.avatar && (
-                <img
-                  src={author.avatar}
-                  height={16}
-                  width={16}
-                  loading="lazy"
-                />
+              {isFoundationAuthor ? (
+                <Logo />
+              ) : (
+                author?.avatar && (
+                  <img
+                    src={author.avatar}
+                    height={16}
+                    width={16}
+                    loading="lazy"
+                  />
+                )
               )}
               {author?.name || asset.author}
             </div>
@@ -243,7 +252,17 @@ const AssetContainer: React.FC<AssetContainerProps> = ({ value, onAddToFilesyste
   return (
     <>
       <InfoTooltip
-        text={value.name}
+        text={
+          getBuiltInEmote(value) ? (
+            <>
+              {value.name}
+              <br />
+              Built-in: available in every scene.
+            </>
+          ) : (
+            value.name
+          )
+        }
         onOpen={handleInfoTooltipOpen}
         onClose={handleInfoTooltipClose}
         trigger={assetElement}

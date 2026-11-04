@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   send: vi.fn(),
   openExternal: vi.fn(),
   startMobileDebugServer: vi.fn(),
+  dynamicImport: vi.fn(),
+  runSdkCommand: vi.fn(),
 }));
 
 vi.mock('electron', () => ({
@@ -38,13 +40,19 @@ vi.mock('../src/modules/mobile-debug-server', () => ({
   startMobileDebugServer: mocks.startMobileDebugServer,
 }));
 vi.mock('../src/modules/network', () => ({ getLanIp: vi.fn(() => '192.168.0.10') }));
+vi.mock('/shared/dynamic-import', () => ({ dynamicImport: mocks.dynamicImport }));
 
 import {
   cancelPreview,
   getMobilePreview,
   getPreview,
+  killAllPreviews,
   start,
+  stopPreview,
   supportsAssetBundles,
+  getDeployCommandSupport,
+  type DeployCommandSupport,
+  deploy,
 } from '../src/modules/cli';
 
 const BASE_OPTS: PreviewOptions = {
@@ -762,6 +770,137 @@ describe('cli preview cancel', () => {
   });
 });
 
+describe('cli preview stop', () => {
+  let path: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    path = `/scenes/scene-${++sceneCount}`;
+    setSceneSupportsAssetBundles(false);
+    mocks.install.mockResolvedValue(undefined);
+  });
+
+  describe('when the user leaves the scene while its preview is still starting', () => {
+    it('should kill the spawn and settle without reinstalling or spawning again', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, BASE_OPTS);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+
+      await stopPreview(path);
+      await expect(promise).resolves.toBe(path);
+
+      expect(fake.child.kill).toHaveBeenCalled();
+      expect(mocks.install).not.toHaveBeenCalled();
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+      expect(getPreview(path)).toBeUndefined();
+    });
+  });
+
+  describe('when the user leaves the scene before the spawn happens', () => {
+    it('should never spawn', async () => {
+      const promise = start(path, BASE_OPTS);
+      await stopPreview(path);
+
+      await expect(promise).resolves.toBe(path);
+      expect(mocks.run).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the user leaves the scene during the reinstall-retry', () => {
+    let resolveInstall: () => void;
+
+    beforeEach(() => {
+      mocks.run.mockImplementation(() => createFakeChild().child);
+      mocks.install.mockImplementation(
+        () =>
+          new Promise<void>(resolve => {
+            resolveInstall = resolve;
+          }),
+      );
+    });
+
+    it('should not respawn once the reinstall finishes', async () => {
+      const promise = start(path, BASE_OPTS);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+      await getPreview(path)!.child.kill();
+      await vi.waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1));
+
+      await stopPreview(path);
+      resolveInstall();
+
+      await expect(promise).resolves.toBe(path);
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+    });
+
+    it('should spawn a fresh preview for a start issued after the stop', async () => {
+      const first = start(path, BASE_OPTS);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+      await getPreview(path)!.child.kill();
+      await vi.waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1));
+
+      await stopPreview(path);
+      // the user came back to the scene and pressed Preview before the stopped start settled
+      const fresh = createFakeChild();
+      mocks.run.mockImplementation(() => fresh.child);
+      const second = start(path, BASE_OPTS);
+      resolveInstall();
+
+      await expect(first).resolves.toBe(path);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(2));
+      fresh.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await second;
+
+      expect(getPreview(path)?.child).toBe(fresh.child);
+    });
+  });
+
+  describe('when the user leaves the scene while a Bevy web preview is starting', () => {
+    it('should settle instead of waiting for a URL that never comes', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...BASE_OPTS, client: PREVIEW_CLIENT.BEVY_WEB });
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+      await stopPreview(path);
+
+      await expect(promise).resolves.toBe(path);
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the preview is stopped twice (Back, then the editor unmounting)', () => {
+    it('should resolve both stops', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+      const promise = start(path, BASE_OPTS);
+      fake.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await promise;
+
+      await expect(Promise.all([stopPreview(path), stopPreview(path)])).resolves.toBeDefined();
+      expect(getPreview(path)).toBeUndefined();
+    });
+  });
+
+  describe('when the app quits while a preview is still starting', () => {
+    it('should kill it without reinstalling or spawning again', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, BASE_OPTS);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+
+      await killAllPreviews();
+      await expect(promise).resolves.toBe(path);
+
+      expect(fake.child.kill).toHaveBeenCalled();
+      expect(mocks.install).not.toHaveBeenCalled();
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
 describe('supportsAssetBundles', () => {
   let path: string;
 
@@ -807,6 +946,236 @@ describe('supportsAssetBundles', () => {
       mocks.stat.mockResolvedValue({ mtimeMs: 1000 });
       mocks.readFile.mockResolvedValue('args spec with "--asset-bundles" flag');
       await expect(supportsAssetBundles(path)).resolves.toBe(true);
+    });
+  });
+});
+
+describe('getDeployCommandSupport', () => {
+  let files: Record<string, string>;
+  let result: DeployCommandSupport;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    files = {};
+    const find = (file: string) => {
+      const name = Object.keys(files).find(suffix => file.endsWith(suffix));
+      if (name === undefined) throw new Error('ENOENT');
+      return name;
+    };
+    mocks.readFile.mockImplementation(async (file: string) => files[find(file)]);
+    mocks.stat.mockImplementation(async (file: string) => {
+      find(file);
+      return { mtimeMs: 1 };
+    });
+  });
+
+  const read = async () => {
+    result = await getDeployCommandSupport(`/scenes/scene-${++sceneCount}`);
+  };
+
+  describe('when the deploy command predates programmatic deploys', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = 'deploy command';
+      await read();
+    });
+
+    it('should report it as legacy, without any newer capability', () => {
+      expect(result).toEqual({
+        legacy: true,
+        multiScene: false,
+        deployResource: false,
+        deployToken: false,
+      });
+    });
+  });
+
+  describe('when the deploy command ships its routes module and declares every flag', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] =
+        "const args = { '--programmatic': Boolean, '--multi-scene': Boolean, '--deploy-token': String }";
+      files['deploy/routes.js'] = "router.delete('/api/deploy')";
+      await read();
+    });
+
+    it('should report every capability', () => {
+      expect(result).toEqual({
+        legacy: false,
+        multiScene: true,
+        deployResource: true,
+        deployToken: true,
+      });
+    });
+
+    it('should read the deploy command once', () => {
+      expect(mocks.readFile).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the deploy command only mentions respond-async', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = "'--programmatic' --help: Prefer: respond-async";
+      await read();
+    });
+
+    it('should report the deploy resource without a deploy token', () => {
+      expect({ deployResource: result.deployResource, deployToken: result.deployToken }).toEqual({
+        deployResource: true,
+        deployToken: false,
+      });
+    });
+  });
+
+  describe('when the deploy command declares the token flag with double quotes', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] =
+        'const args = { "--programmatic": Boolean, "--deploy-token": String }';
+      await read();
+    });
+
+    it('should still report the token flag', () => {
+      expect(result.deployToken).toBe(true);
+    });
+  });
+
+  describe('when the sdk is not installed', () => {
+    let error: unknown;
+
+    beforeEach(async () => {
+      error = await read().catch(e => e);
+    });
+
+    it('should fail, as there is no deploy command to run', () => {
+      expect(error).toBeInstanceOf(Error);
+    });
+  });
+});
+
+describe('deploy', () => {
+  let files: Record<string, string>;
+  let result: Awaited<ReturnType<typeof deploy>>;
+  let args: string[];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    files = { 'deploy/index.js': 'deploy command with --programmatic' };
+    const find = (file: string) => {
+      const name = Object.keys(files).find(suffix => file.endsWith(suffix));
+      if (name === undefined) throw new Error('ENOENT');
+      return name;
+    };
+    mocks.readFile.mockImplementation(async (file: string) => files[find(file)]);
+    mocks.stat.mockImplementation(async (file: string) => {
+      find(file);
+      return { mtimeMs: 1 };
+    });
+    mocks.runSdkCommand.mockResolvedValue({ stop: vi.fn() });
+    mocks.dynamicImport.mockImplementation(async (file: string) =>
+      file.endsWith('run-command.js')
+        ? { runSdkCommand: mocks.runSdkCommand }
+        : { initComponents: vi.fn(async () => ({})) },
+    );
+  });
+
+  const run = async () => {
+    result = await deploy({
+      path: `/scenes/scene-${++sceneCount}`,
+      chainId: 1,
+      wallet: '0xabc',
+    });
+    args = mocks.runSdkCommand.mock.calls[0][2];
+  };
+
+  describe('when the CLI serves the deploy resource and takes a deploy token', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] =
+        "const args = { '--programmatic': Boolean, '--deploy-token': String }";
+      files['deploy/routes.js'] = "router.delete('/api/deploy')";
+      await run();
+    });
+
+    it('should report the deploy resource as supported', () => {
+      expect(result.supportsDeployResource).toBe(true);
+    });
+
+    it('should hand out a token for the deployment', () => {
+      expect(result.deployToken).toMatch(/^[0-9a-f-]{36}$/);
+    });
+
+    it('should pass the token to the CLI', () => {
+      expect(args.slice(args.indexOf('--deploy-token'))).toEqual([
+        '--deploy-token',
+        result.deployToken,
+      ]);
+    });
+
+    it('should return the port the CLI serves', () => {
+      expect(result.port).toBe(4000);
+    });
+
+    it('should read the deploy command once', () => {
+      expect(mocks.readFile).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the CLI serves the deploy resource but takes no deploy token', () => {
+    beforeEach(async () => {
+      files['deploy/routes.js'] = "router.delete('/api/deploy')";
+      await run();
+    });
+
+    it('should report the deploy resource as supported without a token', () => {
+      expect(result).toEqual({ port: 4000, supportsDeployResource: true, deployToken: undefined });
+    });
+
+    it('should not pass a token to the CLI', () => {
+      expect(args).not.toContain('--deploy-token');
+    });
+  });
+
+  describe('when a deploy starts while the previous one is still starting', () => {
+    let stopFirst: ReturnType<typeof vi.fn>;
+    let stopSecond: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      stopFirst = vi.fn();
+      stopSecond = vi.fn();
+      let releaseFirst: () => void = () => undefined;
+      mocks.runSdkCommand
+        .mockImplementationOnce(
+          () =>
+            new Promise(resolve => {
+              releaseFirst = () => resolve({ stop: stopFirst });
+            }),
+        )
+        .mockResolvedValueOnce({ stop: stopSecond });
+      const options = { path: `/scenes/scene-${++sceneCount}`, chainId: 1, wallet: '0xabc' };
+      const first = deploy(options);
+      const second = deploy(options);
+      await vi.waitFor(() => expect(mocks.runSdkCommand).toHaveBeenCalledTimes(1));
+      releaseFirst();
+      await Promise.all([first, second]);
+    });
+
+    it('should stop the first CLI before starting the second, leaving none untracked', () => {
+      expect({
+        firstStops: stopFirst.mock.calls.length,
+        secondStops: stopSecond.mock.calls.length,
+        starts: mocks.runSdkCommand.mock.calls.length,
+      }).toEqual({ firstStops: 1, secondStops: 0, starts: 2 });
+    });
+  });
+
+  describe('when the CLI predates the deploy resource', () => {
+    beforeEach(async () => {
+      await run();
+    });
+
+    it('should not hand out a token', () => {
+      expect(result).toEqual({ port: 4000, supportsDeployResource: false, deployToken: undefined });
+    });
+
+    it('should not pass a token to the CLI', () => {
+      expect(args).not.toContain('--deploy-token');
     });
   });
 });

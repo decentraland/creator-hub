@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/iron_ring_chandelier/iron_ring_chandelier.glb"
+          }
+        }
+      }
+    }
+  ]
+}
