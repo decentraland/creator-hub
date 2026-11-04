@@ -61,13 +61,12 @@ export function EndOfLineLabels({ labels }: { labels: EndLabel[] }) {
               strokeOpacity={0.6}
             />
           )}
-          {/* 2px surface ring so the marker stays legible over the line. */}
           <circle
             cx={label.x}
             cy={label.y}
             r={END_MARKER_RADIUS}
             fill={label.color}
-            stroke="var(--card)"
+            style={{ stroke: 'var(--black)' }}
             strokeWidth={2}
           />
           <text
@@ -80,6 +79,61 @@ export function EndOfLineLabels({ labels }: { labels: EndLabel[] }) {
           </text>
         </g>
       ))}
+    </g>
+  );
+}
+
+/** Gap between a settled label's baseline and the top of its dot. */
+const SETTLED_LABEL_GAP = 14;
+
+type SeriesPoint = { date: number; value: number };
+
+/** End marks for a settling tail: a hollow end dot, and the last final value above its solid dot. */
+export function SettlingEndMarks({
+  end,
+  lastFinal,
+  paint,
+}: {
+  end: SeriesPoint;
+  lastFinal?: SeriesPoint & { text: string };
+  paint: string;
+}) {
+  const xScale = useXScale() as (value: Date) => number;
+  const yScale = useYScale() as (value: number) => number;
+  const at = ({ date, value }: SeriesPoint) => ({ x: xScale(new Date(date)), y: yScale(value) });
+  const endAt = at(end);
+  const finalAt = lastFinal && at(lastFinal);
+
+  return (
+    <g className="EndOfLineLabels">
+      {lastFinal && finalAt && (
+        <>
+          <circle
+            cx={finalAt.x}
+            cy={finalAt.y}
+            r={END_MARKER_RADIUS}
+            fill={paint}
+            style={{ stroke: 'var(--black)' }}
+            strokeWidth={2}
+          />
+          <text
+            x={finalAt.x}
+            y={finalAt.y - END_MARKER_RADIUS - SETTLED_LABEL_GAP}
+            textAnchor="middle"
+            className="EndOfLineLabelText Haloed"
+          >
+            {lastFinal.text}
+          </text>
+        </>
+      )}
+      <circle
+        cx={endAt.x}
+        cy={endAt.y}
+        r={END_MARKER_RADIUS}
+        style={{ fill: 'var(--black)' }}
+        stroke={paint}
+        strokeWidth={2}
+      />
     </g>
   );
 }
