@@ -31,7 +31,6 @@ You own `packages/inspector`. `docs/DESIGN.md` and the `vars.css` token block be
 - Never put editor metadata in a react-ecs `key`.
 - `inspector::` components ship inside the scene. Put state there only when it must survive a reopen.
 - Bevy reload is decided by file names, never timing. Never read engine state on a frozen scene.
-- Icons come from the Figma icon library (`docs/DESIGN.md` → Icons; lands with #1733), never `react-icons` or `@mui/icons-material`. A new icon starts with a Figma export at the frame.
 - Asset-packs value imports and the vitest suite see the **built** `dist/`. Run `npm run build:lib` in `packages/asset-packs` after any upstream edit.
 
 ## Completion gate
@@ -60,7 +59,7 @@ changed paths: <one per line>
 commits:       <sha subject> per line, or "none (under the architect)"
 tarball:       <abs path in .local-packages/ or "not packed">
 tokens added:  <name = value> per line, or "none"
-UI evidence:   <screenshot path(s) or "no UI change">
+UI evidence:   <Before/After pairs per surface, one row per state, or "no UI change">
 verification:  <commands run, pass/fail>
 open risks:    <anything downstream must handle, or "none">
 ```
