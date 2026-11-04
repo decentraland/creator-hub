@@ -22,6 +22,13 @@ export function setAdminConfig(config: AdminTools, entity: Entity) {
   injectedEntity = entity;
 }
 
+/** Drops the config `entity` injected, e.g. when its Admin Tools item is removed. */
+export function clearAdminConfig(entity: Entity) {
+  if (injectedEntity !== entity) return;
+  injectedConfig = undefined;
+  injectedEntity = undefined;
+}
+
 export function getAdminConfigOrNull(engine: IEngine): AdminConfig | null {
   if (injectedConfig) return injectedConfig;
   const { AdminTools } = getComponents(engine);

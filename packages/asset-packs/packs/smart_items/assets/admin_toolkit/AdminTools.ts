@@ -1,14 +1,20 @@
-import { engine, pointerEventsSystem } from '@dcl/sdk/ecs';
+import { engine, EntityState, pointerEventsSystem } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
 import { ReactEcsRenderer } from '@dcl/sdk/react-ecs';
 import { syncEntity } from '@dcl/sdk/network';
 import players from '@dcl/sdk/players';
 import type { AdminTools as AdminConfig } from '@dcl/asset-packs/dist/definitions';
-import { createAdminToolkitUI, setAdminConfig } from '@dcl/asset-packs/dist/admin-toolkit-ui';
+import {
+  clearAdminConfig,
+  createAdminToolkitUI,
+  setAdminConfig,
+} from '@dcl/asset-packs/dist/admin-toolkit-ui';
 import { isServer } from '~system/EngineApi';
 import { renderAdminPanel } from './AdminPanel';
 
 export class AdminTools {
+  private uiRoot: Entity | null = null;
+
   /**
    * Adds an in-world admin panel to the scene. Admin users can play videos and streams,
    * trigger other smart items' actions, moderate players, and send scene-wide text
@@ -94,8 +100,10 @@ export class AdminTools {
     // client (mirrors `createAdminToolkitSystem`).
     // `renderAdminPanel` is the editable panel that ships in this smart item's folder — edit
     // AdminPanel.tsx to customize the in-world panel (add links, tabs, branding).
-    const mount = () =>
-      createAdminToolkitUI(
+    const mount = () => {
+      // The item may have been removed while the role check was in flight.
+      if (this.isRemoved()) return;
+      this.uiRoot = createAdminToolkitUI(
         engine,
         pointerEventsSystem,
         ReactEcsRenderer,
@@ -103,11 +111,34 @@ export class AdminTools {
         players,
         renderAdminPanel,
       );
+    };
     isServer({})
       .then(({ isServer: runsOnServer }) => {
         if (!runsOnServer) mount();
       })
       .catch(mount);
+
+    engine.addSystem(this.teardownWhenRemoved);
+  }
+
+  // Mirrors the legacy `createAdminToolkitSystem` removal path: once this item's entity is gone,
+  // unmount the panel and drop the injected config. Presentation detection re-checks the config
+  // every tick, so it goes idle on its own.
+  private teardownWhenRemoved = () => {
+    if (!this.isRemoved()) return;
+    engine.removeSystem(this.teardownWhenRemoved);
+    clearAdminConfig(this.entity);
+    if (this.uiRoot !== null) {
+      ReactEcsRenderer.removeUiRenderer(this.uiRoot);
+      engine.removeEntity(this.uiRoot);
+      this.uiRoot = null;
+    }
+  };
+
+  // A removed entity reads `Unknown`, not `Removed`, until the tick that removed it is flushed, so
+  // test for "no longer in use". Scene entities always load as `UsedEntity`.
+  private isRemoved() {
+    return engine.getEntityState(this.entity) !== EntityState.UsedEntity;
   }
 
   private buildConfig(): AdminConfig {
