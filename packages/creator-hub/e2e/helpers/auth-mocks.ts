@@ -42,7 +42,12 @@ export type AuthMockOptions = {
   identityResponse?: StubResponse;
 };
 
-export type RecordedFetch = { url: string; method: string; body: string | null };
+export type RecordedFetch = {
+  url: string;
+  method: string;
+  body: string | null;
+  verifier?: string | null;
+};
 
 /** Reads back what the installed mocks observed. */
 export type AuthMockRecorder = {
@@ -68,7 +73,12 @@ export type AuthMockRecorder = {
  * the network stack entirely and therefore controls the status.
  */
 type StubWindow = {
-  __e2eFetchCalls?: { url: string; method: string; body: string | null }[];
+  __e2eFetchCalls?: {
+    url: string;
+    method: string;
+    body: string | null;
+    verifier?: string | null;
+  }[];
   __e2eFetchPatched?: boolean;
   __e2eResponses?: { requests: StubResponse; identity: StubResponse };
   fetch: typeof fetch;
@@ -98,7 +108,8 @@ function installFetchStub(page: Page, payload: { requests: StubResponse; identit
         return reply(w.__e2eResponses!.requests);
       }
       if (url.includes('/identities/')) {
-        w.__e2eFetchCalls!.push({ url, method, body: (init?.body as string) ?? null });
+        const verifier = new Headers(init?.headers).get('x-identity-verifier');
+        w.__e2eFetchCalls!.push({ url, method, body: (init?.body as string) ?? null, verifier });
         return reply(w.__e2eResponses!.identity);
       }
       return realFetch(input, init);
