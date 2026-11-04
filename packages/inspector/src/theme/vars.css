@@ -12,7 +12,8 @@
   /* Panel accent blue with a Charcoal label (5.6:1), per docs/DESIGN.md */
   --built-in-badge-bg-color: #63b4f6;
   --built-in-badge-fg-color: #35333b;
-  --tree-bg-color: var(--base-20);
+  --panel: var(--base-20);
+  --tree-bg-color: var(--panel);
   --tree-border-color: var(--vscode-panel-border, #333333);
   --input-border-color: var(--vscode-input-border, #cdcccc);
   --button-color: var(--vscode-button-foreground, var(--black));
@@ -32,16 +33,21 @@
   --controlHeight-small: 26px;
   --controlHeight-medium: 40px;
   --controlHeight-large: 46px;
-  --shape-borderRadius: 6px;
+  --r-control: 6px;
+  --shape-borderRadius: var(--r-control);
   --shape-borderRadiusMedium: 8px;
   --shape-borderRadiusLarge: 12px;
-  --shape-borderRadiusXLarge: 16px;
+  --r-card: 16px;
+  --shape-borderRadiusXLarge: var(--r-card);
   --shape-borderRadiusXXLarge: 24px;
-  --shape-borderRadiusPill: 100px;
+  --r-pill: 100px;
+  --shape-borderRadiusPill: var(--r-pill);
   --borderWidth-strong: 1.5px;
   --palette-whiteTransparent-faint: rgba(255, 255, 255, 0.05);
-  --palette-whiteTransparent-hint: rgba(255, 255, 255, 0.08);
-  --palette-whiteTransparent-subtle: rgba(255, 255, 255, 0.1);
+  --fill-3: rgba(255, 255, 255, 0.08);
+  --palette-whiteTransparent-hint: var(--fill-3);
+  --white-10: rgba(255, 255, 255, 0.1);
+  --palette-whiteTransparent-subtle: var(--white-10);
   --palette-whiteTransparent-hover: rgba(255, 255, 255, 0.15);
   --palette-whiteTransparent-soft: rgba(255, 255, 255, 0.2);
   --palette-whiteTransparent-blurry: rgba(255, 255, 255, 0.4);
@@ -49,7 +55,8 @@
   --palette-blackTransparent-subtle: rgba(0, 0, 0, 0.1);
   --palette-blackTransparent-soft: rgba(0, 0, 0, 0.2);
   --palette-blackTransparent-blurry: rgba(0, 0, 0, 0.4);
-  --palette-primary-light: #ff6280;
+  --brand-light: #ff6280;
+  --palette-primary-light: var(--brand-light);
   --palette-primary-dark2: #d80029;
   --palette-primary-light2: #ff93a8;
   --palette-primaryAlt-dark2: #d84900;
@@ -65,45 +72,59 @@
   --palette-neutral-gray2: #716b7c;
   --palette-neutral-gray3: #a09ba8;
   --palette-neutral-gray4: #cfcdd4;
-  --palette-neutral-gray5: #ecebed;
+  --pearl: #ecebed;
+  --palette-neutral-gray5: var(--pearl);
   --palette-neutral-softWhite: #fcfcfc;
   --palette-neutral-onyx: #35333b;
   --palette-neutral-onyxDark1: #2d2a33;
   --palette-system-blueDark2: #244b7d;
   --palette-system-blueDark3: #243852;
-  --palette-info-main: #2196f3;
+  --info: #2196f3;
+  --palette-info-main: var(--info);
   --palette-info-dark1: #1a75d2;
   --palette-info-light: #63b4f6;
   --palette-info-light2: #bbdefb;
-  --palette-rarity-common: #73d3d3;
+  --rar-common: #73d3d3;
+  --palette-rarity-common: var(--rar-common);
   --palette-rarity-common-light: #acf8f8;
-  --palette-rarity-uncommon: #ff8362;
+  --rar-uncommon: #ff8362;
+  --palette-rarity-uncommon: var(--rar-uncommon);
   --palette-rarity-uncommon-light: #ffe0b2;
-  --palette-rarity-rare: #34ce76;
+  --rar-rare: #34ce76;
+  --palette-rarity-rare: var(--rar-rare);
   --palette-rarity-rare-light: #73ffaf;
-  --palette-rarity-epic: #438fff;
+  --rar-epic: #438fff;
+  --palette-rarity-epic: var(--rar-epic);
   --palette-rarity-epic-light: #81e1ff;
-  --palette-rarity-legendary: #a14bf3;
+  --rar-legendary: #a14bf3;
+  --palette-rarity-legendary: var(--rar-legendary);
   --palette-rarity-legendary-light: #e8b9ff;
-  --palette-rarity-mythic: #ff4bed;
+  --rar-mythic: #ff4bed;
+  --palette-rarity-mythic: var(--rar-mythic);
   --palette-rarity-mythic-light: #f6c1ff;
-  --palette-rarity-exotic: #caff73;
+  --rar-exotic: #caff73;
+  --palette-rarity-exotic: var(--rar-exotic);
   --palette-rarity-exotic-light: #e4ffb8;
-  --palette-rarity-unique: #fea217;
+  --rar-unique: #fea217;
+  --palette-rarity-unique: var(--rar-unique);
   --palette-rarity-unique-light: #fff280;
   --gradient-flare: linear-gradient(135deg, #ff2d55, #ffbc5b);
   --gradient-cerise: linear-gradient(135deg, #ff2d55, #c640cd);
   --gradient-amin: linear-gradient(135deg, #c640cd, #691fa9);
-  --focus-ring: var(--ui-designer-text);
+  --focus-ring-color: var(--ui-designer-text);
+  --focus-ring: var(--focus-ring-color);
   --menu-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   --shadow-tooltip: 0 2px 3px rgba(0, 0, 0, 0.25);
   --shadow-toast: 0 4px 4px rgba(0, 0, 0, 0.1);
   --shadow-popover: 0 4px 10px rgba(0, 0, 0, 0.25);
 
   /* DCL Colors */
-  --primary-main: #ff2d55;
-  --primary-dark: #f70038;
-  --secondary-main: #ff7439;
+  --brand: #ff2d55;
+  --primary-main: var(--brand);
+  --brand-dark: #f70038;
+  --primary-dark: var(--brand-dark);
+  --accent: #ff7439;
+  --secondary-main: var(--accent);
   --secondary-dark: #e65002;
   /* Color definitions */
   --white: #ffffff;
@@ -161,13 +182,16 @@
   --accent-blue-10: #062f4a;
 
   /* Status Colors */
-  --success-main: #4caf50;
+  --success: #4caf50;
+  --success-main: var(--success);
   --success-dark: #388e3c;
   --success-light: #66bb6a;
-  --error-main: #f44336;
+  --error: #f44336;
+  --error-main: var(--error);
   --error-dark: #d32f2f;
   --error-light: #ef5350;
-  --warning-main: #ffc95b;
+  --warning: #ffc95b;
+  --warning-main: var(--warning);
   --warning-dark: #ef6c00;
   --secondary-light: #ff8d5e;
 
@@ -195,7 +219,8 @@
   /* Modal */
   --modal-content-bg-color: var(--tree-bg-color);
   --modal-content-border-color: var(--tree-border-color);
-  --modal-overlay-bg-color: rgba(0, 0, 0, 0.6);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --modal-overlay-bg-color: var(--scrim);
 
   /* UI Designer — TWO accents, split by what they sit on.
 
@@ -240,17 +265,22 @@
      declaring the design's #25212a: the two differ by 1/255, and the group cards
      (Container.css) already paint --base-19, so borrowing it keeps frame and card
      identical instead of near-miss different. */
-  --ui-designer-panel-bg: var(--base-19);
+  --panel-2: var(--base-19);
+  --ui-designer-panel-bg: var(--panel-2);
   --ui-designer-control-bg: #35333b;
   --ui-designer-text: var(--palette-neutral-softWhite);
   --ui-designer-text-value: var(--palette-neutral-gray4);
-  --ui-designer-text-muted: var(--palette-neutral-gray3);
-  --ui-designer-control-border: var(--palette-whiteTransparent-subtle);
+  --ui-muted: var(--palette-neutral-gray3);
+  --ui-designer-text-muted: var(--ui-muted);
+  --ui-border: var(--white-10);
+  --ui-designer-control-border: var(--ui-border);
   /* One step up, for a border that has to out-weigh another White 10 stroke
      inside the same control (the Anchor preview's box vs its crosshair). */
-  --ui-designer-control-border-strong: var(--palette-whiteTransparent-soft);
+  --ui-border-strong: var(--palette-whiteTransparent-soft);
+  --ui-designer-control-border-strong: var(--ui-border-strong);
   --ui-designer-checkbox-border: var(--palette-whiteTransparent-blurry);
-  --ui-designer-hairline: rgba(255, 255, 255, 0.07);
+  --line: rgba(255, 255, 255, 0.07);
+  --ui-designer-hairline: var(--line);
 
   /* Glyph stroke. The design paints every panel glyph Neutrals/Cloudy Sky, which
      clears the 3:1 non-text minimum on the panel frame (3.08:1) but not on a field
@@ -264,22 +294,28 @@
   --ui-designer-radius-field: var(--shape-borderRadius);
   --ui-designer-radius-menu: var(--shape-borderRadiusLarge);
   /* 4px spacing scale */
-  --uid-space-1: 4px;
-  --uid-space-2: 8px;
-  --uid-space-3: 12px;
-  --uid-space-4: 16px;
+  --s-1: 4px;
+  --uid-space-1: var(--s-1);
+  --s-2: 8px;
+  --uid-space-2: var(--s-2);
+  --s-3: 12px;
+  --uid-space-3: var(--s-3);
+  --s-4: 16px;
+  --uid-space-4: var(--s-4);
   --uid-space-5: 20px;
-  --uid-space-6: 24px;
+  --s-5: 24px;
+  --uid-space-6: var(--s-5);
 
   /* Margins */
   --sidebar: 314px;
   --label-margin-bottom: 4.5px;
 
   /* Fonts */
-  --font-family:
+  --font-sans:
     "Inter", system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-monospace:
-    "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+  --font-family: var(--font-sans);
+  --font-mono: "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+  --font-monospace: var(--font-mono);
 
   --type-display-semi-size: 48px;
   --type-display-semi-weight: 600;

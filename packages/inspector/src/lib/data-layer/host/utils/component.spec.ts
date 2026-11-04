@@ -1,9 +1,15 @@
 import type { DeepReadonlyObject } from '@dcl/ecs';
 import type { Scene } from '@dcl/schemas';
 
-import type { EditorComponentsTypes } from '../../../sdk/components';
+import type { EditorComponentsTypes, SceneSpawnPoint } from '../../../sdk/components';
 import type * as ConfigModule from '../../../logic/config';
-import { fromSceneComponent, toSceneComponent } from './component';
+import {
+  fromSceneComponent,
+  fromSceneSpawnPoint,
+  isSceneSpawnAxis,
+  toSceneComponent,
+  toSceneSpawnPoint,
+} from './component';
 
 const mocks = vi.hoisted(() => ({ authServerSupported: false }));
 
@@ -315,6 +321,173 @@ describe('toSceneComponent', () => {
         } as unknown as SceneWithMultiplayer),
       );
       expect(result.logsPermissions).toEqual(['0x0000000000000000000000000000000000000001']);
+    });
+  });
+
+  describe('when scene.json has spawn ranges alongside multiplayer and logs permissions', () => {
+    it('should read and write every field back unchanged', () => {
+      mocks.authServerSupported = true;
+      const address = '0x0000000000000000000000000000000000000001';
+      const spawnPoints = [
+        {
+          name: 'Range',
+          default: true,
+          position: { x: [1, 3], y: [0, 0], z: [2, 4] },
+          cameraTarget: { x: 8, y: 1, z: 8 },
+        },
+        { name: 'Single', position: { x: 5, y: 0, z: 6 } },
+      ] as NonNullable<Scene['spawnPoints']>;
+      const sceneJson = getScene(
+        { parcels: ['0,0'], base: '0,0' },
+        { spawnPoints, authoritativeMultiplayer: true, logsPermissions: [address] },
+      );
+
+      const component = toSceneComponent(sceneJson);
+      expect(component.multiplayerServer).toBe(true);
+      expect(component.logsPermissions).toEqual([address]);
+      expect(component.spawnPoints?.[0].position.x).toEqual({ $case: 'range', value: [1, 3] });
+      expect(component.spawnPoints?.[1].position.x).toEqual({ $case: 'single', value: 5 });
+
+      const written = fromSceneComponent(
+        component as DeepReadonlyObject<EditorComponentsTypes['Scene']>,
+      ) as SceneWithMultiplayer;
+      expect(written.authoritativeMultiplayer).toBe(true);
+      expect(written.logsPermissions).toEqual([address]);
+      expect(written.spawnPoints?.map(({ name, position }) => ({ name, position }))).toEqual([
+        { name: 'Range', position: { x: [1, 3], y: [0, 0], z: [2, 4] } },
+        { name: 'Single', position: { x: 5, y: 0, z: 6 } },
+      ]);
+    });
+  });
+});
+
+describe('fromSceneSpawnPoint', () => {
+  describe('when every axis is a range', () => {
+    it('should return every axis as a [min, max] array', () => {
+      const result = fromSceneSpawnPoint({
+        name: 'A',
+        default: true,
+        position: {
+          x: { $case: 'range', value: [1, 2] },
+          y: { $case: 'range', value: [0, 0] },
+          z: { $case: 'range', value: [3, 4] },
+        },
+        cameraTarget: { x: 1, y: 2, z: 3 },
+      });
+      expect(result).toEqual({
+        name: 'A',
+        default: true,
+        position: { x: [1, 2], y: [0, 0], z: [3, 4] },
+        cameraTarget: { x: 1, y: 2, z: 3 },
+      });
+    });
+  });
+
+  describe('when every axis is a single value', () => {
+    it('should return every axis as a number', () => {
+      const result = fromSceneSpawnPoint({
+        name: 'B',
+        position: {
+          x: { $case: 'single', value: 8 },
+          y: { $case: 'single', value: 0 },
+          z: { $case: 'single', value: 8 },
+        },
+      });
+      expect(result).toEqual({
+        name: 'B',
+        default: undefined,
+        position: { x: 8, y: 0, z: 8 },
+        cameraTarget: undefined,
+      });
+    });
+  });
+
+  describe('when ranges and single values are mixed', () => {
+    it('should return the single values as [v, v] arrays', () => {
+      const result = fromSceneSpawnPoint({
+        name: 'C',
+        position: {
+          x: { $case: 'range', value: [1, 2] },
+          y: { $case: 'single', value: 5 },
+          z: { $case: 'single', value: 7 },
+        },
+      });
+      expect(result.position).toEqual({ x: [1, 2], y: [5, 5], z: [7, 7] });
+    });
+  });
+});
+
+describe('toSceneSpawnPoint', () => {
+  describe('when the axes are [min, max] arrays', () => {
+    it('should return range cases', () => {
+      const result: SceneSpawnPoint = toSceneSpawnPoint(
+        { name: 'A', default: true, position: { x: [1, 2], y: [0, 0], z: [3, 4] } },
+        0,
+      );
+      expect(result.position).toEqual({
+        x: { $case: 'range', value: [1, 2] },
+        y: { $case: 'range', value: [0, 0] },
+        z: { $case: 'range', value: [3, 4] },
+      });
+    });
+  });
+
+  describe('when the axes are numbers', () => {
+    it('should return single cases', () => {
+      const result = toSceneSpawnPoint({ name: 'B', position: { x: 8, y: 0, z: 8 } }, 0);
+      expect(result.position).toEqual({
+        x: { $case: 'single', value: 8 },
+        y: { $case: 'single', value: 0 },
+        z: { $case: 'single', value: 8 },
+      });
+    });
+  });
+
+  describe('when the spawn point has no name', () => {
+    it('should name it after its index', () => {
+      const result = toSceneSpawnPoint(
+        { position: { x: 1, y: 0, z: 1 } } as NonNullable<Scene['spawnPoints']>[number],
+        2,
+      );
+      expect(result.name).toBe('Spawn Point 3');
+    });
+  });
+});
+
+describe('isSceneSpawnAxis', () => {
+  describe('when the value is a finite number', () => {
+    it('should return true', () => {
+      expect(isSceneSpawnAxis(4.5)).toBe(true);
+    });
+  });
+
+  describe('when the value is a pair of finite numbers', () => {
+    it('should return true', () => {
+      expect(isSceneSpawnAxis([1, 2])).toBe(true);
+    });
+  });
+
+  describe('when the value is NaN', () => {
+    it('should return false', () => {
+      expect(isSceneSpawnAxis(NaN)).toBe(false);
+    });
+  });
+
+  describe('when the value is a numeric string', () => {
+    it('should return false', () => {
+      expect(isSceneSpawnAxis('1')).toBe(false);
+    });
+  });
+
+  describe('when the value is an array of one number', () => {
+    it('should return false', () => {
+      expect(isSceneSpawnAxis([1])).toBe(false);
+    });
+  });
+
+  describe('when the value is an array of three numbers', () => {
+    it('should return false', () => {
+      expect(isSceneSpawnAxis([1, 2, 3])).toBe(false);
     });
   });
 });

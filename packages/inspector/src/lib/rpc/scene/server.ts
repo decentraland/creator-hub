@@ -20,7 +20,11 @@ import * as mobileDebugStore from '../../logic/mobile-debug-store';
 import { publishSceneBuildEvent, type SceneBuildEvent } from '../../logic/scene-build-events';
 import { setFeatureFlags } from '../../../redux/feature-flags';
 import { type EnumEntity } from '../../sdk/enum-entity';
-import { EditorComponentNames, type EditorComponents } from '../../sdk/components';
+import {
+  EditorComponentNames,
+  type EditorComponents,
+  type SceneSpawnPoint,
+} from '../../sdk/components';
 import { resolveActiveSceneComponent } from '../../sdk/components/scene-metadata-version';
 import { getViewportRect, type ViewportRect } from '../../logic/viewport-rect';
 import {
@@ -35,8 +39,15 @@ import {
   getDataLayerInterface,
   refreshUndoRedoState,
 } from '../../../redux/data-layer';
+import { updateCanSave } from '../../../redux/app';
 import { getConfig } from '../../logic/config';
 import { withAssetDir } from '../../data-layer/host/fs-utils';
+import {
+  fromSceneSpawnPoint,
+  isSceneSpawnAxis,
+  toSceneSpawnPoint,
+  type SceneJsonSpawnPoint,
+} from '../../data-layer/host/utils/component';
 
 enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
@@ -82,6 +93,7 @@ enum Method {
   GET_SCENE_SETTINGS = 'get_scene_settings',
   SET_SCENE_SETTINGS = 'set_scene_settings',
   GET_VIEWPORT_RECT = 'get_viewport_rect',
+  SAVE_SCENE = 'save_scene',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -144,6 +156,7 @@ type Params = {
   // The patch: the SceneMetadata fields to change (each replaces that field wholesale).
   [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
   [Method.GET_VIEWPORT_RECT]: Record<string, never>;
+  [Method.SAVE_SCENE]: Record<string, never>;
 };
 
 type Result = {
@@ -186,6 +199,7 @@ type Result = {
   [Method.GET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
   [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
   [Method.GET_VIEWPORT_RECT]: { rect: ViewportRect | null };
+  [Method.SAVE_SCENE]: void;
 };
 
 // Validate an AI-supplied entity id before branding it as an Entity. The id comes from the
@@ -365,6 +379,16 @@ export class SceneServer extends RPC<Method, Params, Result> {
     this.handle('set_mobile_debug_session_enabled', async ({ enabled, sessions }) => {
       store.dispatch(setMobileDebugSessionEnabled({ enabled }));
       mobileDebugStore.updateSessions(sessions);
+    });
+
+    // Renderer-agnostic on purpose: the host calls this before publishing, and publishing
+    // must not ship a stale scene.json under Bevy either. Rejects when the flush fails, so
+    // the host can stop rather than deploy the previous content.
+    this.handle('save_scene', async () => {
+      const dataLayer = getDataLayerInterface();
+      if (!dataLayer) throw new Error('Data layer is not connected');
+      await dataLayer.save({});
+      store.dispatch(updateCanSave({ dirty: false }));
     });
 
     // The 3D viewport's screen rect (inspector-window coords), so the host can crop a
@@ -581,26 +605,45 @@ export class SceneServer extends RPC<Method, Params, Result> {
         return { ok: true as const };
       });
 
-      // Scene settings live in the versioned SceneMetadata component on the root — name,
-      // description, categories, spawn points, skybox, terrain, layout/parcels, etc. — which
-      // the AI otherwise can't see or edit (#1527). resolveActiveSceneComponent picks the
-      // version the data-layer actually speaks, so reads/writes round-trip and persist to
-      // scene.json on save exactly like the SceneInspector UI.
-      this.handle('get_scene_settings', async () => {
+      // Scene settings live in the versioned SceneMetadata component on the root (#1527).
+      // resolveActiveSceneComponent picks the version the data layer actually speaks, so
+      // reads/writes round-trip and persist to scene.json like the SceneInspector UI. Spawn
+      // axes are converted to and from the scene.json shape the AI speaks: the component
+      // needs OneOf `{ $case, value }`, and a bare value there crashes older data layers.
+      const readSceneSettings = () => {
         const Scene = resolveActiveSceneComponent(engine);
-        return { settings: (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown> };
-      });
+        const settings = (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown>;
+        const spawnPoints = settings.spawnPoints as SceneSpawnPoint[] | undefined;
+        return spawnPoints
+          ? { ...settings, spawnPoints: spawnPoints.map(fromSceneSpawnPoint) }
+          : settings;
+      };
 
-      // Merge a partial patch into the current settings (each field the caller includes
-      // replaces that field wholesale) and write it through the real operations layer, so it
-      // updates the live editor, is undoable, and autosaves. The component schema validates
-      // the merged value on write — an invalid patch throws, surfaced to the assistant.
+      this.handle('get_scene_settings', async () => ({ settings: readSceneSettings() }));
+
       this.handle('set_scene_settings', async patch => {
+        const spawnPoints = patch.spawnPoints as SceneJsonSpawnPoint[] | undefined;
+        if (spawnPoints !== undefined && !Array.isArray(spawnPoints)) {
+          throw new Error('spawnPoints must be an array');
+        }
+        spawnPoints?.forEach((spawnPoint, index) => {
+          for (const axis of ['x', 'y', 'z'] as const) {
+            if (!isSceneSpawnAxis(spawnPoint?.position?.[axis])) {
+              throw new Error(
+                `spawnPoints[${index}].position.${axis} must be a number or a [min, max] pair of numbers`,
+              );
+            }
+          }
+        });
         const Scene = resolveActiveSceneComponent(engine);
         const current = (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown>;
-        operations.updateValue(Scene as never, engine.RootEntity, { ...current, ...patch });
+        operations.updateValue(Scene as never, engine.RootEntity, {
+          ...current,
+          ...patch,
+          ...(spawnPoints && { spawnPoints: spawnPoints.map(toSceneSpawnPoint) }),
+        });
         await operations.dispatch();
-        return { settings: (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown> };
+        return { settings: readSceneSettings() };
       });
     }
   }
