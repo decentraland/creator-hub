@@ -270,6 +270,68 @@ describe('Lands.fetchLand', () => {
     });
   });
 
+  describe('when the subgraph returns both the UpdateManager grant and its later revoke', () => {
+    const managedBy = (isApproved: boolean, timestamp: string) => ({
+      owner: { address: '0xowner', parcels: [parcelFields(2, 2)], estates: [] },
+      isApproved,
+      tokenAddress: '0xland',
+      timestamp,
+    });
+
+    describe('and the revoke is the latest event', () => {
+      it.each([
+        ['grant first', [managedBy(true, '100'), managedBy(false, '200')]],
+        ['revoke first', [managedBy(false, '200'), managedBy(true, '100')]],
+      ])('should not list the owner LAND when the rows arrive %s', async (_order, events) => {
+        fetchMock.mockResolvedValue(landQuery({ operatorAuthorizations: events }));
+
+        const [lands] = await new Lands().fetchLand('0xme');
+
+        expect(lands).toEqual([]);
+      });
+    });
+
+    describe('and the owner granted it again after the revoke', () => {
+      beforeEach(() => {
+        fetchMock.mockResolvedValue(
+          landQuery({
+            operatorAuthorizations: [
+              managedBy(true, '300'),
+              managedBy(true, '100'),
+              managedBy(false, '200'),
+            ],
+          }),
+        );
+      });
+
+      it('should list the owner LAND as managed', async () => {
+        const [lands] = await new Lands().fetchLand('0xme');
+
+        expect(lands.map(land => [land.id, land.role])).toEqual([['2,2', RoleType.MANAGER]]);
+      });
+    });
+  });
+
+  describe('when the owner revoked an UpdateManager after granting it', () => {
+    const managing = (isApproved: boolean, timestamp: string) => ({
+      operator: '0xmanager',
+      isApproved,
+      tokenAddress: '0xland',
+      timestamp,
+    });
+
+    it.each([
+      ['grant first', [managing(true, '100'), managing(false, '200')]],
+      ['revoke first', [managing(false, '200'), managing(true, '100')]],
+    ])('should not list it as a manager when the rows arrive %s', async (_order, events) => {
+      fetchMock.mockResolvedValue(landQuery({ ownerAuthorizations: events }));
+
+      const [, authorizations] = await new Lands().fetchLand('0xme');
+
+      expect(authorizations).toEqual([]);
+    });
+  });
+
   describe('when a token has its own update operator', () => {
     beforeEach(() => {
       fetchMock.mockResolvedValue(
