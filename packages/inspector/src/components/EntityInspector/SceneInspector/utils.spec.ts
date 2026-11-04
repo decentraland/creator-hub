@@ -8,6 +8,7 @@ import type { SceneInput } from './types';
 import {
   containsAddress,
   dedupeAddresses,
+  enableMultiplayerWithInstall,
   fromScene,
   getThumbnailWarnings,
   hasThumbnailAspectRatio,
@@ -197,6 +198,79 @@ describe('SceneInspector/utils', () => {
 
     it('should install and write nothing when the SDK is absent', () => {
       expect(nextMultiplayerValue(true, false)).toEqual({ install: true, patch: null });
+    });
+  });
+
+  describe('enableMultiplayerWithInstall', () => {
+    describe('when the install succeeds', () => {
+      it('should write the flag before the install answers, since that answer can arrive after the iframe reloads', async () => {
+        const writes: boolean[] = [];
+        let writesWhenInstallStarted: boolean[] = [];
+        const install = vi.fn(async () => {
+          writesWhenInstallStarted = [...writes];
+          return { ok: true };
+        });
+
+        await enableMultiplayerWithInstall(enabled => writes.push(enabled), install);
+
+        expect(writesWhenInstallStarted).toEqual([true]);
+      });
+
+      it('should leave the flag on and report success', async () => {
+        const writes: boolean[] = [];
+
+        const ok = await enableMultiplayerWithInstall(
+          enabled => writes.push(enabled),
+          async () => ({ ok: true }),
+        );
+
+        expect(ok).toBe(true);
+        expect(writes).toEqual([true]);
+      });
+    });
+
+    describe('when the host reports the install failed', () => {
+      it('should turn the flag back off and report failure', async () => {
+        const writes: boolean[] = [];
+
+        const ok = await enableMultiplayerWithInstall(
+          enabled => writes.push(enabled),
+          async () => ({ ok: false }),
+        );
+
+        expect(ok).toBe(false);
+        expect(writes).toEqual([true, false]);
+      });
+    });
+
+    describe('when there is no host to install through', () => {
+      it('should turn the flag back off and report failure', async () => {
+        const writes: boolean[] = [];
+
+        const ok = await enableMultiplayerWithInstall(
+          enabled => writes.push(enabled),
+          async () => undefined,
+        );
+
+        expect(ok).toBe(false);
+        expect(writes).toEqual([true, false]);
+      });
+    });
+
+    describe('when the install request throws', () => {
+      it('should turn the flag back off and report failure', async () => {
+        const writes: boolean[] = [];
+
+        const ok = await enableMultiplayerWithInstall(
+          enabled => writes.push(enabled),
+          async () => {
+            throw new Error('rpc closed');
+          },
+        );
+
+        expect(ok).toBe(false);
+        expect(writes).toEqual([true, false]);
+      });
     });
   });
 

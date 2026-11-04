@@ -210,6 +210,29 @@ export function nextMultiplayerValue(
   return { install: true, patch: null };
 }
 
+/**
+ * Turn the Multiplayer Server on for a scene that still needs the auth-server SDK.
+ *
+ * The flag is written BEFORE the install, not after it: a successful install flips the
+ * host's `authServerSupported`, which changes the inspector URL and reloads this iframe
+ * before the RPC answers, so a write placed after the await never lands. A failed install
+ * does not reload the iframe, so the flag can be turned back off.
+ */
+export async function enableMultiplayerWithInstall(
+  setEnabled: (enabled: boolean) => void,
+  install: () => Promise<{ ok: boolean } | undefined>,
+): Promise<boolean> {
+  setEnabled(true);
+  let ok = false;
+  try {
+    ok = !!(await install())?.ok;
+  } catch {
+    ok = false;
+  }
+  if (!ok) setEnabled(false);
+  return ok;
+}
+
 /** One entry per distinct address, in stored order and stored spelling, blanks dropped. */
 export const dedupeAddresses = (stored: string[] = []): string[] => {
   const seen = new Set<string>();

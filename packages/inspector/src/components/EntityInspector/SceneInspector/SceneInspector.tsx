@@ -46,6 +46,7 @@ import {
   MIDDAY_SECONDS,
   containsAddress,
   dedupeAddresses,
+  enableMultiplayerWithInstall,
   withoutAddress,
   validateThumbnailFile,
   validateThumbnailPath,
@@ -193,16 +194,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
       setInstallingMultiplayer(true);
       setMultiplayerInstallFailed(false);
-      try {
-        const result = await getSceneClient()?.installMultiplayer();
-        if (result?.ok) {
-          setComponentValue({ ...componentValue, multiplayerServer: true });
-        } else {
-          setMultiplayerInstallFailed(true);
-        }
-      } catch {
-        setMultiplayerInstallFailed(true);
-      }
+      const ok = await enableMultiplayerWithInstall(
+        multiplayerServer => setComponentValue(current => ({ ...current, multiplayerServer })),
+        async () => getSceneClient()?.installMultiplayer(),
+      );
+      setMultiplayerInstallFailed(!ok);
       setInstallingMultiplayer(false);
     },
     [componentValue, setComponentValue, authServerSupported],
@@ -494,7 +490,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               />
             )}
           </div>
-          {componentValue.multiplayerServer && (
+          {componentValue.multiplayerServer && !installingMultiplayer && (
             <div className="LogsAccess">
               <Label text="Log Access & Storage" />
               <div

@@ -346,7 +346,7 @@ Inspector tokens that name a role rather than a Figma variable: surfaces, foregr
 | `--ui-designer-panel-bg` | `--base-19` `#242129` | Charcoal `#25212a` (**✱ deviation**, within 1/255) | UI Designer panel frame |
 | `--ui-designer-control-bg` | `#35333b` | Neutrals/Onix | Inputs/selects/textarea chrome, and UI Designer menus |
 | `--disabled-bg-color` | `#323036` | — | Disabled control fill |
-| `--row-hover-bg` | `rgba(255,255,255,.05)` | not a Figma step | Hover fill on a list **row** (the Scene panel's Log Access rows). Deliberately a second near-identical white overlay beside `--ui-designer-control-hover-bg` (6%): that one is UI-Designer-scoped to a segmented cell, and this is a general role, so neither is a mistake — pick by subsystem, not by value |
+| `--row-hover-bg` | `rgba(255,255,255,.05)` | Figma's unnamed `#FFFFFF` 5% (no variable); value-identical to `--palette-whiteTransparent-faint` | Hover fill on a list **row** (the Scene panel's Log Access rows). Deliberately a second near-identical white overlay beside `--ui-designer-control-hover-bg` (6%): that one is UI-Designer-scoped to a segmented cell, and this is a general role, so neither is a mistake — pick by subsystem, not by value |
 | `--title` | `#eeeeef` | — | Primary text **on dark surfaces** |
 | `--sub-text` | `#ffffffcf` | — | Secondary text on dark |
 | `--text-primary` | `#000000de` | — | Text **on light surfaces** |
