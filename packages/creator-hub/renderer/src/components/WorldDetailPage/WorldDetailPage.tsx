@@ -20,6 +20,7 @@ import { CollaboratorsTab } from './CollaboratorsTab';
 import { DetailsTab } from './DetailsTab';
 import { ScenesTab } from './ScenesTab';
 import { SettingsTab } from './SettingsTab';
+import { useDeployScope } from './useDeployScope';
 import { getWorldPermissions, type WorldTab } from './worldPermissions';
 
 export function WorldDetailPage() {
@@ -39,6 +40,7 @@ export function WorldDetailPage() {
   const [resolutionFailure, setResolutionFailure] = useState<string | null>(null);
   const loading = status === 'idle' || status === 'loading';
   const project = listed ?? (resolved?.id === name ? resolved : undefined);
+  const deployScope = useDeployScope(project, wallet);
 
   useEffect(() => {
     if (listed) setResolved(listed);
@@ -74,10 +76,12 @@ export function WorldDetailPage() {
       />
     );
 
-  const permissions = project && getWorldPermissions(project);
+  const permissions =
+    project && deployScope !== 'loading' && getWorldPermissions(project, deployScope);
 
   const page = (() => {
     if (!project && (loading || (ens && resolutionFailure !== name))) return <Loader size={70} />;
+    if (project && deployScope === 'loading') return <Loader size={70} />;
     if (!project || !permissions) return <DetailMissing message={t('world_detail.not_found')} />;
 
     const activeTab: WorldTab = permissions.tabs.includes(tab as WorldTab)
@@ -108,7 +112,12 @@ export function WorldDetailPage() {
         activeTab={activeTab}
       >
         {activeTab === 'details' && <DetailsTab worldName={project.id} />}
-        {activeTab === 'settings' && <SettingsTab worldName={project.id} />}
+        {activeTab === 'settings' && (
+          <SettingsTab
+            worldName={project.id}
+            access={permissions.access}
+          />
+        )}
         {activeTab === 'collaborators' && <CollaboratorsTab worldName={project.id} />}
         {activeTab === 'scenes' && (
           <ScenesTab

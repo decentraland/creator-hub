@@ -5,7 +5,7 @@ import { retry } from '/shared/utils';
 import type { Authorization, Land, LandDeployment } from '/@/lib/land';
 import { coordsToId, LandType, ownedCoords, parseCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
-import type { WorldData, WorldScene, Worlds } from '/@/lib/worlds';
+import type { WorldData, WorldPermissionsResponse, WorldScene, Worlds } from '/@/lib/worlds';
 import { WorldRoleType } from '/@/lib/worlds';
 
 import type { WorldPermissionsState, WorldSettingsState } from './slice';
@@ -443,3 +443,16 @@ export const getWorldPermissionsInitialState = (): WorldPermissionsState => ({
   status: 'idle',
   error: null,
 });
+
+/**
+ * Whether `wallet` may deploy anywhere in the World. It reads the server's own `worldWide` flag on
+ * the wallet's deployment grant, the check the Worlds content server makes before it accepts a
+ * settings PUT from anyone but the NAME owner, so whoever this marks can save Details and Settings.
+ */
+export function isWorldWideDeployer(
+  summary: WorldPermissionsResponse['summary'],
+  wallet: string,
+): boolean {
+  const grants = summary[wallet] ?? summary[wallet.toLowerCase()];
+  return !!grants?.some(grant => grant.permission === 'deployment' && grant.worldWide);
+}

@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { flatten } from 'flat';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import { useAuth } from '/@/hooks/useAuth';
@@ -49,6 +49,7 @@ vi.mock('../AvatarWithInfo', () => ({
 const fetchWorldScenes = vi.fn(async () => ({ scenes: [], total: 1 }));
 const fetchWorldSettings = vi.fn(async () => ({ title: 'Deep World' }));
 const getContentSrcUrl = vi.fn((hash: string) => hash);
+const getPermissions = vi.fn(async (): Promise<unknown> => permissionsWith({}));
 vi.mock('/@/lib/worlds', async importOriginal => {
   const original = await importOriginal<typeof WorldsModule>();
   return {
@@ -57,6 +58,7 @@ vi.mock('/@/lib/worlds', async importOriginal => {
       fetchWorldScenes = fetchWorldScenes;
       fetchWorldSettings = fetchWorldSettings;
       getContentSrcUrl = getContentSrcUrl;
+      getPermissions = getPermissions;
     },
   };
 });
@@ -67,6 +69,20 @@ vi.mock('decentraland-ui2', async importOriginal => ({
 
 const WALLET = '0x00000000000000000000000000000000000000c3';
 const OTHER = '0x00000000000000000000000000000000000000d4';
+
+function permissionsWith(summary: Record<string, unknown>) {
+  return {
+    owner: OTHER,
+    permissions: {
+      deployment: { type: 'allow-list', wallets: Object.keys(summary) },
+      access: { type: 'unrestricted' },
+      streaming: { type: 'allow-list', wallets: [] },
+    },
+    summary,
+  };
+}
+const parcelGrant = { [WALLET]: [{ permission: 'deployment', worldWide: false, parcelCount: 2 }] };
+const worldWideGrant = { [WALLET]: [{ permission: 'deployment', worldWide: true }] };
 
 const deployment = {
   title: 'Scene X',
@@ -161,6 +177,8 @@ describe('WorldDetailPage', () => {
     fetchWorldSettings.mockResolvedValue({ title: 'Deep World' });
     getContentSrcUrl.mockReset();
     getContentSrcUrl.mockImplementation((hash: string) => hash);
+    getPermissions.mockReset();
+    getPermissions.mockResolvedValue(permissionsWith(parcelGrant));
   });
 
   describe('when the owner opens a World', () => {
@@ -211,20 +229,61 @@ describe('WorldDetailPage', () => {
     });
   });
 
-  describe('when a collaborator who can deploy opens a World', () => {
-    it('should show only Scenes, even when the URL asks for Details', () => {
+  describe('when a collaborator who can deploy to some parcels opens a World', () => {
+    beforeEach(() => {
+      getPermissions.mockResolvedValue(permissionsWith(parcelGrant));
+    });
+
+    it('should show only Scenes, even when the URL asks for Details', async () => {
       renderPage('/manage/world/team.dcl.eth/details');
 
+      await screen.findByRole('tablist');
       expect(tabs()).toEqual(['Scenes']);
       expect(selectedTab()).toBe('Scenes');
     });
 
-    it('should show the role and the owner, as on a LAND', () => {
+    it('should show the role and the owner, as on a LAND', async () => {
       renderPage('/manage/world/team.dcl.eth/scenes');
 
+      await screen.findByRole('tablist');
       expect(terms()).toEqual(['Role', 'Owner']);
       expect(screen.getByText('Collaborator')).toBeTruthy();
       expect(screen.getByText(OTHER)).toBeTruthy();
+    });
+  });
+
+  describe('when a collaborator who can deploy anywhere in the World opens it', () => {
+    beforeEach(() => {
+      getPermissions.mockResolvedValue(permissionsWith(worldWideGrant));
+    });
+
+    it('should show Details, Scenes and Settings, opening the Details the URL asks for', async () => {
+      renderPage('/manage/world/team.dcl.eth/details');
+
+      await screen.findByRole('tablist');
+      expect(tabs()).toEqual(['Details', 'Scenes', 'Settings']);
+      expect(selectedTab()).toBe('Details');
+      expect(
+        await within(screen.getByRole('tabpanel')).findByRole('textbox', { name: 'World Name' }),
+      ).toBeTruthy();
+    });
+
+    it('should keep the role and the owner in the header', async () => {
+      renderPage('/manage/world/team.dcl.eth/settings');
+
+      await screen.findByRole('tablist');
+      expect(selectedTab()).toBe('Settings');
+      expect(terms()).toEqual(['Role', 'Owner']);
+    });
+  });
+
+  describe("when reading a collaborator's permissions fails", () => {
+    it('should fall back to Scenes only', async () => {
+      getPermissions.mockResolvedValue(null);
+      renderPage('/manage/world/team.dcl.eth/details');
+
+      await screen.findByRole('tablist');
+      expect(tabs()).toEqual(['Scenes']);
     });
   });
 

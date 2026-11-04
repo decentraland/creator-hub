@@ -20,16 +20,29 @@ describe('getWorldPermissions', () => {
         tabs: ['details', 'scenes', 'settings', 'collaborators'],
         scenes: 'manage',
         header: 'owner',
+        access: 'manage',
       });
     });
   });
 
-  describe('when the account can deploy to the World', () => {
+  describe('when the account can deploy to some parcels of the World', () => {
     it('should show only the Scenes tab, for viewing', () => {
-      expect(getWorldPermissions(world({ role: WorldRoleType.COLLABORATOR }))).toEqual({
+      expect(getWorldPermissions(world({ role: WorldRoleType.COLLABORATOR }), 'parcels')).toEqual({
         tabs: ['scenes'],
         scenes: 'view',
         header: 'collaborator',
+        access: 'hidden',
+      });
+    });
+  });
+
+  describe('when the account can deploy anywhere in the World', () => {
+    it('should add Details and Settings, but keep Access and Collaborators for the owner', () => {
+      expect(getWorldPermissions(world({ role: WorldRoleType.COLLABORATOR }), 'world')).toEqual({
+        tabs: ['details', 'scenes', 'settings'],
+        scenes: 'view',
+        header: 'collaborator',
+        access: 'hidden',
       });
     });
   });

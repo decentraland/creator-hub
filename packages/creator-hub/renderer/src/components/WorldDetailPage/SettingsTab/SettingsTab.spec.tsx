@@ -37,6 +37,8 @@ vi.mock('../../Button', async importOriginal => ({
 }));
 
 const OWNER = '0x00000000000000000000000000000000000000a1';
+const COLLABORATOR = '0x00000000000000000000000000000000000000b2';
+const signer = vi.hoisted(() => ({ address: '0x00000000000000000000000000000000000000a1' }));
 
 const api = {
   fetchWorldSettings: vi.fn(),
@@ -60,7 +62,7 @@ vi.mock('/@/lib/worlds', async importOriginal => {
 });
 vi.mock('/@/lib/auth', async importOriginal => ({
   ...(await importOriginal<object>()),
-  AuthServerProvider: { getAccount: () => OWNER },
+  AuthServerProvider: { getAccount: () => signer.address },
 }));
 vi.mock('/@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 
@@ -71,8 +73,12 @@ const saved: WorldSettings = {
   showInPlaces: true,
 };
 
-async function renderTab(settings: WorldSettings = saved) {
-  vi.mocked(useAuth).mockReturnValue({ wallet: OWNER } as unknown as ReturnType<typeof useAuth>);
+async function renderTab(
+  settings: WorldSettings = saved,
+  { wallet = OWNER, access = 'manage' }: { wallet?: string; access?: 'manage' | 'hidden' } = {},
+) {
+  signer.address = wallet;
+  vi.mocked(useAuth).mockReturnValue({ wallet } as unknown as ReturnType<typeof useAuth>);
   api.fetchWorldSettings.mockResolvedValue(settings);
   api.putWorldSettings.mockResolvedValue({ success: true });
   api.postPermissionType.mockResolvedValue(true);
@@ -97,7 +103,10 @@ async function renderTab(settings: WorldSettings = saved) {
             tabs={[{ value: 'settings', label: 'Settings' }]}
             activeTab="settings"
           >
-            <SettingsTab worldName="plaza.dcl.eth" />
+            <SettingsTab
+              worldName="plaza.dcl.eth"
+              access={access}
+            />
           </DetailShell>
         </ThemeProvider>
       </MemoryRouter>
@@ -309,6 +318,26 @@ describe('World SettingsTab', () => {
       expect(api.postPermissionType).toHaveBeenCalled();
       expect(save()).toBeNull();
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    });
+  });
+
+  describe('when a world-wide collaborator opens it', () => {
+    it('should leave out Access, which only the owner may change', async () => {
+      await renderTab(saved, { wallet: COLLABORATOR, access: 'hidden' });
+
+      expect(screen.queryByRole('combobox', { name: 'Access' })).toBeNull();
+      expect(api.getPermissions).not.toHaveBeenCalled();
+    });
+
+    it('should save the General settings signed as the collaborator', async () => {
+      await renderTab(saved, { wallet: COLLABORATOR, access: 'hidden' });
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Single Player' }));
+
+      await act(async () => fireEvent.click(save()!));
+
+      expect(api.putWorldSettings).toHaveBeenCalledWith(COLLABORATOR, 'plaza.dcl.eth', {
+        singlePlayer: true,
+      });
     });
   });
 });
