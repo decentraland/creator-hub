@@ -7,62 +7,63 @@
   overflow: hidden;
 }
 
-.Assets .Assets-buttons span {
-  font-size: 14px;
-  line-height: 13px;
-  font-weight: 500;
-}
-
+/* The three browser tabs, per the Figma "3D Editor Bottom Panel" header: a 54px bar, tabs
+   20px apart with a 24px glyph and an uppercase semibold label, the current one in Snow with a
+   2px Snow underline on the bar's edge and the rest in Silver. */
 .Assets .Assets-buttons {
-  padding-left: 8px;
   display: flex;
   background: var(--tree-bg-color);
-  padding: 5px 0;
   position: relative;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
-}
-
-.Assets .Assets-buttons > div > div {
-  display: flex;
-  position: relative;
-}
-
-.Assets .Assets-buttons > div:hover > div::after,
-.Assets .Assets-buttons > div > div.underlined::after {
-  width: 100%;
-}
-
-.Assets .Assets-buttons .icon-custom-assets {
-  background-image: url("./custom-asset-icon.svg");
-  background-size: 16px 16px;
-  background-repeat: no-repeat;
-  background-position: center;
-  width: 16px;
-  height: 12px;
-}
-
-.Assets .Assets-buttons > div > div::after {
-  content: "";
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-  height: 2px;
-  background: var(--primary-main);
-}
-
-.Assets .Assets-buttons > div span {
-  margin-left: 4px;
-  margin-bottom: 4px;
+  gap: 20px;
+  min-height: 54px;
+  border-bottom: 1px solid var(--base-17);
 }
 
 .Assets .Assets-buttons > div {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
   cursor: pointer;
   user-select: none;
+}
+
+.Assets .Assets-buttons > .tab {
+  align-self: stretch;
+}
+
+.Assets .Assets-buttons > .tab > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 10px 4px;
+  box-sizing: border-box;
+  border-bottom: 2px solid transparent;
+  color: var(--neutral-grey-3);
+}
+
+.Assets .Assets-buttons > .tab:hover > div {
+  color: var(--white);
+}
+
+.Assets .Assets-buttons > .tab > div.underlined {
+  border-bottom-color: var(--white);
+  color: var(--white);
+}
+
+.Assets .Assets-buttons > .tab svg {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.Assets .Assets-buttons > .tab span {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .Assets .Assets-buttons .Assets-buttons-left {
@@ -91,13 +92,19 @@
   background-color: var(--base-19);
 }
 
+/* 32px buttons with a 20px glyph, per the Figma header (icon inset 20%), whatever the icon source. */
 .Assets .Assets-buttons .Assets-buttons-left .icon-item {
-  width: 25px;
-  height: 25px;
-  padding: 5px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border-radius: 8px;
   color: var(--base-01);
   cursor: pointer;
+}
+
+.Assets .Assets-buttons .Assets-buttons-left button.icon-item svg {
+  width: 20px;
+  height: 20px;
 }
 
 .Assets .Assets-buttons .Assets-buttons-left button.icon-item {
@@ -116,32 +123,125 @@
 .Assets .Assets-buttons .Assets-buttons-right {
   position: absolute;
   right: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   padding: 8px 12px;
+}
+
+/* The 32px panel toggles (preview pane, folder tree), per the Figma PreviewToggle and
+   Collapse/Expand Panel states: Silver glyph at rest, a White 10 tint on hover, Blue Dark 2 with a
+   Snow glyph while on and Blue Dark 3 when that is hovered. */
+.Assets-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--neutral-grey-3);
+  cursor: pointer;
+}
+
+.Assets-toggle:hover {
+  background: var(--ui-designer-control-selected-bg);
+  color: var(--white);
+}
+
+.Assets-toggle.active {
+  background: var(--selected-item);
+  color: var(--white);
+}
+
+.Assets-toggle.active:hover {
+  background: var(--selected-row);
+}
+
+.Assets-toggle svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Thumbnail-size slider, per the Figma Scale Slider: a 4px White 20 track with a 10px handle. */
+.Assets .Assets-size {
+  display: flex;
+  align-items: center;
+  margin: 0 4px;
+}
+
+.Assets .Assets-size input[type="range"] {
+  width: 60px;
+  height: 4px;
+  appearance: none;
+  border-radius: 100px;
+  background: var(--ui-designer-control-border-strong);
+  cursor: pointer;
+}
+
+.Assets .Assets-size input[type="range"]::-webkit-slider-thumb {
+  width: 10px;
+  height: 10px;
+  appearance: none;
+  border-radius: 50%;
+  background: var(--neutral-grey-3);
+}
+
+.Assets .Assets-size input[type="range"]:hover::-webkit-slider-thumb,
+.Assets .Assets-size input[type="range"]:active::-webkit-slider-thumb {
+  background: var(--white);
+}
+
+.Assets .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .Assets .Assets-buttons .Assets-buttons-right .collapse-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background-color: transparent;
-  color: var(--base-01);
-  font-size: 22px;
+  color: var(--white);
   cursor: pointer;
 }
 
 .Assets .Assets-buttons .Assets-buttons-right .collapse-toggle:hover {
-  background-color: var(--background-gray);
+  background-color: var(--ui-designer-control-selected-bg);
+}
+
+.Assets .Assets-buttons .Assets-buttons-right .collapse-toggle svg {
+  width: 24px;
+  height: 24px;
+}
+
+.Assets .Assets-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  background: var(--tree-bg-color);
+}
+
+.Assets .Assets-body.Hide {
+  display: none;
 }
 
 .Assets .Assets-content {
   background: var(--tree-bg-color) !important;
   flex: 1;
   overflow: hidden;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -171,4 +271,185 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--text);
+}
+
+/* Toolbar, breadcrumb and search field shared by the three asset browsers. */
+
+.Assets-toolbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 2px;
+}
+
+.Assets-iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--base-08);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.Assets-iconButton:hover {
+  background: var(--base-17);
+  color: var(--white);
+}
+
+.Assets-iconButton.active {
+  background: var(--selected-item);
+  color: var(--white);
+}
+
+.Assets-iconButton.small {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.Assets-crumbs {
+  display: flex;
+  flex: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 2px 10px 4px;
+  font-size: 11px;
+  color: var(--neutral-grey-3);
+}
+
+/* On a toolbar with room to spare the breadcrumb shares the row with the search field. */
+.Assets-crumbs.inline {
+  padding: 0 4px;
+}
+
+.Assets-crumbs button {
+  padding: 1px 5px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.Assets-crumbs button:hover {
+  background: var(--base-17);
+  color: var(--white);
+}
+
+.Assets-crumbs button.current {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.Assets-crumbs button:disabled {
+  cursor: default;
+}
+
+.Assets-crumbs button:disabled:hover {
+  background: transparent;
+  color: inherit;
+}
+
+.Assets-crumbs button.current:disabled:hover {
+  color: var(--white);
+}
+
+.Assets-crumbs svg {
+  flex: none;
+}
+
+.Assets-crumbs-count {
+  margin-left: 6px;
+  padding: 0 7px;
+  border-radius: 9px;
+  background: var(--base-17);
+  color: var(--neutral-grey-3);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.Assets-crumbs-results {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+  color: var(--neutral-grey-3);
+}
+
+.Assets-crumbs-results:first-child {
+  margin-left: 0;
+}
+
+.Assets-crumbs-results button {
+  color: var(--white-gray);
+  text-decoration: underline;
+}
+
+.Assets-search {
+  position: relative;
+  display: flex;
+  flex: 1 1 120px;
+  align-items: center;
+  max-width: 280px;
+}
+
+.Assets-search > svg:first-child {
+  position: absolute;
+  left: 10px;
+  width: 14px;
+  height: 14px;
+  color: var(--base-08);
+  pointer-events: none;
+}
+
+.Assets-search input {
+  width: 100%;
+  height: 28px;
+  padding: 0 28px 0 32px;
+  border: none;
+  border-radius: 8px;
+  outline: none;
+  background-color: var(--gray-0);
+  color: var(--white-gray);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.Assets-search input::placeholder {
+  color: var(--base-08);
+}
+
+.Assets-search input:focus {
+  box-shadow: 0 0 0 1px var(--border-focused);
+}
+
+.Assets-search-clear {
+  position: absolute;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--base-08);
+  cursor: pointer;
+}
+
+.Assets-search-clear:hover {
+  background: var(--base-15);
+  color: var(--white);
 }

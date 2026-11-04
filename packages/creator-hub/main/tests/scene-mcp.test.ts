@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
@@ -10,7 +10,8 @@ import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/typ
 // tool). Mock those so the module imports in the node test env; the read tools don't need
 // a window.
 vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
-vi.mock('../src/modules/window', () => ({ getWindow: () => undefined }));
+const windowMock = vi.hoisted(() => ({ getWindow: vi.fn((): unknown => undefined) }));
+vi.mock('../src/modules/window', () => ({ getWindow: windowMock.getWindow }));
 vi.mock('../src/mainWindow', () => ({ MAIN_WINDOW_ID: 'main' }));
 // The Explorer gateway pulls in cli → bin/path (electron `app` at import); the read/mutation
 // tools under test don't touch it, so stub it out. gatewayProject() must return null so
@@ -44,11 +45,17 @@ vi.mock('../src/modules/explorer-gateway', () => ({
 }));
 
 import {
+  DATA_LAYER_DOWN,
+  DATA_LAYER_STOPPED_DURING_OP,
   ensureSceneMcpServer,
+  getTurnMutations,
+  resetTurnMutations,
+  resolveSceneOp,
   setSceneMcpProject,
   stopSceneMcpServer,
   type SceneMcpInfo,
 } from '../src/modules/scene-mcp';
+import { clearAllRealmDown, markRealmDown } from '../src/modules/realm-status';
 
 const composite = {
   version: 1,
@@ -209,5 +216,102 @@ describe('scene-mcp server', () => {
 
     await vi.waitFor(() => expect(changed).toBeGreaterThan(0)); // list_changed was pushed
     await client.close();
+  });
+});
+
+type ToolResult = { content: { type: string; text: string }[]; isError?: boolean };
+
+describe('scene-mcp data-layer gate', () => {
+  let client: Client;
+
+  beforeEach(async () => {
+    clearAllRealmDown();
+    resetTurnMutations();
+    client = await open(info.token);
+  });
+
+  afterEach(async () => {
+    await client.close();
+    windowMock.getWindow.mockReset();
+  });
+
+  describe('when the current project realm is down', () => {
+    let calls: { name: string; arguments: Record<string, unknown> }[];
+
+    beforeEach(() => {
+      markRealmDown(projectDir);
+      calls = [
+        { name: 'scene_state', arguments: {} },
+        { name: 'entity_detail', arguments: { entity: '512' } },
+        { name: 'get_project_info', arguments: {} },
+        { name: 'editor_screenshot', arguments: {} },
+        { name: 'set_component', arguments: { entity: 512, component: 'Transform', value: {} } },
+        { name: 'get_scene_settings', arguments: {} },
+      ];
+    });
+
+    it('should fail every gated tool with the data-layer-down error', async () => {
+      const results: ToolResult[] = [];
+      for (const call of calls) results.push((await client.callTool(call)) as ToolResult);
+      expect(results.map(r => [r.isError, r.content[0].text])).toEqual(
+        calls.map(() => [true, DATA_LAYER_DOWN]),
+      );
+    });
+  });
+
+  describe('when the realm goes down while a mutation settles', () => {
+    let result: ToolResult;
+
+    beforeEach(async () => {
+      windowMock.getWindow.mockReturnValue({
+        isDestroyed: () => false,
+        webContents: {
+          send: (_channel: string, { id }: { id: string }) => {
+            markRealmDown(projectDir);
+            resolveSceneOp(id, true, {});
+          },
+        },
+      });
+      result = (await client.callTool({
+        name: 'set_component',
+        arguments: { entity: 512, component: 'Transform', value: {} },
+      })) as ToolResult;
+    });
+
+    it('should report the change as not saved', () => {
+      expect([result.isError, result.content[0].text]).toEqual([
+        true,
+        DATA_LAYER_STOPPED_DURING_OP,
+      ]);
+    });
+
+    it('should not count the mutation for the turn', () => {
+      expect(getTurnMutations()).toBe(0);
+    });
+  });
+
+  describe('when the realm stays up through a mutation', () => {
+    let result: ToolResult;
+
+    beforeEach(async () => {
+      windowMock.getWindow.mockReturnValue({
+        isDestroyed: () => false,
+        webContents: {
+          send: (_channel: string, { id }: { id: string }) => resolveSceneOp(id, true, {}),
+        },
+      });
+      result = (await client.callTool({
+        name: 'set_component',
+        arguments: { entity: 512, component: 'Transform', value: {} },
+      })) as ToolResult;
+    });
+
+    it('should succeed', () => {
+      expect(result.isError).toBeFalsy();
+    });
+
+    it('should count the mutation for the turn', () => {
+      expect(getTurnMutations()).toBe(1);
+    });
   });
 });

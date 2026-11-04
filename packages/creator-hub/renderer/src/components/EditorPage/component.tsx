@@ -22,15 +22,18 @@ import { actions as aiActions } from '/@/modules/store/ai';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
+import { IS_NON_PRODUCTION_BUILD } from '/@/modules/buildMode';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { useBevyBuildForwarding } from '/@/hooks/useBevyBuildForwarding';
+import { useBevyRealmRestart } from '/@/hooks/useBevyRealmRestart';
 import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
+import { usePreviewCleanup } from '/@/hooks/usePreviewCleanup';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
@@ -216,6 +219,8 @@ export function EditorPage() {
   // for the project and hold the URLs to thread into the iframe config below.
   const useBevy = settings.renderer === RENDERER.BEVY;
   const [bevyRealm, setBevyRealm] = useState<{ url: string; wsUrl: string } | null>(null);
+  const [realmRestarts, setRealmRestarts] = useState(0);
+  const realmRestartingRef = useRef(false);
   // A broken scene (e.g. a TS error) makes the Bevy realm's `sdk-commands start`
   // fail, or the scene never finishes loading — leaving the editor stuck on the
   // loader with no way out. Capture the failure (or a load timeout) so the loading
@@ -254,6 +259,22 @@ export function EditorPage() {
   );
   useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path, inspectorReadyNonce);
   useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
+  useBevyRealmRestart(useBevy ? project?.path : undefined, {
+    onRestart: () => {
+      dispatch(
+        snackbarActions.pushSnackbar(
+          createGenericNotification('warning', t('editor.realm_restarted')),
+        ),
+      );
+      realmRestartingRef.current = true;
+      setBevyRealm(null);
+      setRealmRestarts(n => n + 1);
+    },
+    onGiveUp: () => {
+      setBevyRealm(null);
+      setLoadError(t('editor.loading.failed.data_layer_crashed'));
+    },
+  });
   useProjectAssetWatch(iframeRef, project?.path);
 
   const handleIframeRef = useCallback(
@@ -436,6 +457,7 @@ export function EditorPage() {
   // The iframe render is gated on the realm being ready when Bevy is selected, so
   // the inspector boots already pointed at the right data-layer + realm.
   const projectPath = project?.path;
+  usePreviewCleanup(projectPath);
 
   // Usage analytics: fire once each time the inline AI chat panel is opened. Anonymous project
   // id, matching the id space of the AI Turn events so "opened" and "used" correlate. Fires on
@@ -454,6 +476,7 @@ export function EditorPage() {
   }, [aiDraftPrompt?.nonce, aiChatEnabled]);
 
   useEffect(() => {
+    realmRestartingRef.current = false;
     if (!projectPath || !useBevy) {
       setBevyRealm(null);
       return;
@@ -487,9 +510,16 @@ export function EditorPage() {
       });
     return () => {
       cancelled = true;
+      if (!realmRestartingRef.current) void killBevyRealm(projectPath);
+    };
+  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm, realmRestarts]);
+
+  useEffect(() => {
+    if (!projectPath || !useBevy) return;
+    return () => {
       void killBevyRealm(projectPath);
     };
-  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm]);
+  }, [projectPath, useBevy, killBevyRealm]);
 
   const isReady = !!project && inspectorPort > 0 && (!useBevy || bevyRealm !== null);
 
@@ -710,6 +740,8 @@ export function EditorPage() {
     bevyRealm,
     project,
     userId,
+    // Dev/QA only: never honor the dev-CDN toggle in a production release.
+    useDevAssetCatalog: IS_NON_PRODUCTION_BUILD && !!settings.useDevAssetCatalog,
   });
 
   // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers

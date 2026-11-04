@@ -45,9 +45,11 @@
         "back": "返回场景",
         "retry": "重试",
         "outdated_deps": "此场景的依赖项已过时，不支持 Bevy 渲染器。请更新它们以继续。",
-        "update_deps": "更新依赖项"
+        "update_deps": "更新依赖项",
+        "data_layer_crashed": "场景反复意外停止。请返回并重新打开，或查看日志。"
       }
     },
+    "realm_restarted": "场景意外停止，已重新加载。最近几秒的更改可能未保存。",
     "header": {
       "actions": {
         "code": "代码",
@@ -170,6 +172,9 @@
         "needs_login_managed_help": "即使显示为已连接，其保存的登录状态也可能已过期。请在“设置 → AI”中点击“退出登录”，然后点击“登录”，再重新发送你的消息。",
         "api_key_alternative": "或者使用 API 密钥：设置 {envVar}，并在“设置 → AI”中开启“{setting}”。"
       }
+    },
+    "publish": {
+      "save_failed": "发布前无法保存你的场景，已停止发布以免部署旧内容。{reason}"
     }
   },
   "scene_list": {
@@ -517,7 +522,8 @@
           "url": "跳转到您的 {target} 的URL是：",
           "world": "世界",
           "land": "土地",
-          "jump_in": "跳转"
+          "jump_in": "跳转",
+          "indexing_note": "场景已经上线。它在浏览器中的卡片（标题、描述和缩略图）是单独索引的，可能需要几分钟才会更新。"
         }
       }
     },
@@ -595,6 +601,10 @@
         },
         "experimental": {
           "label": "实验性功能"
+        },
+        "dev_asset_catalog": {
+          "toggle": "使用开发环境资源 CDN",
+          "help": "从开发环境 CDN（而非生产环境）加载智能物件，以便在合并前测试从 pull request 上传的资源。更改此项后请重启编辑器并重新添加物件。仅限开发版本。"
         },
         "ai_assistant": {
           "label": "启用 AI 助手",

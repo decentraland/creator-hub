@@ -45,9 +45,11 @@
         "back": "Volver a escenas",
         "retry": "Reintentar",
         "outdated_deps": "Las dependencias de esta escena están desactualizadas y no son compatibles con el renderizador Bevy. Actualízalas para continuar.",
-        "update_deps": "Actualizar dependencias"
+        "update_deps": "Actualizar dependencias",
+        "data_layer_crashed": "La escena se detiene inesperadamente una y otra vez. Vuelve atrás y ábrela de nuevo, o revisa los registros."
       }
     },
+    "realm_restarted": "La escena se detuvo inesperadamente y se recargó. Es posible que los cambios de los últimos segundos no se hayan guardado.",
     "header": {
       "actions": {
         "code": "Código",
@@ -170,6 +172,9 @@
         "needs_login_managed_help": "Puede que su inicio de sesión guardado haya caducado, aunque apareciera como conectado. En Configuración → IA, haz clic en Cerrar sesión y luego en Iniciar sesión, y vuelve a enviar tu mensaje.",
         "api_key_alternative": "O usa una clave de API: define {envVar} y activa \"{setting}\" en Configuración → IA."
       }
+    },
+    "publish": {
+      "save_failed": "No se pudo guardar tu escena antes de publicar, así que se detuvo la publicación para no desplegar contenido anterior. {reason}"
     }
   },
   "scene_list": {
@@ -517,7 +522,8 @@
           "url": "La URL para acceder a tu {target} es:",
           "world": "Mundo",
           "land": "Tierra",
-          "jump_in": "Entrar"
+          "jump_in": "Entrar",
+          "indexing_note": "La escena ya está publicada. Su tarjeta en el explorador (título, descripción y miniatura) se indexa por separado y puede tardar unos minutos en actualizarse."
         }
       }
     },
@@ -595,6 +601,10 @@
         },
         "experimental": {
           "label": "Funciones experimentales"
+        },
+        "dev_asset_catalog": {
+          "toggle": "Usar CDN de activos de desarrollo",
+          "help": "Carga los smart items desde el CDN de desarrollo en lugar del de producción, para probar activos subidos desde un pull request antes de publicarlos. Reinicia el editor y vuelve a agregar los items después de cambiar esto. Solo en compilaciones de desarrollo."
         },
         "ai_assistant": {
           "label": "Activar el Asistente IA",
