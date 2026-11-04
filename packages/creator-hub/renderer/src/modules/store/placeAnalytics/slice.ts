@@ -10,6 +10,7 @@ import { toSummary } from '/@/lib/placeAnalytics.adapter';
 import { fetchAnalytics as fetchAnalyticsSnapshot } from '/@/lib/placeAnalytics';
 import { Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
+import { accountChanged } from '/@/modules/store/account';
 import { fetchLandList } from '/@/modules/store/land';
 import { fetchAllDeployedWorlds } from '/@/modules/store/management/utils';
 import { createAsyncThunk } from '/@/modules/store/thunk';
@@ -65,6 +66,7 @@ export type PlaceAnalyticsState = {
    * until we know where a watchlist should be persisted.
    */
   pinnedPlaceIds: string[];
+  requestId: string | null;
 };
 
 export const initialState: Async<PlaceAnalyticsState> = {
@@ -75,6 +77,7 @@ export const initialState: Async<PlaceAnalyticsState> = {
   sortBy: SortBy.NAME_ASC,
   searchQuery: '',
   pinnedPlaceIds: [],
+  requestId: null,
   status: 'idle',
   error: null,
 };
@@ -99,15 +102,17 @@ const slice = createSlice({
         ? state.pinnedPlaceIds.filter($ => $ !== placeId)
         : [...state.pinnedPlaceIds, placeId];
     },
-    clearState: () => initialState,
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchAnalytics.pending, state => {
+      .addCase(accountChanged, () => initialState)
+      .addCase(fetchAnalytics.pending, (state, action) => {
         state.status = 'loading';
         state.error = null;
+        state.requestId = action.meta.requestId;
       })
       .addCase(fetchAnalytics.fulfilled, (state, action) => {
+        if (action.meta.requestId !== state.requestId) return;
         state.exportedAt = action.payload.exportedAt;
         state.places = action.payload.places;
         state.metricsByPlaceId = action.payload.metricsByPlaceId;
@@ -115,6 +120,7 @@ const slice = createSlice({
         state.error = null;
       })
       .addCase(fetchAnalytics.rejected, (state, action) => {
+        if (action.meta.requestId !== state.requestId) return;
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch analytics';
       });

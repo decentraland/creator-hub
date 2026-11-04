@@ -10,6 +10,7 @@ import { fetch } from '/shared/fetch';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
 import { createAsyncThunk } from '/@/modules/store/thunk';
+import { accountChanged } from '/@/modules/store/account';
 import {
   ENS as ensAbi,
   ENSResolver as ensResolverAbi,
@@ -269,6 +270,8 @@ export type ENSState = {
   /** Worlds the wallet can stream to but not publish to; kept out of `data`, which lists publishable names. */
   streamOnlyWorlds: string[];
   error: ENSError | null;
+  requestId: string | null;
+  streamOnlyRequestId: string | null;
 };
 
 export const initialState: Async<ENSState> = {
@@ -277,6 +280,8 @@ export const initialState: Async<ENSState> = {
   streamOnlyWorlds: [],
   status: 'idle',
   error: null,
+  requestId: null,
+  streamOnlyRequestId: null,
 };
 
 // slice
@@ -284,17 +289,19 @@ export const slice = createSlice({
   name: 'ens',
   initialState,
   reducers: {
-    clearState: () => initialState,
     setChainId: (state, action: { payload: ChainId }) => {
       state.chainId = action.payload;
     },
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchENSList.pending, state => {
+      .addCase(accountChanged, state => ({ ...initialState, chainId: state.chainId }))
+      .addCase(fetchENSList.pending, (state, action) => {
         state.status = 'loading';
+        state.requestId = action.meta.requestId;
       })
       .addCase(fetchENSList.fulfilled, (state, action) => {
+        if (action.meta.requestId !== state.requestId) return;
         state.data = {
           ...state.data,
           ...action.payload.reduce(
@@ -307,10 +314,15 @@ export const slice = createSlice({
         };
         state.status = 'succeeded';
       })
+      .addCase(fetchContributableNames.pending, (state, action) => {
+        state.streamOnlyRequestId = action.meta.requestId;
+      })
       .addCase(fetchContributableNames.fulfilled, (state, action) => {
+        if (action.meta.requestId !== state.streamOnlyRequestId) return;
         state.streamOnlyWorlds = action.payload.streamOnly;
       })
       .addCase(fetchENSList.rejected, (state, action) => {
+        if (action.meta.requestId !== state.requestId) return;
         state.status = 'failed';
         state.error = null;
         captureException(action.error, {

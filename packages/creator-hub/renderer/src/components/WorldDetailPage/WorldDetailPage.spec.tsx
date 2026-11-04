@@ -135,9 +135,11 @@ function renderPage(path: string) {
     fetchWorlds.fulfilled({ worlds: [owned, untitled, shared], total: 3 }, 'r', { address: '' }),
   );
   store.dispatch(fetchStreamOnlyWorlds.fulfilled([streamed], 'r', { address: '' }));
+  store.dispatch({ type: 'ens/fetchENSList/pending', meta: { requestId: 'r' } });
   store.dispatch({
     type: 'ens/fetchENSList/fulfilled',
     payload: [{ subdomain: 'deep.dcl.eth', nftOwnerAddress: WALLET }],
+    meta: { requestId: 'r' },
   });
   store.dispatch(fetchAllManagedProjectsData.fulfilled(undefined, 'r', { address: '' }));
   render(

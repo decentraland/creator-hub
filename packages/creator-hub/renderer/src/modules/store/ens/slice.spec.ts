@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 
 import type * as Viem from 'viem';
+import { ChainId } from '@dcl/schemas';
+import { accountChanged } from '../account';
+import type { ENS } from './types';
 import { USER_PERMISSIONS } from './types';
 
 const SELF = '0x0000000000000000000000000000000000000abc';
@@ -50,7 +53,7 @@ vi.mock('/@/lib/worlds', () => ({
   },
 }));
 
-const { fetchENSList, slice } = await import('./slice');
+const { fetchContributableNames, fetchENSList, slice } = await import('./slice');
 
 const onChain: Record<string, unknown> = {
   resolver: RESOLVER,
@@ -118,6 +121,37 @@ describe('fetchENSList', () => {
         userPermissions: [USER_PERMISSIONS.DEPLOYMENT],
         size: '20',
       });
+    });
+  });
+});
+
+describe('ens reducer', () => {
+  describe('when the account changes while the NAME requests are in flight', () => {
+    const args = { address: '0xprevious' };
+    const name = { subdomain: 'previous.dcl.eth' } as ENS;
+    const state = [
+      slice.actions.setChainId(ChainId.ETHEREUM_SEPOLIA),
+      fetchENSList.pending('loaded', args),
+      fetchENSList.fulfilled([name], 'loaded', args),
+      fetchENSList.pending('late', args),
+      fetchContributableNames.pending('late-contributable', args),
+      accountChanged(),
+      fetchENSList.fulfilled([name], 'late', args),
+      fetchContributableNames.fulfilled(
+        { names: [], streamOnly: ['previous-stream.dcl.eth'] },
+        'late-contributable',
+        args,
+      ),
+    ].reduce(slice.reducer, slice.getInitialState());
+
+    it('should drop the previous account NAMEs and their late answers', () => {
+      expect(state.data).toEqual({});
+      expect(state.streamOnlyWorlds).toEqual([]);
+      expect(state.status).toBe('idle');
+    });
+
+    it('should keep the network, which belongs to no account', () => {
+      expect(state.chainId).toBe(ChainId.ETHEREUM_SEPOLIA);
     });
   });
 });

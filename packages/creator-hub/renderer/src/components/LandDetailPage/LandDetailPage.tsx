@@ -24,7 +24,7 @@ import { ScenesTab } from './ScenesTab';
 export function LandDetailPage() {
   const { id = '', tab = 'details' } = useParams();
   const dispatch = useDispatch();
-  const { isSignedIn, isSigningIn } = useAuth();
+  const { isSignedIn, isSigningIn, wallet } = useAuth();
   const { pushGeneric } = useSnackbar();
   const land = useSelector(state => state.land.data.find(item => item.id === id));
   const project = useSelector(state =>
@@ -36,8 +36,8 @@ export function LandDetailPage() {
   );
 
   useEffect(() => {
-    if (isSignedIn && status === 'idle') dispatch(managementActions.fetchLandProjects());
-  }, [isSignedIn, status, dispatch]);
+    if (isSignedIn) dispatch(managementActions.fetchLandProjects());
+  }, [isSignedIn, wallet, id, dispatch]);
 
   if (!isSignedIn && !isSigningIn)
     return (

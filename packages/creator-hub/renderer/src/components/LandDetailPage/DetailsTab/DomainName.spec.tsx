@@ -45,13 +45,16 @@ type Name = { subdomain: string; resolver: string; content: string };
 async function renderField(names: Name[]) {
   vi.mocked(useAuth).mockReturnValue({ wallet: '0xme' } as unknown as ReturnType<typeof useAuth>);
   const store = createTestStore();
+  store.dispatch(fetchLandList.pending('r', { address: '0xme' }));
   store.dispatch(
     fetchLandList.fulfilled({ land: [land], authorizations: [], rentals: [] }, 'r', {
       address: '0xme',
     }),
   );
+  store.dispatch({ type: 'ens/fetchENSList/pending', meta: { requestId: 'r' } });
   store.dispatch({
     type: 'ens/fetchENSList/fulfilled',
+    meta: { requestId: 'r' },
     payload: names.map(name => ({
       ...name,
       nftOwnerAddress: '0xme',

@@ -7,6 +7,7 @@ import type { Land, LandDeployment } from '../../../lib/land';
 import { LandType, RoleType } from '../../../lib/land';
 import { clearLandScene } from '../../../lib/landUnpublish';
 import { fetchLandList } from '../land';
+import { accountChanged } from '../account';
 import type * as ManagementUtils from './utils';
 import {
   actions,
@@ -333,12 +334,16 @@ describe('management slice', () => {
       beforeEach(() => {
         vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
         store.dispatch({
+          type: 'ens/fetchENSList/pending',
+          meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
+        });
+        store.dispatch({
           type: 'ens/fetchENSList/fulfilled',
           payload: [
             { subdomain: 'zeta.dcl.eth', nftOwnerAddress: TEST_ADDRESS },
             { subdomain: 'beta.dcl.eth', nftOwnerAddress: TEST_ADDRESS },
           ],
-          meta: { arg: { address: TEST_ADDRESS } },
+          meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
         });
         mockWorldsAPI.fetchWorlds.mockResolvedValue({
           worlds: [
@@ -1217,9 +1222,13 @@ describe('management slice', () => {
   describe('fetchStreamOnlyWorlds', () => {
     beforeEach(() => {
       store.dispatch({
+        type: 'ens/fetchContributableNames/pending',
+        meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
+      });
+      store.dispatch({
         type: 'ens/fetchContributableNames/fulfilled',
         payload: { names: [], streamOnly: ['live.dcl.eth', 'broken.dcl.eth'] },
-        meta: { arg: { address: TEST_ADDRESS } },
+        meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
       });
       mockWorldsAPI.fetchWorldSettings.mockResolvedValue({});
       mockWorldsAPI.fetchWorldScenes.mockImplementation(async (name: string) => {
@@ -1274,9 +1283,13 @@ describe('management slice', () => {
         },
       ];
       store.dispatch({
+        type: 'ens/fetchENSList/pending',
+        meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
+      });
+      store.dispatch({
         type: 'ens/fetchENSList/fulfilled',
         payload: ensDataArray,
-        meta: { arg: { address: TEST_ADDRESS } },
+        meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
       });
     });
 
@@ -1895,12 +1908,18 @@ describe('management slice', () => {
     const landListResolves = (land: Land[]) =>
       vi.mocked(fetchLandList).mockImplementation(({ address }) => {
         const payload = { land, authorizations: [], rentals: [] };
-        return {
-          type: 'land/fetchLandList/fulfilled',
-          payload,
-          meta: { arg: { address } },
-          unwrap: () => Promise.resolve(payload),
-        } as any;
+        return ((dispatch: (action: unknown) => void) => {
+          dispatch({
+            type: 'land/fetchLandList/pending',
+            meta: { arg: { address }, requestId: 'r' },
+          });
+          dispatch({
+            type: 'land/fetchLandList/fulfilled',
+            payload,
+            meta: { arg: { address }, requestId: 'r' },
+          });
+          return { unwrap: () => Promise.resolve(payload) };
+        }) as any;
       });
 
     beforeEach(() => {
@@ -2002,11 +2021,11 @@ describe('management slice', () => {
         });
       });
 
-      describe('when the state is cleared while the fetch is in flight', () => {
+      describe('when the account changes while the fetch is in flight', () => {
         beforeEach(async () => {
           vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
           const pending = store.dispatch(fetchLandProjects());
-          store.dispatch(actions.clearState());
+          store.dispatch(accountChanged());
           await pending;
         });
 

@@ -3,11 +3,13 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Dispatch } from '@reduxjs/toolkit';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import { useAuth } from '/@/hooks/useAuth';
 import { LandType, RoleType, type Land } from '/@/lib/land';
 import { fetchLandList } from '/@/modules/store/land/slice';
+import { actions as managementActions } from '/@/modules/store/management';
 import { fetchLandProjects } from '/@/modules/store/management/slice';
 import { toLandProject } from '/@/modules/store/management/utils';
 import { en } from '/@/modules/store/translation/locales';
@@ -53,6 +55,7 @@ function renderPage(path: string, lands: Land[]) {
     wallet: '0x1234567890123456789012345678901234567890',
   } as unknown as ReturnType<typeof useAuth>);
   const store = createTestStore();
+  store.dispatch(fetchLandList.pending('r', { address: '' }));
   store.dispatch(
     fetchLandList.fulfilled({ land: lands, authorizations: [], rentals: [] }, 'r', { address: '' }),
   );
@@ -106,12 +109,13 @@ describe('LandDetailPage', () => {
   });
 
   describe('when the owner transfers the LAND and it leaves the list', () => {
-    it('should keep the transfer dialog open over the empty state', () => {
+    it('should keep the transfer dialog open over the empty state', async () => {
       const store = renderPage('/manage/land/96%2C15/details', [parcel(RoleType.OWNER)]);
       fireEvent.click(screen.getByRole('button', { name: 'Options for Land Name' }));
       fireEvent.click(screen.getByRole('menuitem', { name: 'Transfer' }));
 
       act(() => {
+        store.dispatch(fetchLandList.pending('r', { address: '' }));
         store.dispatch(
           fetchLandList.fulfilled({ land: [], authorizations: [], rentals: [] }, 'r', {
             address: '',
@@ -120,7 +124,27 @@ describe('LandDetailPage', () => {
       });
 
       expect(screen.getByRole('dialog').textContent).toBe('transferring Land Name');
-      expect(screen.getByText('This LAND is no longer in your list.')).toBeTruthy();
+      expect(await screen.findByText('This LAND is no longer in your list.')).toBeTruthy();
+    });
+  });
+
+  describe('when a LAND is opened again with its list already loaded', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should refetch the list while keeping the LAND on screen', () => {
+      const refetch = vi
+        .spyOn(managementActions, 'fetchLandProjects')
+        .mockImplementation(
+          (() => (dispatch: Dispatch) => dispatch(fetchLandProjects.pending('refetch'))) as never,
+        );
+
+      const store = renderPage('/manage/land/96%2C15/details', [parcel(RoleType.OWNER)]);
+
+      expect(refetch).toHaveBeenCalledTimes(1);
+      expect(store.getState().management.lands.status).toBe('loading');
+      expect(screen.getByRole('heading', { level: 1, name: 'Manage - Land Name' })).toBeTruthy();
     });
   });
 
@@ -154,11 +178,11 @@ describe('LandDetailPage', () => {
   });
 
   describe('when the LAND is no longer in the list', () => {
-    it('should say so and offer the way back', () => {
+    it('should say so once the refetch settles, and offer the way back', async () => {
       renderPage('/manage/land/unknown/details', [parcel(RoleType.OWNER)]);
 
       expect(
-        screen.getByRole('heading', { name: 'This LAND is no longer in your list.' }),
+        await screen.findByRole('heading', { name: 'This LAND is no longer in your list.' }),
       ).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Back to Manage' })).toBeTruthy();
     });

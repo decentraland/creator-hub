@@ -10,6 +10,7 @@ import { createTestStore } from '../../../../tests/utils/testStore';
 import type * as ManagementUtils from '../management/utils';
 import { fetchAllDeployedWorlds } from '../management/utils';
 import { actions as managementActions } from '../management';
+import { accountChanged } from '../account';
 import { actions, fetchAnalytics, initialState, selectors } from './slice';
 
 const TEST_ADDRESS = '0x123abc';
@@ -117,6 +118,25 @@ describe('placeAnalytics slice', () => {
     });
   });
 
+  describe('when the account changes while a fetch is in flight', () => {
+    beforeEach(async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+      store.dispatch(actions.togglePinnedPlace(BANANARAMA.placeId));
+      const late = store.dispatch(fetchAnalytics());
+      store.dispatch(accountChanged());
+      await late;
+    });
+
+    it("should drop the previous account's places, pins and late answer", () => {
+      const state = store.getState().placeAnalytics;
+      expect(state.places).toEqual([]);
+      expect(state.metricsByPlaceId).toEqual({});
+      expect(state.pinnedPlaceIds).toEqual([]);
+      expect(state.status).toBe('idle');
+    });
+  });
+
   describe('when a fetch is already in flight', () => {
     beforeEach(() => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
@@ -146,6 +166,7 @@ describe('placeAnalytics slice', () => {
         exportedAt: EXPORTED_AT,
         places: SNAPSHOT.places,
         metricsByPlaceId: SNAPSHOT.metricsByPlaceId,
+        requestId: expect.any(String),
         status: 'succeeded',
       });
     });
