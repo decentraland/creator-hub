@@ -176,7 +176,7 @@ export function Deploy(props: Props) {
   }, [deployment?.status, previousStep, onBack, onClose]);
 
   const jumpInLocation = useMemo(() => {
-    const [x, y] = parseCoords(project.scene.base);
+    const [x, y] = parseCoords(deployment?.info.baseParcel ?? project.scene.base);
     const world =
       deployment?.info.isWorld && project.worldConfiguration
         ? project.worldConfiguration.name
