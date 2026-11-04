@@ -40,6 +40,16 @@ describe('AI settings agent card', () => {
     vi.restoreAllMocks();
   });
 
+  describe('when the window gets focus back', () => {
+    it('should check the agents again, since a terminal sign-in or sign-out happens outside the app', async () => {
+      renderWith(claude);
+      await screen.findByText('modal.app_settings.fields.ai_connect.connected');
+      const callsBefore = vi.mocked(ai.detectProviders).mock.calls.length;
+      fireEvent.focus(window);
+      expect(ai.detectProviders).toHaveBeenCalledTimes(callsBefore + 1);
+    });
+  });
+
   describe('when the agent asked the user to sign in', () => {
     beforeEach(() => {
       renderWith({ ...claude, needsLogin: true });

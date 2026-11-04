@@ -45,6 +45,7 @@ import { useCliSignIn } from '/@/hooks/useCliSignIn';
 
 import type { AiMessage, AiPromptData, AiSessionMeta } from '/@/modules/store/ai/types';
 import { WarningCircleIcon } from '../Icons';
+import { SignInCodeField } from '../SignInCodeField';
 import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
@@ -491,6 +492,7 @@ export function ChatView(props: ChatViewProps) {
     signIn,
     start: handleSignIn,
     cancel: handleCancelSignIn,
+    submitCode: handleSubmitSignInCode,
   } = useCliSignIn(provider, onRecheck);
 
   useEffect(() => {
@@ -672,6 +674,9 @@ export function ChatView(props: ChatViewProps) {
                 <span>{t('editor.ai.setup.signin_browser')}</span>
                 <CommandLine>{signIn.url}</CommandLine>
               </SetupStep>
+            )}
+            {signIn.busy && signIn.url !== null && signIn.acceptsCode && (
+              <SignInCodeField onSubmit={handleSubmitSignInCode} />
             )}
             {signIn.error !== null && <ErrorRow>{signIn.error}</ErrorRow>}
             <SetupDivider />

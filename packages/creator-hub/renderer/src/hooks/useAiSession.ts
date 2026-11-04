@@ -62,6 +62,17 @@ export function useAiSession(
     };
   }, [enabled, dispatch]);
 
+  // Billing mode decides whether an agent's own sign-in counts (a signed-out CLI still runs
+  // turns billed to an API key), so flipping it in Settings must re-detect, or the panel keeps
+  // offering an agent whose every turn now fails.
+  const apiKeyFromEnv = useSelector(state => state.workspace.settings?.useApiKeyFromEnv ?? false);
+  const prevApiKeyFromEnv = useRef(apiKeyFromEnv);
+  useEffect(() => {
+    if (prevApiKeyFromEnv.current === apiKeyFromEnv) return;
+    prevApiKeyFromEnv.current = apiKeyFromEnv;
+    if (enabled) dispatch(aiActions.fetchProviders());
+  }, [enabled, apiKeyFromEnv, dispatch]);
+
   // Killing the CLI child when the assistant is turned OFF mid-turn (not on navigate-away —
   // that leaves the turn to finish and reconciles on return, above). A running child edits
   // files with bypassPermissions, so a disable must stop it, not just hide the UI.

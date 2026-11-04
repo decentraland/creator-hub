@@ -4,61 +4,139 @@
   padding-bottom: 32px;
 }
 
-.AnalyticsDetailPage .Header {
+.AnalyticsDetailPage .DetailHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
 }
 
-.AnalyticsDetailPage .Header .Title {
+.AnalyticsDetailPage .DetailHeader .Title {
   margin: 0;
+}
+
+.AnalyticsDetailPage .DetailHeader .ExportAction {
+  display: flex;
+  align-items: center;
+  height: 48px;
+}
+
+.AnalyticsDetailPage .HeaderTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.AnalyticsDetailPage .ExportedAt {
+  color: var(--dcl-silver);
+  font-size: var(--type-h7-regular-size);
+  font-weight: var(--type-h7-regular-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h7-regular-letter-spacing);
 }
 
 .AnalyticsDetailPage .Content {
   display: flex;
   align-items: flex-start;
-  gap: 32px;
+  gap: 40px;
 }
 
 .AnalyticsDetailPage .Metrics {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 40px;
   flex: 1 1 auto;
   min-width: 0;
 }
 
 .AnalyticsDetailPage .TabsBar {
   display: flex;
+  flex-wrap: wrap-reverse;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  border-bottom: 1px solid var(--dark-gray);
+  min-height: 40px;
+  border-bottom: 1px solid var(--palette-whiteTransparent-soft);
 }
 
 .AnalyticsDetailPage .TabsBar .MuiTabs-root {
-  min-height: 48px;
+  min-height: 40px;
+  align-self: flex-end;
+  border-bottom: none;
 }
 
-/*
- * Uppercased in CSS rather than in the copy, so the accessible name and the
- * locales that have no case (zh) are left alone.
- */
+.AnalyticsDetailPage .TabsBar .MuiTabs-flexContainer {
+  gap: 40px;
+}
+
 .AnalyticsDetailPage .TabsBar .MuiTab-root {
+  min-width: 0;
+  min-height: 40px;
+  padding: 10px 4px;
+  color: var(--dcl-silver);
+  font-size: var(--type-h6-semi-caps-size);
+  font-weight: var(--type-h6-semi-caps-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h6-semi-caps-letter-spacing);
   text-transform: uppercase;
+}
+
+.AnalyticsDetailPage .TabsBar .MuiTab-root:hover {
+  background: var(--palette-whiteTransparent-subtle);
+}
+
+.AnalyticsDetailPage .TabsBar .MuiTab-root.Mui-selected {
+  color: var(--palette-neutral-softWhite);
+}
+
+.AnalyticsDetailPage .TabsBar .MuiTab-root:focus-visible {
+  outline: 2px solid var(--mui-palette-info-light);
+  outline-offset: -2px;
+}
+
+.AnalyticsDetailPage .TabsBar .MuiTabs-indicator {
+  height: 2px;
+  background: var(--palette-neutral-softWhite);
 }
 
 .AnalyticsDetailPage .DateRange {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 8px;
+  gap: 10px;
+  margin-left: auto;
 }
 
-.AnalyticsDetailPage .DateRange .MuiTypography-root {
-  color: var(--secondary-text);
+.AnalyticsDetailPage .DateRange > .MuiTypography-root {
+  color: var(--dcl-silver);
+  font-size: var(--type-h6-regular-size);
+  font-weight: var(--type-h6-regular-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h6-regular-letter-spacing);
   white-space: nowrap;
+}
+
+.AnalyticsDetailPage .DateRange .Select {
+  padding: 10px;
+  border-radius: var(--mui-shape-borderRadius);
+}
+
+.AnalyticsDetailPage .DateRange .Select div[role="combobox"] {
+  color: var(--palette-neutral-softWhite);
+  font-size: var(--type-h7-regular-size);
+  font-weight: var(--type-h7-regular-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h7-regular-letter-spacing);
+}
+
+.AnalyticsDetailPage .DateRange .Select div[role="combobox"]:focus-visible {
+  outline: 2px solid var(--mui-palette-info-light);
+  outline-offset: 2px;
+}
+
+.AnalyticsDetailPage .DateRange .Select svg {
+  color: var(--dcl-silver);
+  font-size: 16px;
 }
 
 .AnalyticsDetailPage .ErrorContainer {
