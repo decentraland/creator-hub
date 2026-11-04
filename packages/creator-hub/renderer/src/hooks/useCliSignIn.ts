@@ -9,10 +9,18 @@ export interface CliSignInState {
   busy: boolean;
   message: string;
   url: string | null;
+  /** Whether the login also takes the code shown by `url`'s page. */
+  acceptsCode: boolean;
   error: string | null;
 }
 
-const IDLE: CliSignInState = { busy: false, message: '', url: null, error: null };
+const IDLE: CliSignInState = {
+  busy: false,
+  message: '',
+  url: null,
+  acceptsCode: false,
+  error: null,
+};
 
 // Drives a provider CLI login: it streams the auth URL/status while `<provider> login` runs, and
 // resets cleanly when the user cancels (the kill rejects the promise, so an expected cancel must
@@ -20,41 +28,46 @@ const IDLE: CliSignInState = { busy: false, message: '', url: null, error: null 
 // settings "Connect" section so both behave identically.
 export function useCliSignIn(provider: AiProvider, onSignedIn?: () => void) {
   const [signIn, setSignIn] = useState<CliSignInState>(IDLE);
-  const cancelled = useRef(false);
+  // Bumped by every start and cancel: a cancelled attempt still settles later (the kill rejects
+  // it, or npm finishes first), and must neither surface a scary "exited with code" error nor
+  // reset the state of a retry the user started meanwhile.
+  const attempt = useRef(0);
 
   const start = useCallback(async () => {
-    cancelled.current = false;
-    setSignIn({
-      busy: true,
-      message: t('editor.ai.setup.signin_starting'),
-      url: null,
-      error: null,
-    });
+    const mine = ++attempt.current;
+    setSignIn({ ...IDLE, busy: true, message: t('editor.ai.setup.signin_starting') });
     try {
       await aiPreload.signInCli(provider, event => {
+        if (attempt.current !== mine) return;
         setSignIn(s =>
           event.type === 'auth'
-            ? { ...s, url: event.url, message: t('editor.ai.setup.signin_browser') }
+            ? {
+                ...s,
+                url: event.url,
+                acceptsCode: event.acceptsCode,
+                message: t('editor.ai.setup.signin_browser'),
+              }
             : { ...s, message: event.message },
         );
       });
+      if (attempt.current !== mine) return;
       setSignIn(IDLE);
       onSignedIn?.();
     } catch (e) {
-      setSignIn({
-        busy: false,
-        message: '',
-        url: null,
-        error: cancelled.current ? null : e instanceof Error ? e.message : String(e),
-      });
+      if (attempt.current !== mine) return;
+      setSignIn({ ...IDLE, error: e instanceof Error ? e.message : String(e) });
     }
   }, [provider, onSignedIn]);
 
   const cancel = useCallback(() => {
-    cancelled.current = true;
+    attempt.current++;
     void aiPreload.cancelSignInCli();
     setSignIn(IDLE);
   }, []);
 
-  return { signIn, start, cancel };
+  const submitCode = useCallback((code: string) => {
+    void aiPreload.submitSignInCode(code);
+  }, []);
+
+  return { signIn, start, cancel, submitCode };
 }

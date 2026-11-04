@@ -149,6 +149,9 @@
         "signin_cancel": "取消登录",
         "signin_starting": "正在开始登录…",
         "signin_browser": "在浏览器中完成登录后返回。",
+        "signin_code_hint": "浏览器没有带你回到这里？打开上面的链接并登录，然后粘贴页面上显示的代码。",
+        "signin_code_placeholder": "粘贴代码",
+        "signin_code_submit": "提交代码",
         "manual_title": "偏好使用终端？自行安装并登录：",
         "recheck": "重新检查",
         "ready": "就绪",
@@ -158,7 +161,7 @@
         "alt_copied": "已复制",
         "alt_note": "仅限本地主机。每次 Creator Hub 重启时 URL 和令牌都会更改。",
         "install_guide": "如果无效，请按照 {provider} 安装指南操作",
-        "desktop_detected": "已安装 Claude Desktop，但助手需要 Claude Code（Anthropic 的终端工具）。Desktop 的登录状态不会与其共享，因此请安装 Claude Code 并登录一次：",
+        "desktop_detected": "已安装 Claude Desktop，但助手需要 Claude Code（Anthropic 的终端工具）。Desktop 的登录状态不会与其共享，因此请登录 Claude Code 一次。",
         "gemini_plan_note": "Gemini CLI 现在仅支持付费 Gemini API 密钥或 Gemini Code Assist Standard/Enterprise 许可证。",
         "needs_login_status": "需要登录",
         "needs_login_title": "{provider} 要求你登录",
@@ -616,6 +619,7 @@
           "connected": "已连接",
           "sign_in": "登录",
           "sign_out": "退出登录",
+          "sign_out_shared": "这也会让你在这台电脑上的其他地方（桌面应用、编辑器扩展、终端）退出 {agent}。",
           "cancel": "取消",
           "via_terminal": "通过终端",
           "install": "安装",
@@ -1237,12 +1241,35 @@
         "description": "了解首次访问后再次回访的用户占比。",
         "platforms": {
           "title": "平台",
-          "description": "你的 60 天滚动平均值，按移动端和桌面端对比。"
+          "description": "你的 {days} 天滚动平均值，按移动端和桌面端对比。",
+          "tooltips": {
+            "all": "所有新用户的 7 日留存，不区分所用客户端。",
+            "desktop": "首次通过桌面客户端访问的新用户的 7 日留存。",
+            "mobile": "首次通过移动客户端访问的新用户的 7 日留存。"
+          }
+        },
+        "day_3": {
+          "title": "3 日留存",
+          "description": "首次访问后 3 天内回访的新用户占比，按移动端和桌面端对比。",
+          "tooltips": {
+            "all": "所有新用户的 3 日留存，不区分所用客户端。",
+            "desktop": "首次通过桌面客户端访问的新用户的 3 日留存。",
+            "mobile": "首次通过移动客户端访问的新用户的 3 日留存。"
+          }
+        },
+        "day_3_cohort": {
+          "title": "按首访周划分的 3 日留存",
+          "description": "首次访问后的 3 天内至少回访过一次的新用户占比，按首次进入你的 Place 的那一周分组。",
+          "benchmark": "{value}% 3 日留存目标"
         },
         "day_7_cohort": {
           "title": "按首访周划分的 7 日留存",
-          "description": "首次访问后的 7 天内至少回访过一次的用户占比，按首次进入你的 Place 的那一周分组。",
-          "benchmark": "{value}% 7 日留存目标"
+          "description": "首次访问后的 7 天内至少回访过一次的新用户占比，按首次进入你的 Place 的那一周分组。",
+          "benchmark": "{value}% 7 日留存目标",
+          "settling": {
+            "tooltip": "仍在统计中：该群组开始于不到 14 天前，其回访仍在计数。",
+            "caption": "点状线：最近 14 天内的群组，其回访仍在计数。"
+          }
         },
         "churn": {
           "title": "每周流失率",
@@ -1329,6 +1356,10 @@
         "label": "独立访问量",
         "tooltip": "访问过你的 Place 的不同用户数，每人只计一次。"
       },
+      "new_players": {
+        "label": "Decentraland 新玩家",
+        "tooltip": "首次进入 Decentraland、且第一天大部分时间都在你的 Place 中度过的钱包。"
+      },
       "new_users": {
         "label": "新用户",
         "tooltip": "首次访问你的 Place 的用户。"
@@ -1341,9 +1372,13 @@
         "label": "收入",
         "tooltip": "在你的 Place 中获得的 MANA。"
       },
+      "day_3_retention": {
+        "label": "3 日留存",
+        "tooltip": "首次访问后 3 天内回访你的 Place 的新用户占比。"
+      },
       "day_7_retention": {
         "label": "7 日留存",
-        "tooltip": "首次访问后的 7 天内至少回访过一次的新用户占比。"
+        "tooltip": "首次访问后 7 天内回访你的 Place 的新用户占比。"
       },
       "median_playtime": {
         "label": "游玩时长中位数",

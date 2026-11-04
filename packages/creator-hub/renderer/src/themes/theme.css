@@ -38,6 +38,8 @@
   --ai-input-bg: #28252d;
   --ai-warning-bg: rgba(244, 130, 33, 0.16);
   --dcl-silver: #a09ba8;
+  --palette-neutral-softWhite: #fcfcfc;
+  --chart-reference: #a99afe;
 
   /* Share */
   --facebook: #4267b2;
@@ -210,6 +212,7 @@
   --brightness: brightness(100);
 
   --shape-borderRadiusMedium: 8px;
+  --shape-borderRadiusLarge: 12px;
   --shape-borderRadiusXLarge: 16px;
   --shape-borderRadiusXXLarge: 24px;
   --shadow-tooltip: 0 2px 3px rgba(0, 0, 0, 0.25);

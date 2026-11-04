@@ -126,7 +126,7 @@ async function runShellProbe(): Promise<void> {
         shell,
         [
           '-ilc',
-          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
+          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@X=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CODEX_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
         ],
         { stdio: ['ignore', 'pipe', 'ignore'], detached: true },
       );
@@ -156,6 +156,7 @@ async function runShellProbe(): Promise<void> {
   // Capture the shell's API keys for API-key billing (in memory only; never logged).
   shellApiKeys.ANTHROPIC_API_KEY = /@@A=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.OPENAI_API_KEY = /@@O=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.CODEX_API_KEY = /@@X=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.CURSOR_API_KEY = /@@C=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.GEMINI_API_KEY = /@@G=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.GOOGLE_API_KEY = /@@GA=(.*?)@@/s.exec(out)?.[1] || undefined;
@@ -254,6 +255,80 @@ export function getCliVersion(bin: string): string | undefined {
   return version;
 }
 
+const signedOutCache = new Map<string, boolean>();
+const STATUS_TIMEOUT_MS = 5000;
+
+/** Whether `provider`'s CLI at `bin` reports itself signed out. Only a clear signed-out answer
+ *  counts, so a probe that times out, or an older CLI without the subcommand, leaves the agent
+ *  usable. Async, unlike the version probe, so a slow credential store can't freeze the main
+ *  process. */
+export async function cliReportsSignedOut(bin: string, provider: AiProvider): Promise<boolean> {
+  const cached = signedOutCache.get(bin);
+  if (cached !== undefined) return cached;
+  const { statusArgs, signedOutPattern } = CLI_SPECS[provider];
+  if (statusArgs === undefined || signedOutPattern === undefined) return false;
+  const signedOut = await new Promise<boolean>(resolve => {
+    let out = '';
+    let child: ChildProcess;
+    try {
+      // Same env as a subscription turn, so the probe reads the credentials the turn will use.
+      child = crossSpawn(bin, statusArgs, { env: childEnv(false) });
+    } catch {
+      resolve(false);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      child.kill();
+      resolve(false);
+    }, STATUS_TIMEOUT_MS);
+    child.stdout?.on('data', chunk => (out += String(chunk)));
+    child.stderr?.on('data', chunk => (out += String(chunk)));
+    child.on('error', () => {
+      clearTimeout(timeout);
+      resolve(false);
+    });
+    child.on('close', code => {
+      clearTimeout(timeout);
+      resolve(code !== 0 && signedOutPattern.test(out));
+    });
+  });
+  signedOutCache.set(bin, signedOut);
+  return signedOut;
+}
+
+// Codex also bills to CODEX_API_KEY, which the turn keeps alongside OPENAI_API_KEY.
+const EXTRA_API_KEY_ENV: Partial<Record<AiProvider, string[]>> = { codex: ['CODEX_API_KEY'] };
+
+/** Whether turns will bill to an API key: the user chose it AND a key is set, as aiSend decides. */
+function billsToApiKey(provider: AiProvider, apiKeyFromEnv: boolean): boolean {
+  if (!apiKeyFromEnv) return false;
+  const names = [AI_CLI_COMMANDS[provider].apiKeyEnv, ...(EXTRA_API_KEY_ENV[provider] ?? [])];
+  const fromShell = shellApiKeys as Record<string, string | undefined>;
+  return names.some(name => (process.env[name] ?? fromShell[name] ?? '') !== '');
+}
+
+function statusChecked(provider: AiProvider, apiKeyFromEnv: boolean): boolean {
+  // A signed-out CLI can still run turns billed to an API key, so don't block on it then.
+  return CLI_SPECS[provider].statusArgs !== undefined && !billsToApiKey(provider, apiKeyFromEnv);
+}
+
+/** Signed in per the CLI's own status command where it has one (probed beforehand by
+ *  probeSignIn); otherwise a PATH install is trusted and an app-managed one needs the marker
+ *  our sign-in flow wrote. */
+function isCliSignedIn(
+  bin: string,
+  provider: AiProvider,
+  managed: boolean,
+  apiKeyFromEnv: boolean,
+): boolean {
+  // Turns billed to an API key need no sign-in, whoever installed the CLI.
+  if (billsToApiKey(provider, apiKeyFromEnv)) return true;
+  if (statusChecked(provider, apiKeyFromEnv)) {
+    return signedOutCache.get(bin) !== true;
+  }
+  return managed ? isManagedSignedIn(provider) : true;
+}
+
 // The CLI relays an API 400 as a raw JSON blob when the installed version is too old for the
 // requested model (a Fable/newer model set as the user's own CLI default — the Creator Hub
 // never selects it, it only omits `--model` and lets the CLI use its default). Swap that blob
@@ -305,6 +380,7 @@ const API_KEY_ENV = new Set([
 const shellApiKeys: {
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
+  CODEX_API_KEY?: string;
   CURSOR_API_KEY?: string;
   GEMINI_API_KEY?: string;
   GOOGLE_API_KEY?: string;
@@ -339,6 +415,8 @@ export function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
     for (const [k, v] of Object.entries(shellApiKeys)) {
       if (v !== undefined && v !== '' && env[k] === undefined) env[k] = v;
     }
+    // `codex exec` reads only CODEX_API_KEY; with OPENAI_API_KEY alone it sends no key at all.
+    if (!env.CODEX_API_KEY && env.OPENAI_API_KEY) env.CODEX_API_KEY = env.OPENAI_API_KEY;
   }
   env.PATH = [...(env.PATH ?? '').split(path.delimiter), ...searchDirs()]
     .filter(Boolean)
@@ -964,13 +1042,22 @@ export function isClaudeDesktopInstalled(appDataDir: string): boolean {
   return fs.existsSync(path.join(appDataDir, 'Claude'));
 }
 
-const scan = (): AiProviderInfo[] =>
+/** Run each found CLI's status command ahead of the scan, which reads the results. */
+async function probeSignIn(apiKeyFromEnv: boolean): Promise<void> {
+  await Promise.all(
+    (Object.keys(PROVIDERS) as AiProvider[]).map(async id => {
+      const bin = usableBin(findExecutable(PROVIDERS[id].binNames), id);
+      if (statusChecked(id, apiKeyFromEnv) && bin !== null) await cliReportsSignedOut(bin, id);
+    }),
+  );
+}
+
+const scan = (apiKeyFromEnv: boolean): AiProviderInfo[] =>
   (Object.keys(PROVIDERS) as AiProvider[]).map(id => {
     const def = PROVIDERS[id];
     const bin = usableBin(findExecutable(def.binNames), id);
     const managed = bin !== null && bin.startsWith(getManagedBinDir());
-    const signedIn = managed ? isManagedSignedIn(id) : true;
-    const available = bin !== null && signedIn;
+    const available = bin !== null && isCliSignedIn(bin, id, managed, apiKeyFromEnv);
     return {
       id: def.id,
       label: def.label,
@@ -994,13 +1081,16 @@ const scan = (): AiProviderInfo[] =>
 
 // Cheap scan first; only pay for the login shell when something is missing — which is
 // also exactly when the user presses Recheck after installing.
-export async function detectProviders(): Promise<AiProviderInfo[]> {
+export async function detectProviders(apiKeyFromEnv = false): Promise<AiProviderInfo[]> {
   cachedDirs = null; // an explicit check re-reads the disk: they may have just installed
   cliVersionCache.clear(); // ...and may have just updated the CLI — re-probe its version
-  const first = scan();
+  signedOutCache.clear(); // ...or signed in or out since the last check
+  await probeSignIn(apiKeyFromEnv);
+  const first = scan(apiKeyFromEnv);
   if (first.every(p => p.available)) return first;
   await loadShellDirs();
-  return scan();
+  await probeSignIn(apiKeyFromEnv); // the shell may have revealed a different binary or a key
+  return scan(apiKeyFromEnv);
 }
 
 let current: { child: ChildProcess; turnId: string; done: boolean } | null = null;
