@@ -11,6 +11,7 @@ enum Method {
   UPDATE_SDK = 'update_sdk',
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
   INSTALL_MULTIPLAYER = 'install_multiplayer',
+  UNINSTALL_MULTIPLAYER = 'uninstall_multiplayer',
   GET_PROFILES = 'get_profiles',
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
@@ -37,6 +38,7 @@ type Params = {
   [Method.UPDATE_SDK]: Record<string, never>;
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
   [Method.INSTALL_MULTIPLAYER]: Record<string, never>;
+  [Method.UNINSTALL_MULTIPLAYER]: Record<string, never>;
   [Method.GET_PROFILES]: { addresses: string[] };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
@@ -67,6 +69,7 @@ type Result = {
   [Method.UPDATE_SDK]: { ok: boolean };
   [Method.SET_UI_DESIGNER_MODE]: void;
   [Method.INSTALL_MULTIPLAYER]: { ok: boolean };
+  [Method.UNINSTALL_MULTIPLAYER]: { ok: boolean };
   [Method.GET_PROFILES]: { profiles: ProfileSummary[] };
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
@@ -120,6 +123,14 @@ export class SceneClient extends RPC<Method, Params, Result> {
    */
   installMultiplayer = () => {
     return this.request('install_multiplayer', {});
+  };
+
+  /**
+   * Put the scene back on the latest SDK release, replacing the authoritative-server
+   * build. Parameterless for the same reason as `installMultiplayer`.
+   */
+  uninstallMultiplayer = () => {
+    return this.request('uninstall_multiplayer', {});
   };
 
   /**

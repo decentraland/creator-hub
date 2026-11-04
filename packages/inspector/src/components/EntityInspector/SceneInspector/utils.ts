@@ -195,19 +195,23 @@ export async function validateThumbnailPath(path: string): Promise<ValidationErr
 export const MIDDAY_SECONDS = 43200;
 export const MIDNIGHT_SECONDS = 86400;
 
+export type MultiplayerSdkChange = 'install' | 'uninstall';
+
 /**
- * The component patch a Multiplayer Server toggle produces, and whether the host
- * must install the authoritative-server SDK first.
+ * The component patch a Multiplayer Server toggle produces, and which SDK swap the host
+ * must run: `install` puts the authoritative-server SDK in, `uninstall` puts the latest
+ * release back. Switching on waits for the install (the flag is written by
+ * `enableMultiplayerWithInstall`); switching off writes the flag at once and then swaps.
  */
 export function nextMultiplayerValue(
   enabled: boolean,
   authServerSupported: boolean,
-): { install: boolean; patch: Partial<EditorComponentsTypes['Scene']> | null } {
+): { sdk: MultiplayerSdkChange | null; patch: Partial<EditorComponentsTypes['Scene']> | null } {
   if (!enabled) {
-    return { install: false, patch: { multiplayerServer: false } };
+    return { sdk: authServerSupported ? 'uninstall' : null, patch: { multiplayerServer: false } };
   }
-  if (authServerSupported) return { install: false, patch: { multiplayerServer: true } };
-  return { install: true, patch: null };
+  if (authServerSupported) return { sdk: null, patch: { multiplayerServer: true } };
+  return { sdk: 'install', patch: null };
 }
 
 /**
@@ -231,6 +235,26 @@ export async function enableMultiplayerWithInstall(
   }
   if (!ok) setEnabled(false);
   return ok;
+}
+
+/**
+ * Turn the Multiplayer Server off and put the latest SDK release back.
+ *
+ * The flag is written before the swap for the same reason as the install: a successful
+ * swap flips `authServerSupported` and reloads the iframe. It stays off when the swap
+ * fails, since the scene then simply keeps the auth-server SDK, which still runs a
+ * single-player scene; the caller reports the failure so the creator can retry.
+ */
+export async function disableMultiplayerWithUninstall(
+  setEnabled: (enabled: boolean) => void,
+  uninstall: () => Promise<{ ok: boolean } | undefined>,
+): Promise<boolean> {
+  setEnabled(false);
+  try {
+    return !!(await uninstall())?.ok;
+  } catch {
+    return false;
+  }
 }
 
 /** One entry per distinct address, in stored order and stored spelling, blanks dropped. */

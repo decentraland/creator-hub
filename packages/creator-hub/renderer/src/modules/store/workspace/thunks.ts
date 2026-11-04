@@ -108,11 +108,19 @@ export const updatePackages = createAsyncThunk(
   },
 );
 const MULTIPLAYER_PACKAGES = ['@dcl/sdk@auth-server', '@dcl/js-runtime@auth-server'];
+const LATEST_SDK_PACKAGES = ['@dcl/sdk@latest', '@dcl/js-runtime@latest'];
 
 export const installMultiplayerSdk = createAsyncThunk(
   'workspace/installMultiplayerSdk',
   async (project: Project, { dispatch }) => {
     await dispatch(installProject({ path: project.path, packages: MULTIPLAYER_PACKAGES })).unwrap();
+  },
+);
+
+export const uninstallMultiplayerSdk = createAsyncThunk(
+  'workspace/uninstallMultiplayerSdk',
+  async (project: Project, { dispatch }) => {
+    await dispatch(installProject({ path: project.path, packages: LATEST_SDK_PACKAGES })).unwrap();
   },
 );
 export const updateAvailableDependencyUpdates = createAsyncThunk(

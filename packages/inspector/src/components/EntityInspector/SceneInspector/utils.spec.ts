@@ -8,6 +8,7 @@ import type { SceneInput } from './types';
 import {
   containsAddress,
   dedupeAddresses,
+  disableMultiplayerWithUninstall,
   enableMultiplayerWithInstall,
   fromScene,
   getThumbnailWarnings,
@@ -168,16 +169,16 @@ describe('SceneInspector/utils', () => {
   });
 
   describe('nextMultiplayerValue', () => {
-    it('should keep the address list when switching off with the SDK present', () => {
+    it('should switch off and put the latest SDK back when the auth-server SDK is present', () => {
       expect(nextMultiplayerValue(false, true)).toEqual({
-        install: false,
+        sdk: 'uninstall',
         patch: { multiplayerServer: false },
       });
     });
 
-    it('should keep the address list when switching off without the SDK', () => {
+    it('should switch off without touching the SDK when it is already the latest release', () => {
       expect(nextMultiplayerValue(false, false)).toEqual({
-        install: false,
+        sdk: null,
         patch: { multiplayerServer: false },
       });
     });
@@ -191,13 +192,68 @@ describe('SceneInspector/utils', () => {
 
     it('should enable without installing when the SDK is already present', () => {
       expect(nextMultiplayerValue(true, true)).toEqual({
-        install: false,
+        sdk: null,
         patch: { multiplayerServer: true },
       });
     });
 
     it('should install and write nothing when the SDK is absent', () => {
-      expect(nextMultiplayerValue(true, false)).toEqual({ install: true, patch: null });
+      expect(nextMultiplayerValue(true, false)).toEqual({ sdk: 'install', patch: null });
+    });
+  });
+
+  describe('disableMultiplayerWithUninstall', () => {
+    it('should write the flag off before the swap answers, since that answer can arrive after the iframe reloads', async () => {
+      const writes: boolean[] = [];
+      let writesWhenUninstallStarted: boolean[] = [];
+      const uninstall = vi.fn(async () => {
+        writesWhenUninstallStarted = [...writes];
+        return { ok: true };
+      });
+
+      const ok = await disableMultiplayerWithUninstall(enabled => writes.push(enabled), uninstall);
+
+      expect(ok).toBe(true);
+      expect(writesWhenUninstallStarted).toEqual([false]);
+      expect(writes).toEqual([false]);
+    });
+
+    it('should leave the flag off and report failure when the host cannot swap the SDK', async () => {
+      const writes: boolean[] = [];
+
+      const ok = await disableMultiplayerWithUninstall(
+        enabled => writes.push(enabled),
+        async () => ({ ok: false }),
+      );
+
+      expect(ok).toBe(false);
+      expect(writes).toEqual([false]);
+    });
+
+    it('should leave the flag off and report failure when there is no host', async () => {
+      const writes: boolean[] = [];
+
+      const ok = await disableMultiplayerWithUninstall(
+        enabled => writes.push(enabled),
+        async () => undefined,
+      );
+
+      expect(ok).toBe(false);
+      expect(writes).toEqual([false]);
+    });
+
+    it('should leave the flag off and report failure when the request throws', async () => {
+      const writes: boolean[] = [];
+
+      const ok = await disableMultiplayerWithUninstall(
+        enabled => writes.push(enabled),
+        async () => {
+          throw new Error('rpc closed');
+        },
+      );
+
+      expect(ok).toBe(false);
+      expect(writes).toEqual([false]);
     });
   });
 

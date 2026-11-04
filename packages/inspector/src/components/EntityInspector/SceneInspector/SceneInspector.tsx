@@ -46,10 +46,12 @@ import {
   MIDDAY_SECONDS,
   containsAddress,
   dedupeAddresses,
+  disableMultiplayerWithUninstall,
   enableMultiplayerWithInstall,
   withoutAddress,
   validateThumbnailFile,
   validateThumbnailPath,
+  type MultiplayerSdkChange,
 } from './utils';
 import { SceneInfoInput } from './SceneInfoInput';
 import { ThumbnailPreview } from './ThumbnailPreview';
@@ -180,26 +182,37 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const authServerSupported = useMemo(() => getConfig().authServerSupported, []);
   const multiplayerStatusId = useId();
-  const [installingMultiplayer, setInstallingMultiplayer] = useState(false);
-  const [multiplayerInstallFailed, setMultiplayerInstallFailed] = useState(false);
+  const [multiplayerSdkChange, setMultiplayerSdkChange] = useState<MultiplayerSdkChange | null>(
+    null,
+  );
+  const [multiplayerSdkFailure, setMultiplayerSdkFailure] = useState<MultiplayerSdkChange | null>(
+    null,
+  );
+  const installingMultiplayer = multiplayerSdkChange !== null;
 
   const handleMultiplayerServerChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { install, patch } = nextMultiplayerValue(e.target.checked, authServerSupported);
+      const { sdk, patch } = nextMultiplayerValue(e.target.checked, authServerSupported);
 
-      if (!install) {
+      if (!sdk) {
         setComponentValue({ ...componentValue, ...(patch ?? {}) });
         return;
       }
 
-      setInstallingMultiplayer(true);
-      setMultiplayerInstallFailed(false);
-      const ok = await enableMultiplayerWithInstall(
-        multiplayerServer => setComponentValue(current => ({ ...current, multiplayerServer })),
-        async () => getSceneClient()?.installMultiplayer(),
-      );
-      setMultiplayerInstallFailed(!ok);
-      setInstallingMultiplayer(false);
+      setMultiplayerSdkChange(sdk);
+      setMultiplayerSdkFailure(null);
+      const setEnabled = (multiplayerServer: boolean) =>
+        setComponentValue(current => ({ ...current, multiplayerServer }));
+      const ok =
+        sdk === 'install'
+          ? await enableMultiplayerWithInstall(setEnabled, async () =>
+              getSceneClient()?.installMultiplayer(),
+            )
+          : await disableMultiplayerWithUninstall(setEnabled, async () =>
+              getSceneClient()?.uninstallMultiplayer(),
+            );
+      setMultiplayerSdkFailure(ok ? null : sdk);
+      setMultiplayerSdkChange(null);
     },
     [componentValue, setComponentValue, authServerSupported],
   );
@@ -477,16 +490,28 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             id={multiplayerStatusId}
             role="status"
           >
-            {installingMultiplayer && (
+            {multiplayerSdkChange === 'install' && (
               <Label
                 className="MultiplayerStatus"
                 text="Installing the multiplayer-server SDK…"
               />
             )}
-            {multiplayerInstallFailed && (
+            {multiplayerSdkChange === 'uninstall' && (
+              <Label
+                className="MultiplayerStatus"
+                text="Installing the latest SDK release…"
+              />
+            )}
+            {multiplayerSdkFailure === 'install' && (
               <Label
                 className="MultiplayerStatus error"
                 text="Couldn't install the multiplayer-server SDK package."
+              />
+            )}
+            {multiplayerSdkFailure === 'uninstall' && (
+              <Label
+                className="MultiplayerStatus error"
+                text="Couldn't install the latest SDK release. The multiplayer-server SDK is still installed."
               />
             )}
           </div>

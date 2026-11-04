@@ -224,6 +224,16 @@ export const slice = createSlice({
           }),
         );
       })
+      .addCase(workspaceActions.uninstallMultiplayerSdk.fulfilled, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'uninstallMultiplayerSdk',
+        );
+        state.notifications.push(
+          createGenericNotification('success', t('snackbar.generic.multiplayer_sdk_uninstalled'), {
+            requestId: 'uninstallMultiplayerSdk',
+          }),
+        );
+      })
       .addCase(
         workspaceActions.updateAvailableDependencyUpdates.fulfilled,
         (state, { meta, payload: { project, strategy } }) => {
