@@ -4,6 +4,7 @@ import { isServer } from '~system/EngineApi';
 import type { IPlayersHelper, ISDKHelpers } from './definitions';
 import { getComponents } from './definitions';
 import { createAdminToolkitUI } from './admin-toolkit-ui';
+import { initAdminToolkitServer } from './admin-toolkit-server';
 
 let adminToolkitEntity: Entity | null = null;
 let adminToolkitUiRoot: Entity | null = null;
@@ -18,16 +19,11 @@ export function createAdminToolkitSystem(
 ) {
   const { AdminTools } = getComponents(engine);
 
-  // The Admin Toolkit is a CLIENT-ONLY feature: it renders a React UI, opens a
-  // text-comms MessageBus, and calls the comms-gatekeeper scene-admin/scene-bans
-  // endpoints. SDK7 runs the SAME scene bundle on both the client and the headless
-  // authoritative server, so without this guard the toolkit also initializes
-  // server-side — where there is no UI to operate it and it only emits failing
-  // comms-gatekeeper requests and unsupported (legacy) `EngineApi.subscribe` calls.
-  // Resolve the runtime role once; the toolkit stays uninitialized until we know
-  // it is a client, and forever on the server. A failed query defaults to client
-  // behavior so the toolkit is never lost on a real client.
+  // SDK7 runs the same scene bundle on clients and on the headless authoritative
+  // server. The UI is client-only; the server only validates and applies admin
+  // commands. A failed role query defaults to client so the UI is never lost.
   let runsOnServer: boolean | undefined = undefined;
+  let serverInitialized = false;
   Promise.resolve()
     .then(() => isServer({}))
     .then(result => {
@@ -38,11 +34,18 @@ export function createAdminToolkitSystem(
     });
 
   return function adminToolkitSystem(_dt: number) {
-    // Skip while the runtime role is still unknown, and permanently on the server.
-    if (runsOnServer !== false) return;
+    if (runsOnServer === undefined) return;
 
     const adminToolkitEntities = Array.from(engine.getEntitiesWith(AdminTools));
     const hasAdminToolkit = adminToolkitEntities.length > 0;
+
+    if (runsOnServer) {
+      if (hasAdminToolkit && !serverInitialized) {
+        serverInitialized = true;
+        initAdminToolkitServer(engine, adminToolkitEntities[0][0], sdkHelpers);
+      }
+      return;
+    }
 
     // Create admin toolkit UI if the smart item exists and UI hasn't been created
     if (hasAdminToolkit && !adminToolkitEntity) {

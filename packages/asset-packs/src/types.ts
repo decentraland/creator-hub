@@ -1,4 +1,4 @@
-import type { Entity, PBAvatarBase, PBAvatarEquippedData, TransformType } from '@dcl/ecs';
+import type { Entity, ISchema, PBAvatarBase, PBAvatarEquippedData, TransformType } from '@dcl/ecs';
 import { BaseComponentNames } from './constants';
 
 export type AssetPackData = {
@@ -133,7 +133,22 @@ export type Component = {
 export type ISDKHelpers = {
   // SyncEntity helper to create network entities at runtime.
   syncEntity?: SyncEntitySDK;
+  messageBus?: MessageBusSDK;
+  // Registers message schemas on the authoritative-server room and returns it.
+  registerMessages?: RegisterMessagesSDK;
 };
+
+export type MessageBusSDK = {
+  on(message: string, cb: (payload: unknown, sender: string) => void): unknown;
+  emit(message: string, payload: Record<string, unknown>): void;
+};
+
+export type RoomSDK = {
+  send(type: string, data: unknown, options?: { to?: string[] }): Promise<void>;
+  onMessage(type: string, cb: (data: unknown, context?: { from: string }) => void): () => void;
+};
+
+export type RegisterMessagesSDK = (messages: Record<string, ISchema>) => RoomSDK;
 
 export type SyncEntitySDK = (
   entityId: Entity,

@@ -14,6 +14,7 @@ import {
   type IPlayersHelper,
   type ISDKHelpers,
 } from '../definitions';
+import { ADMIN_TOOLS_ENTITY } from '../admin-commands';
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
@@ -72,9 +73,6 @@ const ADMIN_ICONS = {
   },
 };
 
-// The editor starts using entities from [8001].
-const ADMIN_TOOLS_ENTITY = 8000 as Entity;
-
 function getAdminToolkitEntity(engine: IEngine) {
   const { AdminTools } = getComponents(engine);
   return Array.from(engine.getEntitiesWith(AdminTools))[0][0];
@@ -102,9 +100,6 @@ export async function fetchSceneAdmins() {
       canBeRemoved: !!$.canBeRemoved,
     }))
     .sort(a => (a.canBeRemoved ? 1 : -1));
-  if (adminDataInitialized) {
-    getAdminMessageBus().updateAdminList(sceneAdminsCache);
-  }
 }
 
 export async function fetchAndSyncSceneAdmins() {
@@ -135,28 +130,12 @@ export function getSmartItems(engine: IEngine) {
   return Array.from(adminToolkitComponent.smartItemsControl.smartItems ?? []);
 }
 
-function initTextAnnouncementSync(engine: IEngine) {
-  const { TextAnnouncements } = getComponents(engine);
-
-  TextAnnouncements.createOrReplace(state.adminToolkitUiEntity, {
-    text: '',
-    author: '',
-    id: '',
-  });
-}
-
 let adminDataInitialized = false;
-export async function initializeAdminData(
-  engine: IEngine,
-  sdkHelpers?: ISDKHelpers,
-  playersHelper?: IPlayersHelper,
-) {
+export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
   if (!adminDataInitialized) {
-    const { VideoControlState } = getComponents(engine);
+    const { VideoControlState, TextAnnouncements } = getComponents(engine);
 
     setAdminToolkitUiEntity(getAdminToolkitEntity(engine) ?? engine.addEntity());
-
-    initTextAnnouncementSync(engine);
 
     if (!VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
       VideoControlState.create(state.adminToolkitUiEntity);
@@ -164,19 +143,13 @@ export async function initializeAdminData(
 
     sdkHelpers?.syncEntity?.(
       state.adminToolkitUiEntity,
-      [VideoControlState.componentId],
+      [VideoControlState.componentId, TextAnnouncements.componentId],
       ADMIN_TOOLS_ENTITY,
     );
 
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
-    initAdminMessageBus(
-      engine,
-      sceneAdminsCache,
-      state.adminToolkitUiEntity,
-      playersHelper,
-      fetchSceneAdmins,
-    );
+    initAdminMessageBus(engine, state.adminToolkitUiEntity, sdkHelpers, fetchSceneAdmins);
 
     adminDataInitialized = true;
 
@@ -196,7 +169,7 @@ export function createAdminToolkitUI(
   // replace the scene's main UI. In a shared renderer the main UI's virtual
   // size wins, so the mobile size below only applies to scenes that set none.
   const uiRoot = engine.addEntity();
-  initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
+  initializeAdminData(engine, sdkHelpers).then(() => {
     // The smart item may have been removed while the admin data was loading.
     if (engine.getEntityState(uiRoot) === EntityState.Removed) return;
     console.log('createAdminToolkitUI - initialized');
