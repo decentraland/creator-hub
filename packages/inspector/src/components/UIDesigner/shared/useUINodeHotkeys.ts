@@ -4,16 +4,18 @@ import type { Entity } from '@dcl/ecs';
 
 import { useAppSelector } from '../../../redux/hooks';
 import { getSelectedNode } from '../../../redux/ui-designer';
+import { isAssetExplorerActive } from '../../../redux/ui';
 import { useUINodeActions } from './useUINodeActions';
 
 /** UI-Designer keyboard shortcuts (copy/paste/duplicate/delete), scoped to the panel. */
 export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
   const selectedNode = useAppSelector(getSelectedNode);
+  const assetExplorerActive = useAppSelector(isAssetExplorerActive);
   const { remove, duplicate } = useUINodeActions();
   const copiedRef = useRef<Entity | null>(null);
 
-  const state = useRef({ selectedNode, remove, duplicate });
-  state.current = { selectedNode, remove, duplicate };
+  const state = useRef({ selectedNode, remove, duplicate, assetExplorerActive });
+  state.current = { selectedNode, remove, duplicate, assetExplorerActive };
 
   useEffect(() => {
     const isEditable = (el: EventTarget | null): boolean => {
@@ -30,7 +32,8 @@ export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
       if (!container || container.offsetParent === null) return;
       if (isEditable(e.target)) return;
 
-      const { selectedNode, remove, duplicate } = state.current;
+      const { selectedNode, remove, duplicate, assetExplorerActive } = state.current;
+      if (assetExplorerActive) return;
       const mod = e.ctrlKey || e.metaKey;
       const key = e.key.toLowerCase();
 

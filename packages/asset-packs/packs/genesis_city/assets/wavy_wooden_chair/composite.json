@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/wavy_wooden_chair/wavy_wooden_chair.glb"
+          }
+        }
+      }
+    }
+  ]
+}

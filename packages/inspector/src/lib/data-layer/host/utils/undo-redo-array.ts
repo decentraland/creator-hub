@@ -3,6 +3,9 @@ import type { UndoRedo } from '../undo-redo-provider';
 const ONE_MB_IN_BYTES = 1_048_576;
 const ONE_GB_IN_BYTES = ONE_MB_IN_BYTES * 1024;
 
+/** The undo history's default size cap, in bytes of file content. */
+export const DEFAULT_UNDO_MAX_SIZE = ONE_MB_IN_BYTES * 100;
+
 export function UndoRedoArray(maxEntries: number, maxSize: number = ONE_GB_IN_BYTES) {
   const valueList: UndoRedo[] = [];
   let memorySize: number = 0;
@@ -26,6 +29,8 @@ export function UndoRedoArray(maxEntries: number, maxSize: number = ONE_GB_IN_BY
 
   return {
     push(value: UndoRedo) {
+      if (valueSize(value) >= maxSize) return undefined;
+
       // If we reach the max entries, remove the first element and calc size
       while (valueList.length >= maxEntries) {
         const valToRemove = valueList.shift();

@@ -18,6 +18,7 @@ export interface UiState {
   uiDesignerTool: UIDesignerTool;
   uiDesignerSnapEnabled: boolean;
   sceneRunIntent: boolean;
+  assetExplorerActive: boolean;
 }
 
 export const initialState: UiState = {
@@ -34,6 +35,7 @@ export const initialState: UiState = {
   uiDesignerTool: UIDesignerTool.FREE,
   uiDesignerSnapEnabled: true,
   sceneRunIntent: false,
+  assetExplorerActive: false,
 };
 
 export const appState = createSlice({
@@ -94,6 +96,9 @@ export const appState = createSlice({
     setSceneRunIntent: (state, { payload }: PayloadAction<{ running: boolean }>) => {
       state.sceneRunIntent = payload.running;
     },
+    setAssetExplorerActive: (state, { payload }: PayloadAction<{ active: boolean }>) => {
+      state.assetExplorerActive = payload.active;
+    },
   },
 });
 
@@ -112,6 +117,7 @@ export const {
   setUIDesignerTool,
   setUIDesignerSnap,
   setSceneRunIntent,
+  setAssetExplorerActive,
 } = appState.actions;
 
 // Selectors
@@ -133,6 +139,7 @@ export const getUIDesignerTool = (state: RootState): UIDesignerTool => state.ui.
 export const getUIDesignerSnapEnabled = (state: RootState): boolean =>
   state.ui.uiDesignerSnapEnabled;
 export const getSceneRunIntent = (state: RootState): boolean => state.ui.sceneRunIntent;
+export const isAssetExplorerActive = (state: RootState): boolean => state.ui.assetExplorerActive;
 
 // Reducer
 export default appState.reducer;

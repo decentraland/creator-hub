@@ -41,6 +41,10 @@ export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  // Marker for the one-time `previewOptions.debugger` promotion (the toolbar's "Open Debug
+  // Console" checkbox was removed, so this is now the only way an existing install gets it
+  // turned on) — see `promoteDebugConsoleSetting`.
+  debugConsolePromoted?: boolean;
   // Per-project Optimize Assets preference, keyed by project path. `previewOptions.optimizedAssets`
   // is the ephemeral value for the open project; this map is the persisted per-project source of
   // truth so the toggle comes back on for a project that had it on, without carrying across projects.
@@ -64,7 +68,6 @@ export type AppSettings = {
   // default — the assistant strips those keys to force subscription billing. Base-URL
   // overrides are always stripped regardless (they could redirect the OAuth token).
   useApiKeyFromEnv: boolean;
-  guiEditor: boolean;
   // The creator ticked "don't show this again" on the Optimize tools disclosure. Per machine;
   // the install screen still says when tools are being downloaded.
   optimizerConsentAcknowledged?: boolean;

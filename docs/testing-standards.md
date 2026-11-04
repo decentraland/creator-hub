@@ -6,6 +6,7 @@ Project-specific patterns for tests in this repo. See also: [coding-standards.md
 
 - Test framework: **Vitest** (not Jest, though patterns are similar). Tests use `describe`/`it`/`beforeEach`.
 - Structure tests with `describe("when ...", () => { ... })` for context, `it("should ...", () => { ... })` for behavior.
+  `shared/tests/flags.spec.ts` predates this and is flat — don't infer the convention from the nearest neighbour; `shared/tests/scene-parser.spec.ts` and `shared/tests/config.spec.ts` conform.
 - Scope mocks and test data to the specific `describe` block that needs them (not globally).
 - Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
 - React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
@@ -118,6 +119,36 @@ Under happy-dom the whole subtree reports "There are no accessible roles", and
 `Block`, so query those by label (`getByLabelText`) or with
 `querySelector('[role="…"]')` — see `FlowField.spec.tsx`, `CallbackField.spec.tsx`.
 `getByRole` is fine on a bare control (`Pill.spec.tsx`).
+
+### happy-dom is not a browser for labels and visibility
+
+- happy-dom 14 activates a `<label>` during the bubble phase and ignores
+  `preventDefault()`. A test can't prove "clicking this icon inside a label
+  doesn't toggle the checkbox" from the checkbox state; assert the click was
+  cancelled (`fireEvent.click(el)` returns `false`) and prove the toggle in a
+  browser (`CheckboxField.spec.tsx`; lands with #1707).
+- Importing through the `components/ui` barrel pulls in Babylon GUI-editor
+  stylesheets, and happy-dom then computes `display: none` up to `<html>`. Role
+  queries need `{ hidden: true }`. A `description` filter still works, but a
+  name that comes from a `<label>` computes as empty, because hidden label text
+  is dropped — assert the association with `findByLabelText` instead and prove
+  the name in a browser (`CreateScriptModal.spec.tsx`; lands with #1707).
+- jest-dom isn't installed. Assert accessible names and descriptions through
+  `getByRole(role, { name })` and `{ description }`.
+
+### Mocking `@dcl/sdk/ecs` with the real `@dcl/ecs`
+
+`vi.importActual('@dcl/ecs')` hands back the bare generated component
+definitions in place of the helper-wrapped ones: the star re-export of
+`components/generated/global.gen` shadows the module's own `Animator`,
+`AudioSource`, `TriggerArea`, `Material`… so calls like
+`Animator.playSingleAnimation` or `TriggerArea.setBox` are missing. Rebind each
+one from `ecs.components` before returning the mock, as `fakeSdkEcs` in
+`packages/asset-packs/test/script-harness.ts` does.
+
+`vi.resetModules()` does not re-run a `vi.mock` factory's module, so the engine
+singleton survives between tests. Reset the state a test depends on (players,
+captured handlers) instead of expecting a fresh engine.
 
 ### Asset-packs circular imports & vitest
 

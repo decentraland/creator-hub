@@ -18,12 +18,11 @@ const initialState: Async<Workspace> = {
   sortBy: SortBy.NEWEST,
   projects: [],
   missing: [],
-  templates: [],
   settings: {
     scenesPath: '',
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
     previewOptions: {
-      debugger: false,
+      debugger: true,
       skipAuthScreen: true,
       enableLandscapeTerrains: true,
       openNewInstance: false,
@@ -39,7 +38,6 @@ const initialState: Async<Workspace> = {
     aiAssistant: true,
     exposeMcpServer: false,
     useApiKeyFromEnv: false,
-    guiEditor: false,
   },
   status: 'idle',
   error: null,

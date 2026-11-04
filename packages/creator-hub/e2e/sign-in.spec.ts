@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import type { ElectronApplication, Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { launchApp } from './helpers/app';
@@ -22,6 +23,15 @@ const FOREIGN_IDENTITY_ID = 'e2e-foreign-identity-id';
  */
 const REQUESTS_PATH_WITH_UUID_V4 =
   /\/requests\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\?/i;
+
+/** Mirrors auth-server: first 16 bytes of SHA-256(verifier) with the UUID v4 bits set. */
+function deriveRequestId(verifier: string): string {
+  const bytes = createHash('sha256').update(verifier, 'ascii').digest().subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 let electronApp: ElectronApplication;
 let cleanup: () => void;
@@ -113,7 +123,14 @@ describe('sign in (happy path)', () => {
 
     // The identity fetch happened and the signer address was persisted.
     const fetchCalls = await getFetchCalls(page);
-    expect(fetchCalls.some(c => c.url.includes(`/identities/${IDENTITY_ID}`))).toBe(true);
+    const identityCall = fetchCalls.find(c => c.url.includes(`/identities/${IDENTITY_ID}`));
+    expect(identityCall, 'the identity should be fetched').toBeDefined();
+
+    // auth-server only serves the identity to the holder of the verifier the request id derives from.
+    expect(identityCall!.verifier, 'the identity fetch should carry the verifier').toMatch(
+      /^[A-Za-z0-9_-]{43}$/,
+    );
+    expect(deriveRequestId(identityCall!.verifier!)).toBe(openedRequestId);
 
     const storedAddress = await page.evaluate(() =>
       window.localStorage.getItem('auth-server-provider-address'),

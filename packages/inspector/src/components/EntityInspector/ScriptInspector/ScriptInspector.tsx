@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { getDataLayerInterface, importAsset } from '../../../redux/data-layer';
 import { selectAssetCatalog } from '../../../redux/app';
 import { retry } from '../../../lib/utils/retry';
+import { isMissingScriptFile } from '../../../lib/utils/script-files';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { Container } from '../../Container';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
@@ -123,6 +124,21 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const allScriptsInScene = useMemo(() => {
     return files?.assets.filter($ => isScriptFile($.path)) ?? [];
   }, [files]);
+
+  const sceneFiles = useMemo(
+    () => (files ? new Set(files.assets.map($ => $.path.toLowerCase())) : undefined),
+    [files],
+  );
+
+  const getMissingFileError = useCallback(
+    (scriptPath: string, param: ScriptParamUnion) =>
+      sceneFiles &&
+      param.type === 'string' &&
+      isMissingScriptFile(scriptPath, param.value, sceneFiles)
+        ? `"${param.value}" is missing`
+        : undefined,
+    [sceneFiles],
+  );
 
   const getDropdownOptions = useCallback(
     (currentScriptPath?: string) => {
@@ -326,8 +342,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         if (!dataLayer) return;
 
         const content = await retry(readScript, [dataLayer, path]);
-        const { params, actions, error: parseError } = getScriptParams(content);
-        const layout: ScriptLayout = { params, actions, error: parseError };
+        const { params, actions, events, error: parseError } = getScriptParams(content);
+        const layout: ScriptLayout = { params, actions, events, error: parseError };
 
         if (isNewScript) {
           addScript({
@@ -366,7 +382,12 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       const layout = parsedLayouts[index];
       if (!layout) return;
 
+      // Preserve the rest of the layout (actions, events, error) — rebuilding it from
+      // `params` alone drops `events`, which is what drives the Reactions section, so
+      // editing any param (e.g. the Trigger Area's shape) would wipe the prompt fields
+      // for good (#1654).
       const updatedLayout: ScriptLayout = {
+        ...layout,
         params: {
           ...layout.params,
           [paramName]: { ...layout.params[paramName], value: paramValue } as ScriptParamUnion,
@@ -411,6 +432,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 key={name}
                 name={name}
                 param={param}
+                error={getMissingFileError(scripts[index].path, param)}
                 onUpdate={value => handleUpdateDynamicField(index, name, value)}
               />
             ))}
@@ -418,7 +440,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         </Container>
       );
     },
-    [handleUpdateDynamicField],
+    [handleUpdateDynamicField, getMissingFileError, scripts],
   );
 
   // The union of reaction events declared by this entity's scripts (via `@event`). Non-empty =>

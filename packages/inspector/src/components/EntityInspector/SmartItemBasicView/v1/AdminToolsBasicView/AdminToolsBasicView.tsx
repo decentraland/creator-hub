@@ -1,7 +1,6 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 import { withSdk } from '../../../../../hoc/withSdk';
-import { useComponentValue } from '../../../../../hooks/sdk/useComponentValue';
 
 import { Accordion } from '../../../../ui';
 
@@ -10,26 +9,16 @@ import { SmartItemControl } from '../../../AdminToolkitView/SmartItemControl';
 import { TextAnnouncementControl } from '../../../AdminToolkitView/TextAnnouncementControl';
 
 import { type Props } from '../../../AdminToolkitView/types';
+import { type AdminControlKey, useAdminTools } from '../../../AdminToolkitView/useAdminTools';
 
 import './AdminToolsBasicView.css';
 
 const AdminToolsBasicView = withSdk<Props>(({ sdk, entity }) => {
   const { AdminTools, Config } = sdk.components;
-  const [adminComponent, setAdminComponent] = useComponentValue(entity, AdminTools);
+  const [adminComponent, updateControl] = useAdminTools(entity, AdminTools);
 
-  const handleToggleEnabled = useCallback(
-    (
-      control: 'videoControl' | 'textAnnouncementControl' | 'rewardsControl' | 'smartItemsControl',
-      enabled: boolean,
-    ) => {
-      if (!adminComponent) return;
-      setAdminComponent({
-        ...adminComponent,
-        [control]: { ...adminComponent[control], isEnabled: enabled },
-      });
-    },
-    [adminComponent, setAdminComponent],
-  );
+  const handleToggleEnabled = (control: AdminControlKey, isEnabled: boolean) =>
+    updateControl(control, { isEnabled });
 
   const config = useMemo(() => {
     return Config.getOrNull(entity);

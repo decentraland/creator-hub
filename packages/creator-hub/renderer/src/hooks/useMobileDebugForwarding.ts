@@ -8,6 +8,9 @@ export function useMobileDebugForwarding(
   iframeRef: MutableRefObject<RPCInfo | undefined>,
   isPreviewRunning: boolean,
   projectKey?: string,
+  // Bumped when a (re)loaded inspector reports ready, so a fresh iframe gets the
+  // session panel enabled again instead of only the entries.
+  inspectorReadyNonce = 0,
 ) {
   useEffect(() => {
     if (!isPreviewRunning) return;
@@ -53,5 +56,5 @@ export function useMobileDebugForwarding(
       unsubscribeEntries();
       unsubscribeSessions();
     };
-  }, [isPreviewRunning, projectKey]);
+  }, [isPreviewRunning, projectKey, inspectorReadyNonce]);
 }

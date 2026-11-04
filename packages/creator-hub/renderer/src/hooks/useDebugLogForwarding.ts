@@ -1,11 +1,9 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
-import Convert from 'ansi-to-html';
 
 import { editor } from '#preload';
 
 import type { RPCInfo } from '/@/modules/rpc';
 
-const convert = new Convert({ escapeXML: true });
 const LOG_BATCH_INTERVAL = 100;
 
 export function useDebugLogForwarding(
@@ -17,6 +15,10 @@ export function useDebugLogForwarding(
   // into the inspector store regardless (so docking back is instant), and only flip the
   // inspector's inline tab between the logs and a "opened in a separate window" placeholder.
   consoleDetached = false,
+  // Bumped each time a (re)loaded inspector reports its scene RPC server ready. The ref
+  // itself is stable across an iframe reload, so without this the forwarding would keep
+  // feeding the disposed RPC and the fresh inspector never learns the console is enabled.
+  inspectorReadyNonce = 0,
 ) {
   const logBatchRef = useRef<string[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -47,7 +49,7 @@ export function useDebugLogForwarding(
         const lines = Array.isArray(data) ? data : data.split('\n');
         for (const line of lines) {
           if (line.trim() !== '') {
-            logBatchRef.current.push(convert.toHtml(line));
+            logBatchRef.current.push(line);
           }
         }
       })
@@ -69,12 +71,19 @@ export function useDebugLogForwarding(
       // RPC call may fail if the inspector iframe was destroyed
       void scene.setDebugConsoleEnabled(false).catch(() => {});
     };
-  }, [isPreviewRunning, showDebugPanel, projectPath, iframeRef]);
+  }, [isPreviewRunning, showDebugPanel, projectPath, iframeRef, inspectorReadyNonce]);
 
   // Reflect the detached state into the inspector's inline tab (logs vs placeholder) without
   // tearing down the forwarding above, so toggling pop-out/dock doesn't flicker the tab.
   useEffect(() => {
     if (!isPreviewRunning || !showDebugPanel || !projectPath || !iframeRef.current) return;
     void iframeRef.current.scene.setConsoleDetached(consoleDetached).catch(() => {});
-  }, [consoleDetached, isPreviewRunning, showDebugPanel, projectPath, iframeRef]);
+  }, [
+    consoleDetached,
+    isPreviewRunning,
+    showDebugPanel,
+    projectPath,
+    iframeRef,
+    inspectorReadyNonce,
+  ]);
 }

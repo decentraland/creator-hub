@@ -272,6 +272,33 @@ export async function initRpcMethods(
       });
     },
 
+    async removeAssets(req) {
+      return stateManager.executeTransaction('external', async () => {
+        const undoAcc: FileOperation[] = [];
+        const success: string[] = [];
+        const failed: string[] = [];
+        try {
+          for (const filePath of req.paths) {
+            try {
+              if (await fs.existFile(filePath)) {
+                const prevValue = await fs.readFile(filePath);
+                await fs.rm(filePath);
+                undoAcc.push({ prevValue, newValue: null, path: filePath });
+              }
+            } catch (e) {
+              console.error(`Failed to delete ${filePath}:`, e);
+              failed.push(filePath);
+              continue;
+            }
+            success.push(filePath);
+          }
+        } finally {
+          if (undoAcc.length > 0) undoRedoProvider.addUndoFile(undoAcc);
+        }
+        return { success, failed };
+      });
+    },
+
     async save() {
       await compositeProvider.saveComposite(true);
       return {};

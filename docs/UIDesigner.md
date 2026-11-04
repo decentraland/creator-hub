@@ -4,13 +4,26 @@ The UI Designer is the inspector's 2D mode for authoring a scene's `@dcl/react-e
 
 Read this when working on the 2D toolbar, the canvas direct-manipulation, or the 2D/3D mode switch.
 
-## Availability (opt-in gate and SDK requirement)
+## Availability (SDK requirement and the embedder gate)
 
-The UI Designer is gated twice, and both gates arrive as **inspector config query params** (`InspectorConfig`, read once per session via `getConfig`) — the same mechanism as `renderer`, not the feature-flag channel. Creator Hub appends them to the iframe URL in `EditorPage`, so changing a setting rebuilds the URL and reloads the iframe with the new value. Its user-facing name is **UI Editor**; the internal code keeps the older `uiDesigner` name.
+Two **inspector config query params** (`InspectorConfig`, read once per session via `getConfig`) decide whether 2D mode is reachable — the same mechanism as `renderer`, not the feature-flag channel. Creator Hub appends them to the iframe URL in `EditorPage` (`buildInspectorUrl`, `renderer/src/components/EditorPage/inspectorUrl.ts`), so a change that rebuilds the URL reloads the iframe with the new value. Its user-facing name is **UI Editor**; the internal code keeps the older `uiDesigner` name.
 
-- **Feature opt-in** (`uiEditorEnabled`). It is an app setting, off by default: **Settings → Experimental → UI Editor** (`settings.guiEditor`, a toggle in the dedicated Experimental tab, alongside the Scene renderer picker). Creator Hub passes it as the `uiEditorEnabled` query param straight from `settings.guiEditor`. `ModeSwitcher` renders nothing when `getConfig().uiEditorEnabled` is false, so the 2D/3D tablist — the only entry into 2D — is absent, and `useRestorePersistedMode` never restores a persisted 2D mode. The standalone dev inspector has no Creator Hub to pass params, so `getConfig` defaults both to `INSPECTOR_DEV_PARSER` (on in dev builds).
+- **Embedder gate** (`uiEditorEnabled`). Creator Hub always passes `true` — the UI Editor is stable and has no setting. The param exists for *other* hosts: `@dcl/inspector` is published to npm with documented iframe and WebSocket embedding, and `getConfig` defaults it to `INSPECTOR_DEV_PARSER` — true in dev builds, false in production — because code-as-source needs a parser a production standalone build does not ship. The `@oxc-parser/wasm` fallback is compiled out under `--production`, and only Creator Hub's RPC bridge reaches main's native `oxc-parser`. `ModeSwitcher` renders nothing when the param is false, so the 2D/3D tablist — the only entry into 2D — is absent, and `useRestorePersistedMode` never restores a persisted 2D mode.
 
-- **SDK compatibility** (`uiEditorSupported`). The editor emits `ScreenInsetArea` / `InteractableArea` wrappers and relies on react-ecs' per-device default virtual screen, both of which exist only in `@dcl/sdk` 7.26.0+ (react-ecs 7.26.0). Below that, a generated `src/ui/index.tsx` fails to compile. Creator Hub derives `supportsUiDesigner` from the scene's installed SDK version (`shared/flags.ts`, `editor` slice) and passes it as the `uiEditorSupported` query param. When the feature is on but the scene is incompatible, the 2D tab stays available and entering it renders `SdkUpgradeNotice` (a full-cover dropout) instead of the canvas. **Update SDK** calls the `update_sdk` scene RPC, which runs the SAME canonical update as the "New dependencies version detected" toast (`updatePackages`, guarded by `editor.isInstallingProject` so the two can't double-install) then `fetchSdkCommandsVersion`; on success the inspector reloads itself (`window.location.reload()`) so the scene picks up the new dependency. **Maybe later** switches back to 3D (`togglePanel` off + `uiDesignerOpen: false`).
+- **SDK compatibility** (`uiEditorSupported`). The editor emits `ScreenInsetArea` / `InteractableArea` wrappers and relies on react-ecs' per-device default virtual screen, both of which exist only in `@dcl/sdk` 7.26.0+ (react-ecs 7.26.0). Below that, a generated `src/ui/index.tsx` fails to compile. Creator Hub derives `supportsUiDesigner` from the scene's installed SDK version (`shared/flags.ts`, `editor` slice) and passes it as the `uiEditorSupported` query param. When the scene's SDK is too old, the 2D tab stays available and entering it renders `SdkUpgradeNotice` (a full-cover dropout) instead of the canvas. **Update SDK** calls the `update_sdk` scene RPC, which runs the SAME canonical update as the "New dependencies version detected" toast (`updatePackages`, guarded by `editor.isInstallingProject` so the two can't double-install) then `fetchSdkCommandsVersion`; on success the inspector reloads itself (`window.location.reload()`) so the scene picks up the new dependency. **Maybe later** switches back to 3D (`togglePanel` off + `uiDesignerOpen: false`).
+
+`getConfigStorage` (`creator-hub/main/src/modules/config.ts`) deletes a `guiEditor` key from `mergedConfig.settings`: configs written while the UI Editor was an opt-in still carry it, and `mergeConfig` is `deepmerge(defaults, stored)`, so a stored key absent from the defaults survives every merge. The deletion targets `mergedConfig` rather than `existingConfig` on purpose — `existingConfig.settings` is what the `storedSettings` cast aliases, so mutating it there would make the `JSON.stringify(existingConfig) !== JSON.stringify(mergedConfig)` write guard see no change and the cleaned config would never reach disk. It works because `deepmerge` clones into a fresh tree instead of aliasing, which is the same reason the `previewOptions.optimizedAssets` reset and the `optimizedAssetsByPath` prune sit after the merge: mutate `mergedConfig` when the result must persist, `existingConfig` when it only has to be right in memory.
+
+## Inspector iframe config params
+
+The transport and asset params `buildInspectorUrl` (`creator-hub/renderer/src/components/EditorPage/inspectorUrl.ts`) appends. Several look redundant and are load-bearing — check this list before changing or dropping one. The analytics params (`segmentKey`, `segmentAppId`, `segmentUserId`), `projectId` and `uiDesignerOpen` are not listed here; `uiDesignerOpen` is covered under Mode persistence below.
+
+- **`renderer`** is always sent. Without it the inspector offers an independent, un-plumbed renderer picker in its own toolbar, and choosing Bevy there mounts the engine with no realm and boots the default world. The host owns renderer selection and supplies each renderer's config.
+- **`dataLayerRpcParentUrl`** is always sent, for *both* renderers. It carries the parent-window scene-RPC control channel — host-to-inspector feature flags, notifications, file/dir open. Babylon additionally uses it as its data-layer transport.
+- **`dataLayerRpcWsUrl`** and **`bevyRealm`** are sent only on the Bevy path, and the WS takes precedence over `dataLayerRpcParentUrl` *for the data layer*: sharing the realm's websocket keeps entity ids aligned with the engine so forwarded edits land on the right entities. It does not supersede the control channel, which is why `dataLayerRpcParentUrl` is still sent alongside it — drop it and host feature flags (`SceneMinimap`, for one) never arrive.
+- **`bevyPosition`** is the scene's real parcel base coord (`project.scene.base`), where the engine loads the scene.
+- **`bevySystemScene`** points at the super-user editor-agent portable experience (viewport pick and gizmo), a static realm at `inspector/public/bevy-agent` served same-origin by the inspector's http-server. The engine GETs `<systemScene>/about` and the realm export nests `<realmName>/about`, which is why the path segment is doubled (`/bevy-agent/bevy-agent`). `VITE_BEVY_SYSTEM_SCENE` overrides it to point at a dev server.
+- **`binIndexJsUrl`** and **`contentUrl`** exist for local `@dcl/asset-packs` development, or for pointing the inspector at another environment such as `.zone`. `binIndexJsUrl` defaults to the inspector's own `bin/index.js`; setting both `VITE_ASSET_PACKS_JS_PORT` and `VITE_ASSET_PACKS_JS_PATH` redirects it at a local content server, and `VITE_ASSET_PACKS_CONTENT_URL` adds `contentUrl`, which is otherwise left to the inspector's default.
 
 ## Testing the UI Designer
 
@@ -36,8 +49,10 @@ Icons shown in a labeled row — the widget palette, the add-widget picker, and 
 
 The 2D toolbar is a dedicated component, not the shared 3D one. `App` swaps it in by mode: `isUIDesigner ? <UIDesignerToolbar/> : <Toolbar/>`. This mirrors how the left, right, and bottom panels already swap per mode, and keeps 2D-specific wiring out of the shared `Toolbar`.
 
-- `UIDesignerToolbar` reuses `ToolbarButton` and the shared `.Toolbar` CSS for visual parity, and the tool group (`Tools.tsx`) reuses `Gizmos.css` and the gizmo SVG icons so it matches the 3D gizmo bar exactly.
-- **No manual save.** The code store writes every splice to disk immediately (`code/store.ts`, "writes are immediate"), so there is no dirty buffer to flush. The toolbar shows a non-interactive "All changes saved" badge, never a floppy or a `save()` dispatch.
+- Both bars follow Figma's Viewport Toolbar board and share one rule set: `ToolbarButton`, the `.Toolbar` CSS, the glyphs in `Toolbar/icons.tsx`, and the ⋮ menu (`Toolbar/MoreOptions`). The tool group (`Tools.tsx`) is the 3D gizmo group, with rotation disabled (lands with #1714).
+- The right side is **Edit Scene**, which leaves 2D and selects the scene root, then a ⋮ holding **Scene Info** only. The ⋮ is absent when the scene has no scene info (lands with #1714).
+- **No Save.** The code store writes every splice to disk immediately (`code/store.ts`, "writes are immediate"), so there's never anything to save (lands with #1714).
+- **No snap control.** Figma draws none on the 2D bar. Snapping still works; see "Grid snap" below (lands with #1714).
 
 ### Tool modes
 
@@ -50,17 +65,21 @@ The Free / Move / Resize tools are a session-only Redux value, `uiDesignerTool` 
 
 ### Grid snap
 
-Canvas drag and resize snap to `DRAG_SNAP_GRID` (10 logical px). The toolbar's Snap dropdown toggles `uiDesignerSnapEnabled` (`redux/ui`); the canvas gates the snap on `snapEnabledRef.current && !e.shiftKey`, so holding **Shift** is still a per-gesture override for free movement.
+Canvas drag and resize snap to `DRAG_SNAP_GRID` (10 logical px). The canvas gates the snap on `uiDesignerSnapEnabled` (`redux/ui`, on by default; the toolbar has no control for it (lands with #1714), and until then the 2D toolbar's Snap control in `Tools.tsx` toggles it) and `!e.shiftKey`, so holding **Shift** frees a single drag.
 
 ## Scene-run controls and mode sync
 
-The 2D toolbar mirrors the 3D scene controls — a Play/Pause toggle plus an always-visible Stop — and they exist only under Bevy (`sdk.renderer.sceneRun`).
+Both toolbars carry Figma's RuntimeControls, only under Bevy (`sdk.renderer.sceneRun`): [Play][Pause, disabled] when stopped, [Stop][Pause, highlighted] while running, and [Stop][Resume] while paused. Pause is not a toggle: its `running` class draws the highlight, and its name flips between "Pause scene" and "Resume scene". Each slot is one element in a fixed position, so keyboard focus stays put when slot 1 swaps between Play and Stop. The two bars read the same in every state (lands with #1714).
+
+- 3D reads "running" from `sceneRun.isRunning()`; 2D reads it from `sceneRunIntent`, because the scene is always frozen in 2D.
+- In 2D, Play and resuming a paused scene both leave 2D first, then run. Pause and Stop stay in 2D.
 
 The subtlety is **run intent**. `sceneRun` exposes only a boolean `isRunning()`, which can't distinguish "paused for editing but was running" from "stopped." So a separate `sceneRunIntent` (`redux/ui`) records what the user wants:
 
 - Both toolbars set `sceneRunIntent` on Play, Pause, and Stop.
+- `sceneRunStarted` (`redux/ui`) is the bit the 3D model adds: "has the scene run since the last Stop". Play sets it, Pause leaves it, and Stop clears it through `setSceneRunIntent({ running: false, reset: true })`, which both Stop buttons dispatch. It lives in Redux because each bar unmounts while the other mode is open. A scene runtime error freezes the scene without a Stop, so 3D then shows paused (lands with #1714).
 - `useSyncSceneRunWithMode` freezes the scene when 2D opens (editing needs a static viewport, because the renderer is only CSS-hidden in 2D) and resumes it when 3D returns, but only if the intent was to run.
-- The 2D toolbar displays the intent, so switching to 2D while a scene runs shows **Pause** (it's still your running scene, just frozen), not Play as if it never ran.
+- The 2D toolbar displays the intent, so switching to 2D while a scene runs shows it as running (Stop, Pause highlighted), not stopped.
 
 **Own source writes and the Bevy hot-reload (`register.ts`, `build-reload-bridge.ts`).** Under the Bevy renderer every rebuild of the scene bundle is reported to the inspector by the host (the realm bundler's `File <path> changed, rebuilding...` / `Bundle saved` lines, relayed as `notify_scene_build`), and a rebuild triggered by a source file reloads the engine scene so an IDE code save shows up (#1419). Code mode writes `src/ui/*.tsx` through the storage bridge, which would look exactly like such a save — so `writeToDisk` registers the path with `markOwnWrite` (`lib/logic/own-writes.ts`) first, and the bridge treats a rebuild it triggered like the editor's own autosave: no reload. Matched by path, not by a timing window.
 
@@ -218,6 +237,8 @@ the right rail becomes the MobileHUD editor.
 ## Canvas framing (artboard vs screen) and overflow
 
 The canvas frames the root two ways (`Canvas.tsx`, `fixedRoot`): a root whose width AND height are fixed px (`widthUnit/heightUnit === YGU_POINT`) is an **artboard** — the frame is the root's own box, drawn at true size (`fitScale = 1`, no device-screen letterbox), and the screen-relative overlays (safe-area, inset guide) are hidden. A **full-screen** root (%, auto or unset) is fitted into the previewed device screen: the design resolution is `DEFAULT_CANVAS_WIDTH/HEIGHT` (`1920×1080`) on desktop and `MOBILE_CANVAS_WIDTH/HEIGHT` (`1600×720`) on mobile. Since each matches its default screen, `fitScale` is 1 and there is no letterbox unless a non-default screen preset is chosen (see the mobile safe-area section). Feeding a fixed 400×400 root into the old `min(screen/virtual)` fit blew it up to fill 1080px — the "canvas not resized to the root" symptom.
+
+Artboard framing is suppressed while the **MobileHUD** is the selection (`computeCanvasGeometry`, `shared/canvas-geometry.ts`). Selecting the HUD clears the selected nodes but does not change the active code root, so without that exemption the HUD inherited the artboard box of whichever GUI happened to be open: a 200×100 root rendered the HUD into a 200×100 frame and dropped its screenfill backdrop, and switching between GUIs changed the HUD's size with them. The HUD is a device view — it always frames against the mobile screen.
 
 Overflow is shown, not clipped: the clip lived on `.ui-designer-canvas-screen` (`overflow: hidden`), which cut nodes at the frame edge. It is now `visible`, and `.ui-designer-canvas-stagewrap` too, so a child larger than the frame renders past it; the outer `.ui-designer-canvas-viewport` still clips at the panel boundary. The mobile `.ui-designer-device-frame` keeps its bezel clip.
 

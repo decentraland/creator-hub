@@ -120,6 +120,23 @@ describe('UndoRedoArray', () => {
     expect(buffer.memorySize).toEqual(9);
   });
 
+  it('should refuse a file entry larger than the cap without evicting older ones', () => {
+    const small: UndoRedoFile = {
+      $case: 'file',
+      operations: [{ path: '/a', prevValue: new Uint8Array(4), newValue: null }],
+    };
+    const oversized: UndoRedoFile = {
+      $case: 'file',
+      operations: [{ path: '/b', prevValue: new Uint8Array(11), newValue: null }],
+    };
+
+    buffer.push(small);
+    expect(buffer.push(oversized)).toBeUndefined();
+
+    expect(buffer.values()).toEqual([small]);
+    expect(buffer.memorySize).toEqual(4);
+  });
+
   it('should handle popping file operations based on memory size', () => {
     const undoRedo: UndoRedoFile = {
       $case: 'file',

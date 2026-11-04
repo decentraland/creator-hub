@@ -1,0 +1,8 @@
+{
+  "id": "09b9890f-1ae8-4743-a3cf-59601dc6a6e9",
+  "name": "Throw",
+  "category": "actions",
+  "tags": ["throw", "toss", "pitch", "emote", "animation", "avatar"],
+  "description": "Avatar throws something forward.",
+  "author": "Decentraland Foundation"
+}

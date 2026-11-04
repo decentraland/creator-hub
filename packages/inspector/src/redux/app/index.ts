@@ -13,6 +13,8 @@ export interface AppState {
   preferences: InspectorPreferences | undefined;
   assetsCatalog: AssetCatalogResponse | undefined;
   thumbnails: GetFilesResponse['files'];
+  /** True once the thumbnails list has been fetched from the data layer at least once. */
+  thumbnailsLoaded: boolean;
   customAssets: CustomAsset[];
 }
 
@@ -22,6 +24,7 @@ export const initialState: AppState = {
   preferences: undefined,
   assetsCatalog: undefined,
   thumbnails: [],
+  thumbnailsLoaded: false,
   customAssets: [],
 };
 
@@ -49,13 +52,24 @@ export const appState = createSlice({
     },
     updateThumbnails: (state, { payload }: PayloadAction<GetFilesResponse>) => {
       state.thumbnails = payload.files;
+      state.thumbnailsLoaded = true;
+    },
+    upsertThumbnail: (state, { payload }: PayloadAction<GetFilesResponse['files'][number]>) => {
+      const index = state.thumbnails.findIndex($ => $.path === payload.path);
+      if (index === -1) state.thumbnails.push(payload);
+      else state.thumbnails[index] = payload;
     },
   },
 });
 
 // Actions
-export const { updateCanSave, updatePreferences, updateAssetCatalog, updateThumbnails } =
-  appState.actions;
+export const {
+  updateCanSave,
+  updatePreferences,
+  updateAssetCatalog,
+  updateThumbnails,
+  upsertThumbnail,
+} = appState.actions;
 
 // Selectors
 export const selectCanSave = (state: RootState): boolean => state.app.canSave;
@@ -64,6 +78,7 @@ export const selectInspectorPreferences = (state: RootState): InspectorPreferenc
 };
 export const selectAssetCatalog = (state: RootState) => state.app.assetsCatalog;
 export const selectThumbnails = (state: RootState) => state.app.thumbnails;
+export const selectThumbnailsLoaded = (state: RootState) => state.app.thumbnailsLoaded;
 export const selectCustomAssets = (state: RootState) => state.app.customAssets;
 
 // Reducer

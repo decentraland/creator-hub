@@ -1,0 +1,9 @@
+{
+  "id": "d33ed5ad-683f-4b62-8f2f-860d8d26a580",
+  "name": "Wave",
+  "category": "expressions",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "wave"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'wave' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "wave"
+}
