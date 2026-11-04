@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  DEFAULT_CONFIG,
   dropCompressAssetsSettings,
   dropGuiEditorSetting,
   promoteAiAssistantSetting,
@@ -157,5 +158,11 @@ describe('promoteAiAssistantSetting', () => {
     it('should not throw', () => {
       expect(() => promoteAiAssistantSetting(undefined)).not.toThrow();
     });
+  });
+});
+
+describe('DEFAULT_CONFIG', () => {
+  it('should keep AI agents outside Creator Hub opt-in', () => {
+    expect(DEFAULT_CONFIG.settings.exposeMcpServer).toBe(false);
   });
 });
