@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   concat,
   ContractFunctionRevertedError,
+  decodeFunctionData,
   encodeFunctionData,
   stringToHex,
   zeroAddress,
@@ -9,21 +10,19 @@ import {
 import { namehash } from 'viem/ens';
 
 import type * as Viem from 'viem';
-import { DCLRegistrar, ENS as ENSRegistry, ENSResolver } from './abis';
+import { DCLRegistrar, ENS as ENSRegistry } from './abis';
 import { ENSProvider, type ENS } from './types';
 
 const readContractMock = vi.fn();
+const configValues: Record<string, string> = {
+  CHAIN_ID: '11155111',
+  RPC_URL: 'https://rpc.example.org/sepolia',
+  ENVIRONMENT: 'development',
+  JUMP_URL: 'https://decentraland.zone/jump',
+};
 
 vi.mock('/@/config', () => ({
-  config: {
-    get: (key: string) =>
-      ({
-        CHAIN_ID: '11155111',
-        RPC_URL: 'https://rpc.example.org/sepolia',
-        ENVIRONMENT: 'development',
-        JUMP_URL: 'https://decentraland.zone/jump',
-      })[key],
-  },
+  config: { get: (key: string) => configValues[key] },
 }));
 
 vi.mock('viem', async importOriginal => ({
@@ -32,6 +31,7 @@ vi.mock('viem', async importOriginal => ({
 }));
 
 const {
+  PUBLIC_RESOLVER_ABI,
   buildLinkName,
   decodeLandRedirect,
   encodeLandRedirect,
@@ -135,7 +135,7 @@ const AZUL_15_2 =
   '0x3000f268747470733a2f2f646563656e7472616c616e642e7a6f6e652f6a756d702f3f706f736974696f6e3d313525324332';
 const setContenthash = (content: string) =>
   encodeFunctionData({
-    abi: ENSResolver,
+    abi: PUBLIC_RESOLVER_ABI,
     functionName: 'setContenthash',
     args: [namehash('foo.dcl.eth'), content as `0x${string}`],
   });
@@ -208,6 +208,44 @@ describe('buildLinkName', () => {
       expect(buildLinkName({ subdomain: 'foo.dcl.eth', resolver: RESOLVER }, '0x')).toEqual([
         { to: RESOLVER, data: setContenthash('0x') },
       ]);
+    });
+  });
+
+  describe('when decoding the contenthash call', () => {
+    it("should be the resolver's setContenthash(bytes32,bytes) with the NAME node", () => {
+      const [{ data }] = buildLinkName({ subdomain: 'foo.dcl.eth', resolver: RESOLVER }, AZUL_15_2);
+      expect(data.startsWith('0x304e6ade')).toBe(true);
+      expect(decodeFunctionData({ abi: PUBLIC_RESOLVER_ABI, data })).toEqual({
+        functionName: 'setContenthash',
+        args: [namehash('foo.dcl.eth'), AZUL_15_2],
+      });
+    });
+  });
+
+  describe('when the app runs on Ethereum mainnet and the NAME has no resolver', () => {
+    const MAINNET_RESOLVER = '0x4976fb03c32e5b8cfe2b6ccb31c09ba78ebaba41';
+
+    beforeEach(() => {
+      configValues.CHAIN_ID = '1';
+    });
+
+    afterEach(() => {
+      configValues.CHAIN_ID = '11155111';
+    });
+
+    it('should point the NAME at the mainnet public resolver and write through it', () => {
+      const [setResolver, setContent] = buildLinkName(
+        { subdomain: 'foo.dcl.eth', resolver: zeroAddress },
+        AZUL_15_2,
+      );
+      expect(setResolver.data).toBe(
+        encodeFunctionData({
+          abi: ENSRegistry,
+          functionName: 'setResolver',
+          args: [namehash('foo.dcl.eth'), MAINNET_RESOLVER],
+        }),
+      );
+      expect(setContent.to).toBe(MAINNET_RESOLVER);
     });
   });
 });

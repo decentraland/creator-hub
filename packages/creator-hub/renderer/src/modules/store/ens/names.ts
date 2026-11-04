@@ -7,6 +7,7 @@ import {
   hexToString,
   http,
   keccak256,
+  parseAbi,
   stringToHex,
   toBytes,
   zeroAddress,
@@ -18,8 +19,8 @@ import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import { config } from '/@/config';
 import type { LandTransaction } from '/@/lib/landTransactions';
 import { getSceneJumpInUrl } from '/@/modules/utils';
-import { DCLRegistrar, ENS as ENSRegistry, ENSResolver } from './abis';
-import { dclRegistrar, ens, ensResolver } from './contracts';
+import { DCLRegistrar, ENS as ENSRegistry } from './abis';
+import { dclRegistrar, ens } from './contracts';
 import type { ContractData, ENS } from './types';
 
 const DCL_SUFFIX = '.dcl.eth';
@@ -30,12 +31,30 @@ type Parcel = { x: number; y: number };
 
 type NameUsage = { landId: string | null; world: boolean };
 
+/**
+ * The ENS public resolver a NAME is written through. Kept here rather than in `./abis` and
+ * `./contracts` because reads go through the Universal Resolver (#1724), which drops those modules;
+ * writes still need the public resolver itself.
+ */
+export const PUBLIC_RESOLVER_ABI = parseAbi(['function setContenthash(bytes32 node, bytes hash)']);
+
+export const PUBLIC_RESOLVER: Partial<Record<ChainId, Address>> = {
+  [ChainId.ETHEREUM_MAINNET]: '0x4976fb03c32e5b8cfe2b6ccb31c09ba78ebaba41',
+  [ChainId.ETHEREUM_SEPOLIA]: '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD',
+};
+
 const chainId = (): ChainId => Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 
 function contractAddress(contracts: Partial<Record<ChainId, ContractData>>): Address {
   const contract = contracts[chainId()];
   if (!contract) throw new Error(`No contract for chain ${chainId()}`);
   return contract.address as Address;
+}
+
+function publicResolverAddress(): Address {
+  const address = PUBLIC_RESOLVER[chainId()];
+  if (!address) throw new Error(`No contract for chain ${chainId()}`);
+  return address;
 }
 
 /** `foo` or `foo.dcl.eth` → `foo`; null when it cannot be a Decentraland NAME. */
@@ -92,11 +111,11 @@ export function buildLinkName(
 ): LandTransaction[] {
   const node = namehash(name.subdomain);
   const hasResolver = !!name.resolver && name.resolver.toLowerCase() !== zeroAddress;
-  const resolver = hasResolver ? (name.resolver as Address) : contractAddress(ensResolver);
+  const resolver = hasResolver ? (name.resolver as Address) : publicResolverAddress();
   const setContent = {
     to: resolver,
     data: encodeFunctionData({
-      abi: ENSResolver,
+      abi: PUBLIC_RESOLVER_ABI,
       functionName: 'setContenthash',
       args: [node, content],
     }),
@@ -108,7 +127,7 @@ export function buildLinkName(
       data: encodeFunctionData({
         abi: ENSRegistry,
         functionName: 'setResolver',
-        args: [node, contractAddress(ensResolver)],
+        args: [node, publicResolverAddress()],
       }),
     },
     setContent,
