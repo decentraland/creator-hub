@@ -1,9 +1,10 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import type { ElectronApplication } from 'playwright';
 import { _electron as electron } from 'playwright';
+import { SCENES_DIRECTORY } from '../../shared/paths';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -59,7 +60,7 @@ export type LaunchedApp = {
   electronApp: ElectronApplication;
   /** The throwaway `--user-data-dir`. Scenes are created under `<userData>/Scenes`
    *  (`getDefaultScenesPath`), so filesystem assertions about a scene resolve from here —
-   *  not from HOME, which only backs the legacy `.decentraland` path. */
+   *  not from HOME. */
   userDataDir: string;
   /** Removes the throwaway user-data and home directories. Safe to call more than once. */
   cleanup: () => void;
@@ -75,9 +76,15 @@ export type LaunchedApp = {
  *     from leaking in (which would start the app already logged in), and scenes are created
  *     under `<userData>/Scenes` per `getDefaultScenesPath`, so a scene test cannot touch the
  *     developer's own projects.
- *   - `HOME` is redirected for the legacy `.decentraland` path (`getAppHomeLegacy`). Electron
- *     derives `app.getPath('home')` from `$HOME`, so passing it here avoids needing a
- *     test-only `app.setPath('home', ...)` branch in the main process.
+ *   - `<userData>/Scenes` is created before launch. On macOS `app.getPath('home')` comes
+ *     from the OS account, NOT `$HOME`, so the `HOME` override below does not hide the
+ *     developer's real `~/.decentraland`. The legacy-paths migration (`migrations.ts`)
+ *     treats an existing Scenes folder as "already migrated" and skips; without it, a local
+ *     run copies every legacy scene into the throwaway profile and the empty-state
+ *     "new scene" button the specs drive never renders. CI has no legacy folder, so only
+ *     local runs showed it.
+ *   - `HOME` is still redirected for children that read `$HOME` directly (the npm install a
+ *     new scene runs, `os.homedir()` on Linux).
  */
 export async function launchApp(
   options: { attempts?: number; extraArgs?: string[] } = {},
@@ -85,6 +92,7 @@ export async function launchApp(
   const { attempts = 3, extraArgs = [] } = options;
   const userDataDir = mkdtempSync(join(tmpdir(), 'creator-hub-e2e-data-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'creator-hub-e2e-home-'));
+  mkdirSync(join(userDataDir, SCENES_DIRECTORY));
 
   const cleanup = () => {
     for (const dir of [userDataDir, homeDir]) {

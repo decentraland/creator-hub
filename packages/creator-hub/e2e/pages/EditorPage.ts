@@ -23,7 +23,9 @@ export class EditorPage {
   /** Imports a `.glb` from the filesystem through the inspector's file input. */
   async importGlb(filePath: string) {
     const inspector = this.page.frameLocator('[data-testid="editor-page-iframe"]');
-    const fileInput = inspector.locator('input[type="file"]').first();
+    // Scoped to the asset panel's drop wrapper: the Scene inspector's thumbnail field is also
+    // an `input[type="file"]`, and whichever panel mounts first wins an unscoped `.first()`.
+    const fileInput = inspector.locator('.ImportAsset input[type="file"]').first();
     await fileInput.waitFor({ state: 'attached', timeout: IMPORT_TIMEOUT });
     await fileInput.setInputFiles(filePath);
     await inspector

@@ -388,6 +388,17 @@ fails is a separate, open app-side ticket.
 extracted outside `dist`, so `E2E_APP_PATH` overrides the search — and accepts either the `.app`
 bundle or the executable inside it.
 
+### `launchApp` pre-creates `<userData>/Scenes`, because `HOME` does not isolate macOS
+
+Each launch gets a throwaway `--user-data-dir` and `HOME`, but on macOS Electron's
+`app.getPath('home')` comes from the OS account, not `$HOME`. The legacy-paths migration
+(`main/src/modules/migrations.ts`) reads `~/.decentraland/config.json` from there and copies every
+scene it lists into the fresh profile, so a local run on a machine that ever had the old app opens
+on the developer's own scenes instead of the empty state, and `ScenesPage.createBlankScene` times
+out on `scene-list-new-scene-button`. The migration skips when `<userData>/Scenes` already exists,
+so `launchApp` creates it before launch. CI runners have no legacy folder, which is why only local
+runs ever hit this.
+
 ### Wait out the install `Backdrop` before driving the inspector iframe
 
 The app shows a MUI `<Backdrop>` over a freshly created scene while it installs. Asserting
