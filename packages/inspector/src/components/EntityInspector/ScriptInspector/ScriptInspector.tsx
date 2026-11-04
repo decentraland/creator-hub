@@ -440,7 +440,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 key={name}
                 name={name}
                 param={param}
-                error={getMissingFileError(scripts[index].path, param)}
+                getError={leaf => getMissingFileError(scripts[index].path, leaf)}
                 onUpdate={update => handleUpdateDynamicField(index, name, update)}
               />
             ))}

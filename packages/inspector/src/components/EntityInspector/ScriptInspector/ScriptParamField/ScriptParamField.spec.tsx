@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import type { ScriptParamArray, ScriptParamObject } from '../types';
@@ -166,5 +166,38 @@ describe('ArrayField', () => {
     );
     const row = screen.getByText('1').closest('[data-testid="container"]') as HTMLElement;
     expect(within(row).getByText('Custom Name')).toBeTruthy();
+  });
+});
+
+describe('when a string nested in an object list names a missing file', () => {
+  const tracks: ScriptParamArray = {
+    type: 'array',
+    value: [{ clip: 'gone.mp3' }, { clip: 'here.mp3' }],
+    item: {
+      type: 'object',
+      value: { clip: '' },
+      fields: { clip: { type: 'string', value: '' } },
+    },
+  };
+  const getError = (param: { type: string; value: unknown }) =>
+    param.type === 'string' && param.value === 'gone.mp3' ? '"gone.mp3" is missing' : undefined;
+
+  beforeEach(() => {
+    render(
+      <ScriptParamField
+        name="tracks"
+        param={tracks}
+        getError={getError}
+        onUpdate={vi.fn()}
+      />,
+    );
+  });
+
+  it('should show the warning under that field', () => {
+    expect(screen.getByText('"gone.mp3" is missing')).toBeTruthy();
+  });
+
+  it('should show it only once', () => {
+    expect(screen.getAllByText(/is missing/)).toHaveLength(1);
   });
 });

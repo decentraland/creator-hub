@@ -11,7 +11,7 @@ import { labelWithTooltip } from './labels';
 
 import type { Props } from './types';
 
-export function ScriptParamField({ name, param, error, onUpdate }: Props) {
+export function ScriptParamField({ name, param, getError, onUpdate }: Props) {
   switch (param.type) {
     case 'number':
       return (
@@ -79,6 +79,7 @@ export function ScriptParamField({ name, param, error, onUpdate }: Props) {
         <ObjectField
           name={name}
           param={param}
+          getError={getError}
           onUpdate={onUpdate}
         />
       );
@@ -88,6 +89,7 @@ export function ScriptParamField({ name, param, error, onUpdate }: Props) {
         <ArrayField
           name={name}
           param={param}
+          getError={getError}
           onUpdate={onUpdate}
         />
       );
@@ -100,7 +102,7 @@ export function ScriptParamField({ name, param, error, onUpdate }: Props) {
           value={param.value}
           onChange={e => onUpdate(e.target.value)}
           debounceTime={300}
-          error={error}
+          error={getError?.(param)}
         />
       );
   }

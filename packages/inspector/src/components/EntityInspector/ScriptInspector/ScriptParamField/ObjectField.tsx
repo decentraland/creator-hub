@@ -8,6 +8,7 @@ import { resolveParamUpdate, type ParamUpdate } from './update';
 type Props = {
   name: string;
   param: ScriptParamObject;
+  getError?: (param: ScriptParamUnion) => string | undefined;
   onUpdate: (update: ParamUpdate) => void;
 };
 
@@ -15,7 +16,7 @@ type Props = {
 // key and bubbles a FUNCTIONAL update up, merging into the freshest object rather than a stale
 // render-closure snapshot (see update.ts). `fields` is the schema (fresh from the parse); `value`
 // holds the data, with the field's own default as a fallback when a key is absent.
-export function ObjectField({ name, param, onUpdate }: Props) {
+export function ObjectField({ name, param, getError, onUpdate }: Props) {
   const { value, fields } = param;
   return (
     <Container
@@ -30,6 +31,7 @@ export function ObjectField({ name, param, onUpdate }: Props) {
           key={key}
           name={key}
           param={{ ...fieldParam, value: value?.[key] ?? fieldParam.value } as ScriptParamUnion}
+          getError={getError}
           onUpdate={childUpdate =>
             onUpdate((prev: unknown) => {
               const base =

@@ -14,6 +14,7 @@ import './ArrayField.css';
 type Props = {
   name: string;
   param: ScriptParamArray;
+  getError?: (param: ScriptParamUnion) => string | undefined;
   onUpdate: (update: ParamUpdate) => void;
 };
 
@@ -24,7 +25,7 @@ const asArray = (prev: unknown): unknown[] => (Array.isArray(prev) ? prev : []);
 // bubbles a FUNCTIONAL update that recomputes from the freshest array (see update.ts), so a row
 // edit, an add, and a remove don't clobber one another. A new row seeds from a deep clone of the
 // item's default value.
-export function ArrayField({ name, param, onUpdate }: Props) {
+export function ArrayField({ name, param, getError, onUpdate }: Props) {
   const { value, item } = param;
   const rows = asArray(value);
 
@@ -44,6 +45,7 @@ export function ArrayField({ name, param, onUpdate }: Props) {
           <ScriptParamField
             name={`${index + 1}`}
             param={{ ...item, value: element } as ScriptParamUnion}
+            getError={getError}
             onUpdate={childUpdate =>
               onUpdate((prev: unknown) => {
                 const next = asArray(prev).slice();
