@@ -45,9 +45,11 @@
         "back": "Back to scenes",
         "retry": "Retry",
         "outdated_deps": "This scene's dependencies are out of date and don't support the Bevy renderer. Update them to continue.",
-        "update_deps": "Update dependencies"
+        "update_deps": "Update dependencies",
+        "data_layer_crashed": "The scene keeps stopping unexpectedly. Go back and reopen it, or check the logs."
       }
     },
+    "realm_restarted": "The scene stopped unexpectedly and was reloaded. Changes from the last few seconds may not have been saved.",
     "header": {
       "actions": {
         "code": "Code",
