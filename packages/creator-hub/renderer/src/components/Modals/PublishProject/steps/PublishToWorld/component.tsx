@@ -53,9 +53,9 @@ import { PublishModal } from '../../PublishModal';
 import { ProjectStepWrapper } from '../../ProjectStepWrapper';
 import { COLORS, type Props, type Coordinate } from '../../types';
 import {
-  breaksWorldPlaceContinuity,
   calculateParcels,
   countOverlappedWorldScenes,
+  getWorldPlaceContinuityBreak,
   parseCoords,
 } from '../../utils';
 import { PlaceContinuityWarning } from '../../PlaceContinuityWarning';
@@ -224,6 +224,7 @@ export function PublishToWorld(props: Props) {
             <ConfirmOverwrite
               parcels={pendingScene?.parcels ?? project.scene.parcels}
               worldScenes={worldSettings.scenes}
+              isMultiScene={isMultiSceneEnabled}
               onCancel={handleBack}
               onConfirm={handlePublish}
             />
@@ -342,8 +343,7 @@ function SelectWorld({
           coordsToId(parcel.x, parcel.y),
         ),
       };
-      // The world already has scenes: publishing at 0,0 may break the Place continuity.
-      if (breaksWorldPlaceContinuity(worldSettings.scenes, scene.parcels)) {
+      if (getWorldPlaceContinuityBreak(worldSettings.scenes, scene.parcels, isMultiSceneEnabled)) {
         onShowConfirmation({ worldConfiguration, scene });
       } else {
         onPublish({ worldConfiguration, scene });
@@ -714,19 +714,14 @@ function SelectLocation({
       base: coordsToId(placement.x, placement.y),
       parcels: Array.from(placedProjectParcels),
     };
-    if (isOverlappingScenes || breaksWorldPlaceContinuity(worldScenes, scene.parcels)) {
+    // Multi-scene mode: only an overlap can break the Place continuity, and an overlap already
+    // goes through the confirmation.
+    if (isOverlappingScenes) {
       onShowConfirmation({ scene });
     } else {
       onPublish({ scene });
     }
-  }, [
-    placement,
-    placedProjectParcels,
-    isOverlappingScenes,
-    worldScenes,
-    onShowConfirmation,
-    onPublish,
-  ]);
+  }, [placement, placedProjectParcels, isOverlappingScenes, onShowConfirmation, onPublish]);
 
   return (
     <div className="SelectLocation">
@@ -803,11 +798,13 @@ function SelectLocation({
 function ConfirmOverwrite({
   parcels,
   worldScenes,
+  isMultiScene,
   onCancel,
   onConfirm,
 }: {
   parcels: string[];
   worldScenes: WorldScene[];
+  isMultiScene: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -822,7 +819,7 @@ function ConfirmOverwrite({
     () => countOverlappedWorldScenes(worldScenes, parcels),
     [worldScenes, parcels],
   );
-  const breaksContinuity = breaksWorldPlaceContinuity(worldScenes, parcels);
+  const continuityBreak = getWorldPlaceContinuityBreak(worldScenes, parcels, isMultiScene);
   const hasReplacedScenes = replacedScenes.length > 0;
 
   return (
@@ -861,12 +858,13 @@ function ConfirmOverwrite({
           {t('modal.publish_project.worlds.select_world.confirm_overwrite.description')}
         </Typography>
       )}
-      {breaksContinuity && (
+      {continuityBreak === 'merge' && (
         <PlaceContinuityWarning
-          kind="world"
+          kind="world-merge"
           overlap={overlap}
         />
       )}
+      {continuityBreak === 'replace-world' && <PlaceContinuityWarning kind="world-replace" />}
       <div className="actions">
         <Button
           color="secondary"

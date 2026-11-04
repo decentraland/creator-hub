@@ -11,10 +11,30 @@ const CONSEQUENCES = ['engagement', 'analytics', 'storage'] as const;
 type Props =
   | { kind: 'land' }
   | {
-      kind: 'world';
-      /** Number of existing world scenes the new deployment overlaps. */
+      kind: 'world-merge';
+      /** Number of existing world scenes the new deployment overlaps (two or more). */
       overlap: number;
-    };
+    }
+  | { kind: 'world-replace' };
+
+const KEY = 'modal.publish_project.place_continuity';
+
+function description(props: Props) {
+  switch (props.kind) {
+    case 'land':
+      return t(`${KEY}.land_description`);
+    case 'world-merge':
+      return t(`${KEY}.world_merge_description`, { overlap: props.overlap });
+    case 'world-replace':
+      return t(`${KEY}.world_replace_description`);
+  }
+}
+
+const TIP = {
+  land: `${KEY}.tip`,
+  'world-merge': `${KEY}.world_tip`,
+  'world-replace': `${KEY}.world_replace_tip`,
+} as const satisfies Record<Props['kind'], string>;
 
 /**
  * Warns that a deployment will be registered as a new place (its place_id changes), so the
@@ -41,11 +61,7 @@ export function PlaceContinuityWarning(props: Props) {
           variant="body2"
           className="PlaceContinuityWarning-description"
         >
-          {props.kind === 'land'
-            ? t('modal.publish_project.place_continuity.land_description')
-            : t('modal.publish_project.place_continuity.world_description', {
-                overlap: props.overlap,
-              })}
+          {description(props)}
         </Typography>
         <Typography
           variant="overline"
@@ -64,13 +80,7 @@ export function PlaceContinuityWarning(props: Props) {
         </ul>
         <div className="PlaceContinuityWarning-tip">
           <InfoOutlinedIcon fontSize="inherit" />
-          <Typography variant="body2">
-            {t(
-              props.kind === 'land'
-                ? 'modal.publish_project.place_continuity.tip'
-                : 'modal.publish_project.place_continuity.world_tip',
-            )}
-          </Typography>
+          <Typography variant="body2">{t(TIP[props.kind])}</Typography>
         </div>
       </div>
     </div>

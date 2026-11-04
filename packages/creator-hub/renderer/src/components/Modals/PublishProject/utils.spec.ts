@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   breaksLandPlaceContinuity,
-  breaksWorldPlaceContinuity,
   countOverlappedWorldScenes,
+  getWorldPlaceContinuityBreak,
 } from './utils';
 
 describe('breaksLandPlaceContinuity', () => {
@@ -45,26 +45,53 @@ describe('breaksLandPlaceContinuity', () => {
   });
 });
 
-describe('breaksWorldPlaceContinuity', () => {
+describe('getWorldPlaceContinuityBreak', () => {
   const scenes = [{ parcels: ['0,0', '0,1'] }, { parcels: ['5,5'] }];
 
   it('does not warn for a world without scenes', () => {
-    expect(breaksWorldPlaceContinuity([], ['0,0'])).toBe(false);
+    expect(getWorldPlaceContinuityBreak([], ['0,0'], true)).toBeNull();
+    expect(getWorldPlaceContinuityBreak([], ['0,0'], false)).toBeNull();
   });
 
-  it('does not warn when overlapping exactly one scene', () => {
-    expect(breaksWorldPlaceContinuity(scenes, ['0,1', '0,2'])).toBe(false);
+  describe('multi-scene mode', () => {
+    it('does not warn when overlapping exactly one scene', () => {
+      expect(getWorldPlaceContinuityBreak(scenes, ['0,1', '0,2'], true)).toBeNull();
+    });
+
+    it('does not warn when overlapping no scene, since nothing is disabled', () => {
+      expect(getWorldPlaceContinuityBreak(scenes, ['9,9'], true)).toBeNull();
+    });
+
+    it('warns of a merge when overlapping two or more scenes', () => {
+      expect(getWorldPlaceContinuityBreak(scenes, ['0,1', '5,5'], true)).toBe('merge');
+    });
   });
 
-  it('warns when overlapping no scene', () => {
-    expect(breaksWorldPlaceContinuity(scenes, ['9,9'])).toBe(true);
-  });
+  describe('single-scene mode', () => {
+    it("does not warn when replacing the world's only scene", () => {
+      expect(
+        getWorldPlaceContinuityBreak([{ parcels: ['0,0'] }], ['0,0', '1,0'], false),
+      ).toBeNull();
+    });
 
-  it('warns when overlapping two or more scenes', () => {
-    expect(breaksWorldPlaceContinuity(scenes, ['0,1', '5,5'])).toBe(true);
-  });
+    it('warns that the world is replaced when the placement overlaps no scene', () => {
+      expect(getWorldPlaceContinuityBreak([{ parcels: ['5,5'] }], ['0,0'], false)).toBe(
+        'replace-world',
+      );
+    });
 
+    it('warns that the world is replaced when other scenes would be undeployed', () => {
+      expect(getWorldPlaceContinuityBreak(scenes, ['0,0'], false)).toBe('replace-world');
+    });
+
+    it('warns of a merge when overlapping two or more scenes', () => {
+      expect(getWorldPlaceContinuityBreak(scenes, ['0,0', '5,5'], false)).toBe('merge');
+    });
+  });
+});
+
+describe('countOverlappedWorldScenes', () => {
   it('counts a scene once however many of its parcels overlap', () => {
-    expect(countOverlappedWorldScenes(scenes, ['0,0', '0,1'])).toBe(1);
+    expect(countOverlappedWorldScenes([{ parcels: ['0,0', '0,1'] }], ['0,0', '0,1'])).toBe(1);
   });
 });

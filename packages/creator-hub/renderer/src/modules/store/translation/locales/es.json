@@ -521,8 +521,9 @@
       },
       "place_continuity": {
         "title": "Tu escena perderá su ficha en Places",
-        "land_description": "Tu escena ya tiene una ficha en el directorio Places. Esta publicación cambia tanto su parcela base como las parcelas que ocupa, por lo que Decentraland registrará el resultado como un lugar nuevo en vez de actualizar la ficha actual.",
-        "world_description": "{overlap, plural, =0 {Esta ubicación no se superpone con ninguna escena existente de este World} other {Esta ubicación se superpone con # escenas existentes de este World}}, por lo que Decentraland la registrará como un lugar nuevo en vez de actualizar la ficha actual. La ficha solo se conserva cuando la publicación reemplaza exactamente una escena existente.",
+        "land_description": "Una escena ya publicada en estas parcelas tiene una ficha en el directorio Places. Esta publicación no conserva ni su parcela base ni su conjunto de parcelas, por lo que Decentraland registrará el resultado como un lugar nuevo en vez de actualizar esa ficha.",
+        "world_merge_description": "Esta ubicación se superpone con {overlap} escenas existentes de este World, por lo que Decentraland la registrará como un lugar nuevo y sus fichas se desactivarán. La ficha solo se conserva cuando la publicación reemplaza exactamente una escena existente.",
+        "world_replace_description": "Publicar como escena única primero elimina todas las escenas de este World, por lo que Decentraland registrará el resultado como un lugar nuevo y las fichas actuales se desactivarán.",
         "consequences_title": "Lo que se queda en la ficha anterior",
         "consequences": {
           "engagement": "Sus me gusta, favoritos y posición en los rankings de Places.",
@@ -531,6 +532,7 @@
         },
         "tip": "Para conservar la ficha actual, publica en la misma parcela base o en el mismo conjunto de parcelas que antes.",
         "world_tip": "Para conservar la ficha actual, ubica la escena de modo que reemplace exactamente una escena existente de este World.",
+        "world_replace_tip": "Para conservar la ficha actual, vuelve atrás, activa varias escenas para este World y ubica la escena sobre la que reemplaza.",
         "cancel": "Volver",
         "confirm": "Publicar de todos modos",
         "checking": "Comprobando…"

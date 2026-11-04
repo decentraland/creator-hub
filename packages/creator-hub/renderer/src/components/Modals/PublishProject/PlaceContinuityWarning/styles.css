@@ -5,9 +5,13 @@
   width: 100%;
   box-sizing: border-box;
   padding: 20px 24px;
-  border: 1px solid rgba(255, 169, 0, 0.4);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
   border-radius: 8px;
-  background: linear-gradient(90deg, rgba(255, 169, 0, 0.1), rgba(255, 169, 0, 0.04));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--danger) 10%, transparent),
+    color-mix(in srgb, var(--danger) 4%, transparent)
+  );
   text-align: left;
 }
 
@@ -19,7 +23,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 169, 0, 0.18);
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
   color: var(--danger);
   font-size: 24px;
 }
@@ -79,7 +83,7 @@
   gap: 8px;
   margin-top: 8px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--divider);
   color: var(--dcl-silver);
   font-size: 18px;
 }

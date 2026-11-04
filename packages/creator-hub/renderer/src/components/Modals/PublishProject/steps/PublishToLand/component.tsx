@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SceneParcels } from '@dcl/schemas';
 import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
 import { Box, Button, styled, Typography } from 'decentraland-ui2';
@@ -36,6 +36,15 @@ export function PublishToLand(props: Props) {
   const [isChecking, setIsChecking] = useState(false);
   /** Scene waiting for the user to confirm a deployment that breaks its Place continuity. */
   const [pendingScene, setPendingScene] = useState<SceneParcels | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  // The lookup can take up to a minute; closing the modal meanwhile must not publish.
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   if (!project) return null;
 
@@ -49,6 +58,7 @@ export function PublishToLand(props: Props) {
 
   const publish = useCallback(
     async (sceneUpdates: SceneParcels) => {
+      setIsPublishing(true);
       await updateSceneJson(project.path, { scene: sceneUpdates, worldConfiguration: undefined });
       updateProject({
         ...project,
@@ -88,9 +98,10 @@ export function PublishToLand(props: Props) {
       // Not being able to tell must not block publishing.
       console.error('Could not check the Place continuity of the deployment', error);
     } finally {
-      setIsChecking(false);
+      if (isMountedRef.current) setIsChecking(false);
     }
 
+    if (!isMountedRef.current) return;
     if (continuityBroken) {
       setPendingScene(sceneUpdates);
     } else {
@@ -99,8 +110,8 @@ export function PublishToLand(props: Props) {
   }, [placement, project, publish]);
 
   const handleConfirmWarning = useCallback(async () => {
-    if (pendingScene) await publish(pendingScene);
-  }, [pendingScene, publish]);
+    if (pendingScene && !isPublishing) await publish(pendingScene);
+  }, [pendingScene, isPublishing, publish]);
 
   const handleCancelWarning = useCallback(() => {
     setPendingScene(null);
@@ -239,6 +250,7 @@ export function PublishToLand(props: Props) {
               variant="contained"
               size="large"
               fullWidth
+              disabled={isPublishing}
               onClick={handleConfirmWarning}
             >
               {t('modal.publish_project.place_continuity.confirm')}
@@ -311,7 +323,7 @@ export function PublishToLand(props: Props) {
             color="primary"
             size="large"
             onClick={handleNext}
-            disabled={!placement || isChecking}
+            disabled={!placement || isChecking || isPublishing}
             sx={{ height: '45px' }}
           >
             {isChecking
