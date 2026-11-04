@@ -356,8 +356,10 @@ describe('when a turn ends', () => {
     needsLogin,
   });
 
-  const storeWith = async (info: AiProviderInfo) => {
-    const store = configureStore({ reducer: { ai: reducer } });
+  const storeWith = async (info: AiProviderInfo, useApiKeyFromEnv = false) => {
+    const store = configureStore({
+      reducer: { ai: reducer, workspace: () => ({ settings: { useApiKeyFromEnv } }) },
+    });
     preloadAi.detectProviders.mockResolvedValueOnce([info]);
     await store.dispatch(fetchProviders());
     preloadAi.detectProviders.mockClear();
@@ -367,6 +369,16 @@ describe('when a turn ends', () => {
   beforeEach(() => {
     preloadAi.detectProviders.mockReset();
   });
+
+  it.each([true, false])(
+    'should tell main whether turns bill to an API key (%s), which decides sign-in checks',
+    async useApiKeyFromEnv => {
+      const store = await storeWith(claude(), useApiKeyFromEnv);
+      preloadAi.detectProviders.mockResolvedValue([claude()]);
+      await store.dispatch(fetchProviders());
+      expect(preloadAi.detectProviders).toHaveBeenCalledWith(useApiKeyFromEnv);
+    },
+  );
 
   it('should re-detect agents after a failed turn, so a sign-in request shows up', async () => {
     const store = await storeWith(claude());

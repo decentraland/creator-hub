@@ -1,7 +1,7 @@
 .PlaceCard {
   display: flex;
   flex-direction: column;
-  width: 415px;
+  width: 416px;
   flex-shrink: 0;
   border-radius: 16px;
   background-color: var(--card);

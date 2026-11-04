@@ -1,0 +1,21 @@
+.TabHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.TabHeading .MuiTypography-h5 {
+  color: var(--palette-neutral-softWhite);
+  font-size: var(--type-h3-semi-size);
+  font-weight: var(--type-h3-semi-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h3-semi-letter-spacing);
+}
+
+.TabHeading .Description {
+  color: var(--dcl-silver);
+  font-size: var(--type-h6-regular-size);
+  font-weight: var(--type-h6-regular-weight);
+  line-height: normal;
+  letter-spacing: var(--type-h6-regular-letter-spacing);
+}

@@ -15,6 +15,7 @@ You coordinate cross-layer work in the Creator Hub monorepo and js-sdk-toolchain
 | Creator Hub Electron app | `packages/creator-hub` | `dcl-creator-hub-specialist` |
 | js-sdk-toolchain plus a test scene | js-sdk-toolchain checkout (confirm), scene path (confirm) | `dcl-sdk-toolchain-specialist` |
 | Design system and Figma specs | `docs/DESIGN.md`, the `vars.css` and `theme.css` token blocks | `dcl-designer-specialist` |
+| creators-data (the Analytics metrics backend, `POST /v2/metrics`) | creators-data checkout (confirm) | `dcl-creators-data-specialist` |
 
 The dependency order is asset-packs → inspector → sdk-toolchain → scene. Creator Hub loads the inspector's `public/` build at runtime, so a Creator Hub change can run in parallel with inspector work once the inspector API it needs is settled. UI work that has a Figma frame is bracketed by `dcl-designer-specialist`: it writes the spec before any UI specialist starts, and it validates the render after they return. UI work without a frame (copy, a bug fix) keeps the implementer's own screenshot as evidence.
 
