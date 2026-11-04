@@ -303,6 +303,22 @@ describe('World CollaboratorsTab', () => {
       expect(screen.getByRole('button', { name: 'Confirm' })).toHaveProperty('disabled', false);
     });
 
+    it('should not reopen the picker when it was closed before a save failed', async () => {
+      await renderTab();
+      let fail = (_: boolean) => {};
+      api.postParcelsPermission.mockReturnValue(new Promise<boolean>(resolve => (fail = resolve)));
+
+      pick(CAL_NAME, 'Custom parcels…');
+      await screen.findByRole('dialog', { name: 'Update parcels' });
+      act(() => clickParcel(0, 0));
+      await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Confirm' })));
+      fireEvent.keyDown(screen.getByRole('dialog', { name: 'Update parcels' }), { key: 'Escape' });
+      expect(screen.queryByRole('dialog', { name: 'Update parcels' })).toBeNull();
+      await act(async () => fail(false));
+
+      expect(screen.queryByRole('dialog', { name: 'Update parcels' })).toBeNull();
+    });
+
     it('should retry from what the server kept after a partly failed save', async () => {
       await renderTab();
       api.fetchParcelsPermission.mockResolvedValue({ parcels: ['1,0'], total: 1 });

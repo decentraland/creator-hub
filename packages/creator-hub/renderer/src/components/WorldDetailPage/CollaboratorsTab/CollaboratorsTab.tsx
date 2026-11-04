@@ -103,7 +103,8 @@ export function CollaboratorsTab({ worldName }: { worldName: string }) {
       pushGeneric('success', t('tx.done.parcels_updated'));
     } catch {
       const kept = await world.parcelsOf(row.address).catch(() => initial);
-      setPicking({ row, initial: kept });
+      // The picker may have been closed while the save ran; only refresh one that is still open.
+      setPicking(current => current && { ...current, initial: kept });
     } finally {
       setBusy(false);
     }
