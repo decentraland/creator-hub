@@ -95,9 +95,32 @@ export async function killPreview(path: string) {
   await promise;
 }
 
+// Bumped by every deliberate stop (leaving the scene, ✕, app quit). A start captures the
+// value on entry and gives up — killing whatever it spawned, with no reinstall-retry — once
+// it moves: a start still pending when the user left would otherwise finish (or retry)
+// after the stop and leave a preview no editor owns, holding its port and the scene's
+// authoritative-server seat. Internal kills (replacing a preview, the retry) go through
+// killPreview and don't bump it, so a real start failure still retries.
+const stopGenerations = new Map<string, number>();
+
+function stopGeneration(path: string) {
+  return stopGenerations.get(path) ?? 0;
+}
+
+function markStopped(path: string) {
+  stopGenerations.set(path, stopGeneration(path) + 1);
+}
+
+/** Stops the preview of `path` for good, including a start still on its way up. */
+export async function stopPreview(path: string) {
+  markStopped(path);
+  await killPreview(path);
+}
+
 export async function killAllPreviews() {
-  for (const path of previewCache.keys()) {
-    await killPreview(path);
+  const paths = new Set([...previewCache.keys(), ...inflightStarts.keys()]);
+  for (const path of paths) {
+    await stopPreview(path);
   }
   previewCache.clear(); // just to be sure...
 }
@@ -321,11 +344,7 @@ type StartOptions = PreviewOptions & { retry?: boolean; mobile?: boolean; mcpPor
 
 // Serializes concurrent starts per path: a second Preview press (or a mobile-QR start)
 // while a spawn is still converting must ride that spawn, not race a second one.
-const inflightStarts = new Map<string, Promise<string>>();
-
-// Paths whose in-flight spawn the user cancelled (✕ while converting): start() must
-// settle quietly for them — a deliberate cancel is not a failure to reinstall-and-retry.
-const cancelledStarts = new Set<string>();
+const inflightStarts = new Map<string, { promise: Promise<string>; generation: number }>();
 
 /**
  * Cancels a preview that is still converting (no deeplink yet, so the client never
@@ -336,42 +355,46 @@ export async function cancelPreview(path: string): Promise<void> {
   const preview = previewCache.get(path);
   if (preview?.child.alive() && !preview.url) {
     log.info('[CLI] preview cancelled while converting');
-    cancelledStarts.add(path);
-    await killPreview(path);
+    await stopPreview(path);
   }
 }
 
 export async function start(path: string, opts: StartOptions): Promise<string> {
+  const generation = stopGeneration(path);
+
   // A start is already underway (still converting/booting): ride it instead of racing a
   // second one — the sdk self-opens the client when it's ready, so there is nothing to fire.
-  const pending = inflightStarts.get(path);
-  if (pending) {
-    await pending.catch(() => {});
-    return path;
+  // Riding one that was stopped before this call serves nothing, so start fresh after it.
+  for (let pending = inflightStarts.get(path); pending; pending = inflightStarts.get(path)) {
+    await pending.promise.catch(() => {});
+    if (stopGeneration(path) !== generation || pending.generation === generation) return path;
+    if (inflightStarts.get(path) === pending) inflightStarts.delete(path);
   }
 
-  // Registered synchronously — no await between the check above and this set — so
+  // Registered synchronously — no await between the loop's last check and this set — so
   // concurrent same-tick starts (a Preview press racing a mobile-QR start) ride this
   // entry instead of double-spawning a process previewCache would orphan. The entry
   // spans the whole operation, reinstall-retry included, so a start landing mid-retry
   // is serialized too.
-  const entry = doStart(path, opts);
+  const entry = { promise: doStart(path, opts, generation), generation };
   inflightStarts.set(path, entry);
   try {
-    return await entry;
+    return await entry.promise;
   } finally {
     // guarded so a stale settle never clobbers an entry registered by a later start()
     if (inflightStarts.get(path) === entry) inflightStarts.delete(path);
   }
 }
 
-async function doStart(path: string, opts: StartOptions): Promise<string> {
+async function doStart(path: string, opts: StartOptions, generation: number): Promise<string> {
   const { retry = true } = opts;
+  const stopped = () => stopGeneration(path) !== generation;
 
   // The scene-level landscapeTerrain opt-out overrides the preview preference
   if (!(await sceneHasLandscapeTerrain(path))) {
     opts = { ...opts, enableLandscapeTerrains: false };
   }
+  if (stopped()) return path;
 
   // A mobile-QR start ignores the client option. The phone needs a LAN-reachable server
   // plus the `decentraland://open?preview=` deeplink, and only the Unity path prints that
@@ -410,6 +433,7 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     // one it no longer should — restart the preview instead of reusing it.
     const previewHasSidecar = new URLSearchParams(preview.url).has(LOCAL_AB_PARAM);
     const wantsSidecar = opts.optimizedAssets && (await supportsAssetBundles(path));
+    if (stopped()) return path;
 
     if (wantsSidecar === previewHasSidecar) {
       // re-focus the already-open client, with the deeplink adjusted to the current options
@@ -419,9 +443,6 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
   }
 
   killPreview(path);
-  // a fresh spawn starts with a clean slate: a marker left by a cancel that raced the
-  // deeplink must not swallow this spawn's real failures
-  cancelledStarts.delete(path);
 
   let stopConversionProgress = () => {};
 
@@ -470,11 +491,15 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
             ...(opts.mcp && opts.mcpPort !== undefined ? ['--mcp-port', String(opts.mcpPort)] : []),
           ];
 
+    const env = await getEnv(path);
+    // the last await before the spawn: once it is in previewCache a stop kills it directly
+    if (stopped()) return path;
+
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args,
       cwd: path,
       workspace: path,
-      env: await getEnv(path),
+      env,
     });
 
     // registered before the deeplink resolves so the spawn can be cancelled mid-conversion
@@ -584,17 +609,18 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     return path;
   } catch (error) {
     killPreview(path);
-    // a deliberate ✕ lands here as a process-death rejection: settle quietly, no retry
-    if (cancelledStarts.delete(path)) {
-      log.info('[CLI] preview start cancelled by the user');
+    // a deliberate stop lands here as a process-death rejection: settle quietly, no retry
+    if (stopped()) {
+      log.info('[CLI] preview start stopped by the user');
       return path;
     }
     if (retry && !isClientNotInstalledError(error)) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
       await install(path);
+      if (stopped()) return path;
       // recurse into doStart, not start(): the wrapper's inflight entry (this very call)
       // is still registered, and start() would find it and ride itself forever
-      return await doStart(path, { ...opts, retry: false });
+      return await doStart(path, { ...opts, retry: false }, generation);
     } else {
       throw error;
     }
