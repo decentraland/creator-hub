@@ -61,6 +61,7 @@ export function setSceneMcpProject(projectDir: string | null): void {
   // gateway down so a later launch_preview starts fresh against the new scene.
   const running = gatewayProject();
   if (running !== null && running !== projectDir) void stopExplorerGateway();
+  if (projectDir !== currentProjectDir) log.info(`[MCP] scene tools now target ${projectDir}`);
   currentProjectDir = projectDir;
 }
 
@@ -205,7 +206,18 @@ function requestSceneOp(
   if (currentProjectDir === null)
     return Promise.resolve({ ok: false, payload: 'No scene is open.' });
   const run = sceneOpChain
-    .then(() => requestSceneOpRaw(op, params))
+    .then(async () => {
+      // One line per hop outcome, so a QA main.log tells "the editor never answered" (main's
+      // timeout) from "the inspector never answered" (the renderer's SceneRpc timeout text).
+      const startedAt = Date.now();
+      log.info(`[MCP] scene op "${op}" from ${caller} -> editor (scene ${currentProjectDir})`);
+      const res = await requestSceneOpRaw(op, params);
+      const detail = res.ok ? '' : `: ${String(res.payload)}`;
+      log.info(
+        `[MCP] scene op "${op}" from ${caller} ${res.ok ? 'ok' : 'failed'} in ${Date.now() - startedAt} ms${detail}`,
+      );
+      return res;
+    })
     .then(async res => {
       if (res.ok && MUTATION_UNDO_COST[op] !== undefined) {
         if (caller === 'assistant') turnMutations += MUTATION_UNDO_COST[op];
