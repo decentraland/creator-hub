@@ -176,6 +176,32 @@ describe('Lands.fetchLand', () => {
     fetchMock.mockReset();
   });
 
+  describe('when it asks the subgraph for UpdateManager authorizations', () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValue(landQuery({}));
+    });
+
+    it("should ask for both newest first, so the first page holds each pair's latest grant or revoke", async () => {
+      await new Lands().fetchLand('0xme');
+
+      const [, init] = fetchMock.mock.calls[0];
+      const { query } = JSON.parse(init.body);
+      const authorizationArgs = [
+        ...query.matchAll(/(\w+Authorizations): authorizations\(([^)]*)\)/g),
+      ].map(([, field, args]) => [field, args]);
+      expect(authorizationArgs).toEqual([
+        [
+          'ownerAuthorizations',
+          expect.stringContaining('orderBy: timestamp, orderDirection: desc'),
+        ],
+        [
+          'operatorAuthorizations',
+          expect.stringContaining('orderBy: timestamp, orderDirection: desc'),
+        ],
+      ]);
+    });
+  });
+
   describe('when the account is the update operator of a parcel', () => {
     beforeEach(() => {
       fetchMock.mockResolvedValue(
