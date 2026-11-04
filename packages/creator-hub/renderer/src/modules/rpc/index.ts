@@ -4,6 +4,7 @@ import { hasCustomCode } from '/shared/scene-parser';
 import { fs, custom, workspace, ai } from '#preload';
 
 import { SceneRpcClient } from './scene/client';
+import { clearActiveSceneClient, setActiveSceneClient } from './active-scene';
 import { SceneRpcServer } from './scene/server';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
 import { CodeParserRPC } from './code';
@@ -70,11 +71,13 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     },
   });
   const storage = new StorageRPC(transport, cbs, params);
+  setActiveSceneClient(sceneClient);
   const codeParser = new CodeParserRPC(transport);
 
   return {
     ...params,
     dispose: () => {
+      clearActiveSceneClient(sceneClient);
       storage.dispose();
       codeParser.dispose();
       sceneServer.dispose();

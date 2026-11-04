@@ -17,7 +17,7 @@ import {
 
 const locations = BATCH.locations as unknown as LocationMetrics[];
 
-/** A world scene carrying all 19 metrics. */
+/** A world scene carrying all 26 metrics. */
 const FULL = locations[0];
 /** A world scene carrying 10 of 19 — the common case, not an edge case. */
 const PARTIAL = locations[1];
@@ -29,8 +29,8 @@ const EMPTY = locations[3];
 const { LAST_30_DAYS, LAST_60_DAYS } = MetricsWindow;
 
 describe('the metric name registry', () => {
-  it('should list exactly the 19 metrics the service exports', () => {
-    expect(METRIC_NAMES).toHaveLength(19);
+  it('should list exactly the 26 metrics the service exports', () => {
+    expect(METRIC_NAMES).toHaveLength(26);
     expect([...METRIC_NAMES].sort()).toEqual(
       [...Object.keys(FULL.metrics), ...Object.keys(GENESIS_CITY.metrics)]
         .filter((name, index, all) => all.indexOf(name) === index)
@@ -185,6 +185,37 @@ describe('toOverview', () => {
     });
   });
 
+  describe('when reading the Day 3 retention', () => {
+    it('should read the "all" series of the selected window as a percentage', () => {
+      const rate = FULL.metrics.d3_retention_rate_30d.find(row => row.series === 'all')!.value;
+
+      expect(toOverview(FULL, LAST_30_DAYS).day3Retention).toBeCloseTo(rate * 100, 6);
+    });
+
+    it('should read a different metric from Day 7', () => {
+      const overview = toOverview(FULL, LAST_60_DAYS);
+
+      expect(overview.day3Retention).not.toBeCloseTo(overview.day7Retention!, 6);
+    });
+  });
+
+  describe('when reading the new Decentraland players', () => {
+    it('should read the "all" series of the selected window as a count', () => {
+      const rows = FULL.metrics.new_decentraland_players_60d;
+
+      expect(toOverview(FULL, LAST_60_DAYS).newPlayers).toBe(
+        rows.find(row => row.series === 'all')!.value,
+      );
+      expect(toOverview(FULL, LAST_30_DAYS).newPlayers).toBe(
+        FULL.metrics.new_decentraland_players_30d.find(row => row.series === 'all')!.value,
+      );
+    });
+
+    it('should leave the count null rather than zero when the metric is missing', () => {
+      expect(toOverview(PARTIAL, LAST_60_DAYS).newPlayers).toBeNull();
+    });
+  });
+
   describe('when the location carries only some of the metrics', () => {
     it('should render what is there and leave the rest null', () => {
       const overview = toOverview(PARTIAL, LAST_60_DAYS);
@@ -276,11 +307,131 @@ describe('toRetention', () => {
     );
   });
 
+  it('should read the Day 3 platforms as percentages for the selected window', () => {
+    const { day3Platforms } = toRetention(FULL, LAST_30_DAYS);
+    const rows = FULL.metrics.d3_retention_rate_30d;
+
+    expect(day3Platforms.all).toBeCloseTo(rows.find(r => r.series === 'all')!.value * 100, 6);
+    expect(day3Platforms.desktop).toBeCloseTo(
+      rows.find(r => r.series === 'desktop')!.value * 100,
+      6,
+    );
+    expect(day3Platforms.mobile).toBeCloseTo(rows.find(r => r.series === 'mobile')!.value * 100, 6);
+  });
+
+  it('should read the Day 3 cohort series as percentages of the "all" series', () => {
+    const { day3ByCohortWeek } = toRetention(FULL, LAST_60_DAYS);
+
+    expect(day3ByCohortWeek).toHaveLength(8);
+    expect(day3ByCohortWeek[0].value).toBeCloseTo(
+      FULL.metrics.d3_retention_rate_weekly.find(
+        row => row.period === '2026-06-15' && row.series === 'all',
+      )!.value * 100,
+      6,
+    );
+  });
+
+  it('should read the weekly churn rate as percentages of the "all" series', () => {
+    const { weeklyChurnRate } = toRetention(FULL, LAST_60_DAYS);
+
+    expect(weeklyChurnRate).toHaveLength(8);
+    expect(weeklyChurnRate[0].value).toBeCloseTo(
+      FULL.metrics.churn_rate_weekly.find(
+        row => row.period === '2026-06-15' && row.series === 'all',
+      )!.value * 100,
+      6,
+    );
+    for (const point of weeklyChurnRate) {
+      expect(point.value).toBeLessThanOrEqual(100);
+    }
+  });
+
+  describe('when the export withholds the youngest cohort week', () => {
+    const withoutYoungestWeek = (name: string): LocationMetrics => ({
+      ...FULL,
+      metrics: {
+        ...FULL.metrics,
+        [name]: FULL.metrics[name].filter(row => row.period !== '2026-08-03'),
+      },
+    });
+
+    it('should end the Day 3 series at the last exported week instead of inventing a point', () => {
+      const { day3ByCohortWeek } = toRetention(
+        withoutYoungestWeek('d3_retention_rate_weekly'),
+        LAST_60_DAYS,
+      );
+
+      expect(day3ByCohortWeek).toHaveLength(7);
+      expect(new Date(day3ByCohortWeek.at(-1)!.date).getDate()).toBe(27);
+      expect(day3ByCohortWeek.every(point => point.value !== null)).toBe(true);
+    });
+
+    it('should end the churn series at the last exported week too', () => {
+      const { weeklyChurnRate } = toRetention(
+        withoutYoungestWeek('churn_rate_weekly'),
+        LAST_60_DAYS,
+      );
+
+      expect(weeklyChurnRate).toHaveLength(7);
+      expect(new Date(weeklyChurnRate.at(-1)!.date).getDate()).toBe(27);
+    });
+  });
+
+  describe('when marking Day 7 cohorts that are still settling', () => {
+    const youngest = (exportedAt?: string) =>
+      toRetention(FULL, LAST_60_DAYS, exportedAt).day7ByCohortWeek.at(-1)!;
+
+    it('should treat a cohort exactly 14 days before the export as final', () => {
+      expect(youngest('2026-08-17T00:00:00.000Z').settling).toBe(false);
+    });
+
+    it('should mark a cohort 13 whole days before the export as settling', () => {
+      expect(youngest('2026-08-16T23:59:59.000Z').settling).toBe(true);
+    });
+
+    it('should mark every cohort younger than 14 days and none older', () => {
+      const { day7ByCohortWeek } = toRetention(FULL, LAST_60_DAYS, '2026-08-09T12:00:00.000Z');
+
+      expect(day7ByCohortWeek.map(point => point.settling)).toEqual([
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+      ]);
+    });
+
+    it('should treat every cohort as final when the export date is missing', () => {
+      const { day7ByCohortWeek } = toRetention(FULL, LAST_60_DAYS);
+
+      expect(day7ByCohortWeek.every(point => point.settling === false)).toBe(true);
+    });
+
+    it('should treat every cohort as final when the export date is invalid', () => {
+      const { day7ByCohortWeek } = toRetention(FULL, LAST_60_DAYS, 'not a date');
+
+      expect(day7ByCohortWeek.every(point => point.settling === false)).toBe(true);
+    });
+
+    it('should never mark the Day 3 or churn series, which are gated upstream', () => {
+      const retention = toRetention(FULL, LAST_60_DAYS, '2026-08-04T00:00:00.000Z');
+
+      expect(retention.day3ByCohortWeek.every(point => point.settling === undefined)).toBe(true);
+      expect(retention.weeklyChurnRate.every(point => point.settling === undefined)).toBe(true);
+    });
+  });
+
   it('should leave a location without retention metrics empty', () => {
     const retention = toRetention(PARTIAL, LAST_60_DAYS);
 
     expect(retention.platforms.all).toBeNull();
     expect(retention.day7ByCohortWeek).toEqual([]);
+    expect(retention.day3Platforms.all).toBeNull();
+    expect(retention.day3ByCohortWeek).toEqual([]);
+    expect(retention.weeklyChurnRate).toEqual([]);
   });
 });
 

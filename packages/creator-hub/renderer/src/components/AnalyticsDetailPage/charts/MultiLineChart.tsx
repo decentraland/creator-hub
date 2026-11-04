@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Box, Typography } from 'decentraland-ui2';
 import { LineChart } from '@mui/x-charts';
 
@@ -5,16 +6,20 @@ import type { TimeSeriesPoint } from '/shared/types/place-analytics';
 
 import { t } from '/@/modules/store/translation/utils';
 
+import { ChartTooltipContent } from './ChartTooltipContent';
 import { EndOfLineLabels } from './EndOfLineLabels';
+import { SeriesGradient } from './SeriesGradient';
 import {
   CATEGORICAL_COLORS,
   CHART_HEIGHT,
   CHART_MARGIN,
-  COMPACT_CHART_MARGIN,
   SERIES_COLOR,
   chartSx,
+  fortnightlyTicks,
+  seriesPaint,
   tickDateFormat,
-  tooltipDateFormat,
+  xAxisChrome,
+  yAxisChrome,
 } from './theme';
 
 export type LineSeries = {
@@ -24,20 +29,18 @@ export type LineSeries = {
 };
 
 type Props = {
-  /** Rendered in fixed order, so each series keeps its color across charts. */
+  /** Rendered in fixed order, so each series keeps its color across charts. A lone series wears the brand gradient. */
   series: LineSeries[];
   formatValue: (value: number) => string;
   maxValue?: number;
   height?: number;
-  /** Set when the chart shares a row, so its margins don't crowd out the plot. */
-  compact?: boolean;
 };
 
-/**
- * Several series over the same weeks. Identity comes from the legend the caller
- * renders above the chart; this only labels each line's last value.
- */
-export function MultiLineChart({ series, formatValue, maxValue, height, compact }: Props) {
+/** Several series over the same weeks, each labelled at its last value; the caller renders the legend. */
+export function MultiLineChart({ series, formatValue, maxValue, height }: Props) {
+  const isSingle = series.length === 1;
+  const id = `series-gradient-${useId().replace(/:/g, '')}`;
+  const gradientId = isSingle ? id : undefined;
   const dates = series[0]?.points.map(point => point.date) ?? [];
 
   if (dates.length === 0) {
@@ -48,12 +51,8 @@ export function MultiLineChart({ series, formatValue, maxValue, height, compact 
     );
   }
 
-  /*
-   * A lone series wears the brand color, the same as every other single-series
-   * chart in the page; the categorical set is for telling series apart.
-   */
   const colorOf = (index: number) =>
-    series.length === 1 ? SERIES_COLOR : CATEGORICAL_COLORS[index % CATEGORICAL_COLORS.length];
+    isSingle ? SERIES_COLOR : CATEGORICAL_COLORS[index % CATEGORICAL_COLORS.length];
 
   const endLabels = series
     .map((entry, index) => {
@@ -64,7 +63,7 @@ export function MultiLineChart({ series, formatValue, maxValue, height, compact 
             key: entry.key,
             date: lastPoint.date,
             value: lastPoint.value,
-            color: colorOf(index),
+            color: isSingle ? seriesPaint(gradientId) : colorOf(index),
             text: formatValue(lastPoint.value),
           };
     })
@@ -73,22 +72,29 @@ export function MultiLineChart({ series, formatValue, maxValue, height, compact 
   return (
     <LineChart
       height={height ?? CHART_HEIGHT}
-      margin={compact ? COMPACT_CHART_MARGIN : CHART_MARGIN}
-      sx={chartSx}
+      margin={CHART_MARGIN}
+      sx={chartSx(gradientId)}
       grid={{ horizontal: true }}
       skipAnimation
+      axisHighlight={{ x: 'none', y: 'none' }}
+      tooltip={{ trigger: 'axis' }}
       xAxis={[
         {
+          ...xAxisChrome,
           data: dates.map(date => new Date(date)),
           scaleType: 'time',
-          tickInterval: dates.filter((_date, index) => index % 2 === 0).map(date => new Date(date)),
-          valueFormatter: (date: Date, context) =>
-            context.location === 'tooltip'
-              ? tooltipDateFormat.format(date)
-              : tickDateFormat.format(date),
+          tickInterval: fortnightlyTicks(dates),
+          valueFormatter: (date: Date) => tickDateFormat.format(date),
         },
       ]}
-      yAxis={[{ min: 0, max: maxValue, valueFormatter: (value: number) => formatValue(value) }]}
+      yAxis={[
+        {
+          ...yAxisChrome,
+          min: 0,
+          max: maxValue,
+          valueFormatter: (value: number) => formatValue(value),
+        },
+      ]}
       series={series.map((entry, index) => ({
         id: entry.key,
         data: entry.points.map(point => point.value),
@@ -98,8 +104,15 @@ export function MultiLineChart({ series, formatValue, maxValue, height, compact 
         showMark: false,
         valueFormatter: (value: number | null) => (value === null ? '-' : formatValue(value)),
       }))}
+      slots={{ axisContent: ChartTooltipContent }}
       slotProps={{ legend: { hidden: true } }}
     >
+      {gradientId && (
+        <SeriesGradient
+          id={gradientId}
+          values={series[0].points.map(point => point.value)}
+        />
+      )}
       <EndOfLineLabels labels={endLabels} />
     </LineChart>
   );

@@ -39,6 +39,7 @@ import {
   getDataLayerInterface,
   refreshUndoRedoState,
 } from '../../../redux/data-layer';
+import { updateCanSave } from '../../../redux/app';
 import { getConfig } from '../../logic/config';
 import { withAssetDir } from '../../data-layer/host/fs-utils';
 import {
@@ -92,6 +93,7 @@ enum Method {
   GET_SCENE_SETTINGS = 'get_scene_settings',
   SET_SCENE_SETTINGS = 'set_scene_settings',
   GET_VIEWPORT_RECT = 'get_viewport_rect',
+  SAVE_SCENE = 'save_scene',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -154,6 +156,7 @@ type Params = {
   // The patch: the SceneMetadata fields to change (each replaces that field wholesale).
   [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
   [Method.GET_VIEWPORT_RECT]: Record<string, never>;
+  [Method.SAVE_SCENE]: Record<string, never>;
 };
 
 type Result = {
@@ -196,6 +199,7 @@ type Result = {
   [Method.GET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
   [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
   [Method.GET_VIEWPORT_RECT]: { rect: ViewportRect | null };
+  [Method.SAVE_SCENE]: void;
 };
 
 // Validate an AI-supplied entity id before branding it as an Entity. The id comes from the
@@ -375,6 +379,16 @@ export class SceneServer extends RPC<Method, Params, Result> {
     this.handle('set_mobile_debug_session_enabled', async ({ enabled, sessions }) => {
       store.dispatch(setMobileDebugSessionEnabled({ enabled }));
       mobileDebugStore.updateSessions(sessions);
+    });
+
+    // Renderer-agnostic on purpose: the host calls this before publishing, and publishing
+    // must not ship a stale scene.json under Bevy either. Rejects when the flush fails, so
+    // the host can stop rather than deploy the previous content.
+    this.handle('save_scene', async () => {
+      const dataLayer = getDataLayerInterface();
+      if (!dataLayer) throw new Error('Data layer is not connected');
+      await dataLayer.save({});
+      store.dispatch(updateCanSave({ dirty: false }));
     });
 
     // The 3D viewport's screen rect (inspector-window coords), so the host can crop a

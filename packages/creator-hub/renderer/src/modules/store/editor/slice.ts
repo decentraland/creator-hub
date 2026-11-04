@@ -11,6 +11,9 @@ import { isWorkspaceError } from '/shared/types/workspace';
 
 import { editor } from '#preload';
 
+import { getActiveSceneClient } from '/@/modules/rpc/active-scene';
+import { t } from '/@/modules/store/translation/utils';
+
 import { actions as deploymentActions } from '../deployment';
 import { registerDeployServer } from '../deployment/deploy-api';
 import { actions as workspaceActions } from '../workspace';
@@ -24,7 +27,7 @@ export const runScene = createAsyncThunk(
   'editor/runScene',
   async (
     { path, mobile, ...opts }: PreviewOptions & { path: string; mobile?: boolean },
-    { dispatch },
+    { dispatch, getState, requestId },
   ) => {
     // Surfaces the sidecar's asset-conversion progress (a large scene's first
     // conversion can take minutes before the preview is ready)
@@ -35,17 +38,56 @@ export const runScene = createAsyncThunk(
       await editor.runScene({ path, opts, mobile });
     } finally {
       subscription.cleanup();
-      dispatch(setPreviewProgress(null));
+      // a run that was superseded or left behind must not wipe the current run's progress
+      const { previewRun } = getState().editor;
+      if (!previewRun || previewRun.requestId === requestId) dispatch(setPreviewProgress(null));
     }
   },
 );
 // Cancels a preview that's still converting: the spawn is killed and the pending
 // runScene settles without opening the client.
 export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.cancelPreview);
+
+function isSaveSceneUnsupported(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('"save_scene" not implemented');
+}
+
+/**
+ * Pushes the open editor's queued writes to disk before a deploy reads the project back.
+ *
+ * The Inspector saves asynchronously, so an edit made moments before hitting Publish can
+ * still be in flight — or have failed — while `sdk-commands deploy` packages whatever
+ * scene.json is on disk. Failing here is deliberate: publishing content the creator cannot
+ * see is worse than not publishing at all.
+ *
+ * A closed editor (no iframe mounted) has nothing to flush and is not an error.
+ */
+async function flushEditorToDisk() {
+  const scene = getActiveSceneClient();
+  if (!scene) return;
+
+  try {
+    await scene.saveScene();
+  } catch (error) {
+    // An inspector that predates save_scene (a dev build served on VITE_INSPECTOR_PORT, say)
+    // cannot flush on request. Publishing then behaves exactly as it did before this RPC
+    // existed, rather than being blocked by an editor that never could have answered.
+    if (isSaveSceneUnsupported(error)) return;
+    throw new Error(
+      t('editor.publish.save_failed', {
+        reason: error instanceof Error ? error.message : String(error),
+      }),
+    );
+  }
+}
+
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
+    // Before marking anything replaced: a failed flush starts no deploy, so the previous
+    // deployment must stay retryable.
+    await flushEditorToDisk();
     // Main stops the previous CLI, so a retry of the previous deployment must not start another.
     dispatch(deploymentActions.markDeploymentReplaced({ path: opts.path }));
     const server = await editor.publishScene({ ...opts, language: translation.locale });
@@ -104,7 +146,13 @@ export type EditorState = {
   loadingPreview: boolean;
   previewProgress: PreviewProgress | null;
   previewCancelled: boolean;
+  // The run that owns `loadingPreview`. A run that settles after the user left its scene
+  // (or after a newer run took over) must not touch the state of the scene now open.
+  previewRun: { requestId: string; path: string } | null;
   isPreviewRunning: boolean;
+  // The scene whose preview `isPreviewRunning` describes, so a late stop of a scene the
+  // user already left can't clear the flag for the preview of the scene now open.
+  runningPreviewPath: string | null;
   isInstalling: boolean;
   isInstalled: boolean;
   isInstallingProject: boolean;
@@ -126,7 +174,9 @@ const initialState: EditorState = {
   loadingPreview: false,
   previewProgress: null,
   previewCancelled: false,
+  previewRun: null,
   isPreviewRunning: false,
+  runningPreviewPath: null,
   isInstalling: false,
   isInstallingProject: false,
   isInstalledProject: false,
@@ -254,22 +304,30 @@ export const slice = createSlice({
       state.error = action.error.message ? new Error(action.error.message) : null;
       state.isFetchingVersion = false;
     });
-    builder.addCase(runScene.pending, state => {
+    builder.addCase(runScene.pending, (state, action) => {
       state.loadingPreview = true;
       state.previewCancelled = false;
+      state.previewRun = { requestId: action.meta.requestId, path: action.meta.arg.path };
     });
-    builder.addCase(runScene.fulfilled, state => {
+    builder.addCase(runScene.fulfilled, (state, action) => {
+      if (state.previewRun?.requestId !== action.meta.requestId) return;
+      state.previewRun = null;
       state.loadingPreview = false;
       // a cancelled run settles quietly with no client opened, so it isn't "running"
-      if (!state.previewCancelled) state.isPreviewRunning = true;
+      if (!state.previewCancelled) {
+        state.isPreviewRunning = true;
+        state.runningPreviewPath = action.meta.arg.path;
+      }
       state.previewCancelled = false;
     });
     builder.addCase(runScene.rejected, (state, action) => {
-      state.loadingPreview = false;
-      state.previewCancelled = false;
       captureException(action.error, {
         tags: { source: 'editor-page', event: 'run-scene' },
       });
+      if (state.previewRun?.requestId !== action.meta.requestId) return;
+      state.previewRun = null;
+      state.loadingPreview = false;
+      state.previewCancelled = false;
     });
     // The button stays blocked until the cancel completes: killPreview resolves only once
     // the process is confirmed dead (up to the force-kill timeout), and unblocking earlier
@@ -286,8 +344,20 @@ export const slice = createSlice({
     builder.addCase(cancelPreview.rejected, state => {
       if (state.previewCancelled) state.loadingPreview = false;
     });
-    builder.addCase(killPreviewScene.fulfilled, state => {
-      state.isPreviewRunning = false;
+    // On pending, not fulfilled: killing waits for the process to die (up to the force-kill
+    // timeout), and the scene the user moved to may start its own preview meanwhile.
+    builder.addCase(killPreviewScene.pending, (state, action) => {
+      const path = action.meta.arg;
+      if (state.previewRun?.path === path) {
+        state.previewRun = null;
+        state.loadingPreview = false;
+        state.previewCancelled = false;
+        state.previewProgress = null;
+      }
+      if (state.runningPreviewPath === path) {
+        state.isPreviewRunning = false;
+        state.runningPreviewPath = null;
+      }
     });
     builder.addCase(workspaceActions.saveAndGetThumbnail.pending, state => {
       if (state.project) state.project.status = 'loading';

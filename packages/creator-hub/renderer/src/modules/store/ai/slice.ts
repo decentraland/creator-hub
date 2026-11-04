@@ -57,7 +57,9 @@ function savedSessions(sessions: AiSessionMeta[]): AiSessionMeta[] {
 
 // Ask main which CLIs are installed/runnable. Cheap scan first, login-shell probe only
 // if something's missing — that cost lives in main.
-export const fetchProviders = createAsyncThunk('ai/fetchProviders', () => ai.detectProviders());
+export const fetchProviders = createAsyncThunk('ai/fetchProviders', (_: void, { getState }) =>
+  ai.detectProviders(getState().workspace.settings?.useApiKeyFromEnv ?? false),
+);
 
 export const recheckAfterTurn = createAsyncThunk(
   'ai/recheckAfterTurn',
