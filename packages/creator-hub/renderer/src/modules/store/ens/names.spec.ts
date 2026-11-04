@@ -1,17 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ContractFunctionRevertedError } from 'viem';
+import { ContractFunctionRevertedError, decodeFunctionData } from 'viem';
+import { namehash } from 'viem/ens';
 
 import type * as Viem from 'viem';
 import { DCLRegistrar } from './abis';
 import { ENSProvider, type ENS } from './types';
 
 const readContractMock = vi.fn();
+const configValues: Record<string, string> = {
+  CHAIN_ID: '11155111',
+  RPC_URL: 'https://rpc.example.org/sepolia',
+};
 
 vi.mock('/@/config', () => ({
-  config: {
-    get: (key: string) =>
-      ({ CHAIN_ID: '11155111', RPC_URL: 'https://rpc.example.org/sepolia' })[key],
-  },
+  config: { get: (key: string) => configValues[key] },
 }));
 
 vi.mock('viem', async importOriginal => ({
@@ -19,9 +21,8 @@ vi.mock('viem', async importOriginal => ({
   createPublicClient: () => ({ readContract: readContractMock }),
 }));
 
-const { buildSetNameContent, getNameUsage, resolveNameOwner, toDCLNameLabel } = await import(
-  './names'
-);
+const { PUBLIC_RESOLVER_ABI, buildSetNameContent, getNameUsage, resolveNameOwner, toDCLNameLabel } =
+  await import('./names');
 
 const SEPOLIA_REGISTRAR = '0x7518456ae93eb98f3e64571b689c626616bb7f30';
 const SEPOLIA_RESOLVER = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD';
@@ -124,6 +125,34 @@ describe('buildSetNameContent', () => {
         to: SEPOLIA_RESOLVER,
         data: '0x304e6ade9bb7b7bd73d31b16ff599daabd868b2815d6cd9833b8321051e9dc312e20b56e00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000026e3010170122065e4731d4080eb1944ae2a6cdd6a1f53af5021c7123de709349d0932c98760870000000000000000000000000000000000000000000000000000',
       });
+    });
+  });
+
+  describe('when decoding the call with the public resolver ABI', () => {
+    it('should be setContenthash with the NAME node and the content hash', () => {
+      const contentHash =
+        '0xe3010170122065e4731d4080eb1944ae2a6cdd6a1f53af5021c7123de709349d0932c9876087';
+      const { data } = buildSetNameContent('foo.dcl.eth', contentHash);
+      expect(decodeFunctionData({ abi: PUBLIC_RESOLVER_ABI, data })).toEqual({
+        functionName: 'setContenthash',
+        args: [namehash('foo.dcl.eth'), contentHash],
+      });
+    });
+  });
+
+  describe('when the app runs on Ethereum mainnet', () => {
+    beforeEach(() => {
+      configValues.CHAIN_ID = '1';
+    });
+
+    afterEach(() => {
+      configValues.CHAIN_ID = '11155111';
+    });
+
+    it('should send the call to the mainnet public resolver', () => {
+      expect(buildSetNameContent('foo.dcl.eth', '0x').to).toBe(
+        '0x4976fb03c32e5b8cfe2b6ccb31c09ba78ebaba41',
+      );
     });
   });
 });
