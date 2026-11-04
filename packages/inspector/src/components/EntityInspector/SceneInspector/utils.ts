@@ -1,7 +1,7 @@
 import { areConnected } from '@dcl/ecs';
 import type { EditorComponentsTypes, SceneCategory } from '../../../lib/sdk/components';
 import { SceneAgeRating } from '../../../lib/sdk/components';
-import { normalizeAddress } from '../../../lib/logic/ethereum';
+import { isAddress, normalizeAddress } from '../../../lib/logic/ethereum';
 import type { Coords } from '../../../lib/utils/layout';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
@@ -272,6 +272,26 @@ export const dedupeAddresses = (stored: string[] = []): string[] => {
 /** Whether `address` is already stored, under any spelling. */
 export const containsAddress = (stored: string[] = [], address: string): boolean =>
   stored.some(entry => normalizeAddress(entry) === normalizeAddress(address));
+
+/** Whether `typed` is a valid address already stored, under any spelling. */
+export const isDuplicateAddress = (stored: string[] = [], typed: string): boolean => {
+  const address = typed.trim();
+  return !!address && isAddress(address) && containsAddress(stored, address);
+};
+
+/**
+ * The allowlist after a committed `typed` value: `null` when nothing changes (empty text
+ * or an address already on the list, which `duplicate` tells apart).
+ */
+export function addLogsPermission(
+  stored: string[] = [],
+  typed: string,
+): { next: string[] | null; duplicate: boolean } {
+  const address = typed.trim();
+  if (!address) return { next: null, duplicate: false };
+  if (containsAddress(stored, address)) return { next: null, duplicate: true };
+  return { next: [...stored, address], duplicate: false };
+}
 
 /** Every stored entry that is not `address`, under any spelling. */
 export const withoutAddress = (stored: string[] = [], address: string): string[] =>

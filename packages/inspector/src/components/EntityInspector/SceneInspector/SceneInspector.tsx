@@ -44,7 +44,8 @@ import {
   isImage,
   nextMultiplayerValue,
   MIDDAY_SECONDS,
-  containsAddress,
+  addLogsPermission,
+  isDuplicateAddress,
   dedupeAddresses,
   disableMultiplayerWithUninstall,
   enableMultiplayerWithInstall,
@@ -230,20 +231,26 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const handleAddLogsPermission = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setLogsPermissionIsDuplicate(false);
-      const address = event.target.value;
-      if (!address) return;
-
-      const logsPermissions = componentValue.logsPermissions ?? [];
-      if (containsAddress(logsPermissions, address)) {
-        setLogsPermissionIsDuplicate(true);
-        return;
-      }
-
-      setComponentValue({ ...componentValue, logsPermissions: [...logsPermissions, address] });
+      const { next, duplicate } = addLogsPermission(
+        componentValue.logsPermissions,
+        event.target.value,
+      );
+      setLogsPermissionIsDuplicate(duplicate);
+      if (!next) return;
+      setComponentValue({ ...componentValue, logsPermissions: next });
       setLogsPermissionsCommits(commits => commits + 1);
     },
     [componentValue, setComponentValue],
+  );
+
+  // Flags a duplicate as soon as it is pasted or typed, before any commit.
+  const handleLogsPermissionInput = useCallback(
+    (event: React.FormEvent<HTMLInputElement>) => {
+      setLogsPermissionIsDuplicate(
+        isDuplicateAddress(componentValue.logsPermissions, event.currentTarget.value),
+      );
+    },
+    [componentValue.logsPermissions],
   );
 
   const handleRemoveLogsPermission = useCallback(
@@ -533,6 +540,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
                     : `${logsPermissionsId}-hint`
                 }
                 onChange={handleAddLogsPermission}
+                onInput={handleLogsPermissionInput}
               />
               {logsPermissionIsDuplicate && (
                 <div

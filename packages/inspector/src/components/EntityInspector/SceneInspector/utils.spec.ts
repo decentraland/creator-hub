@@ -6,6 +6,7 @@ import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
 import type { Layout } from '../../../lib/utils/layout';
 import type { SceneInput } from './types';
 import {
+  addLogsPermission,
   containsAddress,
   dedupeAddresses,
   disableMultiplayerWithUninstall,
@@ -13,6 +14,7 @@ import {
   fromScene,
   getThumbnailWarnings,
   hasThumbnailAspectRatio,
+  isDuplicateAddress,
   isValidInput,
   nextMultiplayerValue,
   parseParcels,
@@ -365,6 +367,44 @@ describe('SceneInspector/utils', () => {
 
     it('should not match when nothing is stored', () => {
       expect(containsAddress(undefined, CHECKSUM_ADDRESS)).toBe(false);
+    });
+  });
+
+  describe('addLogsPermission', () => {
+    const STORED = ['0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed'];
+
+    it('should append a new address straight away, trimmed', () => {
+      expect(addLogsPermission(STORED, ' 0x0000000000000000000000000000000000000001 ')).toEqual({
+        next: [...STORED, '0x0000000000000000000000000000000000000001'],
+        duplicate: false,
+      });
+    });
+
+    it('should flag an upper-case spelling of a stored address as a duplicate', () => {
+      expect(addLogsPermission(STORED, '0x5AAEB6053F3E94C9B9A09F33669435E7EF1BEAED')).toEqual({
+        next: null,
+        duplicate: true,
+      });
+    });
+
+    it('should do nothing for empty text', () => {
+      expect(addLogsPermission(STORED, '  ')).toEqual({ next: null, duplicate: false });
+    });
+  });
+
+  describe('isDuplicateAddress', () => {
+    const STORED = ['0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed'];
+
+    it('should flag a pasted checksummed spelling of a stored address', () => {
+      expect(isDuplicateAddress(STORED, '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed')).toBe(true);
+    });
+
+    it('should not flag a partial address while it is still being typed', () => {
+      expect(isDuplicateAddress(STORED, '0x5aaeb6053f')).toBe(false);
+    });
+
+    it('should not flag an address that is not stored', () => {
+      expect(isDuplicateAddress(STORED, '0x0000000000000000000000000000000000000001')).toBe(false);
     });
   });
 
