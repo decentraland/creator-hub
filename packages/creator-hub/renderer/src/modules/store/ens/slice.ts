@@ -10,13 +10,11 @@ import { fetch } from '/shared/fetch';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
 import { createAsyncThunk } from '/@/modules/store/thunk';
-import {
-  ENS as ensAbi,
-  ENSResolver as ensResolverAbi,
-  DCLRegistrar as dclRegistrarAbi,
-} from './abis';
-import { ens as ensContract, ensResolver, dclRegistrar } from './contracts';
+import { ENS as ensAbi, DCLRegistrar as dclRegistrarAbi } from './abis';
+import { ens as ensContract, ensUniversalResolver, dclRegistrar } from './contracts';
 import { getEnsProvider, isValidENSName } from './utils';
+import { isMissingENSRecordError, resolveContent } from './resolveContent';
+import { withENSRecordClient } from './ccipRead';
 import { USER_PERMISSIONS, type ENS } from './types';
 
 const DEFAULT_CHAIN_ID: ChainId = Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
@@ -67,9 +65,9 @@ export const fetchDCLNames = createAsyncThunk(
 
     const ensData = ensContract[chainId];
     const dclRegistrarData = dclRegistrar[chainId];
-    const resolverData = ensResolver[chainId];
+    const universalResolverAddress = ensUniversalResolver[chainId];
 
-    if (!ensData || !dclRegistrarData || !resolverData) {
+    if (!ensData || !dclRegistrarData || !universalResolverAddress) {
       throw new Error(`ENS contract for chainId ${chainId} not found.`);
     }
 
@@ -82,12 +80,6 @@ export const fetchDCLNames = createAsyncThunk(
     const dclRegistrarImplementation = getContract({
       address: dclRegistrarData.address as Address,
       abi: dclRegistrarAbi,
-      client: provider,
-    });
-
-    const resolverImplementation = getContract({
-      address: resolverData.address as Address,
-      abi: ensResolverAbi,
       client: provider,
     });
 
@@ -113,26 +105,35 @@ export const fetchDCLNames = createAsyncThunk(
 
         const owner = ownerRaw.toLowerCase();
         const tokenId = tokenIdRaw.toString().toLowerCase();
-        const resolver = resolverAddress.toLowerCase();
+        let resolver = resolverAddress.toLowerCase();
 
-        try {
-          const resolvedAddress = (await resolverImplementation.read.addr([nodehash])) as Address;
-          ensAddressRecord = resolvedAddress !== zeroAddress ? resolvedAddress : '';
-        } catch (_e) {
-          console.log('Failed to fetch ens address record');
+        // Resolve through the name's current resolver (found by the ENS Universal Resolver,
+        // with CCIP-Read for offchain names), not a hardcoded one it may no longer use.
+        // Both lookups run at once so a stalled gateway costs one deadline per name, not two.
+        const [addressRecord, contentRecord] = await Promise.allSettled([
+          withENSRecordClient(config.get('RPC_URL'), client =>
+            client.getEnsAddress({ name: subdomain, universalResolverAddress, strict: true }),
+          ),
+          // An ancestor can resolve the name even without a direct registry resolver.
+          withENSRecordClient(config.get('RPC_URL'), client =>
+            resolveContent(client, subdomain, universalResolverAddress),
+          ),
+        ]);
+
+        if (addressRecord.status === 'fulfilled') {
+          const resolvedAddress = addressRecord.value;
+          ensAddressRecord =
+            resolvedAddress && resolvedAddress !== zeroAddress ? resolvedAddress : '';
+        } else if (!isMissingENSRecordError(addressRecord.reason)) {
+          // Strict mode surfaces gateway/resolver outages; a name with no resolver is not one.
+          console.log('Failed to fetch ens address record', addressRecord.reason);
         }
 
-        if (resolver !== zeroAddress) {
-          try {
-            const dynamicResolver = getContract({
-              address: resolverAddress,
-              abi: ensResolverAbi,
-              client: provider,
-            });
-            content = await dynamicResolver.read.contenthash([nodehash]);
-          } catch (error) {
-            console.log('Failed to load ens resolver', error);
-          }
+        if (contentRecord.status === 'fulfilled') {
+          content = contentRecord.value.content;
+          resolver = contentRecord.value.resolver ?? resolver;
+        } else {
+          console.log('Failed to resolve ens content', contentRecord.reason);
         }
 
         return {
