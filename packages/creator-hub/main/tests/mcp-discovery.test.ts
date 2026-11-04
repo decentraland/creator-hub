@@ -375,6 +375,9 @@ describe('outside access to the MCP server', () => {
 
   describe('when an agent asks for access', () => {
     const request = () => fs.writeFileSync(accessRequestFilePath(mocks.userData), '');
+    // fs.watch delivers late while the whole suite runs in parallel; vi.waitFor's 1 s default
+    // made the first case flaky in `npm run test:unit`.
+    const WATCH = { timeout: 5_000 };
 
     describe('and access is off', () => {
       it('should ask the creator once, consume the request and grant nothing', async () => {
@@ -382,8 +385,9 @@ describe('outside access to the MCP server', () => {
 
         request();
 
-        await vi.waitFor(() =>
-          expect(mocks.send).toHaveBeenCalledWith(AI_EXTERNAL_ACCESS_REQUESTED),
+        await vi.waitFor(
+          () => expect(mocks.send).toHaveBeenCalledWith(AI_EXTERNAL_ACCESS_REQUESTED),
+          WATCH,
         );
         expect(fs.existsSync(accessRequestFilePath(mocks.userData))).toBe(false);
         expect(mocks.writeConfig).not.toHaveBeenCalled();
@@ -398,7 +402,7 @@ describe('outside access to the MCP server', () => {
 
         await m.initMcpDiscovery();
 
-        await vi.waitFor(() => expect(m.takeExternalAccessRequest()).toBe(true));
+        await vi.waitFor(() => expect(m.takeExternalAccessRequest()).toBe(true), WATCH);
         expect(fs.existsSync(discoveryFile())).toBe(false);
       });
     });
@@ -411,7 +415,7 @@ describe('outside access to the MCP server', () => {
 
         request();
 
-        await vi.waitFor(() => expect(fs.existsSync(discoveryFile())).toBe(true));
+        await vi.waitFor(() => expect(fs.existsSync(discoveryFile())).toBe(true), WATCH);
         expect(m.takeExternalAccessRequest()).toBe(false);
       });
     });
@@ -420,8 +424,9 @@ describe('outside access to the MCP server', () => {
       it('should drop the question', async () => {
         request();
         await m.initMcpDiscovery();
-        await vi.waitFor(() =>
-          expect(mocks.send).toHaveBeenCalledWith(AI_EXTERNAL_ACCESS_REQUESTED),
+        await vi.waitFor(
+          () => expect(mocks.send).toHaveBeenCalledWith(AI_EXTERNAL_ACCESS_REQUESTED),
+          WATCH,
         );
 
         await m.syncExposeMcpServer(true);
