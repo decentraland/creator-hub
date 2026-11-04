@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatAddress, normalizeAddress } from './ethereum';
+import { formatAddress, isAddress, normalizeAddress } from './ethereum';
 
 describe('when formatting an address for display', () => {
   it('should keep the first twelve and last eight characters', () => {
@@ -49,5 +49,25 @@ describe('when normalizing an address', () => {
     expect(normalizeAddress('0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed')).toBe(
       '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed',
     );
+  });
+});
+
+describe('when validating an address', () => {
+  it.each([
+    ['lowercase', '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed'],
+    ['upper-case hex after a 0x prefix', '0x5AAEB6053F3E94C9B9A09F33669435E7EF1BEAED'],
+    ['fully upper-case, prefix included', '0X5AAEB6053F3E94C9B9A09F33669435E7EF1BEAED'],
+    ['EIP-55 checksummed', '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed'],
+    ['prefixless', '5aaeb6053f3e94c9b9a09f33669435e7ef1beaed'],
+  ])('should accept a %s address', (_, address) => {
+    expect(isAddress(address)).toBe(true);
+  });
+
+  it('should reject a mixed-case address whose checksum is wrong', () => {
+    expect(isAddress('0x5aAeb6053f3e94c9b9a09f33669435e7ef1beaed')).toBe(false);
+  });
+
+  it('should reject a shortened display address', () => {
+    expect(isAddress('0x5aAeb6053F...Ef1BeAed')).toBe(false);
   });
 });
