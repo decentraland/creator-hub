@@ -84,7 +84,13 @@ export type EditorState = {
   publishError: string | null;
   loadingInspector: boolean;
   loadingPreview: boolean;
+  // The run that owns `loadingPreview`. A run that settles after the user left its scene
+  // (or after a newer run took over) must not touch the state of the scene now open.
+  previewRun: { requestId: string; path: string } | null;
   isPreviewRunning: boolean;
+  // The scene whose preview `isPreviewRunning` describes, so a late stop of a scene the
+  // user already left can't clear the flag for the preview of the scene now open.
+  runningPreviewPath: string | null;
   isInstalling: boolean;
   isInstalled: boolean;
   isInstallingProject: boolean;
@@ -104,7 +110,9 @@ const initialState: EditorState = {
   publishError: null,
   loadingInspector: false,
   loadingPreview: false,
+  previewRun: null,
   isPreviewRunning: false,
+  runningPreviewPath: null,
   isInstalling: false,
   isInstallingProject: false,
   isInstalledProject: false,
@@ -229,21 +237,37 @@ export const slice = createSlice({
       state.error = action.error.message ? new Error(action.error.message) : null;
       state.isFetchingVersion = false;
     });
-    builder.addCase(runScene.pending, state => {
+    builder.addCase(runScene.pending, (state, action) => {
       state.loadingPreview = true;
+      state.previewRun = { requestId: action.meta.requestId, path: action.meta.arg.path };
     });
-    builder.addCase(runScene.fulfilled, state => {
+    builder.addCase(runScene.fulfilled, (state, action) => {
+      if (state.previewRun?.requestId !== action.meta.requestId) return;
+      state.previewRun = null;
       state.loadingPreview = false;
       state.isPreviewRunning = true;
+      state.runningPreviewPath = action.meta.arg.path;
     });
     builder.addCase(runScene.rejected, (state, action) => {
-      state.loadingPreview = false;
       captureException(action.error, {
         tags: { source: 'editor-page', event: 'run-scene' },
       });
+      if (state.previewRun?.requestId !== action.meta.requestId) return;
+      state.previewRun = null;
+      state.loadingPreview = false;
     });
-    builder.addCase(killPreviewScene.fulfilled, state => {
-      state.isPreviewRunning = false;
+    // On pending, not fulfilled: killing waits for the process to die (up to the force-kill
+    // timeout), and the scene the user moved to may start its own preview meanwhile.
+    builder.addCase(killPreviewScene.pending, (state, action) => {
+      const path = action.meta.arg;
+      if (state.previewRun?.path === path) {
+        state.previewRun = null;
+        state.loadingPreview = false;
+      }
+      if (state.runningPreviewPath === path) {
+        state.isPreviewRunning = false;
+        state.runningPreviewPath = null;
+      }
     });
     builder.addCase(workspaceActions.saveAndGetThumbnail.pending, state => {
       if (state.project) state.project.status = 'loading';

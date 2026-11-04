@@ -30,6 +30,7 @@ import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
+import { usePreviewCleanup } from '/@/hooks/usePreviewCleanup';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
@@ -428,6 +429,7 @@ export function EditorPage() {
   // The iframe render is gated on the realm being ready when Bevy is selected, so
   // the inspector boots already pointed at the right data-layer + realm.
   const projectPath = project?.path;
+  usePreviewCleanup(projectPath);
 
   // Usage analytics: fire once each time the inline AI chat panel is opened. Anonymous project
   // id, matching the id space of the AI Turn events so "opened" and "used" correlate. Fires on

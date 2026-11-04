@@ -81,6 +81,23 @@ function fakeChild(lines: string[], code: number, stderr = '') {
   return child;
 }
 
+// A `codex login status` that reports signed in, for the provider checks that probe it.
+function signedInStatusChild() {
+  const child = Object.assign(new EventEmitter(), {
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+  });
+  setTimeout(() => {
+    child.stdout.end('Logged in using ChatGPT\n');
+    child.emit('close', 0);
+  }, 0);
+  return child;
+}
+
+beforeEach(() => {
+  mocks.crossSpawn.mockImplementation(signedInStatusChild);
+});
+
 async function runTurn(
   lines: string[],
   code: number,
