@@ -30,7 +30,7 @@ Don't report success until all of these pass. Paste the tail of each output:
 
 ```bash
 (cd packages/creator-hub && npm run typecheck && npm run test:unit)
-npx eslint <every touched .tsx>    # make lint skips .tsx
+npx eslint <every touched .ts/.tsx>    # same rules as make lint, scoped to your files
 ```
 
 If `atScale.spec.tsx` times out in the full run, rerun it alone before you call it a regression.
