@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { EditorConfig } from '/shared/types/config';
 
@@ -22,12 +22,28 @@ const { execFileSpy, execSpy, openPathSpy, showItemInFolderSpy } = vi.hoisted(()
 vi.mock('child_process', () => ({ exec: execSpy, execFile: execFileSpy }));
 
 vi.mock('electron', () => ({
+  app: { getAppPath: () => '/app' },
   shell: {
     openPath: openPathSpy,
     showItemInFolder: showItemInFolderSpy,
     openExternal: vi.fn(),
   },
 }));
+
+// The two PATH entries `setup-node` prepends in production: the directory holding the `node`
+// link to the Electron executable, and the one holding the npm scripts that resolve `node`
+// through PATH. They are only injected in a packaged app, so they are stated here rather than
+// produced by running the real setup.
+const SHIM_DIR = '/app/../app.asar.unpacked';
+const BUNDLED_NPM_DIR = '/app/node_modules/npm/bin';
+const BUNDLED_NODE_DIR = '/resources/node-bin/bin';
+
+vi.mock('../src/modules/setup-node', () => ({
+  getInjectedPathEntries: () => [SHIM_DIR, BUNDLED_NPM_DIR],
+}));
+
+const { resolveNodeRuntimeSpy } = vi.hoisted(() => ({ resolveNodeRuntimeSpy: vi.fn() }));
+vi.mock('../src/modules/node-runtime', () => ({ resolveNodeRuntime: resolveNodeRuntimeSpy }));
 
 vi.mock('electron-log/main', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -60,6 +76,7 @@ const EDITOR_PATH = '/Applications/Visual Studio Code.app/Contents/MacOS/Electro
 describe('code.open', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resolveNodeRuntimeSpy.mockReturnValue({ source: 'bundled', binDir: BUNDLED_NODE_DIR });
     editors = [{ name: 'VSCode', path: EDITOR_PATH, isDefault: true }];
   });
 
@@ -159,6 +176,71 @@ describe('code.open', () => {
       await open(batFilePath);
 
       expect(openPathSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when handing the environment to the editor', () => {
+    const ORIGINAL_PATH = process.env.PATH;
+    const ORIGINAL_RUN_AS_NODE = process.env.ELECTRON_RUN_AS_NODE;
+
+    beforeEach(() => {
+      process.env.PATH = [SHIM_DIR, BUNDLED_NPM_DIR, '/usr/bin', '/bin'].join(':');
+      process.env.ELECTRON_RUN_AS_NODE = '1';
+    });
+
+    afterEach(() => {
+      process.env.PATH = ORIGINAL_PATH;
+      if (ORIGINAL_RUN_AS_NODE === undefined) delete process.env.ELECTRON_RUN_AS_NODE;
+      else process.env.ELECTRON_RUN_AS_NODE = ORIGINAL_RUN_AS_NODE;
+    });
+
+    function editorEnv() {
+      const [, , options] = execFileSpy.mock.calls[0] as [
+        string,
+        string[],
+        { env: NodeJS.ProcessEnv },
+      ];
+      return options.env;
+    }
+
+    it('should drop the entries whose node and npm are Creator Hub itself', async () => {
+      await open('/projects/scene/main.ts');
+
+      const entries = (editorEnv().PATH ?? '').split(':');
+      expect(entries).not.toContain(SHIM_DIR);
+      expect(entries).not.toContain(BUNDLED_NPM_DIR);
+    });
+
+    it('should put the real bundled node first so node and npm still resolve', async () => {
+      await open('/projects/scene/main.ts');
+
+      const entries = (editorEnv().PATH ?? '').split(':');
+      expect(entries[0]).toBe(BUNDLED_NODE_DIR);
+    });
+
+    it('should keep the rest of the inherited PATH in order', async () => {
+      await open('/projects/scene/main.ts');
+
+      const entries = (editorEnv().PATH ?? '').split(':');
+      expect(entries.slice(1)).toEqual(['/usr/bin', '/bin']);
+    });
+
+    describe('and the only Node runtime is Electron itself', () => {
+      beforeEach(() => {
+        resolveNodeRuntimeSpy.mockReturnValue({ source: 'electron', binDir: SHIM_DIR });
+      });
+
+      it('should not put the shim directory back in', async () => {
+        await open('/projects/scene/main.ts');
+
+        expect((editorEnv().PATH ?? '').split(':')).toEqual(['/usr/bin', '/bin']);
+      });
+    });
+
+    it('should not leak ELECTRON_RUN_AS_NODE into the editor', async () => {
+      await open('/projects/scene/main.ts');
+
+      expect(editorEnv()).not.toHaveProperty('ELECTRON_RUN_AS_NODE');
     });
   });
 });
