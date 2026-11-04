@@ -188,6 +188,7 @@ const getLandQuery = (skip = 0) => `
       operator
       isApproved
       tokenAddress
+      timestamp
     }
     operatorAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, where: { operator: $address, type: "UpdateManager" }) {
       owner {
@@ -201,6 +202,7 @@ const getLandQuery = (skip = 0) => `
       }
       isApproved
       tokenAddress
+      timestamp
     }
   }
   ${parcelFields()}
@@ -295,6 +297,22 @@ export type Rental = {
   endsAt: number;
 };
 
+type AuthorizationEvent<T> = T & { isApproved: boolean; tokenAddress: string; timestamp: string };
+
+/** The latest `setUpdateManager` event per counterparty and registry: the subgraph keeps every one. */
+function latestAuthorizations<T extends AuthorizationEvent<object>>(
+  events: T[],
+  counterparty: (event: T) => string,
+): T[] {
+  const latest = new Map<string, T>();
+  for (const event of events) {
+    const key = `${counterparty(event)}-${event.tokenAddress}`;
+    const seen = latest.get(key);
+    if (!seen || BigInt(event.timestamp) > BigInt(seen.timestamp)) latest.set(key, event);
+  }
+  return [...latest.values()];
+}
+
 export type LandQueryResult = {
   tenantParcels: ParcelFields[];
   tenantEstates: EstateFields[];
@@ -304,12 +322,10 @@ export type LandQueryResult = {
   ownerEstates: EstateFields[];
   updateOperatorParcels: ParcelFields[];
   updateOperatorEstates: EstateFields[];
-  ownerAuthorizations: { operator: string; isApproved: boolean; tokenAddress: string }[];
-  operatorAuthorizations: {
+  ownerAuthorizations: AuthorizationEvent<{ operator: string }>[];
+  operatorAuthorizations: AuthorizationEvent<{
     owner: { address: string; parcels: ParcelFields[]; estates: EstateFields[] };
-    isApproved: boolean;
-    tokenAddress: string;
-  }[];
+  }>[];
 };
 
 export type LandDeployment = Omit<WorldDeployment, 'metadata'> & {
@@ -415,30 +431,19 @@ export class Lands {
       lands.push(fromEstate(estate, RoleType.LESSOR));
     }
 
-    // addresses I gave UpdateManager permission are operators of all my lands
-    for (const authorization of data.ownerAuthorizations) {
-      const { operator, isApproved, tokenAddress } = authorization;
-      switch (tokenAddress) {
-        case this.LAND_REGISTRY_ADDRESS: {
-          if (isApproved) {
-            landUpdateManagers.add(operator);
-          } else {
-            landUpdateManagers.delete(operator);
-          }
-          break;
-        }
-        case this.ESTATE_REGISTRY_ADDRESS: {
-          if (isApproved) {
-            estateUpdateManagers.add(operator);
-          } else {
-            estateUpdateManagers.delete(operator);
-          }
-          break;
-        }
-      }
+    for (const { operator, isApproved, tokenAddress } of latestAuthorizations(
+      data.ownerAuthorizations,
+      event => event.operator,
+    )) {
+      if (!isApproved) continue;
+      if (tokenAddress === this.LAND_REGISTRY_ADDRESS) landUpdateManagers.add(operator);
+      if (tokenAddress === this.ESTATE_REGISTRY_ADDRESS) estateUpdateManagers.add(operator);
     }
 
-    for (const { owner, isApproved, tokenAddress } of data.operatorAuthorizations) {
+    for (const { owner, isApproved, tokenAddress } of latestAuthorizations(
+      data.operatorAuthorizations,
+      event => event.owner.address,
+    )) {
       if (!isApproved) continue;
       const parcels = tokenAddress === this.LAND_REGISTRY_ADDRESS ? owner.parcels : [];
       const estates = tokenAddress === this.ESTATE_REGISTRY_ADDRESS ? owner.estates : [];
