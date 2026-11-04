@@ -166,6 +166,9 @@
         "needs_login_managed_help": "Puede que su inicio de sesión guardado haya caducado, aunque apareciera como conectado. En Configuración → IA, haz clic en Cerrar sesión y luego en Iniciar sesión, y vuelve a enviar tu mensaje.",
         "api_key_alternative": "O usa una clave de API: define {envVar} y activa \"{setting}\" en Configuración → IA."
       }
+    },
+    "publish": {
+      "save_failed": "No se pudo guardar tu escena antes de publicar, así que se detuvo la publicación para no desplegar contenido anterior. {reason}"
     }
   },
   "scene_list": {
@@ -513,7 +516,8 @@
           "url": "La URL para acceder a tu {target} es:",
           "world": "Mundo",
           "land": "Tierra",
-          "jump_in": "Entrar"
+          "jump_in": "Entrar",
+          "indexing_note": "La escena ya está publicada. Su tarjeta en el explorador (título, descripción y miniatura) se indexa por separado y puede tardar unos minutos en actualizarse."
         }
       }
     },

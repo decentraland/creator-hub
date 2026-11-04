@@ -167,6 +167,9 @@
         "needs_login_managed_help": "Its saved sign-in may have expired, even if it showed as connected. In Settings → AI, click Sign out, then Sign in, then send your message again.",
         "api_key_alternative": "Or use an API key: set {envVar} and turn on \"{setting}\" in Settings → AI."
       }
+    },
+    "publish": {
+      "save_failed": "Couldn't save your scene before publishing, so publishing was stopped to avoid deploying older content. {reason}"
     }
   },
   "scene_list": {
@@ -514,7 +517,8 @@
           "url": "The URL to jump in your {target} is:",
           "world": "World",
           "land": "Land",
-          "jump_in": "Jump In"
+          "jump_in": "Jump In",
+          "indexing_note": "The scene itself is live now. Its card in the explorer — title, description and thumbnail — is indexed separately and can take a few minutes to catch up."
         }
       }
     },

@@ -166,6 +166,9 @@
         "needs_login_managed_help": "即使显示为已连接，其保存的登录状态也可能已过期。请在“设置 → AI”中点击“退出登录”，然后点击“登录”，再重新发送你的消息。",
         "api_key_alternative": "或者使用 API 密钥：设置 {envVar}，并在“设置 → AI”中开启“{setting}”。"
       }
+    },
+    "publish": {
+      "save_failed": "发布前无法保存你的场景，已停止发布以免部署旧内容。{reason}"
     }
   },
   "scene_list": {
@@ -513,7 +516,8 @@
           "url": "跳转到您的 {target} 的URL是：",
           "world": "世界",
           "land": "土地",
-          "jump_in": "跳转"
+          "jump_in": "跳转",
+          "indexing_note": "场景已经上线。它在浏览器中的卡片（标题、描述和缩略图）是单独索引的，可能需要几分钟才会更新。"
         }
       }
     },
