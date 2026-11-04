@@ -62,6 +62,8 @@ Each value names its token. A value that differs from the token file carries its
 
 Both UIs are specified in one Figma file, **📗️ Design System | Creator Tools** (file key `5ecKgNHjChZEe05LUwKGku`). [Node `20420:50646`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20420-50646) is its COVER page. Tokens live on the pages under **Tokens** (Colors, Icons, Typography, Tags / Labels); components and screens live on the section pages, so start from the frame URL for the surface you're changing. A page whose name contains `🟡 Outdated` is superseded: don't pull from it.
 
+The Creator Hub Analytics detail page is drawn in a second Figma file (file key `DhBtPn56J6ZlPLrTUDufqp`); its frames are listed under [Analytics detail](#analytics-detail).
+
 Read `.ai/skills/figma/SKILL.md` before pulling a frame. It covers the Figma MCP, the Claude-in-Chrome fallback, and syncing palette changes back into this file.
 
 ## Pages inventory
@@ -163,7 +165,7 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Figma variable | Value | Use | `vars.css` | `theme.css` / ui2 | Status |
 | --- | --- | --- | --- | --- | --- |
 | Neutrals/White | `#FFFFFF` | Glyphs on dark boards (every icon frame) | `--white` `#ffffff`, `--base-01` | `--white`, `--text` `#ffffff` · ui2 `neutral.white` | match |
-| Neutrals/Snow (also DCL/Snow) | `#FCFCFC` | Figma Neutrals/Snow (ui2 `neutral.softWhite`): the 3D toolbar's hover and selected glyph; `--ui-designer-text` aliases it, and `--focus-ring` reads it through that alias | `--palette-neutral-softWhite` `#fcfcfc` | ui2 `neutral.softWhite` | match |
+| Neutrals/Snow (also DCL/Snow) | `#FCFCFC` | Figma Neutrals/Snow (ui2 `neutral.softWhite`): the 3D toolbar's hover and selected glyph; `--ui-designer-text` aliases it, and `--focus-ring` reads it through that alias | `--palette-neutral-softWhite` `#fcfcfc` | `--palette-neutral-softWhite` `#fcfcfc` · ui2 `neutral.softWhite` | match |
 | Neutrals/Pearl | `#ECEBED` | Light surface (the Typography sheet) | `--palette-neutral-gray5` `#ecebed` | ui2 `neutral.gray5` | match |
 | Neutrals/Gray | `#CFCDD4` | Figma Neutrals/Gray (ui2 `neutral.gray4`): the 3D toolbar's resting glyph (11.55:1 on Shadow); `--ui-designer-text-value` aliases it | `--palette-neutral-gray4` `#cfcdd4` | ui2 `neutral.gray4` | match |
 | Neutrals/Silver | `#A09BA8` | Figma Neutrals/Silver (ui2 `neutral.gray3`): the camera button's icon stroke (4.59:1 on Onix); `--ui-designer-text-muted` aliases it | `--palette-neutral-gray3` `#a09ba8`, `--neutral-grey-3` `#a09ba8` | `--dcl-silver` `#a09ba8`, `--clear-divider` `#a09ba8` · ui2 `neutral.gray3` | match |
@@ -243,7 +245,7 @@ Contrast of the status text and icon colours at these values, on the surfaces th
 | Blue Dark 1 | `#1A75D2` | — | `--palette-info-dark1` `#1a75d2` | ui2 `palette.info.dark` `#1A75D2` | match; the fill is the value (Figma's label reads `#1F87E5`) |
 | Blue Dark 2 | `#244B7D` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1); the selected toggle fill through `--ui-designer-control-active-bg` | `--palette-system-blueDark2` `#244b7d` | `--ai-session-selected` `#244b7d` | match on the fill (Figma's label reads `#1764C0`) |
 | Blue Dark 3 | `#243852` | Figma System/Blue Dark 3: the fill of a selected toggle under the pointer (Snow glyph 11.61:1). Darker than Blue Dark 2 on purpose, as Figma draws it | `--palette-system-blueDark3` `#243852` | `--ai-session-selected-hover` `#243852` | match |
-| System/Blue Light 1 | `#63B4F6` | Figma System/Blue Light 1 (ui2 dark `palette.info.light`, `#63B4F6`): the shared `Tree`'s drop target, a 1px inset outline for inside and a 2px line for before / after, in all four trees (user decision; NodeTypeHierarchy ✱ drop target). 7.09:1 on the panel `#242129`, 8.13:1 on the tree `#161518`, 5.33:1 on Blue Dark 3. Same value as `--ui-designer-control-accent`, which stays the UI Designer's panel accent (ui2 theme-path name) | `--palette-info-light` `#63b4f6`, `--ui-designer-control-accent` `#63b4f6`, `--built-in-badge-bg-color` `#63b4f6` | ui2 `palette.info.light` | match |
+| System/Blue Light 1 | `#63B4F6` | Figma System/Blue Light 1 (ui2 dark `palette.info.light`, `#63B4F6`): the shared `Tree`'s drop target, a 1px inset outline for inside and a 2px line for before / after, in all four trees (user decision; NodeTypeHierarchy ✱ drop target). 7.09:1 on the panel `#242129`, 8.13:1 on the tree `#161518`, 5.33:1 on Blue Dark 3. Same value as `--ui-designer-control-accent`, which stays the UI Designer's panel accent (ui2 theme-path name) | `--palette-info-light` `#63b4f6`, `--ui-designer-control-accent` `#63b4f6`, `--built-in-badge-bg-color` `#63b4f6` | `--palette-info-light` `#63b4f6` · ui2 `palette.info.light` | match |
 | Blue Light 2 | `#BBDEFB` | — | `--palette-info-light2` `#bbdefb` | `--palette-info-light2` `#bbdefb` · ui2 alert info text | match |
 | — | `#214272` / `#2E4A7A` | AI selection | — | `--ai-selected` `#214272` / `--ai-selected-hover` `#2e4a7a` | not in Figma |
 | — | `#127FD4` | VS Code focus blue | `--border-focused` `#127fd4` | — | not in Figma; **✱ deviation**, keep |
@@ -541,7 +543,7 @@ Every corner radius Figma draws, with its token:
 | 6px | Dense field, dropdown and textarea corners | `--shape-borderRadius` `6px` (aliased by `--ui-designer-radius-field`) · Creator Hub `--mui-shape-borderRadius` `6px` | match (ui2 theme-path name) |
 | 8px | Colour swatches, list rows, the Toast tooltip of rounded-button-contained | `--shape-borderRadiusMedium` `8px` · Creator Hub `--shape-borderRadiusMedium` `8px` | match |
 | 10px | The Toast tooltip of IconContainedToggle and TextureContainedRoundedButton | — | Figma defect: the three Toast tooltips disagree |
-| 12px | Large field, `.Button.medium` and `.Button.large` corners, option lists and popovers, the LabelAccordion frame | `--shape-borderRadiusLarge` `12px` (aliased by `--ui-designer-radius-menu`) | match (ui2 theme-path name) |
+| 12px | Large field, `.Button.medium` and `.Button.large` corners, option lists and popovers, the LabelAccordion frame | `--shape-borderRadiusLarge` `12px` (aliased by `--ui-designer-radius-menu`) · Creator Hub `--shape-borderRadiusLarge` `12px` | match (ui2 theme-path name) |
 | 16px | Cards | `--shape-borderRadiusXLarge` `16px` · Creator Hub `--shape-borderRadiusXLarge` `16px` | match |
 | 24px | Modals | `--shape-borderRadiusXXLarge` `24px` · Creator Hub `--shape-borderRadiusXXLarge` `24px` | match |
 | 64px | The icon boards and the Typography sheet (page chrome) | — | not a component value |
@@ -700,7 +702,7 @@ Every literal the Feedback pages use, mapped once; the variant tables below refe
 
 | Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
 | --- | --- | --- | --- |
-| `#FCFCFC` text, glyphs, spinner track, progress border | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#FCFCFC` text, glyphs, spinner track, progress border | Neutrals/Snow | `--ui-designer-text` | `--palette-neutral-softWhite` · ui2 `neutral.softWhite` |
 | `#FF2D55` action text, spinner arc | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
 | `#161518` snackbar fill | Neutrals/Shadow | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` |
 | `#35333B` tooltip fill | Neutrals/Onix (a Figma variable on this page) | `--ui-designer-control-bg`, `--palette-neutral-onyx` | missing (ui2 `_components.tooltip.fill` is `#242129`, upstream) |
@@ -776,11 +778,11 @@ Every literal the Navigation pages use, mapped once; the variant tables below re
 
 | Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
 | --- | --- | --- | --- |
-| `#FCFCFC` active tab label and underline, button text, logo disc | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#FCFCFC` active tab label and underline, button text, logo disc | Neutrals/Snow | `--ui-designer-text` | `--palette-neutral-softWhite` · ui2 `neutral.softWhite` |
 | `#A09BA8` resting tab label | Neutrals/Silver | `--palette-neutral-gray3` (aliased by `--ui-designer-text-muted`) | `--dcl-silver` · ui2 `neutral.gray3` |
 | `#FF2D55` Create button fill, notification dot | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
 | `rgba(255,255,255,.4)` Sign-in border | Transparencies/White 40 | `--palette-whiteTransparent-blurry` (aliased by `--ui-designer-checkbox-border`) | `--palette-whiteTransparent-blurry` (`--transparent-gray-light` is .23) |
-| `rgba(255,255,255,.1)` tab hover fill | Transparencies/White 10 | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`), `--ui-designer-control-selected-bg` (menu rows) | `--palette-whiteTransparent-subtle` (`Navbar` paints `#ffffff0d`, White 5) |
+| `rgba(255,255,255,.1)` tab hover fill | Transparencies/White 10 | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`), `--ui-designer-control-selected-bg` (menu rows) | `--palette-whiteTransparent-subtle` (the `Navbar` tab hover) |
 | `rgba(255,255,255,.2)` Create split divider | Transparencies/White 20 | `--palette-whiteTransparent-soft` (aliased by `--ui-designer-control-border-strong`) | `--palette-whiteTransparent-soft` (`CreateButton` carries the literal) |
 | `#A14BF3` avatar disc behind the placeholder snapshot | Rarities/Legendary | `--palette-rarity-legendary` | `--palette-rarity-legendary` · ui2 `rarity.legendary`; a wearable-rarity colour, not a navigation token — the real avatar decides |
 | 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px; `CreateButton` and `UserMenu` carry the literal) |
@@ -798,13 +800,25 @@ No interaction states drawn on the bar itself; the tabs it embeds are the `tab-b
 | Part | Variant | Fill | Border | Radius | Typography | Size / spacing | Inspector token | Creator Hub token | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Logo disc (TextureContainedRoundedButton `21232:42112`) | both | Snow, logo asset 64 in a 44 box (SVG asset) | none | 100px | — | 40 × 40 | `--ui-designer-text`; `--shape-borderRadiusPill` | `LogoButton`; ui2 `neutral.softWhite` | disc vs `#16141a` 17.81:1 | `<button aria-label>`; `LogoButton` matches at 40px, adds a 2px white hover outline and a `--dcl` focus ring Figma does not draw |
-| Tab bar | both | none | none | — | `H4 Semi`, Silver at rest | 8 tabs (HOME, SCENES, TEMPLATES, ANALYTICS, MANAGE, BADGES, LEARN, MORE), gap 40, tab padding 10 / 4 | `--palette-neutral-gray3` / `--ui-designer-text-muted` | `--dcl-silver` · ui2 `neutral.gray3` | Silver on `#16141a` 6.74:1, on `#161518` 6.71:1 | `<nav>`; `Navbar` uses gap 8 and tab padding 19 / 16 / 17 — drift |
+| Tab bar | both | none | none | — | `H4 Semi`, Silver at rest | 8 tabs (HOME, SCENES, TEMPLATES, ANALYTICS, MANAGE, BADGES, LEARN, MORE), gap 40, tab padding 10 / 4 | `--palette-neutral-gray3` / `--ui-designer-text-muted` | `--dcl-silver` · ui2 `neutral.gray3` | Silver on `#16141a` 6.74:1, on `#161518` 6.71:1 | `<nav>`; `Navbar` matches (see Creator Hub navbar below) |
 | Create (label half, `20817:810`) | both | Primary | none | 12px, on the outer row | `H6 Semi Caps` Snow, line-height 22 | 40 tall, padding 0 / 14, gap 6, icon 18 | `--primary-main`; `--ui-designer-text` | `--primary`, `--dcl` | Snow on Primary 3.55:1 — **fails 4.5:1** (16px / 600 is not large text); Primary Dark 1 4.08:1 also fails | `<button>`; `CreateButton` matches geometry and paints hover `#F70038` as a literal |
 | Create (menu half, `20817:813`) | both | Primary | 1px White 20 left | 12px, on the outer row | chevron 8.5 × 5 Snow | 40 × 40 | `--palette-whiteTransparent-soft` | `--palette-whiteTransparent-soft` (`CreateButton` carries the literal) | divider on Primary 1.20:1, decorative; chevron 3.55:1 (≥ 3:1 non-text) | `aria-haspopup="menu"`, `aria-expanded`, `aria-label`; `CreateButton` matches |
 | Divider | both | — | 37px vertical hairline (SVG asset; its stroke colour is not in the node tree) | — | — | 0 × 37 | — | — | — | `aria-hidden`; `Navbar` has none |
-| Account (TextureContainedRoundedButton `21232:42212`) | Signed In=On | Legendary `#A14BF3` under the avatar snapshot | none | 100px | — | 40 × 40 | `--palette-rarity-legendary` | `--palette-rarity-legendary`; ui2 `rarity.legendary` | placeholder disc vs page 4.19:1; the real avatar decides | `<button aria-label>`; `UserMenu` renders the avatar at 44px — drift |
+| Account (TextureContainedRoundedButton `21232:42212`) | Signed In=On | Legendary `#A14BF3` under the avatar snapshot | none | 100px | — | 40 × 40 | `--palette-rarity-legendary` | `--palette-rarity-legendary`; ui2 `rarity.legendary` | placeholder disc vs page 4.19:1; the real avatar decides | `<button aria-label>`; `UserMenu` matches at 40px |
 | Account (Button-Contained-Text `20960:6432`) | Signed In=Off | none | 1.5px White 40 | 12px | `H6 Semi Caps` Snow, "sign in" | 40 tall, padding 12 / 24 | `--palette-whiteTransparent-blurry`; `--borderWidth-strong` | `--palette-whiteTransparent-blurry`; the rest missing; `--transparent-gray-light` is .23 | text 17.81:1; border 3.83:1 (≥ 3:1) | `<button>`; `UserMenu` paints 1px `--transparent-gray-light`, padding 7 / 16 — drift |
 | Create, Sign in | ✱ hover / press / focus / disabled | not drawn on this page; take them from Buttons (Inputs page) when it is extracted | — | — | — | — | — | — | — | — |
+
+**Creator Hub navbar.** The app follows the navbar instances on the LAND board (`5690:7364`, `5660:4203` in `albOLmqF5fUwmRJ7CjBulU`) on every page (user decision). The board's instances drop the DS set's 37px divider, put 20 between the Create button and the avatar, and draw 44-tall tabs where the `tab-bar` set draws 40. The rules apply to `.Navbar` only; the editor header keeps its own.
+
+| Part | Board value | Code |
+| --- | --- | --- |
+| Bar | 1920 × **100**, padding 0 / 32, `space-between`, items centred vertically, no fill or border; page content starts **30** below it | `.Navbar`: `height: 100px; padding: 0 32px; margin-bottom: 30px; align-items: center` |
+| Left group | logo 40 × 40 disc at x 32, then the tab bar **26** after it | `.Navbar .menu { margin-left: 26px }` |
+| Tab bar | gap **40** | `.Navbar .menu { gap: 40px }` |
+| Tab (`TabHorizontal`) | padding **10 / 4** (44 tall); label `H4 Semi` Inter **600** 20 / 100%, letter-spacing 0, uppercase. The label widths match Figma only with `font-optical-sizing: none` (see [Conventions](#conventions)) | `.menu-item { padding: 10px 4px; font-weight: 600; line-height: 24px; letter-spacing: 0 }` |
+| Tab rest / hover / active / focus | Silver `#A09BA8` / White 10 fill (DS) / Snow `#FCFCFC` + 2px Snow underline / ✱ 2px Blue Light 1 ring (not drawn) | `var(--dcl-silver)` / `var(--palette-whiteTransparent-subtle)` / `var(--palette-neutral-softWhite)` with `box-shadow: inset 0 -2px 0` / `outline: 2px solid var(--palette-system-blueLight1)` |
+| Order | HOME · SCENES · **TEMPLATES** · ANALYTICS · MANAGE · LEARN · MORE (the `tab-bar` set's BADGES has no route in the app) | `NavbarItem.TEMPLATES` → `/templates`. The Templates shortcuts (Home "See all", the Scenes list's "Templates" button) stay beside it (user decision) |
+| Right group | Create split button 155 × 40, then **20**, then the 40 × 40 avatar; avatar right edge 32 from the window edge | gap 20; `UserMenu` avatar 40. The Create button keeps the app's `Button` look (user decision) |
 
 ### tab-bar (Header)
 
@@ -860,7 +874,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Modals
 
 | Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
 | --- | --- | --- | --- |
-| `#FCFCFC` titles, labels, values, button text | Neutrals/Snow | `--ui-designer-text` (→ `--palette-neutral-softWhite`) | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#FCFCFC` titles, labels, values, button text | Neutrals/Snow | `--ui-designer-text` (→ `--palette-neutral-softWhite`) | `--palette-neutral-softWhite` · ui2 `neutral.softWhite` |
 | `#CFCDD4` accordion body, modal body, thumbnail fallback | Neutrals/Gray | `--ui-designer-text-value` (→ `--palette-neutral-gray4`) | ui2 `neutral.gray4`; `theme.css` missing |
 | `#A09BA8` card meta, menu glyphs, menu section label | Neutrals/Silver | `--ui-designer-text-muted`, `--neutral-grey-3` | `--dcl-silver`, `--clear-divider` · ui2 `neutral.gray3` |
 | `#FFFFFF` icon glyphs | Neutrals/White | `--white` | `--white`, `--text` |
@@ -1029,8 +1043,15 @@ Component [`20506:31427`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?n
 
 | Name | Fill | Overlay | Size | Usage | Contrast | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Background | raster `image.png` — a near-black field with a violet glow bottom-left and a dark-blue glow left (no gradient stops: it is a bitmap, not a Figma gradient) | solid `rgba(0,0,0,0.2)` (Transparencies/Black 20), inset 0 | 1720 × 1080, no radius | the app canvas behind cards and pages | text is specified against the solid page colours above; the raster's darkest region reads as `#0a0712`-ish and its glow as `#1d1033`-ish (canvas measurement, ±8 per channel) — treat `#16141a` as the design surface and keep Snow / Silver text ≥ 4.5:1 there | `--palette-blackTransparent-soft` for the overlay; no background token | overlay `--palette-blackTransparent-soft`; `.Main` blends the raster instead of overlaying it |
+| Background | raster `image.png` — a near-black field with a violet glow bottom-left and a dark-blue glow left (no gradient stops: it is a bitmap, not a Figma gradient) | solid `rgba(0,0,0,0.2)` (Transparencies/Black 20), inset 0 | 1720 × 1080, no radius | the app canvas behind cards and pages | text is specified against the solid page colours above; the raster's darkest region reads as `#0a0712`-ish and its glow as `#1d1033`-ish (canvas measurement, ±8 per channel) — treat `#16141a` as the design surface and keep Snow / Silver text ≥ 4.5:1 there | `--palette-blackTransparent-soft` for the overlay; no background token | `--page-shade` over the blended raster, not the 20% layer (below) |
 | ✱ Page board | `#302C37`, 64px radius, padding 100 | — | 1920 × Hug | Figma presentation frame on every Surfaces page, not a product surface | — | — | — |
+
+**Creator Hub page background.** The LAND board's frames (`5690:7364`, `5660:4203` in `albOLmqF5fUwmRJ7CjBulU`) are 1920 × 1080 with an `image.png` fill and a `#000000` 20% layer over it. That `image.png` is darker at the top than the app's `background.png`, so the 20% layer alone matches only the bottom fifth. Measured at 1:1 against the app, the board is the app's image under a vertical black wash: ≈52% at the top, 51% at 25% of the height, ≈46% at 37%, 20% at the bottom (validated on four board frames, rows within ±0.02 after the 25% stop). The app paints that wash as a gradient token rather than shipping the board's image (user decision), on every page, Sign In and the editor included (user decision).
+
+| Part | Rule |
+| --- | --- |
+| `.Main` (`theme.css`) | `background: var(--page-shade), url(background.png) #242129; background-blend-mode: normal, overlay; background-size: cover; background-position: center; background-attachment: fixed`, through the single `<main className="Main">` in `renderer/src/index.tsx` |
+| `--page-shade` | `linear-gradient(180deg, rgb(0 0 0 / 52%) 0%, rgb(0 0 0 / 51%) 25%, rgb(0 0 0 / 46%) 37%, rgb(0 0 0 / 20%) 100%)` |
 
 ### Scene-Card (Cards)
 
@@ -1441,7 +1462,7 @@ Literals the Inputs pages add to the Surfaces tokens table; the Snow, Gray, Silv
 | Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
 | --- | --- | --- | --- |
 | `#FF2D55` Switch On track | DCL/Ruby (legacy collection; same value as Primary/Primary) | `--primary-main` | `--primary`, `--dcl` |
-| `#FCFCFC` Switch knob | DCL/Snow (legacy collection; same value as Neutrals/Snow) | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#FCFCFC` Switch knob | DCL/Snow (legacy collection; same value as Neutrals/Snow) | `--ui-designer-text` | `--palette-neutral-softWhite` · ui2 `neutral.softWhite` |
 | `#161518` ToolbarButton rest rectangle | DCL/Shadow | `--tree-bg-color` (`--base-20`) | missing (`--bg-inspector` is `#000`) |
 | `#5E5B67` Switch Off track (Switch page) | Neutrals/Graffito | `--palette-neutral-gray1` (ui2 `neutral.gray1`) | `--light-gray` · ui2 `neutral.gray1` |
 | `#2D2A33` Toast tooltip fill (rounded-button-contained, IconContainedToggle, TextureContainedRoundedButton) | Neutrals/Onix Dark 1 | `--palette-neutral-onyxDark1` | `--title-bar-button` |
@@ -2967,11 +2988,14 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 | Role | Tokens | Status |
 | --- | --- | --- |
 | Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--secondary` `#242129`, `--modal` `#181225`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` | `--bg` ships in #1703, `--background` ships in #1703; `#242129` is the Charcoal **✱ deviation** |
-| Text | `--text` `#ffffff`, `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` | match |
+| Text | `--text` `#ffffff`, `--palette-neutral-softWhite` `#fcfcfc` (Snow), `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` | match |
+| Charts | `--chart-reference` `#a99afe` (benchmark lines on the Analytics detail charts) | raw Figma fill, no variable |
 | Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) | `--primary-hover` ships in #1703 |
 | Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` | `--danger` ships in #1703, `--error` ships in #1703 |
 | Lines | `--divider` `#67637033`, `--text-area-border` `#676370`, `--clear-divider` `#a09ba8` | match |
 | AI assistant | `--ai-selected` `#214272`, `--ai-selected-hover` `#2e4a7a`, `--ai-session-selected` `#244b7d`, `--ai-session-selected-hover` `#243852`, `--ai-menu-bg` `#35333b`, `--ai-input-bg` `#2d2a33`, `--ai-warning-bg` `rgba(254,156,42,.1)` | `--ai-menu-bg` ships in #1731, `--ai-input-bg` ships in #1731, `--ai-warning-bg` ships in #1731 |
+| Palette (the inspector's names) | `--palette-neutral-softWhite` `#fcfcfc` (Snow: the navbar's active label and underline), `--palette-info-light` `#63b4f6` (System/Blue Light 1: the navbar focus ring, 8.13:1 on `#161518`) | match |
+| Page | `--page-shade` `linear-gradient(180deg, rgb(0 0 0 / 52%) 0%, rgb(0 0 0 / 51%) 25%, rgb(0 0 0 / 46%) 37%, rgb(0 0 0 / 20%) 100%)` (the page wash, first layer of `.Main`; see [Background (Background)](#background-background)) | `--page-shade` ✱ measured, no Figma variable |
 | ui2 overrides | `--mui-shape-borderRadius` `6px`, `--mui-palette-action-disabled`, `--mui-palette-secondary-contrast` | match |
 
 The brand pink matches the inspector's `--primary-main`, but it's defined separately on each side of the iframe. Change both, or neither.
@@ -2980,7 +3004,7 @@ The brand pink matches the inspector's `--primary-main`, but it's defined separa
 
 - `--primary-hover` is the primary-button hover at five sites: the wrapper `components/Button` (`.Button.MuiButton-colorPrimary:hover`), the editor header actions (`EditorPage/styles.css`), both `CreateButton` segments, and the AI `SendButton`; those sites read the token in #1707. Raw ui2 contained-primary `Button`s (`SignInPage`, `UpdateAvailable`, `WarningModal` and others) hover to ui2 `palette.primary.dark` `#F70038`. `--dcl-hover` and `--dcl-dark` have no consumers left; removing them is a naming decision for the user. White text on `#ff6280` measures 2.87:1 (Snow `#fcfcfc` 2.80:1); the value is the user's pick from Figma and a known trade-off, not a pass. The fill itself is 6.36:1 against the page.
 - `--bg` and `--purple-banner` have no consumer.
-- `--background` paints cards on the page (`HeroStat`, `StatsRow`, `EngagementTab .SocialChart`) and the `Deploy` error-detail block; `--danger` and `--error` paint text, icons and one border.
+- `--background` paints `EngagementTab .SocialChart`, which only commented-out code renders, and the `Deploy` error-detail block (the Analytics detail stat blocks moved to the inner panel); `--danger` and `--error` paint text, icons and one border.
 
 | Pair (consumer) | Contrast | Threshold |
 | --- | --- | --- |
@@ -2996,10 +3020,68 @@ The brand pink matches the inspector's `--primary-main`, but it's defined separa
 
 ### Conventions
 
+- **Type rendering: `body { font-optical-sizing: none }`** in `theme.css`, on every page (user decision). The app's variable Inter otherwise applies its optical-size axis automatically (`opsz` = font size, up to 32), which renders 2–3% narrower than Figma, which uses Inter at text optical size. With it, the navbar labels match Figma's widths (HOME 60.8 / 61, MANAGE 89.0 / 89, TEMPLATES 119.1 / 120, ANALYTICS 115.2 / 116).
+- **Page background:** one `.Main` background for every route, Sign In and the editor included; see [Background (Background)](#background-background).
 - Styled components follow CLAUDE.md → "Styled Components Conventions": import from `decentraland-ui2`, use object syntax, take values from the theme, and keep them in `Component.styled.ts`.
 - Reuse a component the renderer already imports, from `decentraland-ui2` or an existing `@mui/material` import, before you build one. Don't add an import of an MUI module the renderer doesn't use yet. Pulling a not-yet-bundled module into a running dev session retriggers Vite's dependency optimizer. When no imported component fits, hand-roll it, as the settings Accordion is.
 - ui2 pins secondary-text buttons to a grey `secondary.contrast` at high specificity. Overriding their color takes a repeated-`&` selector (see `Tabs/AiTab/component.tsx`), not `!important`.
+- x-charts 7: `axisHighlight={{ x: 'none', y: 'none' }}` with no `tooltip` prop removes the axis interaction listener, so no tooltip ever opens. Pass `tooltip={{ trigger: 'axis' }}` alongside it (Analytics detail charts).
 - ui2 styles a contained-primary `Button` through a 3-class compound selector (`.css-hash.MuiButton-sizeMedium.MuiButton-containedPrimary`), adds a 10px gap between any two adjacent buttons through a global `.MuiButton-root + .MuiButton-root` rule, and sets the hover through `.css-hash.MuiButton-sizeMedium.MuiButton-containedPrimary:not(.Mui-disabled):not(.Mui-focusVisible):hover`. A single-class override loses to all three, so a styled override needs `&&&` for the base styles and `&&&&&&:hover` for the hover (see `CreateButton/component.styled.ts`).
+
+### Analytics detail
+
+Overview [`9455:4972`](https://www.figma.com/design/DhBtPn56J6ZlPLrTUDufqp/?node-id=9455-4972) (Metrics `9455:4974`: tab-bar `9455:4975`, heading `9455:4976`, Panels `9455:4980` and `9455:4989`, Tooltip `9455:4999`) and Retention [`9455:5001`](https://www.figma.com/design/DhBtPn56J6ZlPLrTUDufqp/?node-id=9455-5001) (Metrics `9455:5008`: Platforms `9455:5013`, Day 3 Retention `9455:5021`, Day 3 by Cohort `9455:5029`, Day 7 by Cohort `9455:5061` with DayDetail `9455:5093`, Weekly Churn `9455:5102`), Figma file `DhBtPn56J6ZlPLrTUDufqp`. Size 1920 × 2645 (Retention). Read November 2, 2026. Code: Creator Hub `AnalyticsDetailPage` (`MetricsCard`, `StatsRow`, `ChartCard`, `charts/`, `HeroStat`, the four tabs, the tab bar).
+
+| Part | Figma | Creator Hub token | Contrast |
+| --- | --- | --- | --- |
+| Page | raster backdrop + Black 20 (the Background set); `Content` row gap 40; `Metrics` column gap 40 | `.Main` backdrop (app-wide, see Background) | — |
+| Title bar | `Analytics - {name}` Display H1 Semi 48; "Data as of {date}" `H7 Regular` Silver under the title row, gap 8, left-aligned with the back arrow; Export centred on the title row, not on the title + date column | `--type-display-semi-*`, `--type-h7-regular-*`, `--dcl-silver` | Silver 6.74:1 on `#16141a` |
+| Tab bar | 40 tall, 1px White 20 bottom border; tabs gap 40, padding 10 / 4, `H6 Semi Caps`; rest Silver, active Snow + 2px Snow bottom border | `--palette-whiteTransparent-soft`, `--type-h6-semi-caps-*`, `--dcl-silver`, `--palette-neutral-softWhite` | Silver 6.74:1, Snow 17.81:1 on `#16141a` |
+| Window select | Sort-By Horizontal: "Window" `H6 Regular` Silver, gap 10; value field no border, padding 10, 6px radius, value `H7 Regular` Snow, 10px Silver chevron; centred on the bar's right end | `--type-h6-regular-*`, `--type-h7-regular-*`, `--mui-shape-borderRadius` | as the tab bar |
+| Tab heading | title `H3 Semi` Snow, description `H6 Regular` Silver, gap 10 | `--type-h3-semi-*`, `--type-h6-regular-*`, `--dcl-silver` | as above |
+| Panel (both tabs) | fill White 5, 1px White 10 border, 16px radius; Overview padding 30, row gap 30, panels gap 40; Retention padding 20, gap 20, panels gap 40 | `--palette-whiteTransparent-faint`, `--palette-whiteTransparent-subtle`, `--shape-borderRadiusXLarge` | panel `#222025` over `#16141a`; border 1.32:1, decorative |
+| Panel header | title `H5 Semi` Snow, description `H7 Regular` Silver, gap 10 | `--type-h5-semi-*`, `--type-h7-regular-*` | Silver 5.95:1, Snow 15.73:1 on the panel |
+| Inner panel (stats and charts) | fill Black 40, 1px White 10 border, 12px radius; stats padding 20, chart padding 20 / 60 / 20 / 20 | `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-subtle`, `--shape-borderRadiusLarge` | inner `#141316` |
+| MetricDisplay | column gap 6: label row 28 tall (`H6 Regular` Silver + info button, gap 2), value `H1 Semi` (30, line-height normal) Snow; a unit ("min") in the same size at weight 400 | `--type-h6-regular-*`, `--type-h1-semi-*` | Silver 5.95:1 / 6.83:1, Snow 15.73:1 / 18.04:1 (panel / inner) |
+| MetricDisplay grid | Overview: two equal columns, no column gap; Retention tiles 280 wide, start-aligned, no gap | — | — |
+| Info button | 24 × 24, 100px radius, glyph inset 20% Silver; hover White 10 fill | `--palette-whiteTransparent-subtle` | glyph on the hover fill 4.41:1 (≥ 3:1) |
+| Info tooltip | Tooltip set, Top: Onix, 12px radius, padding 16 / 20, `H7 Regular` Snow, max-width 300, 26px peak at 5px radius, `0 2px 3px rgba(0,0,0,.25)` | `--menu-bg`, `--shadow-tooltip`, `--type-h7-regular-*` | Snow 12.13:1 on Onix |
+| Retention value colour | at or above 20%: System/Green; below: Primary/Primary | ui2 `success.main`, `primary.main` | on the panel: Green 7.87:1, Primary 4.43:1 (30px semibold, ≥ 3:1) |
+| Chart plot | horizontal grid lines 1px White 20, no axis lines or ticks; y labels `H7 Regular` Silver right-aligned in 41px + gap 10; x labels `H7 Regular` Silver, 26 tall; 5 y steps | grid `--palette-whiteTransparent-soft`, labels `--dcl-silver` | grid 1.85:1 decorative; labels 6.83:1 |
+| Chart series | 2px line with a vertical Cerise gradient, `#FF2D55` top → `#C640CD` bottom; end dot 12px with the same fill and a 2px Shadow ring; end label `H7 Semi` Snow | `--primary`, `--lavender`, `--black`, `--type-h7-semi-*` | Primary 5.08:1, Lavender 4.42:1 on the inner panel (≥ 3:1) |
+| Chart reference | 1.5px dashed (≈ 4 on / 4 off) `#A99AFE`; label `H7 Semi` Snow, right-aligned above the line | `--chart-reference` | 7.70:1 on the inner panel |
+| Chart tooltip (DayDetail) | Onix, padding 20, 12px radius, gap 10, `0 4px 8px rgba(0,0,0,.4)`; date `H7 Regular` Silver; row gap 20: value `H6 Semi` Snow, then a 20 × 3 Cerise stroke + series name `H6 Regular` Snow; hover dot 12px as the end dot | `--menu-bg`, `--menu-shadow` | Silver 4.59:1, Snow 12.13:1 on Onix |
+| ✱ focus | not drawn | 2px outline `var(--mui-palette-info-light)`; offset 2px on the info button, −2px on a tab | 7.22:1 on the panel, 8.17:1 on `#16141a` |
+
+**Decisions**
+
+| Topic | Rule |
+| --- | --- |
+| Scope | The Overview and Retention tabs follow these frames. The Places list changes only through the shared retention colour (user decision). |
+| Shared cards | `ChartCard`, `StatsRow` and the chart chrome take this look on every tab that uses them, Visits and Engagement included, with no frame of their own (user decision). |
+| Overview layout | Traffic card: Total Visits alone on the first row, then Unique Visits \| New Decentraland Players, then Concurrent Users \| Peak Concurrent Users. Retention card: Day 3 \| Day 7 Retention, then Median Playtime \| AFK Time, then Desktop \| Mobile. Every value has one size. |
+| Retention order | Platforms (Day 7), Day 3 Retention, Day 3 Retention by Cohort Week, Day 7 Retention by Cohort Week, Weekly Churn Rate (user decision: Weekly Churn ships). |
+| Retention benchmark | Day 3 and Day 7 colour against the same 20% (`DAY_7_RETENTION_BENCHMARK`): green at or above, Primary below, through the one `getRetentionColor`, on the detail page and the Places list alike (user decision). |
+| ✱ Day 3 reference line | 20%, labelled "20% Day 3 KR"; Figma's "20% Day 7 KR" on that chart is a copy slip (user decision). |
+| Labels | Exactly as Figma: "New Decentraland Players", "Day 3 Retention", "Day 3 Retention by Cohort Week", "Weekly Churn Rate" (user decision). |
+| ✱ Day 3 descriptions | Both say "new users": "Percentage of new users who returned within 3 days of their first visit, compared across mobile and desktop." and "Percentage of new users who returned at least once over the 3 days after their first visit, grouped by the week they first jumped into your place." (user decision) |
+| ✱ Day 7 tooltip | "The percentage of new users who returned to your place within 7 days of their first visit." (user decision) |
+| Day 3 tooltip | "The percentage of new users who returned to your place within 3 days of their first visit." (user decision) |
+| New players tooltip | "Wallets new to Decentraland whose first day was spent mostly in your place." (user decision) |
+| Platform tile help | Each All Platforms / Desktop / Mobile tile carries its own definition: "Day 7 retention of all new users, whatever client they used.", "Day 7 retention of new users who first visited from a desktop client.", "Day 7 retention of new users who first visited from a mobile client.", and the same three with "Day 3" on the Day 3 card (user decision). |
+| ✱ Window wording | A card description that names the window follows the selected one: "Your 30-day rolling average, compared across mobile and desktop." or "Your 60-day rolling average, …"; Figma draws 60 only (user decision). |
+| Missing value | A metric with no data shows "-", New Decentraland Players included (user decision). |
+| Window | 30 and 60 days; Figma's "Last 7 Days" is placeholder data (user decision). |
+| ✱ Icons | The info, chevron and download glyphs stay MUI icons until the Figma icon library lands (user decision). |
+| Charts | Pointer only: the hover tooltip has no keyboard path; the end label and the panel's own figures carry the values (user decision). |
+| ✱ Settling Day 7 cohorts | On Day 7 Retention by Cohort Week, a cohort whose Monday is less than 14 days before the export's `exportedAt` is still settling, and one exactly 14 days old is final (`d7_retention_rate_weekly` has no maturity gate). It is shown and marked: the line from the last final point onward is dotted (2px dots every 6px, same gradient, no fade), the end dot is hollow when the last point settles, the end-of-line label shows the last final value (centred above its dot when a tail follows), the tooltip adds the Silver note "Still settling: this cohort started less than 14 days ago, so its returns are still being counted.", and whenever a settling point is present a caption with a dotted sample reads "Dotted line: cohorts from the last 14 days, whose returns are still being counted." Day 3 and churn weekly are gated upstream and never settle (user decision). |
+| ✱ Panel header inset | Both chart and stat panels inset their header 20; Figma's chart headers sit at 30 (a fixed 1208 header centred in 1228). |
+| ✱ x-axis labels | Centred under their week, as a time axis places them; Figma lays them out as equal flex columns. |
+| ✱ Benchmark headroom | A chart with a reference line takes a y maximum of at least 1.25 × the reference (25 for the 20% KR), so the label above the line clears the plot's top edge when every value sits under it. A chart with a fixed maximum (Weekly Churn, 100) keeps it, stepping 0 / 25 / 50 / 75 / 100 as drawn. |
+| ✱ Narrow windows | Figma draws 1920 only. The two Overview panels and Engagement's playtime pair wrap to one column below a 520px panel, Retention tiles wrap at their 280 width, a metric label wraps instead of truncating (the label row keeps a 28 minimum), and the Window control moves to a line above the tabs, right-aligned, when the bar runs out of room. |
+| ✱ Below-benchmark contrast | The Primary value on a hovered Places-list row (`--card` `#242129`) is 4.35:1 at 14px, under 4.5; accepted as the cost of the brand colour (user decision). |
+| ✱ Export alignment | Export centres on the title row as it renders (45 tall, set by the `Title` back control), within 1.5px; accepted (user decision). |
+| Sign-off | The Overview, Retention, Visits, Engagement and Places-list render matches these frames and rules, settling treatment included (user decision). |
 
 ---
 
@@ -3146,6 +3228,11 @@ Everything here is current and unresolved. Design owns the Figma-side defects; t
 | Toolbar (Viewport Toolbar) | Groups named against their position (`RigthSide` is the left group). |
 | RuntimeControls (Viewport Toolbar) | The `Disabled` property on `Preview=Off`'s Pause doesn't change its look (G10); the Play cell is offset −1 / −1. |
 | AudioToggle (Viewport Toolbar) | No hover or focus state. |
+| Analytics Overview `9455:4980`, `9455:4989` (Analytics file) | Row frames are 554 wide holding two 287 cells (574), so the second column overflows the 30 padding by 20. |
+| Analytics Retention `9455:5029`, `9455:5061` (Analytics file) | Chart headers are fixed 1208 wide and centred (inset 30) while the stat panels inset 20. |
+| Analytics Retention `9455:5029` (Analytics file) | The Day 3 chart's reference label reads "20% Day 7 KR"; both Day 3 descriptions say "users" where every Day 7 text says "new users". |
+| Analytics Retention charts (Analytics file) | x labels are equal flex columns, not placed at their dates; the reference colour `#A99AFE` is a raw fill with no variable. |
+| Analytics Overview `9455:4999` (Analytics file) | The Day 7 tooltip says "7 days after their first visit", which reads as day 7 only. |
 
 ### Proposed tokens
 

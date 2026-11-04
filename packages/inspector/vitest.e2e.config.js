@@ -24,8 +24,8 @@ export default defineConfig({
       },
     },
     // Run spec files one at a time so only one headless Chromium is alive at
-    // once. Running two concurrently was tried and reverted: the CI runner is
-    // CPU-bound (macos-latest: 3 vCPU), so two browsers just contend — each
+    // once. Running two concurrently was tried and reverted on the 3-vCPU macOS
+    // runner: CPU-bound, so two browsers just contended — each
     // action ran ~40% slower and the drag/drop-heavy Hierarchy specs raced
     // (entities not settled → "Could not find entity"), for almost no
     // wall-clock win. Speed comes from the lower per-action slowMo instead
