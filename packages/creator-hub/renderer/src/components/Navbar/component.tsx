@@ -19,6 +19,7 @@ import './styles.css';
 export enum NavbarItem {
   HOME = 'home',
   SCENES = 'scenes',
+  TEMPLATES = 'templates',
   COLLECTIONS = 'collections',
   ANALYTICS = 'analytics',
   LEARN = 'learn',
@@ -27,10 +28,12 @@ export enum NavbarItem {
 }
 
 function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boolean }) {
+  const isActive = props.active === props.item;
   return !props.disable ? (
     <Link
       to={`/${props.item}`}
-      className={cx('menu-item', { active: props.active === props.item })}
+      className={cx('menu-item', { active: isActive })}
+      aria-current={isActive ? 'page' : undefined}
     >
       {t(`navbar.menu.${props.item}`)}
     </Link>
@@ -87,14 +90,15 @@ export function Navbar(props: { active: NavbarItem }) {
             item={NavbarItem.SCENES}
             active={props.active}
           />
-          {/* This page will be added in a future shape */}
+          <MenuItem
+            item={NavbarItem.TEMPLATES}
+            active={props.active}
+          />
           <MenuItem
             item={NavbarItem.COLLECTIONS}
             active={props.active}
             disable={true}
           />
-          {/* The only way into Analytics: the router is in-memory, so hiding
-              this entry hides the section. */}
           <MenuItem
             item={NavbarItem.ANALYTICS}
             active={props.active}

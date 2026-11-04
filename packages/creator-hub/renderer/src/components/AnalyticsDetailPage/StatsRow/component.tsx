@@ -1,14 +1,11 @@
 import { Box, Typography } from 'decentraland-ui2';
 
+import { type Metric, MetricDisplay } from '../MetricDisplay';
+
 import './styles.css';
 
-export type Stat = {
-  label: string;
-  value: string;
-};
-
 type Props = {
-  stats: Stat[];
+  stats: Metric[];
   /** Small print under the figures, e.g. how they are deduplicated. */
   footnote?: string;
 };
@@ -19,13 +16,10 @@ export function StatsRow({ stats, footnote }: Props) {
     <Box className="StatsRow">
       <Box className="Stats">
         {stats.map(stat => (
-          <Box
-            className="Stat"
+          <MetricDisplay
             key={stat.label}
-          >
-            <Typography variant="body2">{stat.label}</Typography>
-            <Typography variant="h5">{stat.value}</Typography>
-          </Box>
+            {...stat}
+          />
         ))}
       </Box>
       {footnote && (
