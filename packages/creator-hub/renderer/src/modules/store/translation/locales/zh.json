@@ -45,9 +45,11 @@
         "back": "返回场景",
         "retry": "重试",
         "outdated_deps": "此场景的依赖项已过时，不支持 Bevy 渲染器。请更新它们以继续。",
-        "update_deps": "更新依赖项"
+        "update_deps": "更新依赖项",
+        "data_layer_crashed": "场景反复意外停止。请返回并重新打开，或查看日志。"
       }
     },
+    "realm_restarted": "场景意外停止，已重新加载。最近几秒的更改可能未保存。",
     "header": {
       "actions": {
         "code": "代码",
