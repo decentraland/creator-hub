@@ -1,6 +1,7 @@
 import { ipcRenderer, webUtils, type IpcRendererEvent } from 'electron';
 
 import {
+  AI_ASK_EXPIRED,
   AI_ASK_REQUEST,
   AI_CLI_LOGIN_EVENTS,
   AI_MIRROR_STATE,
@@ -9,6 +10,7 @@ import {
   AI_SCREENSHOT_REQUEST,
   AI_STREAM_EVENT,
   AI_WINDOW_STATE,
+  type AiAskExpired,
   type AiAskRequest,
   type AiCliLoginEvent,
   type AiCliState,
@@ -38,8 +40,8 @@ export type {
 export type { AiMirrorState, AiRemoteCommand, AiWindowState };
 export type { AiCliLoginEvent, AiCliState };
 
-export async function detectProviders(): Promise<AiProviderInfo[]> {
-  return invoke('ai.detectProviders');
+export async function detectProviders(apiKeyFromEnv?: boolean): Promise<AiProviderInfo[]> {
+  return invoke('ai.detectProviders', apiKeyFromEnv);
 }
 
 // Resolve a dropped/picked File to its absolute path on disk. Electron 32+ removed File.path
@@ -104,6 +106,10 @@ export async function signInCli(
   }
 }
 
+export async function submitSignInCode(code: string): Promise<void> {
+  return invoke('ai.submitSignInCode', code);
+}
+
 export async function cancelSignInCli(): Promise<void> {
   return invoke('ai.cancelSignInCli');
 }
@@ -144,6 +150,13 @@ export function onAskRequest(cb: (req: AiAskRequest) => void): { cleanup: () => 
   const handler = (_: IpcRendererEvent, req: AiAskRequest) => cb(req);
   ipcRenderer.on(AI_ASK_REQUEST, handler);
   return { cleanup: () => ipcRenderer.off(AI_ASK_REQUEST, handler) };
+}
+
+// Main stopped waiting for a prompt's answer (its timeout passed); the chat panel closes it.
+export function onAskExpired(cb: (expired: AiAskExpired) => void): { cleanup: () => void } {
+  const handler = (_: IpcRendererEvent, expired: AiAskExpired) => cb(expired);
+  ipcRenderer.on(AI_ASK_EXPIRED, handler);
+  return { cleanup: () => ipcRenderer.off(AI_ASK_EXPIRED, handler) };
 }
 
 export function answerPrompt(id: string, answer: string | null): void {

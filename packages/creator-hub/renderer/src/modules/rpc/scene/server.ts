@@ -1,9 +1,10 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 
-import { fs, editor, consoleWindow } from '#preload';
+import { fs, editor, consoleWindow, misc } from '#preload';
 
 import { type Project } from '/shared/types/projects';
+import type { AiAssetMention } from '/shared/types/ai';
 import { getPath } from '../';
 import type { Severity } from '../../store/snackbar/types';
 import { store } from '../../store';
@@ -32,6 +33,8 @@ export enum Method {
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
+  MENTION_ASSET = 'mention_asset',
+  COPY_TO_CLIPBOARD = 'copy_to_clipboard',
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
   NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
   NOTIFY_READY = 'notify_ready',
@@ -47,8 +50,10 @@ export type Params = {
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
+  [Method.MENTION_ASSET]: AiAssetMention;
+  [Method.COPY_TO_CLIPBOARD]: { text: string };
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
-  [Method.NOTIFY_SCENE_METADATA]: { title: string };
+  [Method.NOTIFY_SCENE_METADATA]: { title: string; scene?: Project['scene'] };
   [Method.NOTIFY_READY]: Record<string, never>;
 };
 
@@ -65,6 +70,8 @@ export type Result = {
   [Method.SET_UI_DESIGNER_MODE]: void;
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
+  [Method.MENTION_ASSET]: void;
+  [Method.COPY_TO_CLIPBOARD]: void;
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
   [Method.NOTIFY_SCENE_METADATA]: void;
   [Method.NOTIFY_READY]: void;
@@ -84,13 +91,15 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       callbacks.onReady?.();
     });
 
-    // The header title used to refresh from the scene.json write passing through the storage
-    // RPC. Under a WebSocket data-layer (Bevy) that write happens in the realm's process, so
-    // the inspector reports the title itself as it is edited.
-    this.handle('notify_scene_metadata', async ({ title }) => {
+    this.handle('notify_scene_metadata', async ({ title, scene }) => {
       const current = store.getState().editor.project ?? project;
-      if (!title || current.title === title) return;
-      store.dispatch(workspaceActions.updateProject({ ...current, title }));
+      store.dispatch(
+        workspaceActions.updateProject({
+          ...current,
+          title: title || current.title,
+          scene: scene ?? current.scene,
+        }),
+      );
     });
 
     this.handle('open_file', async ({ path }) => {
@@ -174,6 +183,23 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
         return;
       }
       store.dispatch(aiActions.setDraftPrompt(text));
+    });
+
+    // A double-click on a Local Assets entry. Only lands while the chat is visible (the reducer
+    // gates on it), so it never opens the assistant on its own.
+    this.handle('mention_asset', async mention => {
+      const isText = (value: unknown) => typeof value === 'string' && value.trim() !== '';
+      if ('path' in mention && isText(mention.path)) {
+        store.dispatch(aiActions.addAssetMention({ path: mention.path }));
+      } else if ('builtInEmote' in mention && isText(mention.builtInEmote)) {
+        store.dispatch(aiActions.addAssetMention({ builtInEmote: mention.builtInEmote }));
+      }
+    });
+
+    // Electron denies navigator.clipboard to the inspector iframe, so it copies through here.
+    this.handle('copy_to_clipboard', async ({ text }) => {
+      if (typeof text !== 'string') return;
+      await misc.copyToClipboard(text);
     });
 
     // The console's pop-out / dock-back controls live inside the inspector iframe (#1272).

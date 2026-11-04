@@ -77,38 +77,126 @@
             "value": 229.088733
           }
         ],
-        "playtime_seconds_p50_30d": [
+        "churn_rate_weekly": [
           {
             "series": "all",
-            "period": null,
-            "value": 152.5
+            "period": "2026-06-15",
+            "value": 0.6154
           },
           {
             "series": "desktop",
-            "period": null,
-            "value": 512.25
+            "period": "2026-06-15",
+            "value": 0.5846
           },
           {
             "series": "mobile",
-            "period": null,
-            "value": 121.0
-          }
-        ],
-        "playtime_seconds_p50_60d": [
+            "period": "2026-06-15",
+            "value": 0.6646
+          },
           {
             "series": "all",
-            "period": null,
-            "value": 163.75
+            "period": "2026-06-22",
+            "value": 0.5833
           },
           {
             "series": "desktop",
-            "period": null,
-            "value": 498.5
+            "period": "2026-06-22",
+            "value": 0.5541
           },
           {
             "series": "mobile",
-            "period": null,
-            "value": 131.5
+            "period": "2026-06-22",
+            "value": 0.63
+          },
+          {
+            "series": "all",
+            "period": "2026-06-29",
+            "value": 0.6667
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-29",
+            "value": 0.6334
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-29",
+            "value": 0.72
+          },
+          {
+            "series": "all",
+            "period": "2026-07-06",
+            "value": 0.55
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-06",
+            "value": 0.5225
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-06",
+            "value": 0.594
+          },
+          {
+            "series": "all",
+            "period": "2026-07-13",
+            "value": 0.6
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-13",
+            "value": 0.57
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-13",
+            "value": 0.648
+          },
+          {
+            "series": "all",
+            "period": "2026-07-20",
+            "value": 0.6364
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-20",
+            "value": 0.6046
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-20",
+            "value": 0.6873
+          },
+          {
+            "series": "all",
+            "period": "2026-07-27",
+            "value": 0.5714
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-27",
+            "value": 0.5428
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-27",
+            "value": 0.6171
+          },
+          {
+            "series": "all",
+            "period": "2026-08-03",
+            "value": 0.625
+          },
+          {
+            "series": "desktop",
+            "period": "2026-08-03",
+            "value": 0.5938
+          },
+          {
+            "series": "mobile",
+            "period": "2026-08-03",
+            "value": 0.675
           }
         ],
         "concurrent_users_avg_30d": [
@@ -137,6 +225,162 @@
             "series": null,
             "period": null,
             "value": 12.0
+          }
+        ],
+        "d3_retention_rate_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 0.2041
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.2258
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 0.1667
+          }
+        ],
+        "d3_retention_rate_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 0.1951
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.2093
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 0.1724
+          }
+        ],
+        "d3_retention_rate_weekly": [
+          {
+            "series": "all",
+            "period": "2026-06-15",
+            "value": 0.2143
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-15",
+            "value": 0.2357
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-15",
+            "value": 0.1714
+          },
+          {
+            "series": "all",
+            "period": "2026-06-22",
+            "value": 0.1875
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-22",
+            "value": 0.2063
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-22",
+            "value": 0.15
+          },
+          {
+            "series": "all",
+            "period": "2026-06-29",
+            "value": 0.25
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-29",
+            "value": 0.275
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-29",
+            "value": 0.2
+          },
+          {
+            "series": "all",
+            "period": "2026-07-06",
+            "value": 0.1622
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-06",
+            "value": 0.1784
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-06",
+            "value": 0.1298
+          },
+          {
+            "series": "all",
+            "period": "2026-07-13",
+            "value": 0.2
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-13",
+            "value": 0.22
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-13",
+            "value": 0.16
+          },
+          {
+            "series": "all",
+            "period": "2026-07-20",
+            "value": 0.2308
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-20",
+            "value": 0.2539
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-20",
+            "value": 0.1846
+          },
+          {
+            "series": "all",
+            "period": "2026-07-27",
+            "value": 0.1739
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-27",
+            "value": 0.1913
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-27",
+            "value": 0.1391
+          },
+          {
+            "series": "all",
+            "period": "2026-08-03",
+            "value": 0.1905
+          },
+          {
+            "series": "desktop",
+            "period": "2026-08-03",
+            "value": 0.2096
+          },
+          {
+            "series": "mobile",
+            "period": "2026-08-03",
+            "value": 0.1524
           }
         ],
         "d7_retention_rate_30d": [
@@ -283,6 +527,196 @@
             "series": "mobile",
             "period": "2026-08-03",
             "value": 0.056886
+          }
+        ],
+        "new_decentraland_players_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 31
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 20
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 12
+          }
+        ],
+        "new_decentraland_players_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 62
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 41
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 23
+          }
+        ],
+        "new_decentraland_players_weekly": [
+          {
+            "series": "all",
+            "period": "2026-06-15",
+            "value": 7
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-15",
+            "value": 5
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-15",
+            "value": 3
+          },
+          {
+            "series": "all",
+            "period": "2026-06-22",
+            "value": 9
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-22",
+            "value": 6
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-22",
+            "value": 4
+          },
+          {
+            "series": "all",
+            "period": "2026-06-29",
+            "value": 6
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-29",
+            "value": 4
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-29",
+            "value": 3
+          },
+          {
+            "series": "all",
+            "period": "2026-07-06",
+            "value": 11
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-06",
+            "value": 8
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-06",
+            "value": 4
+          },
+          {
+            "series": "all",
+            "period": "2026-07-13",
+            "value": 8
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-13",
+            "value": 6
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-13",
+            "value": 3
+          },
+          {
+            "series": "all",
+            "period": "2026-07-20",
+            "value": 5
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-20",
+            "value": 4
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-20",
+            "value": 2
+          },
+          {
+            "series": "all",
+            "period": "2026-07-27",
+            "value": 10
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-27",
+            "value": 7
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-27",
+            "value": 4
+          },
+          {
+            "series": "all",
+            "period": "2026-08-03",
+            "value": 6
+          },
+          {
+            "series": "desktop",
+            "period": "2026-08-03",
+            "value": 4
+          },
+          {
+            "series": "mobile",
+            "period": "2026-08-03",
+            "value": 3
+          }
+        ],
+        "playtime_seconds_p50_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 152.5
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 512.25
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 121.0
+          }
+        ],
+        "playtime_seconds_p50_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 163.75
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 498.5
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 131.5
           }
         ],
         "socially_engaged_ratio_weekly": [

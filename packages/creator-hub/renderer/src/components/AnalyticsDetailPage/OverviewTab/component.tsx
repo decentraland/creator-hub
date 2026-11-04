@@ -1,4 +1,4 @@
-import { Box, Typography } from 'decentraland-ui2';
+import { Box } from 'decentraland-ui2';
 
 import type { PlaceOverviewMetrics } from '/shared/types/place-analytics';
 
@@ -7,11 +7,11 @@ import { t } from '/@/modules/store/translation/utils';
 import {
   formatCount,
   formatDecimal,
-  formatMinutes,
   formatPercentage,
   getRetentionColor,
 } from '../../AnalyticsPage/utils';
 import { MetricsCard } from '../MetricsCard';
+import { TabHeading } from '../TabHeading';
 
 import './styles.css';
 
@@ -19,16 +19,20 @@ type Props = {
   overview: PlaceOverviewMetrics;
 };
 
+function minutes(value: number | null) {
+  return {
+    value: formatDecimal(value),
+    unit: value === null ? undefined : t('analytics.detail.engagement.minutes'),
+  };
+}
+
 export function OverviewTab({ overview }: Props) {
   return (
     <Box className="OverviewTab">
-      <Typography variant="h5">{t('analytics.detail.overview.title')}</Typography>
-      <Typography
-        variant="body1"
-        className="Description"
-      >
-        {t('analytics.detail.overview.description')}
-      </Typography>
+      <TabHeading
+        title={t('analytics.detail.overview.title')}
+        description={t('analytics.detail.overview.description')}
+      />
       <Box className="Cards">
         <MetricsCard
           headline={{
@@ -43,6 +47,11 @@ export function OverviewTab({ overview }: Props) {
               value: formatCount(overview.uniqueVisits),
             },
             {
+              label: t('analytics.metrics.new_players.label'),
+              tooltip: t('analytics.metrics.new_players.tooltip'),
+              value: formatCount(overview.newPlayers),
+            },
+            {
               label: t('analytics.metrics.concurrent_users.label'),
               tooltip: t('analytics.metrics.concurrent_users.tooltip'),
               value: formatDecimal(overview.concurrentUsers),
@@ -52,37 +61,31 @@ export function OverviewTab({ overview }: Props) {
               tooltip: t('analytics.metrics.peak_concurrent_users.tooltip'),
               value: formatCount(overview.peakConcurrentUsers),
             },
-            /* new_users: awaiting a first-time-visitor metric.
-            {
-              label: t('analytics.metrics.new_users.label'),
-              tooltip: t('analytics.metrics.new_users.tooltip'),
-              value: formatCount(overview.newUsers),
-            }, */
-            /* revenue: awaiting a revenue metric.
-            {
-              label: t('analytics.metrics.revenue.label'),
-              tooltip: t('analytics.metrics.revenue.tooltip'),
-              value: <ManaValue>{formatRevenue(overview.revenue)}</ManaValue>,
-            }, */
           ]}
         />
         <MetricsCard
-          headline={{
-            label: t('analytics.metrics.day_7_retention.label'),
-            tooltip: t('analytics.metrics.day_7_retention.tooltip'),
-            value: formatPercentage(overview.day7Retention),
-            color: getRetentionColor(overview.day7Retention),
-          }}
           metrics={[
+            {
+              label: t('analytics.metrics.day_3_retention.label'),
+              tooltip: t('analytics.metrics.day_3_retention.tooltip'),
+              value: formatPercentage(overview.day3Retention),
+              color: getRetentionColor(overview.day3Retention),
+            },
+            {
+              label: t('analytics.metrics.day_7_retention.label'),
+              tooltip: t('analytics.metrics.day_7_retention.tooltip'),
+              value: formatPercentage(overview.day7Retention),
+              color: getRetentionColor(overview.day7Retention),
+            },
             {
               label: t('analytics.metrics.median_playtime.label'),
               tooltip: t('analytics.metrics.median_playtime.tooltip'),
-              value: formatMinutes(overview.medianPlaytime),
+              ...minutes(overview.medianPlaytime),
             },
             {
               label: t('analytics.metrics.afk_time.label'),
               tooltip: t('analytics.metrics.afk_time.tooltip'),
-              value: formatMinutes(overview.afkTime),
+              ...minutes(overview.afkTime),
             },
             {
               label: t('analytics.metrics.desktop.label'),

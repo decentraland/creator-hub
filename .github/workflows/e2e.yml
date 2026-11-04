@@ -16,7 +16,8 @@ jobs:
   # Playwright + Chromium against the served bundle (no Electron). Kept separate
   # from the Electron suite so the two heavy suites get memory-isolated runners.
   e2e-inspector:
-    runs-on: macos-latest
+    # Not ubuntu-latest: Playwright 1.60 has no Chromium build for Ubuntu 26.04; unpin with >= 1.61.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:

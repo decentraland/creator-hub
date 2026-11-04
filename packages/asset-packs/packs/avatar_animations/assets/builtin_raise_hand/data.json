@@ -1,0 +1,9 @@
+{
+  "id": "c5c0f2eb-c1b4-4103-99cd-c6264c049da1",
+  "name": "Raise Hand",
+  "category": "expressions",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "hand", "raise"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'raiseHand' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "raiseHand"
+}

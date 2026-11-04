@@ -131,6 +131,9 @@
       "revert": "Undo AI changes",
       "selection": "Selection: {names}",
       "selection_clear": "Clear",
+      "asset_mention": "Asset: {name}",
+      "asset_mention_built_in": "Built-in animation: {name}",
+      "asset_mention_remove": "Remove",
       "provider": "Assistant",
       "provider_signin": "Sign in",
       "prompt": {
@@ -147,6 +150,9 @@
         "signin_cancel": "Cancel sign-in",
         "signin_starting": "Starting sign-in…",
         "signin_browser": "Finish signing in in your browser, then come back.",
+        "signin_code_hint": "Did the browser not bring you back here? Open the link above, sign in, then paste the code the page shows.",
+        "signin_code_placeholder": "Paste the code",
+        "signin_code_submit": "Submit code",
         "manual_title": "Prefer the terminal? Install and sign in yourself:",
         "recheck": "Recheck",
         "ready": "Ready",
@@ -154,7 +160,15 @@
         "alt_description": "Already signed into Claude Desktop, the VS Code extension, or another MCP-capable tool? Point it at this scene instead — no CLI needed. Add this to its MCP configuration:",
         "alt_copy": "Copy configuration",
         "alt_copied": "Copied",
-        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts."
+        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts.",
+        "install_guide": "If that doesn't work, follow the {provider} install guide",
+        "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so sign in to Claude Code once.",
+        "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license.",
+        "needs_login_status": "Sign-in needed",
+        "needs_login_title": "{provider} asked you to sign in",
+        "needs_login_help": "Its saved sign-in may have expired, even if it showed as connected. Sign out and back in: run these in a terminal, one at a time, and finish in your browser. Then send your message again:",
+        "needs_login_managed_help": "Its saved sign-in may have expired, even if it showed as connected. In Settings → AI, click Sign out, then Sign in, then send your message again.",
+        "api_key_alternative": "Or use an API key: set {envVar} and turn on \"{setting}\" in Settings → AI."
       }
     }
   },
@@ -286,6 +300,7 @@
     "menu": {
       "home": "Home",
       "scenes": "Scenes",
+      "templates": "Templates",
       "collections": "Collections",
       "analytics": "Analytics",
       "manage": "Manage",
@@ -444,6 +459,8 @@
         "files": {
           "count": "{count} {count, plural, one {file} other {files}}",
           "size": "Total Size <b>{size}</b>",
+          "size_with_limit": "Total Size <b>{size} / {limit}</b>",
+          "checking_limit": "Checking limit…",
           "publish": "Publish"
         },
         "deploying": {
@@ -456,6 +473,15 @@
             "unpublishing": "Unpublishing",
             "loading": "In process...",
             "failed": "Error"
+          },
+          "progress": {
+            "checking": "Preparing the upload...",
+            "uploading": "Uploading {sent} of {total}",
+            "processing": "Publishing...",
+            "batches": "Batch {completed} of {total} uploaded",
+            "cancel_too_early": "Can't cancel while the previous scenes are being removed. Try again in a moment.",
+            "cancel_unauthorized": "Couldn't cancel the deployment from here. Quit Creator Hub to stop it.",
+            "cancel_unsupported": "Update the SDK of this scene to cancel deployments from here."
           },
           "errors": {
             "details": "Details",
@@ -471,12 +497,16 @@
             "invalid_identity": "Failed to validate your identity.",
             "max_file_size_exceeded": "One or more assets exceed the allowed limit ({maxFileSizeInMb}MB).\nOptimize or remove large files and try again.",
             "max_scene_size_exceeded": "Your scene exceeds the maximum allowed size.\nReduce the number or size of assets and try again.",
+            "deploy_state_lost": "Lost track of the deployment, which may still finish.\nCheck the scene in the Manage section before publishing again.",
+            "deploy_request_timeout": "The deployment did not finish within 60 minutes and may still be running.\nCheck the scene in the Manage section before publishing again.",
             "unknown": "Something went wrong.\nPlease, try again.",
             "invalid_creator_wallet": "Creator must be a valid Ethereum wallet address."
           },
           "actions": {
             "report_issue": "Report an issue",
-            "retry": "Retry"
+            "retry": "Retry",
+            "cancel": "Cancel",
+            "cancelling": "Cancelling..."
           },
           "redirect": {
             "sign_in": "You will be redirected to Sign In step in {seconds} seconds..."
@@ -590,6 +620,7 @@
           "connected": "Connected",
           "sign_in": "Sign in",
           "sign_out": "Sign out",
+          "sign_out_shared": "Also signs you out of {agent} everywhere else on this computer (desktop app, editor extension, terminal).",
           "cancel": "Cancel",
           "via_terminal": "Via Terminal",
           "install": "Install",
@@ -901,6 +932,9 @@
       "delete_scene": "Deleting scene...",
       "delete_scene_failed": "Failed deleting scene",
       "dependencies_updated": "Scene dependencies were updated",
+      "updating_sdk_skills": "Installing the latest AI skills...",
+      "sdk_skills_updated": "AI skills are up to date",
+      "sdk_skills_update_failed": "Could not install the AI skills",
       "installing_dependencies": "Installing dependencies...",
       "installing_dependencies_failed": "Failed installing dependencies",
       "invalid_scenes_folder": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
@@ -936,6 +970,16 @@
       "title": "New dependencies version detected",
       "actions": {
         "update": "Update"
+      }
+    },
+    "sdk_skills": {
+      "outdated": {
+        "title": "AI skills update available for this scene",
+        "action": "Update"
+      },
+      "missing": {
+        "title": "This scene doesn't have the Decentraland AI skills",
+        "action": "Install"
       }
     },
     "deploy": {
@@ -978,7 +1022,8 @@
       "init_failed": "Failed to initialize signin. Please check your connection.",
       "identity_not_found": "Sign-in could not be completed. Please try signing in again.",
       "identity_expired": "Your sign-in request expired. Please try signing in again.",
-      "network_mismatch": "Couldn't complete sign-in. Disable any VPN or browser private relay and try again."
+      "network_mismatch": "Couldn't complete sign-in. Disable any VPN or browser private relay and try again.",
+      "verifier_mismatch": "Couldn't complete sign-in: it was started from another session. Please try signing in again."
     }
   },
   "more": {
@@ -1015,7 +1060,6 @@
     "title": "Choose a Template",
     "results": "{count} {count, plural, one {template} other {templates}}",
     "actions": {
-      "preview": "Preview Template",
       "code": "View Code"
     },
     "new_scene": {
@@ -1193,12 +1237,35 @@
         "description": "Understand the percentage of users who return after their first session.",
         "platforms": {
           "title": "Platforms",
-          "description": "Your 60-day rolling average, compared across mobile and desktop."
+          "description": "Your {days}-day rolling average, compared across mobile and desktop.",
+          "tooltips": {
+            "all": "Day 7 retention of all new users, whatever client they used.",
+            "desktop": "Day 7 retention of new users who first visited from a desktop client.",
+            "mobile": "Day 7 retention of new users who first visited from a mobile client."
+          }
+        },
+        "day_3": {
+          "title": "Day 3 Retention",
+          "description": "Percentage of new users who returned within 3 days of their first visit, compared across mobile and desktop.",
+          "tooltips": {
+            "all": "Day 3 retention of all new users, whatever client they used.",
+            "desktop": "Day 3 retention of new users who first visited from a desktop client.",
+            "mobile": "Day 3 retention of new users who first visited from a mobile client."
+          }
+        },
+        "day_3_cohort": {
+          "title": "Day 3 Retention by Cohort Week",
+          "description": "Percentage of new users who returned at least once over the 3 days after their first visit, grouped by the week they first jumped into your place.",
+          "benchmark": "{value}% Day 3 KR"
         },
         "day_7_cohort": {
           "title": "Day 7 Retention by Cohort Week",
-          "description": "Percentage of users who returned at least once over the 7 days after their first visit, grouped by the week they first jumped into your place.",
-          "benchmark": "{value}% Day 7 KR"
+          "description": "Percentage of new users who returned at least once over the 7 days after their first visit, grouped by the week they first jumped into your place.",
+          "benchmark": "{value}% Day 7 KR",
+          "settling": {
+            "tooltip": "Still settling: this cohort started less than 14 days ago, so its returns are still being counted.",
+            "caption": "Dotted line: cohorts from the last 14 days, whose returns are still being counted."
+          }
         },
         "churn": {
           "title": "Weekly Churn Rate",
@@ -1306,6 +1373,10 @@
         "label": "Unique Visits",
         "tooltip": "Distinct users who visited your place, counted once each."
       },
+      "new_players": {
+        "label": "New Decentraland Players",
+        "tooltip": "Wallets new to Decentraland whose first day was spent mostly in your place."
+      },
       "new_users": {
         "label": "New Users",
         "tooltip": "Users who visited your place for the first time."
@@ -1318,9 +1389,13 @@
         "label": "Revenue",
         "tooltip": "MANA earned in your place."
       },
+      "day_3_retention": {
+        "label": "Day 3 Retention",
+        "tooltip": "The percentage of new users who returned to your place within 3 days of their first visit."
+      },
       "day_7_retention": {
         "label": "Day 7 Retention",
-        "tooltip": "The percentage of new users who returned to your place at least once over the 7 days after their first visit."
+        "tooltip": "The percentage of new users who returned to your place within 7 days of their first visit."
       },
       "median_playtime": {
         "label": "Median Playtime",

@@ -57,6 +57,10 @@ export type PlaceOverviewMetrics = {
   uniqueVisits: number | null;
   concurrentUsers: number | null;
   peakConcurrentUsers: number | null;
+  /** Wallets new to Decentraland whose first day was spent mostly here — `new_decentraland_players_*`. */
+  newPlayers: number | null;
+  /** Percentage, 0-100. */
+  day3Retention: number | null;
   /** Percentage, 0-100. */
   day7Retention: number | null;
   /** Minutes. */
@@ -65,7 +69,6 @@ export type PlaceOverviewMetrics = {
   afkTime: number | null;
   desktopUsers: number | null;
   mobileUsers: number | null;
-  // newUsers: awaiting a first-time-visitor metric.
   // revenue: awaiting a revenue metric (MANA).
 };
 
@@ -80,6 +83,8 @@ export type TimeSeriesPoint = {
   date: number;
   /** `null` for a week with no data, which the charts leave as a gap. */
   value: number | null;
+  /** A cohort under 14 days old at export: its returns are still being counted. Day 7 cohorts only. */
+  settling?: boolean;
 };
 
 /** A metric compared across the platforms users play on; the unit is the metric's. */
@@ -102,9 +107,14 @@ export type PlaceVisitsMetrics = {
 export type PlaceRetentionMetrics = {
   /** Day-7 retention per platform over the selected window, as percentages. */
   platforms: PlatformBreakdown;
-  /** Day-7 retention of each week's cohort, as percentages. */
+  /** Day-7 retention of each week's cohort, as percentages, with `settling` set on every point. */
   day7ByCohortWeek: TimeSeriesPoint[];
-  // weeklyChurnRate: awaiting a churn metric. 1 - d7 retention is not churn.
+  /** Day-3 retention per platform over the selected window, as percentages. */
+  day3Platforms: PlatformBreakdown;
+  /** Day-3 retention of each week's cohort, as percentages. */
+  day3ByCohortWeek: TimeSeriesPoint[];
+  /** Share of the previous week's active users who did not return, as percentages — `churn_rate_weekly`. */
+  weeklyChurnRate: TimeSeriesPoint[];
 };
 
 /** The metrics behind the Engagement tab. */

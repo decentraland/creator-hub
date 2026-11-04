@@ -486,16 +486,9 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         return;
       }
 
-      // A Name DELETE marks an entity being torn down. Undo of an "add" reverts by
-      // deleting each of the entity's components individually and NEVER emits a
-      // DELETE_ENTITY (#1460), so without this the spawned GLTF mesh + gizmo linger in
-      // the Bevy viewport (Babylon tolerates per-component deletes; a mirrored engine
-      // needs the whole entity gone). Name is the entity's instantiation anchor
-      // (/new_entity, above), so its removal is the reliable "entity is gone" signal.
-      // The engine's own delete path (remove-entity.ts) additionally emits a
-      // DELETE_ENTITY, handled above — firing delete_entity here too is at worst a
-      // harmless no-op console command on an already-removed entity.
-      if (op === CrdtMessageType.DELETE_COMPONENT && component.componentName === NAME_COMPONENT) {
+      const isEntityTeardown =
+        op === CrdtMessageType.DELETE_COMPONENT && component.componentName === NAME_COMPONENT;
+      if (isEntityTeardown) {
         instantiated.delete(entity);
         fire(`delete_entity ${entity}`, 'delete_entity', [String(entity)]);
         return;

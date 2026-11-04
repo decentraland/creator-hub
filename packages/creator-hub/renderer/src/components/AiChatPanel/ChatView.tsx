@@ -31,15 +31,21 @@ import {
   Tooltip,
 } from 'decentraland-ui2';
 
-import type { AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
-import { AI_CLI_COMMANDS, MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
+import type { AiAssetMention, AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
+import {
+  MIN_CLAUDE_CLI_VERSION,
+  assetMentionKey,
+  cliSetup,
+  isCliVersionOutdated,
+} from '/shared/types/ai';
 
-import { ai as aiPreload } from '#preload';
+import { ai as aiPreload, misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
 
 import type { AiMessage, AiPromptData, AiSessionMeta } from '/@/modules/store/ai/types';
 import { WarningCircleIcon } from '../Icons';
+import { SignInCodeField } from '../SignInCodeField';
 import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
@@ -57,6 +63,7 @@ import {
   Composer,
   DropHint,
   ErrorRow,
+  GuideLink,
   HeaderActions,
   HeaderTitle,
   IntroMessage,
@@ -85,6 +92,7 @@ import {
   SetupBox,
   SetupDivider,
   SetupStep,
+  SignInHintBody,
   StopButton,
   ThinkingRow,
   Toolbar,
@@ -138,6 +146,14 @@ function formatWhen(ts: number): string {
 // re-sending the last prompt on retry.
 function messageText(msg: AiMessage): string {
   return msg.parts.map(p => (p.kind === 'text' ? p.text : '')).join('');
+}
+
+function isAwaitingAnswer(msg: AiMessage | undefined): boolean {
+  return (
+    msg?.parts.some(
+      p => p.kind === 'prompt' && p.prompt.answer === undefined && p.prompt.dismissed !== true,
+    ) ?? false
+  );
 }
 
 // Cap on how many files a single prompt carries (mirrors MAX_ATTACHMENTS in main/modules/ai.ts).
@@ -311,14 +327,17 @@ export interface ChatViewProps {
     available: boolean;
     reason?: string;
     version?: string;
-    // False when the CLI has no scriptable login (Gemini) — hides the in-app "Sign in" button.
     managedSignIn: boolean;
+    desktopInstalled?: boolean;
+    needsLogin?: boolean;
   }[];
   provider: AiProvider;
   messages: AiMessage[];
   busy: boolean;
   detecting: boolean;
   selection: { id: number; name: string }[];
+  // Local asset paths mentioned for the next prompt (double-clicked in the Local Assets panel).
+  assetMentions: AiAssetMention[];
   // The user dismissed the billing hint for this scene (#1505) — hide it.
   billingDismissed: boolean;
   // The scene's saved conversations (newest first) and which one is active, for the history menu.
@@ -346,6 +365,8 @@ export interface ChatViewProps {
   onDeleteSession: (id: string) => void;
   // Deselect all entities (clears the selection chips).
   onClearSelection: () => void;
+  // Drop one mentioned asset from the next prompt.
+  onRemoveAssetMention: (mention: AiAssetMention) => void;
   // Open the detached window (inline only — omitted/no-op in the detached window).
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
@@ -356,6 +377,27 @@ export interface ChatViewProps {
   onDraftConsumed?: () => void;
 }
 
+function ClearMentionButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Tooltip title={label}>
+      <IconButton
+        size="small"
+        aria-label={label}
+        onClick={onClick}
+        sx={{
+          flexShrink: 0,
+          padding: 0.25,
+          color: 'text.primary',
+          backgroundColor: 'action.hover',
+          '&:hover': { backgroundColor: 'action.selected' },
+        }}
+      >
+        <CloseIcon sx={{ fontSize: 13 }} />
+      </IconButton>
+    </Tooltip>
+  );
+}
+
 export function ChatView(props: ChatViewProps) {
   const {
     providers,
@@ -364,6 +406,7 @@ export function ChatView(props: ChatViewProps) {
     busy,
     detecting,
     selection,
+    assetMentions,
     billingDismissed,
     sessions,
     currentSessionId,
@@ -381,6 +424,7 @@ export function ChatView(props: ChatViewProps) {
     onSwitchSession,
     onDeleteSession,
     onClearSelection,
+    onRemoveAssetMention,
     onPopOut,
     onClose,
     draftPrompt,
@@ -428,6 +472,16 @@ export function ChatView(props: ChatViewProps) {
     [providers, provider],
   );
   const available = currentProvider?.available ?? false;
+  const cmds = cliSetup(provider, navigator.userAgent.includes('Windows'));
+  const guideLink = (
+    <GuideLink
+      type="button"
+      onClick={() => void misc.openExternal(cmds.guideUrl)}
+    >
+      {t('editor.ai.setup.install_guide', { provider: currentProvider?.label ?? provider })}
+      <OpenInNewIcon fontSize="inherit" />
+    </GuideLink>
+  );
 
   // In-app sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login (browser OAuth), streaming steps here. On success we re-detect so
@@ -436,13 +490,13 @@ export function ChatView(props: ChatViewProps) {
     signIn,
     start: handleSignIn,
     cancel: handleCancelSignIn,
+    submitCode: handleSubmitSignInCode,
   } = useCliSignIn(provider, onRecheck);
 
-  // Keep the newest message in view as text streams in.
   useEffect(() => {
     const el = transcriptRef.current;
     if (el !== null) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, busy]);
 
   // No CLI installed? Reveal the scene's MCP server so a tool the user already has (Claude
   // Desktop, the VS Code extension, …) can connect to this scene instead (#1502). Fetch it
@@ -485,7 +539,7 @@ export function ChatView(props: ChatViewProps) {
 
   const handleCopyMcpConfig = useCallback(() => {
     if (mcpConfigSnippet === null) return;
-    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+    void misc.copyToClipboard(mcpConfigSnippet).then(() => {
       setMcpCopied(true);
       setTimeout(() => setMcpCopied(false), 2000);
     });
@@ -578,14 +632,14 @@ export function ChatView(props: ChatViewProps) {
   );
 
   const renderSetup = () => {
-    const cmds = AI_CLI_COMMANDS[provider];
     return (
       <SetupBox>
         <strong>{t('editor.ai.setup.title')}</strong>
         <span>{t('editor.ai.setup.description')}</span>
-        {/* Primary path (#1531): sign in with the subscription in-app — installs the
-            official CLI on demand and drives its browser OAuth. No terminal needed. Hidden for a
-            provider whose CLI has no scriptable login (Gemini): only the terminal path applies. */}
+        {currentProvider?.desktopInstalled === true && (
+          <span>{t('editor.ai.setup.desktop_detected')}</span>
+        )}
+        {provider === 'gemini' && <span>{t('editor.ai.setup.gemini_plan_note')}</span>}
         {currentProvider?.managedSignIn === true && (
           <>
             <Button
@@ -615,15 +669,20 @@ export function ChatView(props: ChatViewProps) {
                 <CommandLine>{signIn.url}</CommandLine>
               </SetupStep>
             )}
+            {signIn.busy && signIn.url !== null && signIn.acceptsCode && (
+              <SignInCodeField onSubmit={handleSubmitSignInCode} />
+            )}
             {signIn.error !== null && <ErrorRow>{signIn.error}</ErrorRow>}
             <SetupDivider />
           </>
         )}
-        {/* Fallback: run the CLI yourself in a terminal. */}
-        <span>{t('editor.ai.setup.manual_title')}</span>
+        {currentProvider?.managedSignIn === true && (
+          <span>{t('editor.ai.setup.manual_title')}</span>
+        )}
         <SetupStep>
           <span>{t('editor.ai.setup.install')}</span>
           <CommandLine>{cmds.install}</CommandLine>
+          {guideLink}
         </SetupStep>
         <SetupStep>
           <span>{t('editor.ai.setup.signin')}</span>
@@ -722,12 +781,6 @@ export function ChatView(props: ChatViewProps) {
               }
             }
           })}
-          {!msg.done && msg.parts.length === 0 && msg.error === undefined && (
-            <ThinkingRow>
-              <CircularProgress size={12} />
-              {t('editor.ai.thinking')}
-            </ThinkingRow>
-          )}
           {msg.error !== undefined && (
             <ErrorRow>
               {msg.error}
@@ -766,6 +819,12 @@ export function ChatView(props: ChatViewProps) {
       <>
         <IntroMessage>{t('editor.ai.empty')}</IntroMessage>
         {transcript}
+        {busy && !isAwaitingAnswer(messages.at(-1)) && (
+          <ThinkingRow role="status">
+            <CircularProgress size={12} />
+            {t('editor.ai.thinking')}
+          </ThinkingRow>
+        )}
       </>
     );
   };
@@ -968,6 +1027,34 @@ export function ChatView(props: ChatViewProps) {
             </OutdatedHint>
           )}
 
+        {available && currentProvider?.needsLogin === true && (
+          <OutdatedHint>
+            <WarningCircleIcon size={28} />
+            <SignInHintBody>
+              <strong>
+                {t('editor.ai.setup.needs_login_title', { provider: currentProvider.label })}
+              </strong>
+              {currentProvider.managedSignIn ? (
+                <span>{t('editor.ai.setup.needs_login_managed_help')}</span>
+              ) : (
+                <>
+                  <span>{t('editor.ai.setup.needs_login_help')}</span>
+                  {cmds.relogin.map(step => (
+                    <CommandLine key={step}>{step}</CommandLine>
+                  ))}
+                </>
+              )}
+              <span>
+                {t('editor.ai.setup.api_key_alternative', {
+                  envVar: cmds.apiKeyEnv,
+                  setting: t('modal.app_settings.fields.ai_api_key.label'),
+                })}
+              </span>
+              {guideLink}
+            </SignInHintBody>
+          </OutdatedHint>
+        )}
+
         {available && !billingDismissed && (
           <BillingCard>
             <BillingTitle>{t('editor.ai.billing_title')}</BillingTitle>
@@ -1002,24 +1089,34 @@ export function ChatView(props: ChatViewProps) {
                 names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
               })}
             </SelectionNames>
-            <Tooltip title={t('editor.ai.selection_clear')}>
-              <IconButton
-                size="small"
-                aria-label={t('editor.ai.selection_clear')}
-                onClick={onClearSelection}
-                sx={{
-                  flexShrink: 0,
-                  padding: 0.25,
-                  color: 'text.primary',
-                  backgroundColor: 'action.hover',
-                  '&:hover': { backgroundColor: 'action.selected' },
-                }}
-              >
-                <CloseIcon sx={{ fontSize: 13 }} />
-              </IconButton>
-            </Tooltip>
+            <ClearMentionButton
+              label={t('editor.ai.selection_clear')}
+              onClick={onClearSelection}
+            />
           </SelectionBar>
         )}
+
+        {available &&
+          assetMentions.map(mention => (
+            <SelectionBar key={assetMentionKey(mention)}>
+              <InsertDriveFileOutlinedIcon fontSize="small" />
+              {'path' in mention ? (
+                <SelectionNames title={mention.path}>
+                  {t('editor.ai.asset_mention', {
+                    name: mention.path.split('/').pop() ?? mention.path,
+                  })}
+                </SelectionNames>
+              ) : (
+                <SelectionNames>
+                  {t('editor.ai.asset_mention_built_in', { name: mention.builtInEmote })}
+                </SelectionNames>
+              )}
+              <ClearMentionButton
+                label={t('editor.ai.asset_mention_remove')}
+                onClick={() => onRemoveAssetMention(mention)}
+              />
+            </SelectionBar>
+          ))}
 
         <Composer
           dragging={dragging}

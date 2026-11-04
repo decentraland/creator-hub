@@ -2,13 +2,14 @@ import type { OpenDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
-import type { DeployOptions } from '/shared/types/deploy';
+import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
+import type { SkillsUpdateStatus } from './skills';
 import type {
   AiMirrorState,
   AiProvider,
@@ -88,6 +89,13 @@ export type AiSceneOpRequest = { id: string; op: string; params: Record<string, 
 // A null answer means the user dismissed it (or the turn was stopped before they chose).
 export const AI_ASK_REQUEST = 'ai.askRequest';
 
+// Main gave up waiting on an AI_ASK_REQUEST (its timeout passed, so the agent was told the
+// question was dismissed). The renderer closes that prompt so it can't take an answer that
+// nothing is waiting for any more.
+export const AI_ASK_EXPIRED = 'ai.askExpired';
+
+export type AiAskExpired = { id: string };
+
 export type AiAskOption = { label: string; description?: string };
 export type AiAskRequest = {
   id: string;
@@ -124,11 +132,14 @@ export type ConsoleMirrorState = { previewRunning: boolean };
 // AI sign-in without a pre-installed CLI (#1531). Users with a Claude/ChatGPT subscription
 // who never installed a CLI can sign in from the setup panel: main installs the official CLI
 // into an app-managed dir (using the bundled Node) and drives its own subscription login
-// (`claude setup-token` / `codex login`). `ai.signInCli` runs install-if-needed + login,
+// (`claude auth login` / `codex login`). `ai.signInCli` runs install-if-needed + login,
 // streaming its steps — progress messages and the browser URL to open — over this channel.
+// `acceptsCode` means the login also takes the code that URL's page shows (`ai.submitSignInCode`).
 export const AI_CLI_LOGIN_EVENTS = 'ai.cliLogin';
 
-export type AiCliLoginEvent = { type: 'progress'; message: string } | { type: 'auth'; url: string };
+export type AiCliLoginEvent =
+  | { type: 'progress'; message: string }
+  | { type: 'auth'; url: string; acceptsCode: boolean };
 
 // Per-provider setup state for the managed (app-installed) CLIs.
 export type AiCliState = Record<AiProvider, { installed: boolean; signedIn: boolean }>;
@@ -201,7 +212,7 @@ export interface Ipc {
   'cli.start': (path: string, opts: PreviewOptions, mobile?: boolean) => Promise<string>;
   'cli.cancelPreview': (path: string) => Promise<void>;
   'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
-  'cli.deploy': (opts: DeployOptions) => Promise<number>;
+  'cli.deploy': (opts: DeployOptions) => Promise<DeployServer>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;
   'analytics.track': <T extends keyof Events>(event: T, data?: Events[T]) => void;
@@ -211,10 +222,12 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
+  'skills.getProjectStatus': (path: string) => Promise<SkillsUpdateStatus>;
+  'skills.updateProject': (path: string) => Promise<void>;
 
   // AI scene assistant. `ai.send` streams its result over AI_STREAM_EVENT (payload
   // AiEvent) to the calling WebContents; the returned turnId correlates the stream.
-  'ai.detectProviders': () => Promise<AiProviderInfo[]>;
+  'ai.detectProviders': (apiKeyFromEnv?: boolean) => Promise<AiProviderInfo[]>;
   'ai.send': (path: string, params: AiSendParams) => Promise<{ turnId: string }>;
   'ai.stop': () => Promise<void>;
   'ai.reset': (path?: string) => Promise<void>;
@@ -229,6 +242,7 @@ export interface Ipc {
   // drives its subscription login, streaming steps over AI_CLI_LOGIN_EVENTS; signOutCli
   // clears the managed sign-in; getCliState reports install/sign-in status per provider.
   'ai.signInCli': (provider: AiProvider) => Promise<void>;
+  'ai.submitSignInCode': (code: string) => Promise<void>;
   'ai.cancelSignInCli': () => Promise<void>;
   'ai.signOutCli': (provider: AiProvider) => Promise<void>;
   'ai.getCliState': () => Promise<AiCliState>;

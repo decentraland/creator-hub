@@ -32,6 +32,7 @@ import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
+import { usePreviewCleanup } from '/@/hooks/usePreviewCleanup';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
@@ -155,6 +156,7 @@ export function EditorPage() {
     loadingPublish,
     isInstallingProject,
     killPreview,
+    leaveProject,
     publishScene,
     getMobileQR,
     supportsMultiInstance,
@@ -387,6 +389,10 @@ export function EditorPage() {
   // chip, attached as context on send). Cheap read; only runs while the panel is visible.
   // Rejects harmlessly under the Bevy renderer (no selection RPC) — selection just stays empty.
   useEffect(() => {
+    dispatch(aiActions.setChatVisible(aiOpen || aiDetached));
+  }, [aiOpen, aiDetached, dispatch]);
+
+  useEffect(() => {
     // Poll while the chat is visible anywhere — inline or in the detached window (#1504).
     if (!aiOpen && !aiDetached) {
       dispatch(aiActions.setSelection([]));
@@ -432,6 +438,7 @@ export function EditorPage() {
   // The iframe render is gated on the realm being ready when Bevy is selected, so
   // the inspector boots already pointed at the right data-layer + realm.
   const projectPath = project?.path;
+  usePreviewCleanup(projectPath);
 
   // Usage analytics: fire once each time the inline AI chat panel is opened. Anonymous project
   // id, matching the id space of the AI Turn events so "opened" and "used" correlate. Fires on
@@ -558,8 +565,9 @@ export function EditorPage() {
       }
     }
     killPreview();
+    leaveProject();
     navigate('/scenes');
-  }, [navigate, refreshProject, killPreview]);
+  }, [navigate, refreshProject, killPreview, leaveProject]);
 
   // Recover from the outdated-deps load error (#1457): update the scene's packages.
   // installProject toggles isInstallingProject, which re-runs the realm-start effect

@@ -45,16 +45,33 @@ export function useAiSession(
     dispatch(aiActions.fetchProviders());
     const stream = aiPreload.subscribeAiStream(event => {
       dispatch(aiActions.applyEvent(event));
-      if (event.kind === 'done') dispatch(aiActions.persistConversation());
+      if (event.kind === 'done') {
+        dispatch(aiActions.persistConversation());
+        void dispatch(aiActions.recheckAfterTurn(event.ok));
+      }
     });
     // Interactive `ask_user` prompts arrive on their own channel (they block an MCP tool call,
     // not a stream token) — fold each into the transcript.
     const ask = aiPreload.onAskRequest(req => dispatch(aiActions.pushPrompt(req)));
+    // Main gave up waiting on a prompt: close it so it can't take an answer that goes nowhere.
+    const expired = aiPreload.onAskExpired(({ id }) => dispatch(aiActions.expirePrompt(id)));
     return () => {
       stream.cleanup();
       ask.cleanup();
+      expired.cleanup();
     };
   }, [enabled, dispatch]);
+
+  // Billing mode decides whether an agent's own sign-in counts (a signed-out CLI still runs
+  // turns billed to an API key), so flipping it in Settings must re-detect, or the panel keeps
+  // offering an agent whose every turn now fails.
+  const apiKeyFromEnv = useSelector(state => state.workspace.settings?.useApiKeyFromEnv ?? false);
+  const prevApiKeyFromEnv = useRef(apiKeyFromEnv);
+  useEffect(() => {
+    if (prevApiKeyFromEnv.current === apiKeyFromEnv) return;
+    prevApiKeyFromEnv.current = apiKeyFromEnv;
+    if (enabled) dispatch(aiActions.fetchProviders());
+  }, [enabled, apiKeyFromEnv, dispatch]);
 
   // Killing the CLI child when the assistant is turned OFF mid-turn (not on navigate-away —
   // that leaves the turn to finish and reconciles on return, above). A running child edits
@@ -123,6 +140,9 @@ export function useAiSession(
           break;
         case 'clearSelection':
           latest.current.onClearSelection?.();
+          break;
+        case 'removeAssetMention':
+          dispatch(aiActions.removeAssetMention(command.mention));
           break;
         case 'closeAssistant':
           void aiPreload.closeAiWindow();
