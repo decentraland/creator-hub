@@ -601,6 +601,9 @@ export function Success({ info, url, worldName, onClick, onClose }: SuccessProps
             {t('modal.publish_project.deploy.success.world_settings')}
           </SettingsLink>
         )}
+        <div className="indexing-note">
+          {t('modal.publish_project.deploy.success.indexing_note')}
+        </div>
       </div>
       <div className="actions">
         <Button

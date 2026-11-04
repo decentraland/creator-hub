@@ -60,4 +60,16 @@ If so, add after the run above:
 
 ## Screenshots
 
-[Required when the change touches `packages/inspector/src` or `packages/creator-hub/renderer`: a before/after pair for every affected surface. For a token or theme change, every surface that consumes the token. Fixture data only: no wallet addresses, emails, usernames, or real scene names in a screenshot — use the dev fixtures or redact before attaching. Delete this section only if no frontend file changed.]
+[Required when the change touches `packages/inspector/src` or `packages/creator-hub/renderer`. For a token or theme change, cover every surface that consumes the token. Delete this section only if no frontend file changed.]
+
+- One grid per component, one row per state.
+- Columns **Before | After**, plus **Figma** when the change follows a Figma frame.
+- Captions and file names say "Before" and "After", never "base" or "head".
+- Fixture data only: no wallet addresses, emails, usernames, or real scene names. Use the dev fixtures or redact before attaching.
+- Capture Creator Hub (Electron) with `--force-color-profile=srgb`, or the colours shift.
+
+<!--
+AGENT GUIDANCE — screenshots: capture, naming, montage and upload steps are in
+.ai/skills/figma/references/screenshots.md. Ask the user before uploading images to a PR.
+-->
+
