@@ -5,6 +5,7 @@ import {
   encodeFunctionData,
   http,
   keccak256,
+  parseAbi,
   toBytes,
   type Address,
   type Hex,
@@ -13,8 +14,8 @@ import { namehash } from 'viem/ens';
 import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import { config } from '/@/config';
 import type { LandTransaction } from '/@/lib/landTransactions';
-import { DCLRegistrar, ENSResolver } from './abis';
-import { dclRegistrar, ensResolver } from './contracts';
+import { DCLRegistrar } from './abis';
+import { dclRegistrar } from './contracts';
 import type { ContractData, ENS } from './types';
 
 const DCL_SUFFIX = '.dcl.eth';
@@ -22,12 +23,30 @@ const DCL_LABEL = /^[a-z0-9]{2,15}$/;
 
 type NameUsage = { landId: string | null; world: boolean };
 
+/**
+ * The ENS public resolver a NAME is written through. Kept here rather than in `./abis` and
+ * `./contracts` because reads go through the Universal Resolver (#1724), which drops those modules;
+ * writes still need the public resolver itself.
+ */
+export const PUBLIC_RESOLVER_ABI = parseAbi(['function setContenthash(bytes32 node, bytes hash)']);
+
+export const PUBLIC_RESOLVER: Partial<Record<ChainId, Address>> = {
+  [ChainId.ETHEREUM_MAINNET]: '0x4976fb03c32e5b8cfe2b6ccb31c09ba78ebaba41',
+  [ChainId.ETHEREUM_SEPOLIA]: '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD',
+};
+
 const chainId = (): ChainId => Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 
 function contractAddress(contracts: Partial<Record<ChainId, ContractData>>): Address {
   const contract = contracts[chainId()];
   if (!contract) throw new Error(`No contract for chain ${chainId()}`);
   return contract.address as Address;
+}
+
+function publicResolverAddress(): Address {
+  const address = PUBLIC_RESOLVER[chainId()];
+  if (!address) throw new Error(`No contract for chain ${chainId()}`);
+  return address;
 }
 
 /** `foo` or `foo.dcl.eth` → `foo`; null when it cannot be a Decentraland NAME. */
@@ -63,9 +82,9 @@ export async function resolveNameOwner(name: string): Promise<Address | null> {
 /** Points a NAME at the content hash from `LandRedirections.create`. */
 export function buildSetNameContent(subdomain: string, contentHash: Hex): LandTransaction {
   return {
-    to: contractAddress(ensResolver),
+    to: publicResolverAddress(),
     data: encodeFunctionData({
-      abi: ENSResolver,
+      abi: PUBLIC_RESOLVER_ABI,
       functionName: 'setContenthash',
       args: [namehash(subdomain), contentHash],
     }),
