@@ -18,17 +18,19 @@
   --lavender: #c640cd;
   --purplish-grey-raw: 115, 110, 125;
   --white: #ffffff;
-  --black: #161518;
+  --panel: #161518;
+  --black: var(--panel);
 
   --light-gray: #5e5b67;
   --dark-gray: #43404a;
-  --darker-gray: #242129;
+  --darker-gray: var(--panel-2);
   --palette-neutral-softWhite: #fcfcfc;
   --palette-info-light: #63b4f6;
 
-  --dcl: #ff2d55;
+  --dcl: var(--brand);
   --dcl-dark: #9c1c34;
-  --dcl-hover: #f70038;
+  --brand-dark: #f70038;
+  --dcl-hover: var(--brand-dark);
   --title-bar-button: #2d2a33;
   --ai-selected: #214272;
   --ai-selected-hover: #2e4a7a;
@@ -38,6 +40,8 @@
   --ai-input-bg: #28252d;
   --ai-warning-bg: rgba(244, 130, 33, 0.16);
   --dcl-silver: #a09ba8;
+  --palette-neutral-softWhite: #fcfcfc;
+  --chart-reference: #a99afe;
 
   /* Share */
   --facebook: #4267b2;
@@ -48,7 +52,8 @@
   --transparent-gray-light: rgba(255, 255, 255, 0.23);
 
   --palette-whiteTransparent-faint: rgba(255, 255, 255, 0.05);
-  --palette-whiteTransparent-subtle: rgba(255, 255, 255, 0.1);
+  --white-10: rgba(255, 255, 255, 0.1);
+  --palette-whiteTransparent-subtle: var(--white-10);
   --palette-whiteTransparent-hover: rgba(255, 255, 255, 0.15);
   --palette-whiteTransparent-soft: rgba(255, 255, 255, 0.2);
   --palette-whiteTransparent-blurry: rgba(255, 255, 255, 0.4);
@@ -63,21 +68,29 @@
   --palette-error-dark2: #cc1d2c;
   --palette-error-light2: #ffcdd4;
   --palette-info-light2: #bbdefb;
-  --palette-rarity-common: #73d3d3;
+  --rar-common: #73d3d3;
+  --palette-rarity-common: var(--rar-common);
   --palette-rarity-common-light: #acf8f8;
-  --palette-rarity-uncommon: #ff8362;
+  --rar-uncommon: #ff8362;
+  --palette-rarity-uncommon: var(--rar-uncommon);
   --palette-rarity-uncommon-light: #ffe0b2;
-  --palette-rarity-rare: #34ce76;
+  --rar-rare: #34ce76;
+  --palette-rarity-rare: var(--rar-rare);
   --palette-rarity-rare-light: #73ffaf;
-  --palette-rarity-epic: #438fff;
+  --rar-epic: #438fff;
+  --palette-rarity-epic: var(--rar-epic);
   --palette-rarity-epic-light: #81e1ff;
-  --palette-rarity-legendary: #a14bf3;
+  --rar-legendary: #a14bf3;
+  --palette-rarity-legendary: var(--rar-legendary);
   --palette-rarity-legendary-light: #e8b9ff;
-  --palette-rarity-mythic: #ff4bed;
+  --rar-mythic: #ff4bed;
+  --palette-rarity-mythic: var(--rar-mythic);
   --palette-rarity-mythic-light: #f6c1ff;
-  --palette-rarity-exotic: #caff73;
+  --rar-exotic: #caff73;
+  --palette-rarity-exotic: var(--rar-exotic);
   --palette-rarity-exotic-light: #e4ffb8;
-  --palette-rarity-unique: #fea217;
+  --rar-unique: #fea217;
+  --palette-rarity-unique: var(--rar-unique);
   --palette-rarity-unique-light: #fff280;
 
   --menu-bg: #35333b;
@@ -86,10 +99,11 @@
   --scrollbar-thumb-border: var(--palette-whiteTransparent-backdrop);
 
   /* fonts */
-  --font-family:
+  --font-sans:
     "Inter", system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-monospace:
-    "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+  --font-family: var(--font-sans);
+  --font-mono: "Inconsolata", "Consolas", "Droid Sans Mono", "Monaco", "Courier New", monospace;
+  --font-monospace: var(--font-mono);
 
   --type-display-semi-size: 48px;
   --type-display-semi-weight: 600;
@@ -173,26 +187,31 @@
   --type-button-small-letter-spacing: 0.46px;
 
   --background: #18141a;
-  --danger: #ffa900;
+  --warning: #ffa900;
+  --danger: var(--warning);
   --error: #ff0000;
   --success: #34ce77;
-  --primary: #ff2d55;
+  --brand: #ff2d55;
+  --primary: var(--brand);
   --secondary: #242129;
-  --primary-hover: #ff3d61;
+  --brand-hover: #ff3d61;
+  --primary-hover: var(--brand-hover);
   --secondary-hover: #28262c;
   --secondary-on-modal: #67637033;
   --secondary-on-modal-hover: #6763704d;
   --card-on-modal: #67637033;
   --text: #ffffff;
   --secondary-text: #676370;
-  --text-on-primary: #ffffff;
+  --on-brand: #ffffff;
+  --text-on-primary: var(--on-brand);
   --text-on-secondary: #ffffffb2;
   --divider: #67637033;
   --dropdown: #716b7c;
   --dropdown-hover: #24212933;
   --popup: #676370;
   --popup-text: #ffffff;
-  --card: #242129;
+  --panel-2: #242129;
+  --card: var(--panel-2);
   --outline: 1px solid #00000005;
   --toast: #3d3b43;
   --toast-text: #ffffff;
@@ -204,13 +223,16 @@
     rgb(0 0 0 / 46%) 37%,
     rgb(0 0 0 / 20%) 100%
   );
-  --dimmer: #000000dd;
+  --scrim: #000000dd;
+  --dimmer: var(--scrim);
   --text-area-border: #676370;
   --clear-divider: #a09ba8;
   --brightness: brightness(100);
 
   --shape-borderRadiusMedium: 8px;
-  --shape-borderRadiusXLarge: 16px;
+  --shape-borderRadiusLarge: 12px;
+  --r-card: 16px;
+  --shape-borderRadiusXLarge: var(--r-card);
   --shape-borderRadiusXXLarge: 24px;
   --shadow-tooltip: 0 2px 3px rgba(0, 0, 0, 0.25);
   --shadow-toast: 0 4px 4px rgba(0, 0, 0, 0.1);
