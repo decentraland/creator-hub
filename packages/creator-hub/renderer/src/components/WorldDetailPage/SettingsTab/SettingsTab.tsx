@@ -8,12 +8,15 @@ import { SelectCheckbox } from '../../LandDetailPage/SelectCheckbox';
 import { Loader } from '../../Loader';
 import { useWorldSettings } from '../useWorldSettings';
 import { useWorldSettingsDraft } from '../useWorldSettingsDraft';
+import type { WorldPermissions } from '../worldPermissions';
 import { AccessSection } from './Access';
 import { settingsChanges, settingsValid, toSettingsDraft } from './settings';
 import { CheckRow, Note, Root, Row, SectionBlock, SmallInput } from './SettingsTab.styled';
 import { SkyboxField } from './SkyboxField';
 
-function SettingsForm({ worldName, saved }: { worldName: string; saved: WorldSettings }) {
+type Props = { worldName: string; access: WorldPermissions['access'] };
+
+function SettingsForm({ worldName, access, saved }: Props & { saved: WorldSettings }) {
   const [draft, setDraft] = useWorldSettingsDraft({
     worldName,
     saved,
@@ -70,19 +73,20 @@ function SettingsForm({ worldName, saved }: { worldName: string; saved: WorldSet
           {t('world_detail.settings.discoverable')}
         </CheckRow>
       </SectionBlock>
-      <AccessSection worldName={worldName} />
+      {access === 'manage' && <AccessSection worldName={worldName} />}
     </Root>
   );
 }
 
-/** The World's Settings: spawn, skybox and General saved from the shell's SAVE; Access saved as it changes. */
-export function SettingsTab({ worldName }: { worldName: string }) {
+/** The World's Settings: spawn, skybox and General saved from the shell's SAVE; Access, for the owner, saved as it changes. */
+export function SettingsTab({ worldName, access }: Props) {
   const settings = useWorldSettings(worldName);
   if (settings === 'failed') return null;
   if (settings === 'loading') return <Loader size={70} />;
   return (
     <SettingsForm
       worldName={worldName}
+      access={access}
       saved={settings}
     />
   );

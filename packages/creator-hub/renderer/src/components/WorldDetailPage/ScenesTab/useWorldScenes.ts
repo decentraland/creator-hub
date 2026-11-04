@@ -9,7 +9,7 @@ import {
   fetchWorldScenes,
   unpublishWorldScene,
 } from '/@/modules/store/management/slice';
-import type { LandScene } from '/@/modules/store/management/utils';
+import { isWorldWideDeployer, type LandScene } from '/@/modules/store/management/utils';
 
 import type { RowMode } from '../../LandDetailPage/ScenesTab/SceneRow';
 import { scenesOnParcels, toWorldScenes } from './worldScenes';
@@ -45,8 +45,9 @@ export function useWorldScenes(worldName: string, mode: RowMode) {
     permissions.permissions.deployment.wallets.some(
       address => address.toLowerCase() === wallet?.toLowerCase(),
     );
+  const worldWide = !!summary && !!wallet && isWorldWideDeployer(summary, wallet);
   const parcels = wallet ? permissions.parcels[wallet] : undefined;
-  const parcelsWanted = mode === 'view' && !!deployment && !deployment.worldWide;
+  const parcelsWanted = mode === 'view' && !!deployment && !worldWide;
 
   useEffect(() => {
     if (parcelsWanted && wallet)
@@ -60,7 +61,7 @@ export function useWorldScenes(worldName: string, mode: RowMode) {
   }, [dispatch, worldName, wallet, parcelsWanted]);
 
   const allowed: 'all' | Set<string> | undefined =
-    mode === 'manage' || deployment?.worldWide || (listedDeployer && !deployment)
+    mode === 'manage' || worldWide || (listedDeployer && !deployment)
       ? 'all'
       : parcels?.status === 'succeeded'
         ? new Set(parcels.parcels)
