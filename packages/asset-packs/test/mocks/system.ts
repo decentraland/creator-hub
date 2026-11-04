@@ -11,4 +11,3 @@ export const teleportTo = noop;
 export const changeRealm = noop;
 export const signedFetch = noop;
 export const getRealm = noop;
-export const isServer = async () => ({ isServer: false });
