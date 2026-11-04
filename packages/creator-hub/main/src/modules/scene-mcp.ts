@@ -30,6 +30,7 @@ import {
 } from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { getWindow } from './window';
+import { isRealmDown } from './realm-status';
 import { buildRoster, entityDetail, projectInfo, readComposite } from './scene-composite';
 import {
   callExplorerTool,
@@ -63,6 +64,15 @@ export function setSceneMcpProject(projectDir: string | null): void {
   if (running !== null && running !== projectDir) void stopExplorerGateway();
   if (projectDir !== currentProjectDir) log.info(`[MCP] scene tools now target ${projectDir}`);
   currentProjectDir = projectDir;
+}
+
+export const DATA_LAYER_DOWN =
+  "The scene's data layer stopped unexpectedly, so nothing was read or changed. Wait for the editor to reload the scene, then retry; if the editor shows an error instead, the user has to reopen the scene.";
+export const DATA_LAYER_STOPPED_DURING_OP =
+  "The scene's data layer stopped while applying this change, so it was not saved. Wait for the editor to reload the scene, then retry.";
+
+function dataLayerDown(): boolean {
+  return currentProjectDir !== null && isRealmDown(currentProjectDir);
 }
 
 const MAX_ROSTER_ROWS = 200;
@@ -147,6 +157,7 @@ const pendingSceneOps = new Map<
 let sceneOpChain: Promise<unknown> = Promise.resolve();
 
 function requestSceneOpRaw(op: string, params: Record<string, unknown>): Promise<SceneOpOutcome> {
+  if (dataLayerDown()) return Promise.resolve({ ok: false, payload: DATA_LAYER_DOWN });
   const win = getWindow(MAIN_WINDOW_ID);
   if (win === undefined || win.isDestroyed()) {
     return Promise.resolve({ ok: false, payload: 'No editor window is open.' });
@@ -220,10 +231,16 @@ function requestSceneOp(
     })
     .then(async res => {
       if (res.ok && MUTATION_UNDO_COST[op] !== undefined) {
-        if (caller === 'assistant') turnMutations += MUTATION_UNDO_COST[op];
-        else externalMutationsSinceTurn += MUTATION_UNDO_COST[op];
+        const cost = MUTATION_UNDO_COST[op];
+        if (caller === 'assistant') turnMutations += cost;
+        else externalMutationsSinceTurn += cost;
         // let the disk autosave catch up so a subsequent scene_state read is fresh
         await new Promise(r => setTimeout(r, AUTOSAVE_SETTLE_MS));
+        if (dataLayerDown()) {
+          if (caller === 'assistant') turnMutations = Math.max(0, turnMutations - cost);
+          else externalMutationsSinceTurn = Math.max(0, externalMutationsSinceTurn - cost);
+          return { ok: false, payload: DATA_LAYER_STOPPED_DURING_OP };
+        }
       }
       return res;
     });
@@ -386,6 +403,7 @@ function registerTools(server: McpServer, caller: McpCaller): void {
     },
     async () => {
       if (currentProjectDir === null) return fail('No scene is open.');
+      if (dataLayerDown()) return fail(DATA_LAYER_DOWN);
       try {
         return ok(await projectInfo(currentProjectDir));
       } catch (e) {
@@ -404,6 +422,7 @@ function registerTools(server: McpServer, caller: McpCaller): void {
     },
     async () => {
       if (currentProjectDir === null) return fail('No scene is open.');
+      if (dataLayerDown()) return fail(DATA_LAYER_DOWN);
       try {
         const { entities, total } = buildRoster(await readComposite(currentProjectDir));
         const shown = entities.slice(0, MAX_ROSTER_ROWS);
@@ -528,6 +547,7 @@ function registerTools(server: McpServer, caller: McpCaller): void {
     },
     async ({ entity }) => {
       if (currentProjectDir === null) return fail('No scene is open.');
+      if (dataLayerDown()) return fail(DATA_LAYER_DOWN);
       try {
         const detail = entityDetail(await readComposite(currentProjectDir), String(entity));
         if (detail === null) return fail(`No entity found matching "${entity}".`);
@@ -550,6 +570,7 @@ function registerTools(server: McpServer, caller: McpCaller): void {
       },
     },
     async ({ width, height }) => {
+      if (dataLayerDown()) return fail(DATA_LAYER_DOWN);
       const dataUrl = await requestEditorScreenshot(
         Math.round(width ?? 1280),
         Math.round(height ?? 720),
