@@ -45,9 +45,11 @@
         "back": "Volver a escenas",
         "retry": "Reintentar",
         "outdated_deps": "Las dependencias de esta escena están desactualizadas y no son compatibles con el renderizador Bevy. Actualízalas para continuar.",
-        "update_deps": "Actualizar dependencias"
+        "update_deps": "Actualizar dependencias",
+        "data_layer_crashed": "La escena se detiene inesperadamente una y otra vez. Vuelve atrás y ábrela de nuevo, o revisa los registros."
       }
     },
+    "realm_restarted": "La escena se detuvo inesperadamente y se recargó. Es posible que los cambios de los últimos segundos no se hayan guardado.",
     "header": {
       "actions": {
         "code": "Código",
