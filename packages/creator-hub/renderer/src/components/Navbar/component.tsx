@@ -19,6 +19,7 @@ import './styles.css';
 export enum NavbarItem {
   HOME = 'home',
   SCENES = 'scenes',
+  TEMPLATES = 'templates',
   COLLECTIONS = 'collections',
   ANALYTICS = 'analytics',
   LEARN = 'learn',
@@ -35,10 +36,12 @@ function MenuItem(props: {
   // TypeScript exempts hyphenated JSX attributes from excess-property checks.
   'data-testid'?: string;
 }) {
+  const isActive = props.active === props.item;
   return !props.disable ? (
     <Link
       to={`/${props.item}`}
-      className={cx('menu-item', { active: props.active === props.item })}
+      className={cx('menu-item', { active: isActive })}
+      aria-current={isActive ? 'page' : undefined}
       data-testid={props['data-testid']}
     >
       {t(`navbar.menu.${props.item}`)}
@@ -98,15 +101,17 @@ export function Navbar(props: { active: NavbarItem }) {
             item={NavbarItem.SCENES}
             active={props.active}
           />
-          {/* This page will be added in a future shape */}
+          <MenuItem
+            data-testid="navbar-menu-templates"
+            item={NavbarItem.TEMPLATES}
+            active={props.active}
+          />
           <MenuItem
             data-testid="navbar-menu-collections"
             item={NavbarItem.COLLECTIONS}
             active={props.active}
             disable={true}
           />
-          {/* The only way into Analytics: the router is in-memory, so hiding
-              this entry hides the section. */}
           <MenuItem
             item={NavbarItem.ANALYTICS}
             active={props.active}

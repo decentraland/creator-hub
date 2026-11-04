@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/round_grey_carpet/round_grey_carpet.glb"
+          }
+        }
+      }
+    }
+  ]
+}

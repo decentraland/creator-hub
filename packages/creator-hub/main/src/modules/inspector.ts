@@ -131,8 +131,12 @@ function teardownDebugger(state: DebuggerState) {
 
 // Subscribe `sender` (the requesting window's webContents) to a preview's output. Multiple
 // windows can attach to the same preview — the first attach wires the child listener, later
-// ones just join the target set. Each caller gets the current backlog on attach.
-export async function attachSceneDebugger(sender: WebContents, path: string): Promise<string> {
+// ones just join the target set. The current backlog is RETURNED (not pushed on the channel)
+// so the renderer can replay it after registering its listener; see the backlog note below.
+export async function attachSceneDebugger(
+  sender: WebContents,
+  path: string,
+): Promise<{ eventName: string; backlog: string[] }> {
   const preview = cache.getPreview(path);
 
   if (!preview || !preview.child.alive()) {
@@ -179,13 +183,16 @@ export async function attachSceneDebugger(sender: WebContents, path: string): Pr
   // window is closed), tearing the whole debugger down once nobody is left listening.
   sender.once('destroyed', () => detachSceneDebugger(sender, path));
 
-  // Send this subscriber the logs so far (each window gets the backlog on join).
-  const stdall = child.stdall({ sanitize: false });
-  if (stdall.length > 0 && !sender.isDestroyed()) {
-    sender.send(eventName, stdall);
-  }
+  // The logs so far, returned with the channel rather than pushed on it. Pushing here
+  // (sender.send) races the renderer's listener registration: the renderer only subscribes
+  // to `eventName` once THIS invoke resolves, so a pushed backlog arrives first and is
+  // dropped. That is invisible on the first attach (the backlog is ~empty, and live output
+  // keeps coming), but on every re-attach after "Reload scene from disk" it silently emptied
+  // the console of a still-running preview. Returning it lets the renderer replay it after it
+  // has registered, with no race.
+  const backlog = child.stdall({ sanitize: false });
 
-  return eventName;
+  return { eventName, backlog };
 }
 
 export function detachSceneDebugger(sender: WebContents, path: string): void {

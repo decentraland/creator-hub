@@ -1,0 +1,21 @@
+{
+  "id": "3c19ebbb-cf19-4409-b135-917b5f5aaee0",
+  "name": "Fishing - Catch",
+  "category": "actions",
+  "tags": [
+    "fishing",
+    "fish",
+    "fishing rod",
+    "rod",
+    "lake",
+    "river",
+    "catch",
+    "reel",
+    "pull",
+    "emote",
+    "animation",
+    "avatar"
+  ],
+  "description": "Avatar pulls a fishing rod up to land a catch.",
+  "author": "Decentraland Foundation"
+}

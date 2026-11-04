@@ -9,6 +9,7 @@ import type {
   GroundPlane,
   IRenderer,
   RendererAnimation,
+  RendererAudio,
   RendererCamera,
   RendererDebug,
   RendererEditorCamera,
@@ -76,6 +77,7 @@ export class BevyRenderer implements IRenderer {
   readonly editorCamera: RendererEditorCamera;
   readonly sceneRun: RendererSceneRun;
   readonly interaction: RendererInteraction;
+  readonly audio: RendererAudio;
 
   // In-memory camera pose. No wasm camera yet; this exists so the pose getters
   // are coherent (setPose → getPose) as the contract requires.
@@ -133,6 +135,13 @@ export class BevyRenderer implements IRenderer {
   #editingEnabled = true;
   #postEditingEnabled: ((enabled: boolean) => void) | null = null;
   #editingHandlers = new Set<(enabled: boolean) => void>();
+  // Scene audio mute (#1569). Default UNMUTED; the "Mute" toolbar toggle silences all
+  // scene audio while editing. Enacted host-side via the forward bridge (there's no
+  // engine volume/mute console command), so the poster injected by `register` calls
+  // forwardBridge.setAudioMuted rather than posting to the agent.
+  #muted = false;
+  #postMuted: ((muted: boolean) => void) | null = null;
+  #muteHandlers = new Set<(muted: boolean) => void>();
   // True from a Stop/reset until the agent signals `reset-complete` (the reloaded
   // scene is re-pinned + re-frozen). While resetting, Play is deferred: unfreezing
   // an unpinned scene silently no-ops, which is the "hit Play right after Stop and
@@ -175,6 +184,7 @@ export class BevyRenderer implements IRenderer {
     this.editorCamera = this.#createEditorCamera();
     this.sceneRun = this.#createSceneRun();
     this.interaction = this.#createInteraction();
+    this.audio = this.#createAudio();
     this.gizmos = this.#createGizmos();
     this.metrics = this.#createMetrics();
     this.viewport = this.#createViewport();
@@ -363,6 +373,11 @@ export class BevyRenderer implements IRenderer {
     this.#postEditingEnabled = post;
   }
 
+  /** Wire the mute poster (silences/restores scene audio via the forward bridge; #1569). */
+  setMutedPoster(post: (muted: boolean) => void): void {
+    this.#postMuted = post;
+  }
+
   /** Wire the scene resetter (Stop = reboot the engine to the scene's initial
    * state + re-freeze). Injected by `register`. */
   setSceneResetter(reset: () => Promise<void>): void {
@@ -485,6 +500,22 @@ export class BevyRenderer implements IRenderer {
       onEditingChange: (cb: (enabled: boolean) => void): Unsubscribe => {
         this.#editingHandlers.add(cb);
         return () => this.#editingHandlers.delete(cb);
+      },
+    };
+  }
+
+  #createAudio(): RendererAudio {
+    return {
+      isMuted: () => this.#muted,
+      setMuted: (muted: boolean) => {
+        if (muted === this.#muted) return;
+        this.#muted = muted;
+        this.#postMuted?.(muted);
+        for (const cb of this.#muteHandlers) cb(muted);
+      },
+      onMuteChange: (cb: (muted: boolean) => void): Unsubscribe => {
+        this.#muteHandlers.add(cb);
+        return () => this.#muteHandlers.delete(cb);
       },
     };
   }

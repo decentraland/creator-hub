@@ -61,6 +61,8 @@ install-skills:
 		n=$$(basename $$s); \
 		[ -e .claude/skills/$$n ] || ln -sfn ../../.agents/skills/$$n .claude/skills/$$n; \
 	done
+	rm -rf .claude/skills/web-design-guidelines
+	ln -s ../../.ai/skills/web-design-guidelines .claude/skills/web-design-guidelines
 
 get-protobuf-version:
 	@echo $(PROTOBUF_VERSION)

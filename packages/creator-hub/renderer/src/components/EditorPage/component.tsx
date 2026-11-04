@@ -31,6 +31,7 @@ import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
+import { usePreviewCleanup } from '/@/hooks/usePreviewCleanup';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
@@ -154,6 +155,7 @@ export function EditorPage() {
     loadingPublish,
     isInstallingProject,
     killPreview,
+    leaveProject,
     publishScene,
     getMobileQR,
     supportsMultiInstance,
@@ -221,6 +223,21 @@ export function EditorPage() {
   // screen can offer Back + Open code + the error message (#1380).
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
+  // Counts the inspector's "scene RPC ready" reports. The iframe ref is stable across
+  // "Reload scene from disk", so the hooks that push state into the inspector key on this
+  // to re-apply it to the fresh iframe.
+  const [inspectorReadyNonce, setInspectorReadyNonce] = useState(0);
+  // A "Reload scene from disk" or a renderer switch reloads the inspector iframe in place.
+  // The iframe paints black until its content boots (a long wait under Bevy, #1652), so we
+  // cover it with the loader until the inspector reports its scene RPC server ready again.
+  const [isReloadingInspector, setIsReloadingInspector] = useState(false);
+  // A reload that never reports ready (e.g. a scene that only loads under one renderer, #1652)
+  // would otherwise spin forever — isReady stays true so the initial-load timeout never fires.
+  // Back this path with its own timeout that offers Retry + Back instead of an endless cover.
+  const [reloadTimedOut, setReloadTimedOut] = useState(false);
+  // Bumped to force-remount the iframe when retrying a stuck reload — the reload may have left
+  // no RPC handle to reload in place, so we recreate the element from scratch.
+  const [iframeReloadKey, setIframeReloadKey] = useState(0);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -234,8 +251,9 @@ export function EditorPage() {
     showDebugPanel,
     project?.path,
     consoleDetached,
+    inspectorReadyNonce,
   );
-  useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path);
+  useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path, inspectorReadyNonce);
   useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
   useProjectAssetWatch(iframeRef, project?.path);
 
@@ -247,9 +265,14 @@ export function EditorPage() {
           iframeRef.current.dispose();
           iframeRef.current = undefined;
         }
-        const rpc = initRpc(iframe, project, { writeFile: updateScene });
+        const rpc = initRpc(iframe, project, {
+          writeFile: updateScene,
+          onReady: ({ scene }) => {
+            void scene.setFeatureFlags(featureFlags).catch(console.error);
+            setInspectorReadyNonce(nonce => nonce + 1);
+          },
+        });
         iframeRef.current = rpc;
-        void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
       }
     },
     [project, updateScene, featureFlags],
@@ -260,10 +283,52 @@ export function EditorPage() {
     if (!rpc) return;
     const { iframe } = rpc;
     const { src } = iframe;
+    setIsReloadingInspector(true);
+    setReloadTimedOut(false);
     rpc.dispose();
     iframeRef.current = undefined;
     iframe.src = src;
   }, []);
+
+  // Retry a stuck reload. The prior attempt may have left no RPC handle (the iframe never
+  // reached onLoad), so recreate the element via its key rather than reloading in place.
+  const handleRetryReload = useCallback(() => {
+    setReloadTimedOut(false);
+    setIsReloadingInspector(true);
+    const rpc = iframeRef.current;
+    if (rpc) {
+      rpc.dispose();
+      iframeRef.current = undefined;
+    }
+    setIframeReloadKey(key => key + 1);
+  }, []);
+
+  // Switching the renderer setting rebuilds the iframe URL, reloading it in place — cover the
+  // black frame with the loader the same way a manual reload does (Bevy→desktop, #1652).
+  const prevRendererRef = useRef(settings.renderer);
+  useEffect(() => {
+    if (prevRendererRef.current === settings.renderer) return;
+    prevRendererRef.current = settings.renderer;
+    setIsReloadingInspector(true);
+    setReloadTimedOut(false);
+  }, [settings.renderer]);
+
+  // Clear the reload cover once the (re)loaded inspector reports its scene RPC ready. The
+  // nonce starts at 0 and first bumps to 1 on the initial load, which the guard ignores.
+  useEffect(() => {
+    if (inspectorReadyNonce > 0) setIsReloadingInspector(false);
+  }, [inspectorReadyNonce]);
+
+  // A reload that never becomes ready would cover the editor forever; surface Retry + Back
+  // after a grace period instead. Resets whenever the cover comes down (ready, or navigated).
+  useEffect(() => {
+    if (!isReloadingInspector) {
+      setReloadTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setReloadTimedOut(true), 45_000);
+    return () => clearTimeout(timer);
+  }, [isReloadingInspector]);
 
   useEffect(() => {
     const rpc = iframeRef.current;
@@ -323,6 +388,10 @@ export function EditorPage() {
   // chip, attached as context on send). Cheap read; only runs while the panel is visible.
   // Rejects harmlessly under the Bevy renderer (no selection RPC) — selection just stays empty.
   useEffect(() => {
+    dispatch(aiActions.setChatVisible(aiOpen || aiDetached));
+  }, [aiOpen, aiDetached, dispatch]);
+
+  useEffect(() => {
     // Poll while the chat is visible anywhere — inline or in the detached window (#1504).
     if (!aiOpen && !aiDetached) {
       dispatch(aiActions.setSelection([]));
@@ -368,6 +437,7 @@ export function EditorPage() {
   // The iframe render is gated on the realm being ready when Bevy is selected, so
   // the inspector boots already pointed at the right data-layer + realm.
   const projectPath = project?.path;
+  usePreviewCleanup(projectPath);
 
   // Usage analytics: fire once each time the inline AI chat panel is opened. Anonymous project
   // id, matching the id space of the AI Turn events so "opened" and "used" correlate. Fires on
@@ -494,8 +564,9 @@ export function EditorPage() {
       }
     }
     killPreview();
+    leaveProject();
     navigate('/scenes');
-  }, [navigate, refreshProject, killPreview]);
+  }, [navigate, refreshProject, killPreview, leaveProject]);
 
   // Recover from the outdated-deps load error (#1457): update the scene's packages.
   // installProject toggles isInstallingProject, which re-runs the realm-start effect
@@ -794,10 +865,7 @@ export function EditorPage() {
               <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
                 <ButtonGroup
                   ref={previewButtonGroupRef}
-                  className={isOptimizing ? undefined : 'icon-only'}
                   color="secondary"
-                  aria-label={t('editor.header.actions.preview')}
-                  tooltip={t('editor.header.actions.preview')}
                   extraTooltip={t('editor.header.actions.preview_options.title')}
                   popperOffset={10}
                   // Not natively disabled while optimizing (that would kill the inline ✕ too):
@@ -812,9 +880,7 @@ export function EditorPage() {
                     isOffline
                   }
                   onClick={isOptimizing ? undefined : handleOpenPreview}
-                  // icon-only at rest (the icon IS the content); while optimizing the icon moves
-                  // to startIcon so the progress label can sit beside it
-                  startIcon={isOptimizing ? previewIcon : undefined}
+                  startIcon={previewIcon}
                   extra={
                     <PreviewOptions
                       options={settings.previewOptions}
@@ -851,7 +917,7 @@ export function EditorPage() {
                       </Tooltip>
                     </span>
                   ) : (
-                    previewIcon
+                    t('editor.header.actions.play')
                   )}
                 </ButtonGroup>
               </div>
@@ -893,6 +959,7 @@ export function EditorPage() {
           </Header>
           <div className="EditorBody">
             <iframe
+              key={iframeReloadKey}
               className="inspector"
               data-testid="editor-page-iframe"
               src={iframeUrl}
@@ -905,6 +972,36 @@ export function EditorPage() {
               // for the Babylon renderer.
               allow="cross-origin-isolated"
             ></iframe>
+            {isReloadingInspector && (
+              <div className="reload-overlay">
+                {reloadTimedOut ? (
+                  <div className="reload-overlay-error">
+                    <div className="loading-error-title">{t('editor.loading.failed.title')}</div>
+                    <div className="loading-error-message">
+                      {t('editor.loading.failed.timeout')}
+                    </div>
+                    <Row>
+                      <Button
+                        color="secondary"
+                        startIcon={<ArrowBackIosIcon />}
+                        onClick={handleBack}
+                      >
+                        {t('editor.loading.failed.back')}
+                      </Button>
+                      <Button
+                        color="primary"
+                        startIcon={<RefreshIcon />}
+                        onClick={handleRetryReload}
+                      >
+                        {t('editor.loading.failed.retry')}
+                      </Button>
+                    </Row>
+                  </div>
+                ) : (
+                  <Loader />
+                )}
+              </div>
+            )}
             {aiChatEnabled && aiOpen && (
               <>
                 {aiResizing && <div className="ai-resize-overlay" />}

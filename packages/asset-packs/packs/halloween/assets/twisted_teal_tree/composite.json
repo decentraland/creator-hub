@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/twisted_teal_tree/twisted_teal_tree.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -27,7 +27,8 @@ jobs:
   # runner has 4 vCPU/16GB against macOS arm64's 3 vCPU/7GB at a tenth the
   # billed minutes. Only e2e-creator-hub needs darwin, to package the .app.
   e2e-inspector:
-    runs-on: ubuntu-latest
+    # Not ubuntu-latest: Playwright 1.60 has no Chromium build for Ubuntu 26.04; unpin with >= 1.61.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
