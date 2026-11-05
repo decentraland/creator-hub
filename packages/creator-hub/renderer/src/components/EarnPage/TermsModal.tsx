@@ -29,6 +29,9 @@ import { CloseIcon, InfoIcon } from './icons';
 
 const BOTTOM_TOLERANCE_PX = 4;
 
+const ImageAltText = ({ alt }: { alt?: string }) => <>{alt}</>;
+const TERMS_OVERRIDES = { img: { component: ImageAltText } };
+
 export type TermsModalProps =
   | { variant: 'read'; onClose: () => void }
   | {
@@ -155,7 +158,10 @@ export function TermsModal(props: TermsModalProps) {
           >
             {terms.data ? (
               <TermsText onClick={openMarkdownLink}>
-                <MarkdownRenderer content={terms.data.content} />
+                <MarkdownRenderer
+                  content={terms.data.content}
+                  overrides={TERMS_OVERRIDES}
+                />
               </TermsText>
             ) : terms.status === 'failed' ? (
               <BoxState>
