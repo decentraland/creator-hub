@@ -34,7 +34,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os == 'macos-latest' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'creator-fund/pr6-payouts' && fromJSON('["self-hosted","macOS","ARM64"]') || matrix.os }}
+    runs-on: ${{ matrix.os == 'macos-latest' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["creator-fund/pr6-payouts","creator-fund/pr7-fixture"]'), github.head_ref) && fromJSON('["self-hosted","macOS","ARM64"]') || matrix.os }}
     steps:
       - uses: actions/checkout@v6
         with:
