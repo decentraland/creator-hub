@@ -142,9 +142,20 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
   const titleId = useId();
   const [step, setStep] = useState<Step>({ name: 'checking' });
   const [submission, setSubmission] = useState<Submission>({});
+  const [draft, setDraft] = useState<ContactValues>();
   const onExitRef = useRef(onExit);
   onExitRef.current = onExit;
   const checkRef = useRef<{ abort: () => void } | null>(null);
+  /*
+   * Set once the flow has called `onExit`. Close and Cancel stay live while the enrollment is
+   * saved, and an answer that lands after them must not call `onExit` a second time.
+   */
+  const exitedRef = useRef(false);
+  const exit = useCallback((outcome: JoinOutcome) => {
+    if (exitedRef.current) return;
+    exitedRef.current = true;
+    onExitRef.current(outcome);
+  }, []);
 
   useEffect(() => {
     const check = dispatch(actions.fetchEligibility());
@@ -157,25 +168,27 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
         ),
       )
       .catch(error => {
-        if (error?.name !== 'AbortError') onExitRef.current('failed');
+        if (error?.name !== 'AbortError') exit('failed');
       });
     return () => check.abort();
-  }, [dispatch]);
+  }, [dispatch, exit]);
 
   const cancel = useCallback(() => {
     checkRef.current?.abort();
-    onExit('cancelled');
-  }, [onExit]);
+    exit('cancelled');
+  }, [exit]);
 
-  const finish = useCallback(() => onExit('joined'), [onExit]);
+  const finish = useCallback(() => exit('joined'), [exit]);
 
   const submit = useCallback(
     async (values: ContactValues) => {
       if (step.name !== 'contact') return;
+      setDraft(values);
       setSubmission({ status: 'submitting' });
       const result = await dispatch(
         actions.saveEnrollment({ terms_version: step.termsVersion, ...values }),
       );
+      if (exitedRef.current) return;
       if (actions.saveEnrollment.fulfilled.match(result)) {
         setStep({ name: 'welcome' });
         return;
@@ -186,11 +199,12 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
         return;
       }
       if (failure?.status === 409) {
-        onExit('conflict');
+        exit('conflict');
         return;
       }
       if (failure?.status === 400) {
         const latest = await dispatch(actions.fetchTerms());
+        if (exitedRef.current) return;
         if (
           actions.fetchTerms.fulfilled.match(latest) &&
           latest.payload.version !== step.termsVersion
@@ -202,7 +216,7 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
       }
       setSubmission({ errors: [t('earn.errors.generic')] });
     },
-    [dispatch, step, onExit],
+    [dispatch, step, exit],
   );
 
   switch (step.name) {
@@ -255,6 +269,7 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
             <Close onClick={cancel} />
             <ContactInfoForm
               titleId={titleId}
+              initialValues={draft}
               onSubmit={submit}
               onCancel={cancel}
               {...submission}
