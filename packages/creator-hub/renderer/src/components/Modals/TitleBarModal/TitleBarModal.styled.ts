@@ -77,7 +77,7 @@ const Panel = styled(Dialog)(({ theme }) => ({
     overflow: 'hidden',
     borderRadius: 24,
     border: `1px solid ${whiteTransparent.subtle}`,
-    backgroundColor: 'var(--modal-surface)',
+    backgroundColor: 'var(--modal)',
     backgroundImage: 'none',
     boxShadow: 'none',
   },
