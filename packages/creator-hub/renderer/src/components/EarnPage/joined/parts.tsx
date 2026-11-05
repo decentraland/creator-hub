@@ -45,7 +45,8 @@ const reasonLines = (reasons: string[]) => [
   ),
 ];
 
-const TOOLTIP_SLOTS = {
+/** The design-system Tooltip's look for EARN tooltips. */
+export const TOOLTIP_SLOTS = {
   tooltip: {
     sx: {
       ...fontFace,

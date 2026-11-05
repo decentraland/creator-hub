@@ -10,15 +10,20 @@ import type {
   CreatorFundBanner,
   CreatorFundCycles,
   CreatorFundNews,
+  CreatorFundPayouts,
   CreatorFundPlace,
   CreatorFundTerms,
   Cycle,
   Eligibility,
+  EmailVerification,
+  EmailVerificationRequest,
   Enrollment,
   EnrollmentRequest,
   Leaderboard,
   LeaderboardCycle,
   MyPlaces,
+  PayoutWallet,
+  PayoutWalletRequest,
 } from '/shared/types/creator-fund';
 
 import * as api from '/@/lib/creatorFundApi';
@@ -141,6 +146,43 @@ export const fetchBanner = createAsyncThunk(
   async (_: void, { rejectWithValue }) => settle(await api.getBanner(), rejectWithValue),
 );
 
+/** `GET /payouts`. */
+export const fetchPayouts = createAsyncThunk(
+  'creatorFund/fetchPayouts',
+  async (_: void, { rejectWithValue }) => settle(await api.getPayouts(), rejectWithValue),
+);
+
+/** `GET /payout-wallet`; a 404 resolves to `null` (no wallet yet). */
+export const fetchPayoutWallet = createAsyncThunk(
+  'creatorFund/fetchPayoutWallet',
+  async (_: void, { rejectWithValue }) => {
+    const response = await api.getPayoutWallet();
+    if (!response.ok && response.status === 404) return null;
+    return settle(response, rejectWithValue);
+  },
+);
+
+/** `PUT /payout-wallet`: adds or changes it. The answer becomes the wallet. */
+export const savePayoutWallet = createAsyncThunk(
+  'creatorFund/savePayoutWallet',
+  async (wallet: PayoutWalletRequest, { rejectWithValue }) =>
+    settle(await api.putPayoutWallet(wallet), rejectWithValue),
+);
+
+/** `POST /enrollment/email-verification`: sends a code to the enrollment's email. */
+export const sendEmailVerification = createAsyncThunk(
+  'creatorFund/sendEmailVerification',
+  async (_: void, { rejectWithValue }) =>
+    settle(await api.postEmailVerification(), rejectWithValue),
+);
+
+/** `PUT /enrollment/email-verification`: confirms a code. The answer becomes the enrollment. */
+export const confirmEmailVerification = createAsyncThunk(
+  'creatorFund/confirmEmailVerification',
+  async (verification: EmailVerificationRequest, { rejectWithValue }) =>
+    settle(await api.putEmailVerification(verification), rejectWithValue),
+);
+
 type Resources = {
   enrollment: Resource<Enrollment>;
   enrollmentSave: Resource<Enrollment>;
@@ -152,6 +194,11 @@ type Resources = {
   placeMetrics: Resource<PlaceMetrics>;
   news: Resource<CreatorFundNews>;
   banner: Resource<CreatorFundBanner>;
+  payouts: Resource<CreatorFundPayouts>;
+  payoutWallet: Resource<PayoutWallet>;
+  payoutWalletSave: Resource<PayoutWallet>;
+  emailVerification: Resource<EmailVerification>;
+  emailVerificationConfirm: Resource<Enrollment>;
 };
 
 export type CreatorFundState = Resources & {
@@ -173,6 +220,11 @@ export const initialState: CreatorFundState = {
   placeMetrics: resource(),
   news: resource(),
   banner: resource(),
+  payouts: resource(),
+  payoutWallet: resource(),
+  payoutWalletSave: resource(),
+  emailVerification: resource(),
+  emailVerificationConfirm: resource(),
   latestRequestIds: {},
   worldSceneCounts: {},
   worldScenesRequested: {},
@@ -239,6 +291,18 @@ const slice = createSlice({
     track(builder, 'placeMetrics', fetchPlaceMetrics);
     track(builder, 'news', fetchNews);
     track(builder, 'banner', fetchBanner);
+    track(builder, 'payouts', fetchPayouts);
+    track(builder, 'payoutWallet', fetchPayoutWallet);
+    track(builder, 'payoutWalletSave', savePayoutWallet, (state, payload) => {
+      state.payoutWalletSave.data = payload;
+      state.payoutWallet.data = payload;
+      state.payoutWallet.status = 'succeeded';
+    });
+    track(builder, 'emailVerification', sendEmailVerification);
+    track(builder, 'emailVerificationConfirm', confirmEmailVerification, (state, payload) => {
+      state.emailVerificationConfirm.data = payload;
+      state.enrollment.data = payload;
+    });
     builder
       .addCase(fetchWorldSceneCount.pending, (state, action) => {
         state.worldScenesRequested[action.meta.arg] = true;
@@ -287,6 +351,15 @@ const getDefaultPlacesCycle = createSelector(
   (cycles): Cycle | null => cycles[0] ?? null,
 );
 
+/** The cycle the first payout follows: the running one, else the next upcoming, else none. */
+const getFirstPayoutCycle = createSelector(
+  getSortedCycles,
+  (cycles): Cycle | null =>
+    cycles.find(cycle => cycle.status === 'running') ??
+    cycles.filter(cycle => cycle.status === 'upcoming').at(-1) ??
+    null,
+);
+
 /** A cycle's label in the app's locale, or `null` for an unknown id. */
 const getCycleLabel = createSelector(
   [getCycles, (state: AppState) => state.translation.locale, (_: AppState, id: number) => id],
@@ -303,6 +376,7 @@ export const selectors = {
   getLatestClosedCycle,
   getMyPlacesCycles,
   getDefaultPlacesCycle,
+  getFirstPayoutCycle,
   getCycleLabel,
 };
 export const actions = {
@@ -318,5 +392,10 @@ export const actions = {
   fetchWorldSceneCount,
   fetchNews,
   fetchBanner,
+  fetchPayouts,
+  fetchPayoutWallet,
+  savePayoutWallet,
+  sendEmailVerification,
+  confirmEmailVerification,
 };
 export const reducer = slice.reducer;

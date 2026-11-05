@@ -95,5 +95,51 @@ export type Leaderboard = { cycle_id: LeaderboardCycle; entries: LeaderboardEntr
 /** `GET /v3/creator-fund/banner` (hidden in v0), or `null` for its 204. */
 export type CreatorFundBanner = { markdown: string } | null;
 
-/** Non-2xx body; a 403 carries `reasons` and no `message`. */
-export type CreatorFundErrorBody = { error: string; message?: string; reasons?: string[] };
+/** Non-2xx body; a 403 carries `reasons` and no `message`; a 429 `too_soon` carries `resend_available_at`. */
+export type CreatorFundErrorBody = {
+  error: string;
+  message?: string;
+  reasons?: string[];
+  resend_available_at?: string;
+};
+
+export type PayoutStatus = 'pending' | 'paid';
+
+/** A place as a payout lists it. */
+export type PayoutPlaceRef = Pick<
+  CreatorFundPlace,
+  'id' | 'title' | 'image' | 'world' | 'world_name' | 'base_position'
+>;
+
+/** One paid place of a payout; `amount_usdc` is a decimal string. */
+export type PayoutPlace = { place: PayoutPlaceRef; amount_usdc: string };
+
+/** A cycle's payout (mock only): `amount_usdc` sums `places`; `transaction_hash` is set once `paid`. */
+export type Payout = {
+  cycle: Pick<Cycle, 'id' | 'start_at' | 'end_at' | 'status'>;
+  status: PayoutStatus;
+  paid_places: number;
+  amount_usdc: string;
+  transaction_hash: string | null;
+  paid_at: string | null;
+  places: PayoutPlace[];
+};
+
+/** `GET /v3/creator-fund/payouts` (mock only), newest cycle first; empty before the first payout. */
+export type CreatorFundPayouts = { payouts: Payout[] };
+
+/** `GET /v3/creator-fund/payout-wallet` (404 when none is set) and the `PUT` response. */
+export type PayoutWallet = { address: string; updated_at: string };
+
+/** `PUT /v3/creator-fund/payout-wallet` body: 201 on the first set, 200 on a change. */
+export type PayoutWalletRequest = { address: string };
+
+/** `POST /v3/creator-fund/enrollment/email-verification` (mock only): a code was sent. */
+export type EmailVerification = {
+  sent_at: string;
+  expires_at: string;
+  resend_available_at: string;
+};
+
+/** `PUT /v3/creator-fund/enrollment/email-verification` body; answers with the enrollment. */
+export type EmailVerificationRequest = { code: string };

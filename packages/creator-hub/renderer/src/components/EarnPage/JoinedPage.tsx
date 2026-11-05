@@ -9,16 +9,24 @@ import { t } from '/@/modules/store/translation/utils';
 import { EarnHeader } from './joined/EarnHeader';
 import { LeaderboardTab } from './joined/LeaderboardTab';
 import { MyPlacesTab } from './joined/MyPlacesTab';
+import { PayoutsTab } from './joined/PayoutsTab';
 import { GetReadyPage, GradientDefs, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
 
-export type JoinedTab = 'leaderboard' | 'my_places';
+export type JoinedTab = 'leaderboard' | 'my_places' | 'payouts';
 
 const TABS: { id: JoinedTab; label: TranslationPath }[] = [
   { id: 'leaderboard', label: 'earn.joined.tabs.leaderboard' },
   { id: 'my_places', label: 'earn.joined.tabs.my_places' },
+  { id: 'payouts', label: 'earn.joined.tabs.payouts' },
 ];
 
-/** The Creator Fund page for a joined user: the Leaderboard and My Places tabs. */
+const PANELS: Record<JoinedTab, () => React.ReactNode> = {
+  leaderboard: () => <LeaderboardTab />,
+  my_places: () => <MyPlacesTab />,
+  payouts: () => <PayoutsTab />,
+};
+
+/** The Creator Fund page for a joined user: the Leaderboard, My Places and Payouts tabs. */
 export function JoinedPage({
   tab,
   onTabChange,
@@ -27,13 +35,12 @@ export function JoinedPage({
   onTabChange: (tab: JoinedTab) => void;
 }) {
   const id = useId();
-  const gettingReady = useSelector(
-    state =>
-      tab === 'leaderboard' &&
-      state.creatorFund.cycles.status === 'succeeded' &&
-      !selectors.getLatestClosedCycle(state),
+  const fillsWindow = useSelector(state =>
+    tab === 'leaderboard'
+      ? state.creatorFund.cycles.status === 'succeeded' && !selectors.getLatestClosedCycle(state)
+      : tab === 'payouts' && state.creatorFund.payouts.data?.payouts.length === 0,
   );
-  const Shell = gettingReady ? GetReadyPage : Page;
+  const Shell = fillsWindow ? GetReadyPage : Page;
   return (
     <Shell>
       <GradientDefs aria-hidden>
@@ -78,7 +85,7 @@ export function JoinedPage({
         id={`${id}-panel`}
         aria-labelledby={`${id}-${tab}`}
       >
-        {tab === 'leaderboard' ? <LeaderboardTab /> : <MyPlacesTab />}
+        {PANELS[tab]()}
       </TabPanel>
     </Shell>
   );

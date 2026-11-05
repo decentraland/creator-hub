@@ -8,6 +8,8 @@ import './styles.css';
 type Props = {
   text: string;
   children: React.ReactNode;
+  /** Makes the trigger a real `<button>` with this accessible name. */
+  label?: string;
   showPopup?: boolean;
   className?: string;
   timeOut?: number;
@@ -15,10 +17,10 @@ type Props = {
 };
 
 const CopyToClipboard: React.FC<Props> = React.memo(
-  ({ text, showPopup = false, timeOut = 3000, onCopy, className, children }) => {
+  ({ text, label, showPopup = false, timeOut = 3000, onCopy, className, children }) => {
     const [hasCopiedText, setHasCopiedText] = useState(false);
     const [fadeOut, setFadeOut] = useState(false);
-    const anchorRef = useRef<HTMLDivElement>(null);
+    const anchorRef = useRef<HTMLDivElement & HTMLButtonElement>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleTransitionEnd = useCallback(() => {
@@ -51,16 +53,29 @@ const CopyToClipboard: React.FC<Props> = React.memo(
 
     return (
       <>
-        <div
-          className={className}
-          role="button"
-          aria-label="copy"
-          onClick={handleCopy}
-          ref={anchorRef}
-        >
-          {children}
-        </div>
+        {label ? (
+          <button
+            type="button"
+            className={className}
+            aria-label={label}
+            onClick={handleCopy}
+            ref={anchorRef}
+          >
+            {children}
+          </button>
+        ) : (
+          <div
+            className={className}
+            role="button"
+            aria-label="copy"
+            onClick={handleCopy}
+            ref={anchorRef}
+          >
+            {children}
+          </div>
+        )}
         <Popper
+          role="status"
           className={cx('CopyToClipboardPopup', { FadeOut: fadeOut })}
           onTransitionEnd={handleTransitionEnd}
           open={hasCopiedText}

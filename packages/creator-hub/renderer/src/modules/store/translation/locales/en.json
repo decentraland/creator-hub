@@ -1552,7 +1552,8 @@
       "sections": "Creator Fund sections",
       "tabs": {
         "my_places": "My Places",
-        "leaderboard": "Leaderboard"
+        "leaderboard": "Leaderboard",
+        "payouts": "Payouts"
       },
       "title_prefix": "Earn",
       "title": "Creator Fund",
@@ -1632,6 +1633,74 @@
         "empty": "None of your places are in the program yet. Publish a scene on LAND or an open World and it joins automatically.",
         "error": "Couldn't load your places.",
         "replaced_tooltip": "This place was republished as a new one. Its earlier numbers are kept."
+      },
+      "payouts": {
+        "wallet": {
+          "title": "Payout Wallet",
+          "info_label": "About payout wallets",
+          "info": "A digital wallet is where you store and manage your digital assets. You can use it to send, receive, and keep track of your funds securely, including your Creator Fund USDC rewards.",
+          "learn_more": "Learn More",
+          "copy": "Copy wallet address",
+          "edit": "Edit",
+          "add": "Add wallet"
+        },
+        "contact": {
+          "title": "Contact Information",
+          "full_name": "Full Name",
+          "email": "Email",
+          "unverified": "Unverified",
+          "verify": "Verify email"
+        },
+        "table": {
+          "label": "Payouts",
+          "cycle": "Cycle",
+          "status": "Status",
+          "paid_places": "Paid Places",
+          "amount": "Amount",
+          "transaction": "Transaction",
+          "pending": "Pending",
+          "paid": "Paid",
+          "usdc": "{amount} USDC",
+          "view_transaction": "View transaction on Etherscan"
+        },
+        "empty": {
+          "title": "Your rewards journey starts here!",
+          "first_payout": "Your first payout is coming after the {cycle} cycle ends.",
+          "body": "Keep building, bring players together, and create experiences they'll want to revisit!"
+        },
+        "add": {
+          "title": "Add payout wallet",
+          "body": "We’ll send your Creator Fund payouts here in USDC.",
+          "submit": "Add wallet"
+        },
+        "change": {
+          "title": "Change payout wallet",
+          "body": "Upcoming payouts go to this wallet as soon as you save.",
+          "submit": "Save"
+        },
+        "wallet_field": {
+          "label": "Wallet address",
+          "placeholder": "0x…",
+          "invalid": "Invalid wallet address. It should start with 0x and be 42 characters long."
+        },
+        "erc20": "Make sure this wallet can receive USDC on Ethereum (ERC-20). Funds sent to a wallet that doesn't support it can't be recovered.",
+        "verify": {
+          "title": "Verify your email",
+          "body_sent": "6-digit code sent to <b>{email}</b>.",
+          "body_instruction": "Please enter the code below to complete verification.",
+          "digit": "Digit {n} of 6",
+          "resend": "Resend Code",
+          "incorrect": "Incorrect Code. Check the email and try again.",
+          "expired": "This code has expired. Resend a new one.",
+          "submit": "Verify"
+        },
+        "snackbar": {
+          "wallet_added": "Payout wallet added",
+          "wallet_updated": "Payout wallet updated",
+          "email_verified": "Email verified"
+        },
+        "cancel": "Cancel",
+        "error": "Couldn't load your payouts."
       }
     },
     "errors": {

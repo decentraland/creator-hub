@@ -21,6 +21,7 @@ vi.mock('/@/lib/creatorFundApi', () => ({
 }));
 vi.mock('./joined/LeaderboardTab', () => ({ LeaderboardTab: () => <p>leaderboard panel</p> }));
 vi.mock('./joined/MyPlacesTab', () => ({ MyPlacesTab: () => <p>my places panel</p> }));
+vi.mock('./joined/PayoutsTab', () => ({ PayoutsTab: () => <p>payouts panel</p> }));
 vi.mock('../Modals', async importOriginal => ({
   ...((await importOriginal()) as object),
   Modal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
@@ -82,11 +83,24 @@ describe('JoinedPage', () => {
       expect(screen.getByText('Joined on Oct 30, 2026')).toBeTruthy();
     });
 
-    it('should show the selected tab panel', async () => {
-      await renderPage('my_places');
+    it.each([
+      ['my_places', 'My Places', 'my places panel'],
+      ['payouts', 'Payouts', 'payouts panel'],
+    ] as const)('should show the selected tab panel for %s', async (tab, name, panel) => {
+      await renderPage(tab);
 
-      expect(screen.getByRole('tab', { name: 'My Places', selected: true })).toBeTruthy();
-      expect(screen.getByRole('tabpanel').textContent).toBe('my places panel');
+      expect(screen.getByRole('tab', { name, selected: true })).toBeTruthy();
+      expect(screen.getByRole('tabpanel').textContent).toBe(panel);
+    });
+
+    it('should list Payouts third, after My Places', async () => {
+      await renderPage();
+
+      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+        'Leaderboard',
+        'My Places',
+        'Payouts',
+      ]);
     });
   });
 
@@ -120,7 +134,7 @@ describe('JoinedPage', () => {
       expect(screen.queryByRole('checkbox')).toBeNull();
     });
 
-    it.each(['leaderboard', 'my_places'] as const)(
+    it.each(['leaderboard', 'my_places', 'payouts'] as const)(
       'should open support in the browser from Contact Support on %s',
       async tab => {
         await renderPage(tab);
