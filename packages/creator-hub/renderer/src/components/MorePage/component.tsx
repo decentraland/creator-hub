@@ -5,7 +5,7 @@ import { Box, Button, Card, CardContent, Container, Grid, Typography } from 'dec
 import { misc } from '#preload';
 
 import { t } from '/@/modules/store/translation/utils';
-import { SUBMIT_EVENT_URL } from '/@/modules/utils';
+import { CREATE_EVENT_URL } from '/@/modules/utils';
 
 import CollectionsPng from '/assets/images/collections.png';
 import NamesPng from '/assets/images/names.png';
@@ -81,7 +81,7 @@ export function MorePage() {
             <HorizontalCardWithImage
               title={t('more.cards.create.submit_event.title')}
               description={t('more.cards.create.submit_event.description')}
-              action={() => misc.openExternal(SUBMIT_EVENT_URL)}
+              action={() => misc.openExternal(CREATE_EVENT_URL)}
               image={NewEventPng}
             />
           </Grid>
