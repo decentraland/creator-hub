@@ -152,7 +152,7 @@ export function DomainName({ land, project }: { land: Land; project: ManagedProj
           {domain.kind === 'set' && (
             <MenuItem
               value={REMOVE}
-              sx={{ color: 'error.main' }}
+              className="Danger"
             >
               {t('land_detail.details.domain_remove')}
             </MenuItem>

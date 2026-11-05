@@ -8,10 +8,17 @@ const ErrorText = styled('p')(({ theme }) => ({
   fontSize: theme.typography.pxToRem(14),
 }));
 
+const Notice = styled('p')(({ theme }) => ({
+  margin: 0,
+  color: neutral.gray4,
+  fontSize: theme.typography.pxToRem(16),
+  lineHeight: 'normal',
+}));
+
 const Progress = styled('p')(({ theme }) => ({
   margin: 0,
   color: neutral.gray3,
   fontSize: theme.typography.pxToRem(14),
 }));
 
-export { ErrorText, Progress };
+export { ErrorText, Notice, Progress };

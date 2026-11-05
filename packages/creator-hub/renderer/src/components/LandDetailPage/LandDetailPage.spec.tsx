@@ -18,8 +18,8 @@ import { LandDetailPage } from '.';
 
 vi.mock('../Navbar', () => ({ Navbar: () => null, NavbarItem: { MANAGE: 'manage' } }));
 vi.mock('/@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
-vi.mock('../Modals/WorldPermissionsModal/WorldPermissionsAvatarWithInfo', () => ({
-  WorldPermissionsAvatarWithInfo: ({ value }: { value: string }) => <span>{value}</span>,
+vi.mock('../AvatarWithInfo', () => ({
+  AvatarWithInfo: ({ value }: { value: string }) => <span>{value}</span>,
 }));
 vi.mock('./DetailsTab', () => ({ DetailsTab: () => <p>details panel</p> }));
 vi.mock('./ScenesTab', () => ({ ScenesTab: () => <p>scenes panel</p> }));

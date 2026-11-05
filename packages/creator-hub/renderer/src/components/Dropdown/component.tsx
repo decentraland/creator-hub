@@ -13,6 +13,7 @@ function Dropdown(props: Props) {
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const { arrowKeyedClass, onKeyDownCapture, resetArrowKeyed } = useArrowKeyed();
   const open = Boolean(anchorEl);
+  const hasGlyphs = options.some(option => option.icon);
 
   const handleClick = useCallback((e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -63,7 +64,7 @@ function Dropdown(props: Props) {
             onClick={e => handleSelect(e, option)}
             disabled={option.disabled}
           >
-            {option.icon && <span className="MenuGlyph">{option.icon}</span>}
+            {hasGlyphs && <span className="MenuGlyph">{option.icon}</span>}
             {option.text}
           </MenuItem>,
           ...(option.divider

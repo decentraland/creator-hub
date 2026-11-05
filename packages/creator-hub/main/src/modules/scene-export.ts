@@ -14,7 +14,7 @@ import TSCONFIG_JSON from './scene-export-template/template.tsconfig.json?raw';
 
 import type { SceneExportProgress, SceneExportResult } from '/shared/types/scene-export';
 
-import { getPeerUrl } from './catalyst';
+import { getPeerUrl, getWorldsContentUrl } from './catalyst';
 import { showSaveDialog } from './electron';
 
 const CONTENT_HASH = /^[a-zA-Z0-9]+$/;
@@ -72,7 +72,10 @@ type Entity = {
 
 type Source = { hash: string } | { content: string };
 
-type SceneExportOptions = { entityId: string; peerUrl: string; outputPath: string };
+type SceneExportOptions = { entityId: string; outputPath: string } & (
+  | { peerUrl: string }
+  | { contentUrl: string }
+);
 
 type Recovery = {
   status: SceneExportResult['recovered'];
@@ -285,18 +288,24 @@ async function request(url: string, signal: AbortSignal): Promise<Response> {
  * recovered from the build's source map.
  */
 export async function exportScene(
-  { entityId, peerUrl, outputPath }: SceneExportOptions,
+  options: SceneExportOptions,
   onProgress: (progress: SceneExportProgress) => void = () => {},
 ): Promise<SceneExportResult> {
+  const { entityId, outputPath } = options;
+  const server =
+    'contentUrl' in options
+      ? options.contentUrl.replace(/\/+$/, '')
+      : `${options.peerUrl.replace(/\/+$/, '')}/content`;
   if (!CONTENT_HASH.test(entityId)) throw new Error(`Invalid entity id: ${entityId}`);
-  if (new URL(peerUrl).protocol !== 'https:') throw new Error(`Invalid catalyst URL: ${peerUrl}`);
+  if (new URL(server).protocol !== 'https:')
+    throw new Error(`Invalid content server URL: ${server}`);
   if (running.has(entityId)) throw new Error(`Scene ${entityId} is already being exported`);
 
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'dcl-scene-export-'));
   const controller = new AbortController();
   const { signal } = controller;
   running.set(entityId, controller);
-  const contentUrl = `${peerUrl.replace(/\/+$/, '')}/content/contents/`;
+  const contentUrl = `${server}/contents/`;
   const partialPath = `${outputPath}.part`;
 
   try {
@@ -389,20 +398,24 @@ export async function exportScene(
 
 /**
  * Asks the user where to save the export of `entityId`, suggesting a file named after `title`,
- * then exports it from the catalyst of the app's environment. Resolves null when the dialog is
- * cancelled.
+ * then exports it from the app environment's catalyst (`land`) or Worlds content server
+ * (`world`). Resolves null when the dialog is cancelled.
  */
 export async function saveScene(
   entityId: string,
   title: unknown,
+  source: unknown,
   onProgress?: (progress: SceneExportProgress) => void,
 ): Promise<SceneExportResult | null> {
+  if (source !== 'land' && source !== 'world') throw new Error(`Invalid scene source: ${source}`);
   const outputPath = await showSaveDialog({
     defaultPath: `${slugify(title) || 'scene'}.zip`,
     filters: [{ name: 'Zip', extensions: ['zip'] }],
   });
   if (!outputPath) return null;
-  return exportScene({ entityId, peerUrl: getPeerUrl(), outputPath }, onProgress);
+  const server =
+    source === 'world' ? { contentUrl: getWorldsContentUrl() } : { peerUrl: getPeerUrl() };
+  return exportScene({ entityId, outputPath, ...server }, onProgress);
 }
 
 /** Aborts the running export of `entityId`, if any; its `exportScene` call rejects. */

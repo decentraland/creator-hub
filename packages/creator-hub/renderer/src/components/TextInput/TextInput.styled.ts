@@ -26,11 +26,10 @@ const inputStyles = (theme: Theme, { height, inline, multiline }: Metrics) => ({
     borderColor: whiteTransparent.backdrop,
   },
   '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-    border: `1px solid ${neutral.softWhite}`,
-    boxShadow: `0 0 0 2px ${theme.palette.info.light}`,
+    border: `1.5px solid ${neutral.softWhite}`,
   },
   '&.Mui-error .MuiOutlinedInput-notchedOutline': {
-    borderColor: theme.palette.error.main,
+    border: `1.5px solid ${theme.palette.error.main}`,
   },
   '& input, & textarea': {
     padding: 0,

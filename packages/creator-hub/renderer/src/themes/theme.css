@@ -300,6 +300,10 @@ body,
   font-optical-sizing: none;
 }
 
+html body {
+  letter-spacing: 0;
+}
+
 footer {
   padding: 32px;
 }
@@ -348,5 +352,5 @@ a {
 
 /* Temp: make disabled buttons look disabled */
 .Button.MuiButton-root.Mui-disabled {
-  opacity: 0.5;
+  opacity: 0.2;
 }

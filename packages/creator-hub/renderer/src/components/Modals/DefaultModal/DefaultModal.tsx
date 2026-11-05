@@ -32,6 +32,9 @@ type Props = {
   corner?: 'close' | 'none';
 };
 
+/** DefaultModal's content, for a modal that swaps one step for another while staying open. */
+export type ModalStep = Omit<Props, 'open'>;
+
 /** The DS DefaultModal: title, body, optional content and a Secondary + Primary action row. */
 export function DefaultModal({
   open,

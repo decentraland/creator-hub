@@ -23,12 +23,14 @@ const Page = styled('main')({
   flexDirection: 'column',
 });
 
-const Title = styled(Typography)({
+const Title = styled(Typography)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   minHeight: 56,
+  marginBottom: theme.spacing(0.25),
   color: neutral.softWhite,
+  lineHeight: theme.typography.pxToRem(56),
   '&[tabindex="-1"]:focus': { outline: 'none' },
-}) as typeof Typography;
+})) as typeof Typography;
 
 export { Content, Page, Panel, Title };

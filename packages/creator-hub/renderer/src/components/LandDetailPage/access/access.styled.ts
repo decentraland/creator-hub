@@ -1,4 +1,4 @@
-import { dclColors, styled } from 'decentraland-ui2';
+import { dclColors, IconButton, styled } from 'decentraland-ui2';
 
 import { DomainSelect } from '../DetailsTab/DetailsTab.styled';
 
@@ -43,6 +43,20 @@ const AddRow = styled('div')({
   '&& .MuiInputBase-root': { paddingRight: 7 },
 });
 
+const BulkTrashButton = styled(IconButton)(({ theme }) => ({
+  width: 30,
+  height: 30,
+  padding: theme.spacing(0.75),
+  borderRadius: 100,
+  color: whiteTransparent.blurry,
+  '& svg': { width: 18, height: 18 },
+  '&:hover': { backgroundColor: whiteTransparent.subtle },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.palette.info.light}`,
+    outlineOffset: 2,
+  },
+}));
+
 const Description = styled('p')(({ theme }) => ({
   margin: 0,
   color: neutral.softWhite,
@@ -73,6 +87,12 @@ const Root = styled('div')(({ theme }) => ({
   flexDirection: 'column',
   gap: theme.spacing(5),
   paddingTop: theme.spacing(1.125),
+}));
+
+const Notice = styled('p')(({ theme }) => ({
+  margin: theme.spacing(1, 0, 0),
+  color: neutral.gray4,
+  fontSize: theme.typography.pxToRem(14),
 }));
 
 const ParcelSelect = styled(DomainSelect)({
@@ -134,9 +154,11 @@ export {
   AddBlock,
   AddButton,
   AddRow,
+  BulkTrashButton,
   Description,
   ListBlock,
   ListHeader,
+  Notice,
   ParcelSelect,
   Root,
   Row,

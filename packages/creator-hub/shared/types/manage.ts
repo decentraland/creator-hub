@@ -23,6 +23,12 @@ export type ManagedProject = {
   displayName: string;
   type: ManagedProjectType;
   role: LandRoleType | WorldRoleType;
+  /** A World's own name, from its Details (the World settings title); unset when it has none. */
+  title?: string;
+  /** What the account may do in a World it doesn't own: publish (`deploy`, the default) or only stream (`stream`). */
+  access?: 'deploy' | 'stream';
+  /** A World's owner address, when known. */
+  owner?: string;
   deployment?: ProjectDeployment;
   /**
    * Base coordinate of each scene deployed in this world. A world can hold
@@ -51,11 +57,3 @@ export type SceneDeployment = {
   publishedAt: number;
   parcels: string[];
 };
-
-export enum WorldSettingsTab {
-  DETAILS = 'details',
-  LAYOUT = 'layout',
-  GENERAL = 'general',
-  VARIABLES = 'variables',
-  PERMISSIONS = 'permissions',
-}

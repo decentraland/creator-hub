@@ -4,7 +4,7 @@ import type { TranslationPath } from '/@/modules/store/translation/types';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Loader } from '../../Loader';
-import { WorldPermissionsAvatarWithInfo } from '../../Modals/WorldPermissionsModal/WorldPermissionsAvatarWithInfo';
+import { AvatarWithInfo } from '../../AvatarWithInfo';
 import { TextInput } from '../../TextInput';
 import {
   resolveRecipient,
@@ -82,9 +82,7 @@ export function RecipientField({ purpose, self, onResolved, action, autoFocus }:
       />
       {error && <ErrorText id={errorId}>{t(error)}</ErrorText>}
       <div role="status">
-        {resolution.kind === 'resolved' && (
-          <WorldPermissionsAvatarWithInfo value={resolution.recipient.address} />
-        )}
+        {resolution.kind === 'resolved' && <AvatarWithInfo value={resolution.recipient.address} />}
       </div>
     </Root>
   );

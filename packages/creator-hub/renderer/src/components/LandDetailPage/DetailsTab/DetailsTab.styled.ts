@@ -1,4 +1,5 @@
 import { dclColors, Select, styled } from 'decentraland-ui2';
+import type { Theme } from 'decentraland-ui2';
 
 import { ExternalLink } from '../../ExternalLink';
 import { FormTextInput } from '../../TextInput';
@@ -25,9 +26,6 @@ const DomainSelect = styled(Select)(({ theme }) => ({
   '&&.Mui-focused .MuiOutlinedInput-notchedOutline': {
     border: `1px solid ${neutral.softWhite}`,
   },
-  '&&:has(.MuiSelect-select:focus-visible)': {
-    boxShadow: `0 0 0 2px ${theme.palette.info.light}`,
-  },
   '&&& .MuiSelect-select': {
     minHeight: 0,
     padding: theme.spacing(1.75, 5, 1.75, 2),
@@ -45,7 +43,7 @@ const EmptyValue = styled('span')({
   color: neutral.gray3,
 });
 
-const ClaimLink = styled(ExternalLink)(({ theme }) => ({
+const primaryLinkStyles = ({ theme }: { theme: Theme }) => ({
   alignSelf: 'flex-start',
   color: theme.palette.primary.main,
   fontSize: theme.typography.pxToRem(14),
@@ -58,7 +56,9 @@ const ClaimLink = styled(ExternalLink)(({ theme }) => ({
     outline: `2px solid ${theme.palette.info.light}`,
     outlineOffset: 2,
   },
-}));
+});
+
+const ClaimLink = styled(ExternalLink)(primaryLinkStyles);
 
 const InputSlot = styled('div')({
   position: 'relative',
@@ -156,6 +156,7 @@ export {
   FieldTitle,
   Help,
   InputSlot,
+  primaryLinkStyles,
   ReadOnly,
   Root,
   SetName,
