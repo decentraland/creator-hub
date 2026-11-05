@@ -177,4 +177,91 @@ describe('SceneProvider', () => {
       expect((await readSceneJson(mocked.fs)).display.title).toBe('Renamed before publishing');
     });
   });
+  describe('when scene.json is rewritten from outside while the editor is open', () => {
+    async function writeSceneJson(
+      fs: Awaited<ReturnType<typeof feededFileSystem>>['fs'],
+      scene: Record<string, unknown>,
+    ) {
+      await fs.writeFile('scene.json', Buffer.from(JSON.stringify(scene), 'utf-8'));
+    }
+
+    async function openEditorAndPublishFromOutside() {
+      const mocked = await mockedRpcInit();
+      const rpc = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      const Scene = mocked.engine.getComponent(
+        EditorComponentNames.Scene,
+      ) as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>;
+      // What the publish dialog writes: the parcels picked on the map plus the target world.
+      const onDisk = await readSceneJson(mocked.fs);
+      await writeSceneJson(mocked.fs, {
+        ...onDisk,
+        scene: { base: '50,60', parcels: ['50,60', '50,61', '51,60', '51,61'] },
+        worldConfiguration: { name: 'my-world.dcl.eth' },
+      });
+      return { mocked, rpc, Scene };
+    }
+
+    it('should keep the new parcels and world when the editor saves before publishing', async () => {
+      const { mocked, rpc } = await openEditorAndPublishFromOutside();
+
+      await rpc.save({}, {} as any);
+
+      const sceneJson = await readSceneJson(mocked.fs);
+      expect(sceneJson.scene).toEqual({
+        base: '50,60',
+        parcels: ['50,60', '50,61', '51,60', '51,61'],
+      });
+      expect(sceneJson.worldConfiguration).toEqual({ name: 'my-world.dcl.eth' });
+    });
+
+    it('should keep them through a later autosave while still persisting the editor edit', async () => {
+      const { mocked, rpc, Scene } = await openEditorAndPublishFromOutside();
+
+      const current = Scene.get(mocked.engine.RootEntity);
+      Scene.createOrReplace(
+        mocked.engine.RootEntity,
+        serializationRoundTrip(Scene, { ...current, name: 'Edited right before publishing' }),
+      );
+      await mocked.engine.update(1);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await rpc.save({}, {} as any);
+
+      const sceneJson = await readSceneJson(mocked.fs);
+      expect(sceneJson.display.title).toBe('Edited right before publishing');
+      expect(sceneJson.display.description).toBe('This is a feeded scene.json into memory');
+      expect(sceneJson.scene.base).toBe('50,60');
+      expect(sceneJson.worldConfiguration).toEqual({ name: 'my-world.dcl.eth' });
+    });
+
+    it('should write a layout the editor itself changed, keeping the world', async () => {
+      const { mocked, rpc, Scene } = await openEditorAndPublishFromOutside();
+
+      // The publish dialog pushes the picked layout into the open editor too.
+      const current = Scene.get(mocked.engine.RootEntity);
+      Scene.createOrReplace(
+        mocked.engine.RootEntity,
+        serializationRoundTrip(Scene, {
+          ...current,
+          layout: { base: { x: 70, y: 80 }, parcels: [{ x: 70, y: 80 }] },
+        }),
+      );
+      await mocked.engine.update(1);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await rpc.save({}, {} as any);
+
+      const sceneJson = await readSceneJson(mocked.fs);
+      expect(sceneJson.scene).toEqual({ base: '70,80', parcels: ['70,80'] });
+      expect(sceneJson.worldConfiguration).toEqual({ name: 'my-world.dcl.eth' });
+    });
+
+    it('should drop a world that was removed from outside rather than restore it', async () => {
+      const { mocked, rpc } = await openEditorAndPublishFromOutside();
+      const { worldConfiguration: _removed, ...landPublish } = await readSceneJson(mocked.fs);
+      await writeSceneJson(mocked.fs, landPublish);
+
+      await rpc.save({}, {} as any);
+
+      expect((await readSceneJson(mocked.fs)).worldConfiguration).toBeUndefined();
+    });
+  });
 });
