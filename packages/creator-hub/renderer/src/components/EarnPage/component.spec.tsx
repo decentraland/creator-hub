@@ -1,11 +1,12 @@
 import { StrictMode } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
+import { misc } from '#preload';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
@@ -286,8 +287,41 @@ describe('EarnPage', () => {
         expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
         expect(screen.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
       });
+
+      it('should keep the ⋮ menu: the terms read-only and Contact Support', async () => {
+        auth.isSignedIn = true;
+        vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2, status)));
+        page();
+
+        fireEvent.click(await screen.findByRole('button', { name: 'More options' }));
+        const items = await screen.findAllByRole('menuitem');
+        expect(items.map(item => item.textContent)).toEqual(['Read Terms', 'Contact Support']);
+
+        fireEvent.click(items[1]);
+        expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/help/');
+
+        fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+        fireEvent.click(await screen.findByRole('menuitem', { name: 'Read Terms' }));
+        expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
+        expect(screen.queryByRole('checkbox')).toBeNull();
+      });
     },
   );
+
+  describe('when joined on the current terms', () => {
+    beforeEach(() => {
+      auth.isSignedIn = true;
+      vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2)));
+    });
+
+    it('should show the joined page instead of the landing', async () => {
+      page();
+
+      expect(await screen.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
+      expect(screen.getByRole('tab', { name: 'My Places' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
+    });
+  });
 
   describe('when joined on an older terms version', () => {
     beforeEach(() => {
@@ -314,14 +348,12 @@ describe('EarnPage', () => {
       expect(screen.getByText('home page')).toBeTruthy();
     });
 
-    it('should accept the current version and close the modal', async () => {
+    it('should accept the current version and show the joined page', async () => {
       page();
       fireEvent.click(await screen.findByRole('checkbox'));
       fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
 
-      await waitFor(() =>
-        expect(screen.queryByRole('heading', { name: 'Program Terms updated' })).toBeNull(),
-      );
+      expect(await screen.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
       expect(api.putEnrollment).toHaveBeenCalledWith({
         first_name: 'Jane',
         last_name: 'Doe',
@@ -378,9 +410,7 @@ describe('EarnPage', () => {
       fireEvent.click(checkbox.isConnected ? checkbox : screen.getByRole('checkbox'));
       fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
 
-      await waitFor(() =>
-        expect(screen.queryByRole('heading', { name: 'Program Terms updated' })).toBeNull(),
-      );
+      expect(await screen.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
       expect(vi.mocked(api.putEnrollment).mock.calls.map(([body]) => body.terms_version)).toEqual([
         2, 3,
       ]);
