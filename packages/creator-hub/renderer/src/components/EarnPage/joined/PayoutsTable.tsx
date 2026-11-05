@@ -9,7 +9,7 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { CollapseIcon, ExpandIcon, MapPinIcon, TransactionIcon } from '../icons';
 
-import { formatCount, formatPayoutUsdc, placeLocation, placeTitle } from './format';
+import { formatCount, formatUsdc, placeLocation, placeTitle } from './format';
 import {
   PlaceCell,
   PlaceName,
@@ -43,7 +43,7 @@ function Usdc({ amount }: { amount: string }) {
   const locale = useSelector(state => state.translation.locale);
   return (
     <Figure role="cell">
-      {t('earn.joined.payouts.table.usdc', { amount: formatPayoutUsdc(amount, locale) })}
+      {t('earn.joined.payouts.table.usdc', { amount: formatUsdc(amount, locale) })}
     </Figure>
   );
 }

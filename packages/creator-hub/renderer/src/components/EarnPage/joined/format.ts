@@ -24,22 +24,6 @@ export const formatUsdc = (amount: string, locale: string) => {
   ).format(amount as Intl.StringNumericLiteral);
 };
 
-/**
- * A payout's USDC decimal string, never rounded: whole USDC as drawn (`22`), else every decimal
- * the service sent, at least two (`1,842.50`, `0.004`). A payout is money the creator is owed, so
- * the figure must match what is paid to the cent and below.
- */
-export const formatPayoutUsdc = (amount: string, locale: string) => {
-  if (!DECIMAL.test(amount)) return amount;
-  const whole = !/\.\d*[1-9]/.test(amount);
-  return new Intl.NumberFormat(
-    locale,
-    whole
-      ? { maximumFractionDigits: 0 }
-      : { minimumFractionDigits: 2, maximumFractionDigits: USDC_DECIMALS },
-  ).format(amount as Intl.StringNumericLiteral);
-};
-
 /** An integer with grouping, as `1,234`. */
 export const formatCount = (value: number, locale: string) =>
   new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
