@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PreviewOptions } from '/shared/types/settings';
 
-import { editor } from '#preload';
+import { editor, scene } from '#preload';
 
-import { setActiveSceneClient } from '/@/modules/rpc/active-scene';
+import { notifyActiveSceneReady, setActiveSceneClient } from '/@/modules/rpc/active-scene';
 import type { SceneRpcClient } from '/@/modules/rpc/scene/client';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
@@ -482,6 +482,243 @@ describe('editor slice publish flush', () => {
 
       expect(saveScene).not.toHaveBeenCalled();
       expect(editor.publishScene).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('editor slice publish with a placement picked in the publish dialog', () => {
+  let store: ReturnType<typeof createTestStore>;
+  let order: string[];
+  let sceneJson: Record<string, unknown>;
+  const saveScene = vi.fn();
+  const setSceneSettings = vi.fn();
+  const getSceneSettings = vi.fn();
+  let editorLayout: unknown;
+
+  const PICKED = { base: '50,60', parcels: ['50,60', '51,60'] };
+  const publishTo = (sceneUpdates: Record<string, unknown>) =>
+    store.dispatch(
+      publishScene({
+        path: TEST_PATH,
+        chainId: 1 as never,
+        wallet: '0xwallet',
+        target: 'https://peer.decentraland.org',
+        sceneUpdates,
+      }),
+    );
+
+  beforeEach(() => {
+    store = createTestStore();
+    order = [];
+    sceneJson = {
+      display: { title: 'My scene' },
+      scene: { base: '0,0', parcels: ['0,0', '1,0'] },
+      worldConfiguration: { name: 'old-world.dcl.eth' },
+    };
+    saveScene.mockReset().mockImplementation(async () => {
+      order.push('save');
+    });
+    editorLayout = { base: { x: 0, y: 0 }, parcels: [{ x: 0, y: 0 }] };
+    setSceneSettings.mockReset().mockImplementation(async ({ layout }) => {
+      order.push('push');
+      editorLayout = layout;
+      return { settings: {} };
+    });
+    getSceneSettings.mockReset().mockImplementation(async () => ({
+      settings: { layout: editorLayout },
+    }));
+    setActiveSceneClient({
+      saveScene,
+      setSceneSettings,
+      getSceneSettings,
+    } as unknown as SceneRpcClient);
+    vi.mocked(scene.getScene).mockImplementation(async () => structuredClone(sceneJson) as never);
+    vi.mocked(scene.writeScene).mockImplementation(async ({ scene: written }) => {
+      order.push('write');
+      sceneJson = JSON.parse(JSON.stringify(written));
+    });
+    vi.mocked(editor.publishScene).mockImplementation(async () => {
+      order.push('publish');
+      return { port: 3000, supportsDeployResource: false };
+    });
+  });
+
+  afterEach(() => {
+    setActiveSceneClient(null);
+  });
+
+  describe('when the editor is open', () => {
+    it('should hand the layout to the editor, flush, write the pick, then deploy', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['push', 'save', 'write', 'publish']);
+      expect(setSceneSettings).toHaveBeenCalledWith({
+        layout: {
+          base: { x: 50, y: 60 },
+          parcels: [
+            { x: 50, y: 60 },
+            { x: 51, y: 60 },
+          ],
+        },
+      });
+    });
+
+    it('should deploy a scene.json holding the picked parcels and no world', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(sceneJson.scene).toEqual(PICKED);
+      expect(sceneJson.worldConfiguration).toBeUndefined();
+      expect(sceneJson.display).toEqual({ title: 'My scene' });
+    });
+
+    it('should deploy a scene.json holding the picked world', async () => {
+      await publishTo({
+        scene: { base: '0,0', parcels: ['0,0', '1,0'] },
+        worldConfiguration: { name: 'my-world.dcl.eth' },
+      });
+
+      expect(sceneJson.worldConfiguration).toEqual({ name: 'my-world.dcl.eth' });
+      expect(order).toEqual(['push', 'save', 'write', 'publish']);
+    });
+  });
+
+  // The flush rewrites scene.json from the editor; a data layer bundled in an older
+  // sdk-commands writes its whole load-time copy and reverts the pick on disk.
+  describe('when the flush writes the old placement back', () => {
+    beforeEach(() => {
+      saveScene.mockImplementation(async () => {
+        order.push('save');
+        sceneJson = { ...sceneJson, scene: { base: '0,0', parcels: ['0,0', '1,0'] } };
+      });
+    });
+
+    it('should still deploy the picked parcels', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(sceneJson.scene).toEqual(PICKED);
+      expect(editor.publishScene).toHaveBeenCalled();
+    });
+  });
+
+  // Under Bevy an edit can reload the inspector iframe in place; a request sent during the
+  // reload reaches no server and would only time out.
+  describe('when the editor reloads while the placement is being handed to it', () => {
+    let client: SceneRpcClient;
+
+    beforeEach(() => {
+      client = { saveScene, setSceneSettings, getSceneSettings } as unknown as SceneRpcClient;
+      setActiveSceneClient(client);
+      setSceneSettings.mockImplementationOnce(() => {
+        order.push('lost');
+        setTimeout(() => notifyActiveSceneReady(client), 10);
+        return new Promise(() => undefined);
+      });
+    });
+
+    it('should hand it again to the reloaded editor before flushing', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['lost', 'push', 'save', 'write', 'publish']);
+    });
+  });
+
+  describe('when the editor reloads while it is being flushed', () => {
+    let client: SceneRpcClient;
+
+    beforeEach(() => {
+      client = { saveScene, setSceneSettings, getSceneSettings } as unknown as SceneRpcClient;
+      setActiveSceneClient(client);
+      saveScene.mockImplementationOnce(() => {
+        order.push('lost');
+        setTimeout(() => notifyActiveSceneReady(client), 10);
+        return new Promise(() => undefined);
+      });
+    });
+
+    it('should flush the reloaded editor and deploy', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['push', 'lost', 'save', 'write', 'publish']);
+      expect(store.getState().editor.publishError).toBeNull();
+    });
+  });
+
+  // Under Bevy, storing the pick reloads the inspector; the iframe on its way out can answer
+  // the edit without its data layer ever receiving it.
+  describe('when the editor answered the placement but lost it in a reload', () => {
+    beforeEach(() => {
+      setSceneSettings.mockImplementationOnce(async () => {
+        order.push('lost');
+        return { settings: {} };
+      });
+    });
+
+    it('should hand it over and flush again until the editor holds it', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['lost', 'save', 'push', 'save', 'write', 'publish']);
+      expect(editorLayout).toEqual({
+        base: { x: 50, y: 60 },
+        parcels: [
+          { x: 50, y: 60 },
+          { x: 51, y: 60 },
+        ],
+      });
+    });
+  });
+
+  describe('when the editor rejects the placement', () => {
+    beforeEach(() => {
+      setSceneSettings.mockRejectedValue(new Error('layout.base must be integer { x, y } coords'));
+    });
+
+    it('should still deploy the pick without waiting for a reload', async () => {
+      const started = Date.now();
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['save', 'write', 'publish']);
+      expect(Date.now() - started).toBeLessThan(1000);
+      expect(sceneJson.scene).toEqual(PICKED);
+    });
+  });
+
+  describe('when the open editor predates set_scene_settings', () => {
+    beforeEach(() => {
+      setSceneSettings.mockRejectedValue(new Error('Method "set_scene_settings" not implemented'));
+    });
+
+    it('should still flush, write the pick and deploy', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['save', 'write', 'publish']);
+      expect(sceneJson.scene).toEqual(PICKED);
+      expect(store.getState().editor.publishError).toBeNull();
+    });
+  });
+
+  describe('when the flush fails', () => {
+    beforeEach(() => {
+      saveScene.mockRejectedValue(new Error('EBUSY: resource busy or locked'));
+    });
+
+    it('should not start the deploy and surface the reason', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(editor.publishScene).not.toHaveBeenCalled();
+      expect(store.getState().editor.publishError).toContain('EBUSY');
+    });
+  });
+
+  describe('when no editor is open', () => {
+    beforeEach(() => {
+      setActiveSceneClient(null);
+    });
+
+    it('should write the pick to disk and deploy', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['write', 'publish']);
+      expect(sceneJson.scene).toEqual(PICKED);
     });
   });
 });

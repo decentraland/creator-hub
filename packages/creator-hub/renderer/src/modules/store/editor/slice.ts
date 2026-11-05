@@ -1,5 +1,6 @@
 import { createAction, createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
 import { captureException } from '@sentry/electron/renderer';
+import type { Scene } from '@dcl/schemas';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { supportsMcp, supportsMultiInstance, supportsUiDesigner } from '/shared/flags';
@@ -11,7 +12,8 @@ import { isWorkspaceError } from '/shared/types/workspace';
 
 import { editor } from '#preload';
 
-import { getActiveSceneClient } from '/@/modules/rpc/active-scene';
+import { getActiveSceneClient, waitForActiveSceneReady } from '/@/modules/rpc/active-scene';
+import type { SceneRpcClient } from '/@/modules/rpc/scene/client';
 import { t } from '/@/modules/store/translation/utils';
 
 import { actions as deploymentActions } from '../deployment';
@@ -48,8 +50,118 @@ export const runScene = createAsyncThunk(
 // runScene settles without opening the client.
 export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.cancelPreview);
 
-function isSaveSceneUnsupported(error: unknown): boolean {
-  return error instanceof Error && error.message.includes('"save_scene" not implemented');
+function isSceneRpcUnsupported(error: unknown, method: string): boolean {
+  return error instanceof Error && error.message.includes(`"${method}" not implemented`);
+}
+
+const EDITOR_RELOAD_TIMEOUT_MS = 15_000;
+
+const isSceneRpcTimeout = (error: unknown) =>
+  error instanceof Error && error.message.includes('timed out (no renderer response)');
+
+/**
+ * Sends a request the open editor must answer, resending it once if the editor reloads
+ * first. Under Bevy an edit can reload the inspector iframe in place, and a request sent
+ * while it reloads reaches no server: it would only time out, losing a publish's flush or
+ * placement. Both requests this carries are idempotent, so a resend is safe.
+ */
+async function sendSurvivingReload<T>(
+  scene: SceneRpcClient,
+  send: (scene: SceneRpcClient) => Promise<T>,
+): Promise<T> {
+  const reloaded = waitForActiveSceneReady(EDITOR_RELOAD_TIMEOUT_MS);
+  const sent = send(scene);
+  sent.catch(() => undefined);
+  let outcome: { value: T } | { reloaded: boolean };
+  try {
+    outcome = await Promise.race([
+      sent.then(value => ({ value })),
+      reloaded.then(didReload => ({ reloaded: didReload })),
+    ]);
+  } catch (error) {
+    if (!isSceneRpcTimeout(error) || !(await reloaded)) throw error;
+    outcome = { reloaded: true };
+  }
+  if ('value' in outcome) return outcome.value;
+  if (!outcome.reloaded) return sent;
+  return send(getActiveSceneClient() ?? scene);
+}
+
+const toCoords = (parcel: string) => {
+  const [x, y] = parcel.split(',').map(Number);
+  return { x, y };
+};
+
+type EditorLayout = { base: { x: number; y: number }; parcels: { x: number; y: number }[] };
+
+const toEditorLayout = (scene: Partial<Scene>['scene']): EditorLayout | null =>
+  scene?.base && scene.parcels?.length
+    ? { base: toCoords(scene.base), parcels: scene.parcels.map(toCoords) }
+    : null;
+
+/**
+ * Hands the parcels picked in the publish dialog to the open editor, whose Scene component
+ * owns the layout in scene.json. Written only to disk, the pick is reverted by the flush
+ * below and again by the editor's next autosave, and the deploy targets the old parcels.
+ *
+ * @returns whether the editor took it.
+ */
+async function pushLayoutToEditor(layout: EditorLayout): Promise<boolean> {
+  const scene = getActiveSceneClient();
+  if (!scene) return false;
+  try {
+    await sendSurvivingReload(scene, editor => editor.setSceneSettings({ layout }));
+    return true;
+  } catch (error) {
+    // An editor that cannot take the layout keeps its own; publishing still deploys the
+    // pick, because the updates are written to disk again after the flush.
+    if (!isSceneRpcUnsupported(error, 'set_scene_settings')) {
+      console.error('Could not hand the publish placement to the editor:', error);
+    }
+    return false;
+  }
+}
+
+/**
+ * Whether the editor on screen now holds `layout`. A reloaded editor reports no settings
+ * until its data layer has streamed the scene in, so an empty answer is polled for a while.
+ */
+async function editorHoldsLayout(layout: EditorLayout): Promise<boolean> {
+  const deadline = Date.now() + EDITOR_RELOAD_TIMEOUT_MS;
+  for (;;) {
+    const scene = getActiveSceneClient();
+    if (!scene) return true;
+    try {
+      const { settings } = await sendSurvivingReload(scene, editor => editor.getSceneSettings());
+      if (settings.layout || Date.now() > deadline) {
+        return JSON.stringify(settings.layout) === JSON.stringify(layout);
+      }
+    } catch (error) {
+      if (isSceneRpcUnsupported(error, 'get_scene_settings')) return true;
+      if (Date.now() > deadline) return false;
+    }
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+}
+
+/**
+ * Leaves the pick in the open editor and the editor flushed to disk. Under Bevy, storing the
+ * pick reloads the inspector at the new base, and an edit answered by the iframe that is
+ * about to go away never reaches its data layer. The flush rides the same connection as the
+ * edit, so once it returns the data layer holds whatever the editor answered for; reading
+ * the layout back afterwards tells a lost edit apart, and one more round fixes it.
+ */
+async function flushEditorWithLayout(updates: Partial<Scene> | undefined) {
+  const layout = toEditorLayout(updates?.scene);
+  for (let attempt = 1; ; attempt++) {
+    const pushed = layout ? await pushLayoutToEditor(layout) : false;
+    await flushEditorToDisk();
+    if (!layout || !pushed || (await editorHoldsLayout(layout))) return;
+    if (attempt === 2) {
+      console.error('The editor did not keep the publish placement; deploying it from disk.');
+      return;
+    }
+  }
 }
 
 /**
@@ -67,12 +179,12 @@ async function flushEditorToDisk() {
   if (!scene) return;
 
   try {
-    await scene.saveScene();
+    await sendSurvivingReload(scene, editor => editor.saveScene());
   } catch (error) {
     // An inspector that predates save_scene (a dev build served on VITE_INSPECTOR_PORT, say)
     // cannot flush on request. Publishing then behaves exactly as it did before this RPC
     // existed, rather than being blocked by an editor that never could have answered.
-    if (isSaveSceneUnsupported(error)) return;
+    if (isSceneRpcUnsupported(error, 'save_scene')) return;
     throw new Error(
       t('editor.publish.save_failed', {
         reason: error instanceof Error ? error.message : String(error),
@@ -81,13 +193,26 @@ async function flushEditorToDisk() {
   }
 }
 
+export type PublishSceneOptions = DeployOptions & {
+  /** What the publish dialog chose (parcels, world): must be in the scene.json deployed. */
+  sceneUpdates?: Partial<Scene>;
+};
+
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
-  async (opts: DeployOptions, { dispatch, getState }) => {
+  async ({ sceneUpdates, ...opts }: PublishSceneOptions, { dispatch, getState }) => {
     const { translation } = getState();
     // Before marking anything replaced: a failed flush starts no deploy, so the previous
     // deployment must stay retryable.
-    await flushEditorToDisk();
+    await flushEditorWithLayout(sceneUpdates);
+    if (sceneUpdates) {
+      // Last write before the deploy reads scene.json: a data layer bundled in an older
+      // sdk-commands (the Bevy editor's) still writes the copy it loaded over the whole
+      // file on flush, dropping the world and any layout the editor could not take.
+      await dispatch(
+        workspaceActions.updateSceneJson({ path: opts.path, updates: sceneUpdates }),
+      ).unwrap();
+    }
     // Main stops the previous CLI, so a retry of the previous deployment must not start another.
     dispatch(deploymentActions.markDeploymentReplaced({ path: opts.path }));
     const server = await editor.publishScene({ ...opts, language: translation.locale });

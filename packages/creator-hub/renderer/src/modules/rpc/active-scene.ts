@@ -22,3 +22,30 @@ export function clearActiveSceneClient(client: SceneRpcClient): void {
 export function getActiveSceneClient(): SceneRpcClient | null {
   return activeSceneClient;
 }
+
+const readyWaiters = new Set<() => void>();
+
+/**
+ * The open editor's scene RPC server came up: on first load, and again whenever the
+ * inspector iframe reloads itself in place (under Bevy an edit can do that).
+ */
+export function notifyActiveSceneReady(client: SceneRpcClient): void {
+  if (activeSceneClient !== client) return;
+  for (const resolve of readyWaiters) resolve();
+  readyWaiters.clear();
+}
+
+/** Resolves true on the next ready signal, false if none arrives within `timeoutMs`. */
+export function waitForActiveSceneReady(timeoutMs: number): Promise<boolean> {
+  return new Promise(resolve => {
+    const onReady = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    const timer = setTimeout(() => {
+      readyWaiters.delete(onReady);
+      resolve(false);
+    }, timeoutMs);
+    readyWaiters.add(onReady);
+  });
+}

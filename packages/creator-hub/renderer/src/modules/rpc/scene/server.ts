@@ -91,13 +91,20 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       callbacks.onReady?.();
     });
 
+    // The layout the editor reported last. A notice repeats it whenever only the title
+    // changed, and taking it again would undo parcels picked meanwhile in the publish
+    // dialog (an editor that could not take them still holds its old layout).
+    let lastEditorLayout: string | undefined;
     this.handle('notify_scene_metadata', async ({ title, scene }) => {
       const current = store.getState().editor.project ?? project;
+      const layout = scene && JSON.stringify(scene);
+      const layoutChanged = !!layout && layout !== lastEditorLayout;
+      if (layout) lastEditorLayout = layout;
       store.dispatch(
         workspaceActions.updateProject({
           ...current,
           title: title || current.title,
-          scene: scene ?? current.scene,
+          scene: layoutChanged ? scene : current.scene,
         }),
       );
     });
