@@ -38,10 +38,11 @@ import { useWorldSceneCounts } from './useWorldSceneCounts';
 const SECONDS_PER_MINUTE = 60;
 const NO_CYCLE = 'current';
 
-const chipOf = (place: CreatorFundPlace): ChipProps =>
-  place.status === 'in_program' || place.status === 'replaced'
-    ? { status: place.status }
-    : { status: 'not_eligible', reasons: place.reasons };
+const chipOf = (place: CreatorFundPlace): ChipProps => {
+  if (place.status === 'in_program' || place.status === 'eligible') return { status: 'in_program' };
+  if (place.status === 'replaced') return { status: 'replaced' };
+  return { status: 'not_eligible', reasons: place.reasons };
+};
 
 const hasStats = (place: CreatorFundPlace) =>
   place.status === 'in_program' || place.status === 'replaced';
