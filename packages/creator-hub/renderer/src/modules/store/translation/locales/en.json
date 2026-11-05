@@ -1561,7 +1561,23 @@
       "more_options": "More options",
       "read_terms": "Read Terms",
       "contact_support": "Contact Support",
+      "banner": {
+        "region": "Announcement"
+      },
+      "filter": {
+        "cycle": "Cycle",
+        "all_cycles": "All cycles"
+      },
       "leaderboard": {
+        "sentence": "The top 20 places with the highest payouts this cycle",
+        "rank": "Rank",
+        "place": "Place",
+        "earned": "Earned",
+        "amount": "{amount} USDC",
+        "rank_label": "Rank {rank}",
+        "jump_in": "Jump In",
+        "jump_in_label": "Jump In to {place}",
+        "empty": "No payouts for this cycle yet.",
         "error": "Couldn't load the leaderboard."
       },
       "get_ready": {
@@ -1585,6 +1601,9 @@
           "body": "Connect with other creators, share your work, and get feedback.",
           "link": "Join Discord"
         }
+      },
+      "news": {
+        "title": "News"
       }
     },
     "errors": {

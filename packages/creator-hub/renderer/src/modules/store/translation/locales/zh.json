@@ -1535,7 +1535,23 @@
       "more_options": "更多选项",
       "read_terms": "阅读条款",
       "contact_support": "联系支持",
+      "banner": {
+        "region": "公告"
+      },
+      "filter": {
+        "cycle": "周期",
+        "all_cycles": "所有周期"
+      },
       "leaderboard": {
+        "sentence": "本周期收益最高的前 20 个地点",
+        "rank": "排名",
+        "place": "地点",
+        "earned": "收益",
+        "amount": "{amount} USDC",
+        "rank_label": "第 {rank} 名",
+        "jump_in": "进入",
+        "jump_in_label": "进入 {place}",
+        "empty": "本周期暂无付款。",
         "error": "无法加载排行榜。"
       },
       "get_ready": {
@@ -1559,6 +1575,9 @@
           "body": "与其他创作者交流，分享你的作品并获取反馈。",
           "link": "加入 Discord"
         }
+      },
+      "news": {
+        "title": "新闻"
       }
     },
     "errors": {

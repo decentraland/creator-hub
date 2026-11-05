@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { GlobalStyles } from 'decentraland-ui2';
 
 import { useDispatch, useSelector } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
@@ -15,8 +16,11 @@ import { MenuCorner } from './joined/EarnHeader.styled';
 import { JoinedPage, type JoinedTab } from './JoinedPage';
 import { IneligibleModal, JoinFlow, type JoinOutcome } from './JoinFlow';
 import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing';
+import { StickyNavbar } from './component.styled';
 import { Spinner } from './Spinner';
 import { TermsModal } from './TermsModal';
+
+const STICKY_NAVBAR_HEIGHT = 130;
 
 type EarnLocationState = { joinAfterSignIn?: boolean } | null;
 
@@ -207,7 +211,16 @@ export function EarnPage() {
   }
   return (
     <div className="EarnPage">
-      <Navbar active={NavbarItem.EARN} />
+      <GlobalStyles
+        styles={{
+          html: {
+            scrollPaddingTop: `calc(${STICKY_NAVBAR_HEIGHT}px + var(--cf-sticky-extra, 0px))`,
+          },
+        }}
+      />
+      <StickyNavbar>
+        <Navbar active={NavbarItem.EARN} />
+      </StickyNavbar>
       <EarnContent />
     </div>
   );

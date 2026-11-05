@@ -1535,7 +1535,23 @@
       "more_options": "Más opciones",
       "read_terms": "Leer términos",
       "contact_support": "Contactar con soporte",
+      "banner": {
+        "region": "Anuncio"
+      },
+      "filter": {
+        "cycle": "Ciclo",
+        "all_cycles": "Todos los ciclos"
+      },
       "leaderboard": {
+        "sentence": "Los 20 lugares con los pagos más altos de este ciclo",
+        "rank": "Puesto",
+        "place": "Lugar",
+        "earned": "Ganado",
+        "amount": "{amount} USDC",
+        "rank_label": "Puesto {rank}",
+        "jump_in": "Entrar",
+        "jump_in_label": "Entrar en {place}",
+        "empty": "Todavía no hay pagos en este ciclo.",
         "error": "No se pudo cargar la clasificación."
       },
       "get_ready": {
@@ -1559,6 +1575,9 @@
           "body": "Conecta con otros creadores, comparte tu trabajo y recibe comentarios.",
           "link": "Únete a Discord"
         }
+      },
+      "news": {
+        "title": "Novedades"
       }
     },
     "errors": {
