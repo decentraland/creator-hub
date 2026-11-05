@@ -1,4 +1,3 @@
-import fromUnixTime from 'date-fns/fromUnixTime';
 import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
 import { chunk, retry } from '/shared/utils';
@@ -15,6 +14,8 @@ const MAX_POINTERS_PER_REQUEST = 100;
  * it runs to hundreds of kilobytes and outlasts the default timeout on a cold cache.
  */
 const ENTITIES_TIMEOUT_MS = 30_000;
+const MAX_ENTITY_IDS_PER_REQUEST = 50;
+const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 
 const SEPARATOR = ',';
 
@@ -42,13 +43,24 @@ export const idToCoords = (id: string): [string | number, string | number] => {
   return [x, y];
 };
 
+/** Every parcel the lands cover, estates expanded into their parcels. */
+export function ownedCoords(lands: Land[]): Coords[] {
+  return lands.flatMap(land =>
+    land.parcels?.length
+      ? land.parcels.map(({ x, y }): Coords => [x, y])
+      : land.x !== undefined && land.y !== undefined
+        ? [[land.x, land.y] as Coords]
+        : [],
+  );
+}
+
 const fromParcel = (parcel: ParcelFields, role: RoleType) => {
   const id = coordsToId(parcel.x, parcel.y);
 
   const result: Land = {
     id,
     tokenId: parcel.tokenId,
-    name: (parcel.data && parcel.data.name) || 'Parcel',
+    name: parcel.data?.name || '',
     type: LandType.PARCEL,
     roles: [role],
     role,
@@ -57,6 +69,8 @@ const fromParcel = (parcel: ParcelFields, role: RoleType) => {
     y: parseInt(parcel.y, 10),
     owner: parcel.owner.address,
     operators: [],
+    updateOperator:
+      parcel.updateOperator && !isZero(parcel.updateOperator) ? parcel.updateOperator : null,
   };
 
   if (parcel.updateOperator) {
@@ -72,7 +86,7 @@ const fromEstate = (estate: EstateFields, role: RoleType) => {
   const result: Land = {
     id,
     tokenId: id,
-    name: (estate.data && estate.data.name) || `Estate ${id}`,
+    name: estate.data?.name || '',
     type: LandType.ESTATE,
     roles: [role],
     role,
@@ -82,9 +96,13 @@ const fromEstate = (estate: EstateFields, role: RoleType) => {
       x: parseInt(parcel.x, 10),
       y: parseInt(parcel.y, 10),
       id: coordsToId(parcel.x, parcel.y),
+      updateOperator:
+        parcel.updateOperator && !isZero(parcel.updateOperator) ? parcel.updateOperator : null,
     })),
     owner: estate.owner.address,
     operators: [],
+    updateOperator:
+      estate.updateOperator && !isZero(estate.updateOperator) ? estate.updateOperator : null,
   };
 
   if (estate.updateOperator) {
@@ -131,6 +149,7 @@ export const estateFields = () => `
       x
       y
       tokenId
+      updateOperator
     }
     data {
       name
@@ -165,12 +184,13 @@ const getLandQuery = (skip = 0) => `
     updateOperatorEstates: estates(first: ${MAX_RESULTS}, skip: ${skip}, where: { updateOperator: $address }) {
       ...estateFields
     }
-    ownerAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, where: { owner: $address, type: "UpdateManager" }) {
+    ownerAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, orderBy: timestamp, orderDirection: desc, where: { owner: $address, type: "UpdateManager" }) {
       operator
       isApproved
       tokenAddress
+      timestamp
     }
-    operatorAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, where: { operator: $address, type: "UpdateManager" }) {
+    operatorAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, orderBy: timestamp, orderDirection: desc, where: { operator: $address, type: "UpdateManager" }) {
       owner {
         address
         parcels(first: ${MAX_RESULTS}, skip: ${skip}, where: { estate: null }) {
@@ -182,6 +202,7 @@ const getLandQuery = (skip = 0) => `
       }
       isApproved
       tokenAddress
+      timestamp
     }
   }
   ${parcelFields()}
@@ -198,6 +219,7 @@ export enum RoleType {
   LESSOR = 2,
   TENANT = 3,
   OPERATOR = 4,
+  MANAGER = 5,
 }
 
 export type Land = {
@@ -208,12 +230,14 @@ export type Land = {
   role: RoleType;
   x?: number;
   y?: number;
-  parcels?: { x: number; y: number; id: string }[];
+  parcels?: { x: number; y: number; id: string; updateOperator: string | null }[];
   size?: number;
   name: string;
   description: string | null;
   owner: string;
   operators: string[];
+  /** The token's own update operator (a collaborator), apart from managers; null when unset. */
+  updateOperator: string | null;
 };
 
 export type ParcelFields = {
@@ -237,7 +261,7 @@ export type EstateFields = {
   };
   updateOperator: string | null;
   size: number;
-  parcels: Pick<ParcelFields, 'x' | 'y' | 'tokenId'>[];
+  parcels: Pick<ParcelFields, 'x' | 'y' | 'tokenId' | 'updateOperator'>[];
   data: {
     name: string | null;
     description: string | null;
@@ -267,9 +291,27 @@ export type Rental = {
   lessor: string;
   tenant: string;
   operator: string;
-  startedAt: Date;
-  endsAt: Date;
+  /** Epoch milliseconds. */
+  startedAt: number;
+  /** Epoch milliseconds. */
+  endsAt: number;
 };
+
+type AuthorizationEvent<T> = T & { isApproved: boolean; tokenAddress: string; timestamp: string };
+
+/** The latest `setUpdateManager` event per counterparty and registry: the subgraph keeps every one. */
+function latestAuthorizations<T extends AuthorizationEvent<object>>(
+  events: T[],
+  counterparty: (event: T) => string,
+): T[] {
+  const latest = new Map<string, T>();
+  for (const event of events) {
+    const key = `${counterparty(event)}-${event.tokenAddress}`;
+    const seen = latest.get(key);
+    if (!seen || BigInt(event.timestamp) > BigInt(seen.timestamp)) latest.set(key, event);
+  }
+  return [...latest.values()];
+}
 
 export type LandQueryResult = {
   tenantParcels: ParcelFields[];
@@ -280,16 +322,16 @@ export type LandQueryResult = {
   ownerEstates: EstateFields[];
   updateOperatorParcels: ParcelFields[];
   updateOperatorEstates: EstateFields[];
-  ownerAuthorizations: { operator: string; isApproved: boolean; tokenAddress: string }[];
-  operatorAuthorizations: {
+  ownerAuthorizations: AuthorizationEvent<{ operator: string }>[];
+  operatorAuthorizations: AuthorizationEvent<{
     owner: { address: string; parcels: ParcelFields[]; estates: EstateFields[] };
-    isApproved: boolean;
-    tokenAddress: string;
-  }[];
+  }>[];
 };
 
 export type LandDeployment = Omit<WorldDeployment, 'metadata'> & {
-  metadata: Omit<WorldDeployment['metadata'], 'worldConfiguration'>;
+  metadata: Omit<WorldDeployment['metadata'], 'worldConfiguration' | 'source'> & {
+    source?: WorldDeployment['metadata']['source'] & { isEmpty?: boolean };
+  };
 };
 
 export enum Color {
@@ -314,6 +356,7 @@ export const colorByRole: Record<RoleType, string> = {
   [RoleType.LESSOR]: Color.MILLENIAL_ORANGE,
   [RoleType.OPERATOR]: Color.LUISXVI_VIOLET,
   [RoleType.TENANT]: Color.SUMMER_RED,
+  [RoleType.MANAGER]: Color.LUISXVI_VIOLET,
 };
 
 export class Lands {
@@ -388,45 +431,33 @@ export class Lands {
       lands.push(fromEstate(estate, RoleType.LESSOR));
     }
 
-    // addresses I gave UpdateManager permission are operators of all my lands
-    for (const authorization of data.ownerAuthorizations) {
-      const { operator, isApproved, tokenAddress } = authorization;
-      switch (tokenAddress) {
-        case this.LAND_REGISTRY_ADDRESS: {
-          if (isApproved) {
-            landUpdateManagers.add(operator);
-          } else {
-            landUpdateManagers.delete(operator);
-          }
-          break;
-        }
-        case this.ESTATE_REGISTRY_ADDRESS: {
-          if (isApproved) {
-            estateUpdateManagers.add(operator);
-          } else {
-            estateUpdateManagers.delete(operator);
-          }
-          break;
-        }
-      }
+    for (const { operator, isApproved, tokenAddress } of latestAuthorizations(
+      data.ownerAuthorizations,
+      event => event.operator,
+    )) {
+      if (!isApproved) continue;
+      if (tokenAddress === this.LAND_REGISTRY_ADDRESS) landUpdateManagers.add(operator);
+      if (tokenAddress === this.ESTATE_REGISTRY_ADDRESS) estateUpdateManagers.add(operator);
     }
 
-    // I'm operator of all the lands from addresses that gave me UpdateManager permission
-    for (const authorization of data.operatorAuthorizations) {
-      const { owner } = authorization;
-      for (const parcel of owner.parcels) {
-        const land = fromParcel(parcel, RoleType.OPERATOR);
+    for (const { owner, isApproved, tokenAddress } of latestAuthorizations(
+      data.operatorAuthorizations,
+      event => event.owner.address,
+    )) {
+      if (!isApproved) continue;
+      const parcels = tokenAddress === this.LAND_REGISTRY_ADDRESS ? owner.parcels : [];
+      const estates = tokenAddress === this.ESTATE_REGISTRY_ADDRESS ? owner.estates : [];
+      for (const parcel of parcels) {
+        const land = fromParcel(parcel, RoleType.MANAGER);
         land.operators.push(address);
-        // skip if already owned or operated
         if (!lands.some(_land => _land.id === land.id)) {
           lands.push(land);
         }
       }
-      for (const estate of owner.estates) {
+      for (const estate of estates) {
         if (estate.parcels.length > 0) {
-          const land = fromEstate(estate, RoleType.OPERATOR);
+          const land = fromEstate(estate, RoleType.MANAGER);
           land.operators.push(address);
-          // skip if already owned or operated
           if (!lands.some(_land => _land.id === land.id)) {
             lands.push(land);
           }
@@ -500,7 +531,8 @@ export class Lands {
    *
    * `/content/entities/active` resolves many pointers at once and answers each
    * scene once, however many parcels it covers — so a 100-parcel estate holding
-   * one scene costs one request and yields one entity, not a hundred.
+   * one scene costs one request and yields one entity, not a hundred. The empty
+   * scene an unpublish leaves behind (`metadata.source.isEmpty`) is not a scene.
    */
   public async fetchLandPublishedScenes(coords: Coords[]): Promise<LandDeployment[]> {
     const groups = await Promise.all(
@@ -524,8 +556,50 @@ export class Lands {
       ),
     );
 
-    const byEntityId = new Map(groups.flat().map(scene => [scene.id, scene]));
+    const byEntityId = new Map(
+      groups
+        .flat()
+        .filter(scene => !scene.metadata?.source?.isEmpty)
+        .map(scene => [scene.id, scene]),
+    );
     return [...byEntityId.values()];
+  }
+
+  /**
+   * Who deployed each scene entity, as a lowercased address keyed by entity id.
+   * Best effort: a chunk that fails leaves its ids out instead of failing the rest.
+   */
+  public async fetchDeployers(entityIds: string[]): Promise<Record<string, string>> {
+    const asked = new Set(entityIds);
+    const chunks = await Promise.allSettled(
+      chunk(entityIds, MAX_ENTITY_IDS_PER_REQUEST).map(async group => {
+        const query = group.map(id => `entityId=${encodeURIComponent(id)}`).join('&');
+        const result = await fetch(
+          `${this.PEER_URL}/content/deployments?${query}`,
+          undefined,
+          ENTITIES_TIMEOUT_MS,
+        );
+        if (!result.ok) {
+          await result.body?.cancel();
+          throw new Error(`Failed to read ${group.length} deployers: ${result.status}`);
+        }
+        const body = (await result.json()) as {
+          deployments?: Array<{ entityId?: unknown; deployedBy?: unknown }>;
+        };
+        return body.deployments ?? [];
+      }),
+    );
+
+    const deployers: Record<string, string> = {};
+    for (const outcome of chunks) {
+      if (outcome.status !== 'fulfilled') continue;
+      for (const { entityId, deployedBy } of outcome.value) {
+        if (typeof entityId !== 'string' || !asked.has(entityId)) continue;
+        if (typeof deployedBy !== 'string' || !ADDRESS.test(deployedBy)) continue;
+        deployers[entityId] = deployedBy.toLowerCase();
+      }
+    }
+    return deployers;
   }
 }
 
@@ -609,8 +683,8 @@ export class Rentals {
       lessor: fields.lessor,
       tenant: fields.tenant,
       operator: fields.operator,
-      startedAt: fromUnixTime(+fields.startedAt),
-      endsAt: fromUnixTime(+fields.endsAt),
+      startedAt: +fields.startedAt * 1000,
+      endsAt: +fields.endsAt * 1000,
     };
   };
 }

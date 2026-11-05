@@ -137,7 +137,10 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace
               </>
             )}
             <TableCell className="ActionsCell">
-              <Dropdown options={getDropdownOptions(place)} />
+              <Dropdown
+                label={t('menu.options_for', { name: place.name })}
+                options={getDropdownOptions(place)}
+              />
             </TableCell>
           </TableRow>
         ))}
