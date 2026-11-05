@@ -415,6 +415,14 @@
           "title": "You don't have any available World",
           "description": "<b>Get a free world when you own a NAME</b>.<br></br>Each NAME will give you access to one World. You can have as many as you want.",
           "action": "Claim a new Name"
+        },
+        "loading_names": {
+          "title": "Looking for your Worlds..."
+        },
+        "names_error": {
+          "title": "We couldn't load your Worlds",
+          "description": "There was a problem reaching Decentraland. Check your connection and try again.",
+          "action": "Try again"
         }
       },
       "land": {
@@ -1201,6 +1209,9 @@
   "analytics": {
     "header": {
       "title": "Analytics"
+    },
+    "sign_in": {
+      "title": "Sign in to see your Places analytics"
     },
     "empty_list": {
       "title": "No Places to analyse yet",
