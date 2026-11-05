@@ -42,7 +42,37 @@ export const idToCoords = (id: string): [string | number, string | number] => {
   return [x, y];
 };
 
-const fromParcel = (parcel: ParcelFields, role: RoleType) => {
+/**
+ * Who the Catalyst lets deploy, read off the subgraph. It mirrors the access check
+ * every deployment goes through (`checkLAND` in decentraland/checker-contract,
+ * `validations/access/subgraph/scenes.ts` in decentraland/content-validator): the
+ * token's owner, its approved address, its update operator, or someone the owner
+ * approved on that same registry. A rented-out token's owner is the Rentals
+ * contract and its update operator is whoever the tenant named, so the lessor
+ * holds no right to it until it is claimed back.
+ */
+type DeployAccess = {
+  address: string;
+  /** Owners whose latest LAND registry authorization to `address` is approved. */
+  landGrantors: Set<string>;
+  /** Owners whose latest Estate registry authorization to `address` is approved. */
+  estateGrantors: Set<string>;
+};
+
+const isAddress = (candidate: string | null | undefined, address: string) =>
+  !!candidate && candidate.toLowerCase() === address;
+
+const canDeployTo = (
+  token: Pick<ParcelFields, 'owner' | 'operator' | 'updateOperator'>,
+  access: DeployAccess,
+  grantors: Set<string>,
+) =>
+  isAddress(token.owner.address, access.address) ||
+  isAddress(token.operator, access.address) ||
+  isAddress(token.updateOperator, access.address) ||
+  grantors.has(token.owner.address.toLowerCase());
+
+const fromParcel = (parcel: ParcelFields, role: RoleType, access: DeployAccess) => {
   const id = coordsToId(parcel.x, parcel.y);
 
   const result: Land = {
@@ -57,6 +87,7 @@ const fromParcel = (parcel: ParcelFields, role: RoleType) => {
     y: parseInt(parcel.y, 10),
     owner: parcel.owner.address,
     operators: [],
+    deployable: canDeployTo(parcel, access, access.landGrantors),
   };
 
   if (parcel.updateOperator) {
@@ -66,7 +97,7 @@ const fromParcel = (parcel: ParcelFields, role: RoleType) => {
   return result;
 };
 
-const fromEstate = (estate: EstateFields, role: RoleType) => {
+const fromEstate = (estate: EstateFields, role: RoleType, access: DeployAccess) => {
   const id = estate.id;
 
   const result: Land = {
@@ -85,6 +116,7 @@ const fromEstate = (estate: EstateFields, role: RoleType) => {
     })),
     owner: estate.owner.address,
     operators: [],
+    deployable: canDeployTo(estate, access, access.estateGrantors),
   };
 
   if (estate.updateOperator) {
@@ -111,6 +143,7 @@ export const parcelFields = () => `
     owner {
       address
     }
+    operator
     updateOperator
     data {
       name
@@ -125,6 +158,7 @@ export const estateFields = () => `
     owner {
       address
     }
+    operator
     updateOperator
     size
     parcels(first: 1000) {
@@ -138,6 +172,13 @@ export const estateFields = () => `
     }
   }
 `;
+
+/**
+ * The authorization kinds that let an owner's counterparty deploy to the owner's
+ * tokens on that registry: `UpdateManager` (`setUpdateManager`) and the two names
+ * the subgraph gives `setApprovalForAll`.
+ */
+const GRANTING_AUTHORIZATIONS = ['UpdateManager', 'ApprovalForAll', 'Operator'] as const;
 
 const getLandQuery = (skip = 0) => `
   query Land($address: Bytes, $tenantTokenIds: [String!], $lessorTokenIds: [String!]) {
@@ -165,12 +206,21 @@ const getLandQuery = (skip = 0) => `
     updateOperatorEstates: estates(first: ${MAX_RESULTS}, skip: ${skip}, where: { updateOperator: $address }) {
       ...estateFields
     }
-    ownerAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, where: { owner: $address, type: "UpdateManager" }) {
+    approvedParcels: parcels(first: ${MAX_RESULTS}, skip: ${skip}, where: { operator: $address }) {
+      ...parcelFields
+    }
+    approvedEstates: estates(first: ${MAX_RESULTS}, skip: ${skip}, where: { operator: $address }) {
+      ...estateFields
+    }
+    ownerAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, orderBy: timestamp, orderDirection: desc, where: { owner: $address, type: "UpdateManager" }) {
+      type
       operator
       isApproved
       tokenAddress
+      timestamp
     }
-    operatorAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, where: { operator: $address, type: "UpdateManager" }) {
+    operatorAuthorizations: authorizations(first: ${MAX_RESULTS}, skip: ${skip}, orderBy: timestamp, orderDirection: desc, where: { operator: $address, type_in: ${JSON.stringify(GRANTING_AUTHORIZATIONS)} }) {
+      type
       owner {
         address
         parcels(first: ${MAX_RESULTS}, skip: ${skip}, where: { estate: null }) {
@@ -182,6 +232,7 @@ const getLandQuery = (skip = 0) => `
       }
       isApproved
       tokenAddress
+      timestamp
     }
   }
   ${parcelFields()}
@@ -214,6 +265,11 @@ export type Land = {
   description: string | null;
   owner: string;
   operators: string[];
+  /**
+   * Whether the Catalyst accepts a deployment to this land from the wallet it was
+   * fetched for. A lessor still sees the land it rented out, but cannot deploy to it.
+   */
+  deployable: boolean;
 };
 
 export type ParcelFields = {
@@ -223,6 +279,8 @@ export type ParcelFields = {
   owner: {
     address: string;
   };
+  /** The address approved for this one token (`approve`), if any. */
+  operator: string | null;
   updateOperator: string | null;
   data: {
     name: string | null;
@@ -235,6 +293,8 @@ export type EstateFields = {
   owner: {
     address: string;
   };
+  /** The address approved for this one token (`approve`), if any. */
+  operator: string | null;
   updateOperator: string | null;
   size: number;
   parcels: Pick<ParcelFields, 'x' | 'y' | 'tokenId'>[];
@@ -280,13 +340,39 @@ export type LandQueryResult = {
   ownerEstates: EstateFields[];
   updateOperatorParcels: ParcelFields[];
   updateOperatorEstates: EstateFields[];
-  ownerAuthorizations: { operator: string; isApproved: boolean; tokenAddress: string }[];
-  operatorAuthorizations: {
+  approvedParcels: ParcelFields[];
+  approvedEstates: EstateFields[];
+  ownerAuthorizations: AuthorizationEvent<{ operator: string }>[];
+  operatorAuthorizations: AuthorizationEvent<{
     owner: { address: string; parcels: ParcelFields[]; estates: EstateFields[] };
-    isApproved: boolean;
-    tokenAddress: string;
-  }[];
+  }>[];
 };
+
+type AuthorizationEvent<T> = T & {
+  type: string;
+  isApproved: boolean;
+  tokenAddress: string;
+  /** Block time in microseconds plus the log index, so later events always sort higher. */
+  timestamp: string;
+};
+
+/**
+ * The subgraph keeps every authorization event, not the current state: a revoke is
+ * a newer `isApproved: false` beside the original grant. Only the latest event per
+ * counterparty, registry and kind is in force.
+ */
+function latestAuthorizations<T extends AuthorizationEvent<object>>(
+  events: T[],
+  counterparty: (event: T) => string,
+): T[] {
+  const latest = new Map<string, T>();
+  for (const event of events) {
+    const key = `${counterparty(event).toLowerCase()}-${event.tokenAddress.toLowerCase()}-${event.type}`;
+    const seen = latest.get(key);
+    if (!seen || BigInt(event.timestamp) > BigInt(seen.timestamp)) latest.set(key, event);
+  }
+  return [...latest.values()];
+}
 
 export type LandDeployment = Omit<WorldDeployment, 'metadata'> & {
   metadata: Omit<WorldDeployment['metadata'], 'worldConfiguration'>;
@@ -356,75 +442,80 @@ export class Lands {
     const landUpdateManagers = new Set<string>();
     const estateUpdateManagers = new Set<string>();
 
+    const grants = latestAuthorizations(
+      data.operatorAuthorizations,
+      event => event.owner.address,
+    ).filter(grant => grant.isApproved);
+    const grantorsOn = (registry: string) =>
+      new Set(
+        grants
+          .filter(grant => grant.tokenAddress.toLowerCase() === registry)
+          .map(grant => grant.owner.address.toLowerCase()),
+      );
+    const access: DeployAccess = {
+      address,
+      landGrantors: grantorsOn(this.LAND_REGISTRY_ADDRESS),
+      estateGrantors: grantorsOn(this.ESTATE_REGISTRY_ADDRESS),
+    };
+
     // parcels and estates that I own
     for (const parcel of data.ownerParcels) {
-      lands.push(fromParcel(parcel, RoleType.OWNER));
+      lands.push(fromParcel(parcel, RoleType.OWNER, access));
     }
     for (const estate of data.ownerEstates) {
-      lands.push(fromEstate(estate, RoleType.OWNER));
+      lands.push(fromEstate(estate, RoleType.OWNER, access));
     }
 
-    // parcels and estates that I operate
-    for (const parcel of data.updateOperatorParcels) {
-      lands.push(fromParcel(parcel, RoleType.OPERATOR));
+    // parcels and estates that I operate, or that were approved to me one by one
+    for (const parcel of [...data.updateOperatorParcels, ...data.approvedParcels]) {
+      lands.push(fromParcel(parcel, RoleType.OPERATOR, access));
     }
-    for (const estate of data.updateOperatorEstates) {
-      lands.push(fromEstate(estate, RoleType.OPERATOR));
+    for (const estate of [...data.updateOperatorEstates, ...data.approvedEstates]) {
+      lands.push(fromEstate(estate, RoleType.OPERATOR, access));
     }
 
     // parcels and estates that I've rented
     for (const parcel of data.tenantParcels) {
-      lands.push(fromParcel(parcel, RoleType.TENANT));
+      lands.push(fromParcel(parcel, RoleType.TENANT, access));
     }
     for (const estate of data.tenantEstates) {
-      lands.push(fromEstate(estate, RoleType.TENANT));
+      lands.push(fromEstate(estate, RoleType.TENANT, access));
     }
 
     // parcels and estates that I've put for rent
     for (const parcel of data.lessorParcels) {
-      lands.push(fromParcel(parcel, RoleType.LESSOR));
+      lands.push(fromParcel(parcel, RoleType.LESSOR, access));
     }
     for (const estate of data.lessorEstates) {
-      lands.push(fromEstate(estate, RoleType.LESSOR));
+      lands.push(fromEstate(estate, RoleType.LESSOR, access));
     }
 
     // addresses I gave UpdateManager permission are operators of all my lands
-    for (const authorization of data.ownerAuthorizations) {
-      const { operator, isApproved, tokenAddress } = authorization;
-      switch (tokenAddress) {
-        case this.LAND_REGISTRY_ADDRESS: {
-          if (isApproved) {
-            landUpdateManagers.add(operator);
-          } else {
-            landUpdateManagers.delete(operator);
-          }
-          break;
-        }
-        case this.ESTATE_REGISTRY_ADDRESS: {
-          if (isApproved) {
-            estateUpdateManagers.add(operator);
-          } else {
-            estateUpdateManagers.delete(operator);
-          }
-          break;
-        }
-      }
+    for (const { operator, isApproved, tokenAddress } of latestAuthorizations(
+      data.ownerAuthorizations,
+      event => event.operator,
+    )) {
+      if (!isApproved) continue;
+      if (tokenAddress === this.LAND_REGISTRY_ADDRESS) landUpdateManagers.add(operator);
+      if (tokenAddress === this.ESTATE_REGISTRY_ADDRESS) estateUpdateManagers.add(operator);
     }
 
-    // I'm operator of all the lands from addresses that gave me UpdateManager permission
-    for (const authorization of data.operatorAuthorizations) {
-      const { owner } = authorization;
-      for (const parcel of owner.parcels) {
-        const land = fromParcel(parcel, RoleType.OPERATOR);
+    // I'm operator of the lands whose owner approved me on that land's own registry
+    for (const { owner, tokenAddress } of grants) {
+      const registry = tokenAddress.toLowerCase();
+      const parcels = registry === this.LAND_REGISTRY_ADDRESS ? owner.parcels : [];
+      const estates = registry === this.ESTATE_REGISTRY_ADDRESS ? owner.estates : [];
+      for (const parcel of parcels) {
+        const land = fromParcel(parcel, RoleType.OPERATOR, access);
         land.operators.push(address);
         // skip if already owned or operated
         if (!lands.some(_land => _land.id === land.id)) {
           lands.push(land);
         }
       }
-      for (const estate of owner.estates) {
+      for (const estate of estates) {
         if (estate.parcels.length > 0) {
-          const land = fromEstate(estate, RoleType.OPERATOR);
+          const land = fromEstate(estate, RoleType.OPERATOR, access);
           land.operators.push(address);
           // skip if already owned or operated
           if (!lands.some(_land => _land.id === land.id)) {
@@ -472,6 +563,7 @@ export class Lands {
         // Update existing land roles
         savedLand.roles = [...savedLand.roles, land.role].sort();
         savedLand.role = savedLand.roles[0];
+        savedLand.deployable ||= land.deployable;
       } else {
         // Add to the total map
         landsMap[land.id] = land;
@@ -584,9 +676,14 @@ export class Rentals {
       };
     } = await response.json();
 
+    // `isActive` stays true after a rental ends, until the lessor claims the land
+    // back, so a tenant's rental is only current while it has not run out.
+    const now = Date.now();
     return {
       lessorRentals: data.lessorRentals.map(this.fromRentalFields),
-      tenantRentals: data.tenantRentals.map(this.fromRentalFields),
+      tenantRentals: data.tenantRentals
+        .map(this.fromRentalFields)
+        .filter(rental => rental.endsAt.getTime() > now),
     };
   };
 

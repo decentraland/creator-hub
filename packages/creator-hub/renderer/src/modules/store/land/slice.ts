@@ -77,7 +77,10 @@ const getLandTiles = createSelector(
   [getLands, getTiles, getCoordsByEstateId],
   (lands, tiles, coordsByEstateId) => {
     const result: Record<string, LandTile> = {};
+    // The publish picker offers these tiles: a land the Catalyst would refuse the
+    // deployment for (e.g. one the wallet rented out) is not offered at all.
     for (const land of lands) {
+      if (!land.deployable) continue;
       if (land.type === LandType.PARCEL) {
         const id = coordsToId(land.x!, land.y!);
         result[id] = {
