@@ -13,6 +13,7 @@ import {
   Rentals,
   type Authorization,
   type Land,
+  type Rental,
 } from '/@/lib/land';
 
 // actions
@@ -111,16 +112,25 @@ const getLandTiles = createSelector(
 export type LandTile = Tile & { land: Land };
 export type LandState = {
   data: Land[];
+  authorizations: Authorization[];
+  rentals: Rental[];
   tiles: Record<string, AtlasTileProps>;
   error: string | null;
+  requestId: string | null;
 };
 
 export const initialState: Async<LandState> = {
   data: [],
+  authorizations: [],
+  rentals: [],
   tiles: {},
   status: 'idle',
   error: null,
+  requestId: null,
 };
+
+const isStale = (state: LandState, requestId: string) =>
+  state.requestId !== null && state.requestId !== requestId;
 
 // slice
 export const slice = createSlice({
@@ -131,11 +141,15 @@ export const slice = createSlice({
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchLandList.pending, state => {
+      .addCase(fetchLandList.pending, (state, action) => {
         state.status = 'loading';
+        state.requestId = action.meta.requestId;
       })
       .addCase(fetchLandList.fulfilled, (state, action) => {
+        if (isStale(state, action.meta.requestId)) return;
         state.data = [...action.payload.land];
+        state.authorizations = action.payload.authorizations;
+        state.rentals = action.payload.rentals;
         state.status = 'succeeded';
       })
       .addCase(fetchTiles.pending, state => {
@@ -146,6 +160,7 @@ export const slice = createSlice({
         state.status = 'succeeded';
       })
       .addCase(fetchLandList.rejected, (state, action) => {
+        if (isStale(state, action.meta.requestId)) return;
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch land list';
         captureException(action.error, {

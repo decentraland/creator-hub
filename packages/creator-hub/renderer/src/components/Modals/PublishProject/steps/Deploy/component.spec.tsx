@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
@@ -14,6 +15,7 @@ import { Deploy } from './component';
 const hooks = vi.hoisted(() => ({
   deployment: undefined as Deployment | undefined,
   dispatch: vi.fn(),
+  names: {} as Record<string, { nftOwnerAddress?: string }>,
   worldScenes: [] as { parcels: string[] }[],
   wallet: '0xabc' as string | undefined,
   fetchWorldSceneSizeLimit: vi.fn(async () => null),
@@ -21,7 +23,11 @@ const hooks = vi.hoisted(() => ({
 
 vi.mock('#store', () => ({
   useDispatch: () => hooks.dispatch,
-  useSelector: () => hooks.worldScenes,
+  useSelector: (selector: (state: unknown) => unknown) =>
+    selector({
+      ens: { data: hooks.names },
+      management: { worldSettings: { scenes: hooks.worldScenes } },
+    }),
 }));
 vi.mock('/@/hooks/useAuth', () => ({
   useAuth: () => ({ signOut: vi.fn(), wallet: hooks.wallet }),
@@ -103,6 +109,7 @@ describe('Deploy step', () => {
   afterEach(() => {
     cleanup();
     hooks.deployment = undefined;
+    hooks.names = {};
     hooks.worldScenes = [];
     hooks.wallet = '0xabc';
     hooks.fetchWorldSceneSizeLimit.mockClear();
@@ -110,9 +117,11 @@ describe('Deploy step', () => {
 
   const mount = () => {
     const ui = () => (
-      <ThemeProvider theme={dark}>
-        <Deploy {...props} />
-      </ThemeProvider>
+      <MemoryRouter>
+        <ThemeProvider theme={dark}>
+          <Deploy {...props} />
+        </ThemeProvider>
+      </MemoryRouter>
     );
     const result = render(ui());
     rerender = () => result.rerender(ui());
@@ -260,6 +269,52 @@ describe('Deploy step', () => {
           name: 'modal.publish_project.deploy.deploying.actions.cancel',
         }) as HTMLButtonElement;
         expect(button.disabled).toBe(false);
+      });
+    });
+  });
+
+  describe('when a World deployment completes', () => {
+    beforeEach(() => {
+      props.project = {
+        ...PROJECT,
+        worldConfiguration: { name: 'plaza.dcl.eth' },
+      } as unknown as Project;
+      hooks.deployment = createDeployment({
+        status: 'complete',
+        info: {
+          isWorld: true,
+          rootCID: 'bafy',
+          title: 'Example',
+          parcels: ['0,0'],
+        } as Deployment['info'],
+      });
+    });
+
+    describe('and the wallet owns the World', () => {
+      beforeEach(() => {
+        hooks.names = { 'plaza.dcl.eth': { nftOwnerAddress: '0xABC' } };
+        mount();
+      });
+
+      it('should link to the World Settings', () => {
+        expect(
+          screen.getByRole('link', { name: 'modal.publish_project.deploy.success.world_settings' }),
+        ).toBeTruthy();
+      });
+    });
+
+    describe('and the wallet only collaborates on the World', () => {
+      beforeEach(() => {
+        hooks.names = { 'plaza.dcl.eth': {} };
+        mount();
+      });
+
+      it('should offer no World Settings link', () => {
+        expect(
+          screen.queryByRole('link', {
+            name: 'modal.publish_project.deploy.success.world_settings',
+          }),
+        ).toBeNull();
       });
     });
   });
