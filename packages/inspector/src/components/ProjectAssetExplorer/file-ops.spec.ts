@@ -323,5 +323,89 @@ describe('ProjectAssetExplorer/file-ops', () => {
         );
       });
     });
+
+    describe('when a file named inside an object or list parameter is renamed', () => {
+      const nested = {
+        value: [
+          {
+            path: 'assets/jukebox/Jukebox.ts',
+            layout: JSON.stringify({
+              params: {
+                screen: {
+                  type: 'object',
+                  value: { title: 'open.mp3 player', poster: 'poster.png' },
+                  fields: {
+                    title: { type: 'string', value: '' },
+                    poster: { type: 'string', value: '' },
+                  },
+                },
+                tracks: {
+                  type: 'array',
+                  value: [
+                    { label: 'One', clip: 'open.mp3' },
+                    { label: 'Two', clip: 'close.mp3' },
+                  ],
+                  item: {
+                    type: 'object',
+                    value: {},
+                    fields: {
+                      label: { type: 'string', value: '' },
+                      clip: { type: 'string', value: '' },
+                    },
+                  },
+                },
+                covers: {
+                  type: 'array',
+                  value: ['poster.png'],
+                  item: { type: 'string', value: '' },
+                },
+              },
+            }),
+          },
+        ],
+      };
+      const nestedParams = (value: typeof nested) => JSON.parse(value.value[0].layout).params;
+
+      it('should follow the rename inside a list of objects and leave the other items untouched', () => {
+        const next = replaceAssetReferences(
+          nested,
+          createPathMapper('assets/jukebox/open.mp3', 'assets/jukebox/intro.mp3'),
+        );
+        expect(nestedParams(next).tracks.value).toEqual([
+          { label: 'One', clip: 'intro.mp3' },
+          { label: 'Two', clip: 'close.mp3' },
+        ]);
+      });
+
+      it('should follow the rename inside an object and a list of strings', () => {
+        const next = replaceAssetReferences(
+          nested,
+          createPathMapper('assets/jukebox/poster.png', 'assets/jukebox/cover.png'),
+        );
+        expect(nestedParams(next).screen.value).toEqual({
+          title: 'open.mp3 player',
+          poster: 'cover.png',
+        });
+        expect(nestedParams(next).covers.value).toEqual(['cover.png']);
+      });
+
+      it('should keep the schema of the parameters it rewrites', () => {
+        const next = replaceAssetReferences(
+          nested,
+          createPathMapper('assets/jukebox/open.mp3', 'assets/jukebox/intro.mp3'),
+        );
+        expect(nestedParams(next).tracks.item).toEqual(nestedParams(nested).tracks.item);
+      });
+
+      it('should collect the files the nested parameters name', () => {
+        expect(collectAssetReferences(nested)).toEqual(
+          expect.arrayContaining([
+            'assets/jukebox/open.mp3',
+            'assets/jukebox/close.mp3',
+            'assets/jukebox/poster.png',
+          ]),
+        );
+      });
+    });
   });
 });

@@ -279,7 +279,10 @@ export function HomePage() {
 
   return (
     <>
-      <main className="HomePage">
+      <main
+        className="HomePage"
+        data-testid="home-page"
+      >
         <Navbar active={NavbarItem.HOME} />
         <div className="HomeContent">
           <Typography

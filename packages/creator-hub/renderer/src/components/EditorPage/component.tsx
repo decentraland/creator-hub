@@ -22,12 +22,16 @@ import { actions as aiActions } from '/@/modules/store/ai';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
+import { IS_NON_PRODUCTION_BUILD } from '/@/modules/buildMode';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { useBevyBuildForwarding } from '/@/hooks/useBevyBuildForwarding';
+import { useBevyRealmRestart } from '/@/hooks/useBevyRealmRestart';
 import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
+import { useSceneMcpDiscovery } from '/@/hooks/useSceneMcpDiscovery';
+import { useSceneOpBridge } from '/@/hooks/useSceneOpBridge';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
@@ -100,42 +104,6 @@ function isOutdatedDepsError(message: string): boolean {
   const namesBevyFlag = /--(?:no-client|data-layer)/i.test(message);
   return rejectsOption && namesBevyFlag;
 }
-
-// Routes an AI scene-mutation op (from main) to the inspector SceneRpc client. One entry
-// per SceneRpc mutation method; add a line here + the matching client method + MCP tool as
-// Phase 2 grows (set_component, remove_entity, place_smart_item, …).
-type SceneClient = ReturnType<typeof initRpc>['scene'];
-const SCENE_OP_HANDLERS: Record<
-  string,
-  (scene: SceneClient, params: Record<string, unknown>) => Promise<unknown>
-> = {
-  create_entity: (scene, p) =>
-    scene.createEntity(p.name as string | undefined, p.parent as number | undefined),
-  remove_entity: (scene, p) => scene.removeEntity(p.entity as number),
-  set_parent: (scene, p) => scene.setParent(p.entity as number, p.parent as number),
-  set_component: (scene, p) =>
-    scene.setComponent(
-      p.entity as number,
-      p.component as string,
-      p.value as Record<string, unknown>,
-    ),
-  remove_component: (scene, p) => scene.removeComponent(p.entity as number, p.component as string),
-  attach_script: (scene, p) =>
-    scene.attachScript(p.entity as number, p.path as string, p.priority as number | undefined),
-  search_catalog: (scene, p) =>
-    scene.searchCatalog(p.query as string | undefined, p.limit as number | undefined),
-  place_smart_item: (scene, p) =>
-    scene.placeSmartItem(
-      p.assetId as string,
-      p.name as string | undefined,
-      p.position as { x: number; y: number; z: number } | undefined,
-    ),
-  undo: scene => scene.undo(),
-  get_scene_metrics: scene => scene.getSceneMetrics(),
-  get_selection: scene => scene.getSelection(),
-  get_scene_settings: scene => scene.getSceneSettings(),
-  set_scene_settings: (scene, p) => scene.setSceneSettings(p),
-};
 
 export function EditorPage() {
   const dispatch = useDispatch();
@@ -217,6 +185,8 @@ export function EditorPage() {
   // for the project and hold the URLs to thread into the iframe config below.
   const useBevy = settings.renderer === RENDERER.BEVY;
   const [bevyRealm, setBevyRealm] = useState<{ url: string; wsUrl: string } | null>(null);
+  const [realmRestarts, setRealmRestarts] = useState(0);
+  const realmRestartingRef = useRef(false);
   // A broken scene (e.g. a TS error) makes the Bevy realm's `sdk-commands start`
   // fail, or the scene never finishes loading — leaving the editor stuck on the
   // loader with no way out. Capture the failure (or a load timeout) so the loading
@@ -255,7 +225,24 @@ export function EditorPage() {
   );
   useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path, inspectorReadyNonce);
   useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
+  useBevyRealmRestart(useBevy ? project?.path : undefined, {
+    onRestart: () => {
+      dispatch(
+        snackbarActions.pushSnackbar(
+          createGenericNotification('warning', t('editor.realm_restarted')),
+        ),
+      );
+      realmRestartingRef.current = true;
+      setBevyRealm(null);
+      setRealmRestarts(n => n + 1);
+    },
+    onGiveUp: () => {
+      setBevyRealm(null);
+      setLoadError(t('editor.loading.failed.data_layer_crashed'));
+    },
+  });
   useProjectAssetWatch(iframeRef, project?.path);
+  useSceneMcpDiscovery(project?.path);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -337,7 +324,7 @@ export function EditorPage() {
     }
   }, [featureFlags]);
 
-  // Answer the AI assistant's `editor_screenshot` tool: main asks the renderer to capture
+  // Answer the `editor_screenshot` tool (in-app assistant or an outside agent): main asks the renderer to capture
   // the viewport (only the renderer can reach the inspector iframe). Babylon renders its own
   // canvas via the scene RPC. That path returns null under Bevy (its wgpu canvas can't be
   // read via toDataURL, and the engine's /screenshot command may be unavailable), so fall
@@ -345,7 +332,6 @@ export function EditorPage() {
   // viewport is inside its (cross-origin) iframe, offset by the iframe's position in this
   // window, and capturePage that rect in main — then downscale to the requested size (#1526).
   useEffect(() => {
-    if (!aiChatEnabled) return;
     const { cleanup } = ai.onScreenshotRequest(async req => {
       const rpc = iframeRef.current;
       let dataUrl: string | null = null;
@@ -361,27 +347,9 @@ export function EditorPage() {
       ai.screenshotResult(req.id, dataUrl);
     });
     return cleanup;
-  }, [aiChatEnabled]);
+  }, []);
 
-  // Answer the AI assistant's scene-mutation ops (Phase 2): main asks the renderer to run
-  // an inspector SceneRpc mutation on the live engine, and we reply with the result. Only
-  // the renderer holds the iframe RPC handle. Ops are serialized on the main side.
-  useEffect(() => {
-    if (!aiChatEnabled) return;
-    const { cleanup } = ai.onSceneOpRequest(async req => {
-      const rpc = iframeRef.current;
-      const handler = SCENE_OP_HANDLERS[req.op];
-      if (!rpc) return ai.sceneOpResult(req.id, false, 'No scene is open.');
-      if (!handler) return ai.sceneOpResult(req.id, false, `Unknown scene op "${req.op}".`);
-      try {
-        const value = await handler(rpc.scene, req.params);
-        ai.sceneOpResult(req.id, true, value);
-      } catch (e) {
-        ai.sceneOpResult(req.id, false, e instanceof Error ? e.message : String(e));
-      }
-    });
-    return cleanup;
-  }, [aiChatEnabled]);
+  useSceneOpBridge(iframeRef);
 
   // While the AI panel is open, keep the assistant aware of the editor selection: poll the
   // inspector for the selected entities and mirror them into the ai store (shown as a composer
@@ -456,6 +424,7 @@ export function EditorPage() {
   }, [aiDraftPrompt?.nonce, aiChatEnabled]);
 
   useEffect(() => {
+    realmRestartingRef.current = false;
     if (!projectPath || !useBevy) {
       setBevyRealm(null);
       return;
@@ -489,9 +458,16 @@ export function EditorPage() {
       });
     return () => {
       cancelled = true;
+      if (!realmRestartingRef.current) void killBevyRealm(projectPath);
+    };
+  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm, realmRestarts]);
+
+  useEffect(() => {
+    if (!projectPath || !useBevy) return;
+    return () => {
       void killBevyRealm(projectPath);
     };
-  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm]);
+  }, [projectPath, useBevy, killBevyRealm]);
 
   const isReady = !!project && inspectorPort > 0 && (!useBevy || bevyRealm !== null);
 
@@ -712,6 +688,8 @@ export function EditorPage() {
     bevyRealm,
     project,
     userId,
+    // Dev/QA only: never honor the dev-CDN toggle in a production release.
+    useDevAssetCatalog: IS_NON_PRODUCTION_BUILD && !!settings.useDevAssetCatalog,
   });
 
   // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers
@@ -802,7 +780,10 @@ export function EditorPage() {
   const previewIcon = loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />;
 
   return (
-    <main className="Editor">
+    <main
+      className="Editor"
+      data-testid="editor-page"
+    >
       {!isReady ? (
         renderLoading()
       ) : (
@@ -811,6 +792,7 @@ export function EditorPage() {
             <>
               <div
                 className="back"
+                data-testid="editor-page-back-button"
                 onClick={handleBack}
               >
                 <ArrowBackIosIcon />
@@ -924,6 +906,7 @@ export function EditorPage() {
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
+                  data-testid="editor-page-publish-button"
                   onClick={() => {
                     if (deployment?.status === 'pending') {
                       openModal('publish', 'deploy');
@@ -942,6 +925,7 @@ export function EditorPage() {
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
+                  data-testid="editor-page-publish-button"
                   onClick={handlePublishScene}
                   startIcon={isDeploying ? <Loader size={20} /> : <PublicIcon />}
                 >
@@ -955,6 +939,7 @@ export function EditorPage() {
             <iframe
               key={iframeReloadKey}
               className="inspector"
+              data-testid="editor-page-iframe"
               src={iframeUrl}
               onLoad={handleIframeRef}
               // Grant cross-origin isolation to the inspector iframe so the Bevy
