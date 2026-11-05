@@ -1,6 +1,6 @@
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
