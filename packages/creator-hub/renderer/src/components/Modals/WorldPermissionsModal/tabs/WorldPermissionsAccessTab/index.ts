@@ -1,1 +1,0 @@
-export { WorldPermissionsAccessTab } from './component';

@@ -1,4 +1,4 @@
-import { ENSProvider } from './types';
+import { ENSProvider, USER_PERMISSIONS, type ContributableDomain } from './types';
 
 export function extractEntityId(urn: string): string | undefined {
   const entitySuffixMatcher = new RegExp(
@@ -20,4 +20,15 @@ export function getEnsProvider(subdomain: string): ENSProvider {
   }
 
   return ENSProvider.ENS;
+}
+
+/** The Worlds the wallet can stream to but not publish to, from its contributable domains. */
+export function getStreamOnlyWorldNames(domains: ContributableDomain[]): string[] {
+  return domains
+    .filter(
+      domain =>
+        domain.user_permissions.includes(USER_PERMISSIONS.STREAMING) &&
+        !domain.user_permissions.includes(USER_PERMISSIONS.DEPLOYMENT),
+    )
+    .map(domain => domain.name.toLowerCase());
 }
