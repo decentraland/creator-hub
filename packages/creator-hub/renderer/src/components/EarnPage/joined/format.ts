@@ -6,6 +6,9 @@ import type { LocationMetrics } from '/@/lib/metricsApi';
 
 const DECIMAL = /^-?\d+(\.\d+)?$/;
 
+/** The USDC token's precision; no amount has more decimals. */
+const USDC_DECIMALS = 6;
+
 /**
  * A USDC decimal string as `1,842.50`, formatted from the string itself: going through a float
  * would round an amount like `"0.005"` or `"1.005"` on its binary value, not its decimal one.
@@ -17,6 +20,22 @@ export const formatUsdc = (amount: string, locale: string) =>
         amount as Intl.StringNumericLiteral,
       )
     : amount;
+
+/**
+ * A payout's USDC decimal string, never rounded: whole USDC as drawn (`22`), else every decimal
+ * the service sent, at least two (`1,842.50`, `0.004`). A payout is money the creator is owed, so
+ * the figure must match what is paid to the cent and below.
+ */
+export const formatPayoutUsdc = (amount: string, locale: string) => {
+  if (!DECIMAL.test(amount)) return amount;
+  const whole = !/\.\d*[1-9]/.test(amount);
+  return new Intl.NumberFormat(
+    locale,
+    whole
+      ? { maximumFractionDigits: 0 }
+      : { minimumFractionDigits: 2, maximumFractionDigits: USDC_DECIMALS },
+  ).format(amount as Intl.StringNumericLiteral);
+};
 
 /** An integer with grouping, as `1,234`. */
 export const formatCount = (value: number, locale: string) =>

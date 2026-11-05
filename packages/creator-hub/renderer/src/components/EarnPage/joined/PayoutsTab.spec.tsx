@@ -107,8 +107,28 @@ describe('PayoutsTab', () => {
       expect(cycleButton('Oct 16 - Oct 31, 2026').getAttribute('aria-expanded')).toBe('true');
       expect(cycleButton('Oct 1 - Oct 15, 2026').getAttribute('aria-expanded')).toBe('false');
       expect(within(table).getByText('22 USDC')).toBeTruthy();
+      expect(within(table).getByText('9 USDC')).toBeTruthy();
       expect(within(table).getByText('Example Place A')).toBeTruthy();
       expect(within(table).queryByText('Example Place B')).toBeNull();
+    });
+
+    it('should show a payout with cents to the cent, never rounded to whole USDC', async () => {
+      vi.mocked(api.getPayouts).mockResolvedValue(
+        ok({
+          payouts: [
+            payout(LATEST_CLOSED, 'paid', [
+              [place('a', { title: 'Example Place A' }), 1842.5],
+              [place('c', { title: 'Example Place C' }), 0.49],
+            ]),
+          ],
+        }),
+      );
+      await renderTab();
+
+      const table = await screen.findByRole('table', { name: 'Payouts' });
+      expect(within(table).getByText('1,842.99 USDC')).toBeTruthy();
+      expect(within(table).getByText('1,842.50 USDC')).toBeTruthy();
+      expect(within(table).getByText('0.49 USDC')).toBeTruthy();
     });
 
     it('should open a second row while the first stays open', async () => {
