@@ -11,6 +11,7 @@ function baseInput(overrides: Partial<InspectorUrlInput> = {}): InspectorUrlInpu
     inspectorPort: 8000,
     useBevy: false,
     supportsUiDesigner: true,
+    supportsAuthServer: false,
     bevyRealm: null,
     project: undefined,
     userId: null,
@@ -65,6 +66,18 @@ describe('buildInspectorUrl', () => {
     });
   });
 
+  describe("when the scene's sdk ships the auth server", () => {
+    it('should report the auth server as supported', () => {
+      expect(buildParams({ supportsAuthServer: true }).get('authServerSupported')).toBe('true');
+    });
+  });
+
+  describe("when the scene's sdk does not ship the auth server", () => {
+    it('should report the auth server as unsupported', () => {
+      expect(buildParams({ supportsAuthServer: false }).get('authServerSupported')).toBe('false');
+    });
+  });
+
   describe('when the host selects the bevy renderer', () => {
     it('should tell the inspector to use bevy', () => {
       expect(buildParams({ useBevy: true }).get('renderer')).toBe('bevy');
@@ -100,6 +113,20 @@ describe('buildInspectorUrl', () => {
   describe('when the host selects the babylon renderer', () => {
     it('should tell the inspector to use babylon', () => {
       expect(buildParams({ useBevy: false }).get('renderer')).toBe('babylon');
+    });
+  });
+
+  describe('when the dev asset catalog is enabled', () => {
+    it('should point the inspector at the development CDN', () => {
+      expect(buildParams({ useDevAssetCatalog: true }).get('contentUrl')).toBe(
+        'https://builder-items.decentraland.zone',
+      );
+    });
+
+    it('should not point at the development CDN when disabled', () => {
+      expect(buildParams({ useDevAssetCatalog: false }).get('contentUrl')).not.toBe(
+        'https://builder-items.decentraland.zone',
+      );
     });
   });
 

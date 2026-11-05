@@ -1,6 +1,6 @@
 import cx from 'classnames';
 
-import { PropTypes } from './types';
+import type { PropTypes } from './types';
 import './Button.css';
 
 function Button({ size, type, ...props }: PropTypes) {

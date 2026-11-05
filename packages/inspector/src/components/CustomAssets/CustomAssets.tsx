@@ -1,5 +1,6 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDrag } from 'react-dnd';
+import cx from 'classnames';
 
 import './CustomAssets.css';
 import type { CustomAsset } from '../../lib/logic/catalog';
@@ -10,6 +11,8 @@ import { DropTypesEnum } from '../../lib/sdk/drag-drop';
 import { deleteCustomAsset, setAssetToRename } from '../../redux/data-layer';
 import { AssetsTab } from '../../redux/ui/types';
 import { selectAssetsTab } from '../../redux/ui';
+import { AssetSearchField } from '../AssetSearchField';
+import { useAssetSelection, useIsAssetSelected } from '../AssetBrowserPreview';
 import { openCustomAssetContextMenu } from './ContextMenu/ContextMenu';
 import { CustomAssetContextMenu } from './ContextMenu/CustomAssetContextMenu';
 
@@ -26,6 +29,8 @@ const CustomAssetItem: React.FC<CustomAssetItemProps> = ({
   onRename,
   onAddToFilesystem,
 }) => {
+  const { select } = useAssetSelection();
+  const isSelected = useIsAssetSelected('custom', value.id);
   const [, drag] = useDrag(
     () => ({
       type: DropTypesEnum.CustomAsset,
@@ -50,8 +55,9 @@ const CustomAssetItem: React.FC<CustomAssetItemProps> = ({
         onContextMenu={handleContextMenu}
       >
         <div
-          className="custom-asset-item-box"
+          className={cx('custom-asset-item-box', { selected: isSelected })}
           ref={drag}
+          onClick={() => select({ source: 'custom', id: value.id, name: value.name, asset: value })}
           title={value.name}
         >
           {value.thumbnail ? (
@@ -98,7 +104,15 @@ type CustomAssetsProps = {
 
 export function CustomAssets({ onAddToFilesystem }: CustomAssetsProps) {
   const customAssets = useAppSelector(selectCustomAssets);
+  const [search, setSearch] = useState('');
   const dispatch = useAppDispatch();
+  const { selection, select } = useAssetSelection();
+
+  // Deleting happens in place, so the pane would otherwise keep previewing an item that is gone.
+  useEffect(() => {
+    if (selection?.source !== 'custom') return;
+    if (!customAssets.some(asset => asset.id === selection.id)) select(undefined);
+  }, [customAssets, selection, select]);
 
   const handleDelete = useCallback((assetId: string) => {
     dispatch(deleteCustomAsset({ assetId }));
@@ -124,20 +138,45 @@ export function CustomAssets({ onAddToFilesystem }: CustomAssetsProps) {
     [customAssets, onAddToFilesystem],
   );
 
+  const visibleAssets = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return term
+      ? customAssets.filter(asset => asset.name.toLowerCase().includes(term))
+      : customAssets;
+  }, [customAssets, search]);
+
   if (customAssets.length === 0) return <EmptyCustomAssets />;
 
   return (
-    <div className="custom-assets">
-      <CustomAssetContextMenu />
-      {customAssets.map(asset => (
-        <CustomAssetItem
-          key={asset.id}
-          value={asset}
-          onDelete={handleDelete}
-          onRename={handleRename}
-          onAddToFilesystem={handleAddToFilesystem}
+    <div className="custom-assets-browser">
+      <div className="Assets-toolbar">
+        <AssetSearchField
+          value={search}
+          placeholder="Search custom items"
+          onChange={setSearch}
         />
-      ))}
+        {search && (
+          <span className="Assets-crumbs inline">
+            {visibleAssets.length} of {customAssets.length} items
+          </span>
+        )}
+      </div>
+      {visibleAssets.length === 0 ? (
+        <div className="custom-assets-no-results">No custom items match your search.</div>
+      ) : (
+        <div className="custom-assets">
+          <CustomAssetContextMenu />
+          {visibleAssets.map(asset => (
+            <CustomAssetItem
+              key={asset.id}
+              value={asset}
+              onDelete={handleDelete}
+              onRename={handleRename}
+              onAddToFilesystem={handleAddToFilesystem}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
