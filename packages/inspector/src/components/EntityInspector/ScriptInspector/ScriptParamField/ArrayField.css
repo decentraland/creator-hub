@@ -1,0 +1,14 @@
+.ArrayFieldRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ArrayFieldRow > *:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.ArrayFieldRemove {
+  flex-shrink: 0;
+}

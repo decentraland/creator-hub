@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Authenticator } from '@dcl/crypto';
+import { createUnsafeIdentity } from '@dcl/crypto/dist/crypto';
+import { signedHeaderFactory } from 'decentraland-crypto-fetch';
 
 import { request, resolveUrl } from '../src/modules/metrics';
 
@@ -99,6 +102,73 @@ describe('request', () => {
 
       const [, init] = fetchSpy.mock.calls[0];
       expect(init.headers['x-identity-auth-chain-0']).toBe('{"type":"SIGNER"}');
+    });
+
+    it('should forward every header the renderer signer produces', async () => {
+      const wallet = createUnsafeIdentity();
+      const identity = await Authenticator.initializeAuthChain(
+        wallet.address,
+        createUnsafeIdentity(),
+        10,
+        async message => Authenticator.createSignature(wallet, message),
+      );
+      const signed = Object.fromEntries(
+        signedHeaderFactory()(identity, 'post', '/v1/metrics', {}).entries(),
+      );
+      const fetchSpy = stubFetch({ text: () => Promise.resolve('{}') });
+
+      await request({ baseUrl: BASE, path: '/metrics', body, headers: signed });
+
+      const [, init] = fetchSpy.mock.calls[0];
+      expect(Object.keys(signed)).toEqual(
+        expect.arrayContaining(['x-identity-timestamp', 'x-identity-metadata']),
+      );
+      expect(init.headers).toMatchObject(signed);
+    });
+
+    it('should refuse to follow redirects', async () => {
+      const fetchSpy = stubFetch({ text: () => Promise.resolve('{}') });
+
+      await request({ baseUrl: BASE, path: '/metrics', body });
+
+      const [, init] = fetchSpy.mock.calls[0];
+      expect(init.redirect).toBe('error');
+    });
+  });
+
+  describe('when the caller supplies headers other than the auth chain', () => {
+    it('should drop them', async () => {
+      const fetchSpy = stubFetch({ text: () => Promise.resolve('{}') });
+
+      await request({
+        baseUrl: BASE,
+        path: '/metrics',
+        body,
+        headers: {
+          'x-identity-auth-chain-0': '{"type":"SIGNER"}',
+          authorization: 'Bearer sneaky',
+          host: 'evil.example.com',
+        },
+      });
+
+      const [, init] = fetchSpy.mock.calls[0];
+      expect(init.headers['x-identity-auth-chain-0']).toBe('{"type":"SIGNER"}');
+      expect(init.headers.authorization).toBeUndefined();
+      expect(init.headers.host).toBeUndefined();
+    });
+
+    it('should not let them override the content type', async () => {
+      const fetchSpy = stubFetch({ text: () => Promise.resolve('{}') });
+
+      await request({
+        baseUrl: BASE,
+        path: '/metrics',
+        body,
+        headers: { 'content-type': 'text/plain' },
+      });
+
+      const [, init] = fetchSpy.mock.calls[0];
+      expect(init.headers['content-type']).toBe('application/json');
     });
 
     it('should parse the response', async () => {

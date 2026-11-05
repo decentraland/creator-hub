@@ -5,16 +5,16 @@ import type { AxisConfig, ChartsXAxisProps } from '@mui/x-charts';
 
 import { t } from '/@/modules/store/translation/utils';
 
-import { CATEGORICAL_COLORS, CHART_HEIGHT, CHART_MARGIN, chartSx } from './theme';
+import {
+  CATEGORICAL_COLORS,
+  CHART_HEIGHT,
+  CHART_MARGIN,
+  chartSx,
+  tickDateFormat,
+  tooltipDateFormat,
+} from './theme';
 
 import './styles.css';
-
-const tickDateFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-const tooltipDateFormat = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-});
 
 export type StackedSeries = {
   key: string;
