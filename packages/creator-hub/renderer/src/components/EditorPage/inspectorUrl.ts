@@ -2,13 +2,21 @@ import { RENDERER } from '/shared/types/settings';
 
 import type { Project } from '/shared/types/projects';
 
+// Development smart-item CDN. Assets uploaded from a PR via `/upload-assets` land here, so a
+// non-production build can point the inspector at it to test them before merge.
+const DEV_ASSET_CONTENT_URL = 'https://builder-items.decentraland.zone';
+
 export type InspectorUrlInput = {
   inspectorPort: number;
   useBevy: boolean;
   supportsUiDesigner: boolean;
+  supportsAuthServer: boolean;
   bevyRealm: { url: string; wsUrl: string } | null;
   project: Project | undefined;
   userId: string | null;
+  // When true, override the content URL with the dev CDN. The caller must gate this on a
+  // non-production build; this function trusts the flag.
+  useDevAssetCatalog?: boolean;
 };
 
 /** Builds the inspector iframe URL, including every host-supplied config query param. */
@@ -16,9 +24,11 @@ export function buildInspectorUrl({
   inspectorPort,
   useBevy,
   supportsUiDesigner,
+  supportsAuthServer,
   bevyRealm,
   project,
   userId,
+  useDevAssetCatalog,
 }: InspectorUrlInput): string {
   const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
   let binIndexJsUrl = `${htmlUrl}/bin/index.js`;
@@ -29,6 +39,7 @@ export function buildInspectorUrl({
 
   params.append('uiEditorEnabled', 'true');
   params.append('uiEditorSupported', String(supportsUiDesigner));
+  params.append('authServerSupported', String(supportsAuthServer));
 
   params.append('dataLayerRpcParentUrl', window.location.origin);
 
@@ -44,7 +55,10 @@ export function buildInspectorUrl({
     );
   }
 
-  if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
+  // The dev-CDN toggle (non-production only) wins over the build-time env override.
+  if (useDevAssetCatalog) {
+    params.append('contentUrl', DEV_ASSET_CONTENT_URL);
+  } else if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
     params.append('contentUrl', import.meta.env.VITE_ASSET_PACKS_CONTENT_URL);
   }
 
