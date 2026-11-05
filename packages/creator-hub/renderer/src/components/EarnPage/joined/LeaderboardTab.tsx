@@ -213,7 +213,11 @@ export function LeaderboardTab() {
           >
             <FilterBar>
               <FilterSentence id={sentenceId}>
-                {t('earn.joined.leaderboard.sentence')}
+                {t(
+                  selected === 'all'
+                    ? 'earn.joined.leaderboard.sentence_all'
+                    : 'earn.joined.leaderboard.sentence',
+                )}
               </FilterSentence>
               <CycleSelect
                 value={String(selected)}

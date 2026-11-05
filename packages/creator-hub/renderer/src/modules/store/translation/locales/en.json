@@ -1599,6 +1599,7 @@
       },
       "leaderboard": {
         "sentence": "The top 20 places with the highest payouts this cycle",
+        "sentence_all": "The top 20 places with the highest payouts across all cycles",
         "rank": "Rank",
         "place": "Place",
         "earned": "Earned",
