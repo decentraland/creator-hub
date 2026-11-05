@@ -1,6 +1,6 @@
 // Types shared across main/preload/renderer for the model-optimization ("Optimize" tab)
 // feature. Kept here because preload subscribes to the progress channel and cannot import
-// from main, so the event name and payload shape need a single home (mirrors PREVIEW_PROGRESS_EVENT).
+// from main, so the event name and payload shape need a single home.
 
 export type TextureFormat = 'png' | 'jpeg' | 'webp';
 export type DenoiseLevel = 'off' | 'light' | 'medium' | 'strong';
