@@ -37,6 +37,12 @@ function fillValid() {
   type(/Email/, 'jane.doe@example.com');
 }
 
+/*
+ * Each case renders MUI modals and queries them by role and accessible name, which takes seconds
+ * on a loaded CI runner; vitest's default 5 s cut cases off there while they were passing.
+ */
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('ContactInfoForm', () => {
   beforeAll(() => {
     setCurrentLocale('en', flatten(en));
