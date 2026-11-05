@@ -1,7 +1,7 @@
 import React from 'react';
 import cx from 'classnames';
 
-import { Props } from './types';
+import type { Props } from './types';
 
 import './Tab.css';
 

@@ -3,6 +3,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
+import { misc } from '#preload';
+
 import type { Project } from '/shared/types/projects';
 import type { Deployment } from '/@/modules/store/deployment/slice';
 import type { Props } from '/@/components/Modals/PublishProject/types';
@@ -258,6 +260,42 @@ describe('Deploy step', () => {
           name: 'modal.publish_project.deploy.deploying.actions.cancel',
         }) as HTMLButtonElement;
         expect(button.disabled).toBe(false);
+      });
+    });
+  });
+
+  describe('when a LAND deployment completes on a parcel other than the opened project base', () => {
+    beforeEach(() => {
+      hooks.deployment = createDeployment({
+        status: 'complete',
+        phase: undefined,
+        componentsStatus: { catalyst: 'complete', assetBundle: 'complete' },
+        info: {
+          isWorld: false,
+          rootCID: 'bafy',
+          title: 'Example',
+          baseParcel: '20,2',
+          parcels: ['20,2'],
+        } as Deployment['info'],
+      });
+      mount();
+    });
+
+    it('should share the deployed parcel', () => {
+      expect(screen.getByText(/jump\?position=20,2$/)).toBeTruthy();
+    });
+
+    describe('and the user jumps in', () => {
+      beforeEach(() => {
+        fireEvent.click(
+          screen.getByRole('button', { name: 'modal.publish_project.deploy.success.jump_in' }),
+        );
+      });
+
+      it('should open the deployed parcel in the desktop client', () => {
+        expect(misc.openExternal).toHaveBeenCalledWith(
+          expect.stringMatching(/^decentraland:\/\/\?position=20,2&/),
+        );
       });
     });
   });

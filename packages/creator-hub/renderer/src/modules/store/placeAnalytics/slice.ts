@@ -11,6 +11,7 @@ import { fetchAnalytics as fetchAnalyticsSnapshot } from '/@/lib/placeAnalytics'
 import { Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { fetchLandList } from '/@/modules/store/land';
+import { actions as managementActions } from '/@/modules/store/management';
 import { fetchAllDeployedWorlds } from '/@/modules/store/management/utils';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -65,6 +66,12 @@ export type PlaceAnalyticsState = {
    * until we know where a watchlist should be persisted.
    */
   pinnedPlaceIds: string[];
+  /**
+   * The fetch whose answer the slice will take. A sign-out resets it, so a fetch
+   * still in flight for the previous wallet lands on nothing instead of
+   * repopulating the list (and, settled as `succeeded`, never being refetched).
+   */
+  requestId: string | null;
 };
 
 export const initialState: Async<PlaceAnalyticsState> = {
@@ -75,6 +82,7 @@ export const initialState: Async<PlaceAnalyticsState> = {
   sortBy: SortBy.NAME_ASC,
   searchQuery: '',
   pinnedPlaceIds: [],
+  requestId: null,
   status: 'idle',
   error: null,
 };
@@ -103,11 +111,20 @@ const slice = createSlice({
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchAnalytics.pending, state => {
+      /*
+       * Analytics is per wallet, so it goes when the wallet does. Reacting to
+       * management's own reset rather than dispatching from `clearUserManagedProjects`:
+       * this slice already depends on management, and the reverse would be a cycle.
+       */
+      .addCase(managementActions.clearState, () => initialState)
+      .addCase(fetchAnalytics.pending, (state, action) => {
+        state.requestId = action.meta.requestId;
         state.status = 'loading';
         state.error = null;
       })
       .addCase(fetchAnalytics.fulfilled, (state, action) => {
+        if (action.meta.requestId !== state.requestId) return;
+        state.requestId = null;
         state.exportedAt = action.payload.exportedAt;
         state.places = action.payload.places;
         state.metricsByPlaceId = action.payload.metricsByPlaceId;
@@ -115,6 +132,8 @@ const slice = createSlice({
         state.error = null;
       })
       .addCase(fetchAnalytics.rejected, (state, action) => {
+        if (action.meta.requestId !== state.requestId) return;
+        state.requestId = null;
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch analytics';
       });
