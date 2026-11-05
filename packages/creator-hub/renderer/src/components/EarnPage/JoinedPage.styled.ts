@@ -2,15 +2,14 @@ import { styled, Tabs } from 'decentraland-ui2';
 
 import { typeToken } from './tokens';
 
-const Page = styled('div')({
-  padding: '0 clamp(16px, 5.104vw, 98px) 60px',
+const Page = styled('div', { shouldForwardProp: prop => prop !== 'bottom' })<{
+  bottom: 'padded' | 'flush';
+}>(({ bottom }) => ({
+  padding: '0 clamp(16px, 5.104vw, 98px)',
+  paddingBottom: bottom === 'flush' ? 0 : 60,
   display: 'flex',
   flexDirection: 'column',
-});
-
-const GetReadyPage = styled(Page)({
-  paddingBottom: 0,
-});
+}));
 
 const SectionTabs = styled(Tabs)({
   marginTop: 30,
@@ -44,4 +43,4 @@ const TabPanel = styled('div')({
   marginTop: 30,
 });
 
-export { GetReadyPage, Page, SectionTabs, TabPanel };
+export { Page, SectionTabs, TabPanel };

@@ -1,5 +1,5 @@
 import { Provider } from 'react-redux';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
@@ -10,24 +10,12 @@ import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
-import { CYCLES, ok } from './fixtures';
+import { CYCLES, fail, ok } from './fixtures';
 import { LeaderboardTab } from './LeaderboardTab';
 
 vi.mock('/@/lib/creatorFundApi', () => ({
   getCycles: vi.fn(),
-  getLeaderboard: vi.fn(),
-  getNews: vi.fn(),
-  getBanner: vi.fn(),
 }));
-
-const NEWS = {
-  news: [6, 5, 4, 3, 2, 1].map(n => ({
-    id: n,
-    published_at: `2026-11-0${n}T00:00:00Z`,
-    title: `Example news ${n}`,
-    body: `Placeholder body ${n}.`,
-  })),
-};
 
 const renderTab = () =>
   render(
@@ -45,10 +33,6 @@ describe('LeaderboardTab', () => {
 
   beforeEach(() => {
     vi.mocked(api.getCycles).mockResolvedValue(ok(CYCLES));
-    vi.mocked(api.getNews).mockResolvedValue(ok(NEWS));
-    vi.mocked(api.getBanner).mockResolvedValue(
-      ok({ markdown: '**Cycle Nov 1 - Nov 15** is live.' }),
-    );
   });
 
   afterEach(() => {
@@ -63,7 +47,7 @@ describe('LeaderboardTab', () => {
       );
     });
 
-    it('should show Get ready instead of the leaderboard, the news and the banner', async () => {
+    it('should show Get ready', async () => {
       renderTab();
 
       expect(await screen.findByRole('heading', { level: 2, name: 'Get ready!' })).toBeTruthy();
@@ -75,10 +59,6 @@ describe('LeaderboardTab', () => {
         'Get ready for the first cycle',
         'Join the community',
       ]);
-      expect(screen.queryByRole('toolbar')).toBeNull();
-      expect(screen.queryByRole('table')).toBeNull();
-      expect(screen.queryByRole('complementary', { name: 'News' })).toBeNull();
-      expect(api.getLeaderboard).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -91,6 +71,31 @@ describe('LeaderboardTab', () => {
       fireEvent.click(await screen.findByRole('link', { name }));
 
       expect(misc.openExternal).toHaveBeenCalledWith(url);
+    });
+  });
+
+  describe('when a cycle has closed', () => {
+    it('should render nothing once the cycles load', async () => {
+      const { container } = renderTab();
+
+      expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+      await waitFor(() => expect(container.innerHTML).toBe(''));
+    });
+  });
+
+  describe('when the cycles fail to load', () => {
+    beforeEach(() => {
+      vi.mocked(api.getCycles).mockResolvedValueOnce(fail());
+    });
+
+    it('should fetch the cycles again on Retry', async () => {
+      renderTab();
+
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+      await waitFor(() => expect(api.getCycles).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
     });
   });
 });

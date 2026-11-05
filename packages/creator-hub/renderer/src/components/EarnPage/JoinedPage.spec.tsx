@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Provider } from 'react-redux';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { flatten } from 'flat';
@@ -46,14 +47,38 @@ async function renderPage(tab: JoinedTab = 'leaderboard') {
   render(
     <Provider store={store}>
       <ThemeProvider theme={dark}>
-        <JoinedPage
-          tab={tab}
+        <StatefulJoinedPage
+          initialTab={tab}
           onTabChange={onTabChange}
         />
       </ThemeProvider>
     </Provider>,
   );
   return { onTabChange };
+}
+
+function pressEnter(element: HTMLElement) {
+  const activates = fireEvent.keyDown(element, { key: 'Enter' });
+  if (activates && element instanceof HTMLButtonElement) fireEvent.click(element);
+}
+
+function StatefulJoinedPage({
+  initialTab,
+  onTabChange,
+}: {
+  initialTab: JoinedTab;
+  onTabChange: (tab: JoinedTab) => void;
+}) {
+  const [tab, setTab] = useState(initialTab);
+  return (
+    <JoinedPage
+      tab={tab}
+      onTabChange={next => {
+        onTabChange(next);
+        setTab(next);
+      }}
+    />
+  );
 }
 
 describe('JoinedPage', () => {
@@ -81,6 +106,19 @@ describe('JoinedPage', () => {
       expect(screen.getByText('Joined on Oct 30, 2026')).toBeTruthy();
     });
 
+    it('should leave out the joined date when the enrolment date is malformed', async () => {
+      vi.mocked(api.getEnrollment).mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: { ...JOINED, enrolled_at: 'not-a-date' },
+      });
+
+      await renderPage();
+
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Earn · Creator Fund');
+      expect(screen.queryByText(/^Joined on/)).toBeNull();
+    });
+
     it('should show the selected tab panel', async () => {
       await renderPage('my_places');
 
@@ -90,7 +128,7 @@ describe('JoinedPage', () => {
   });
 
   describe('when moving through the tabs with the keyboard', () => {
-    it('should move focus with the arrow keys and select on click', async () => {
+    it('should move focus with the arrow keys and select with Enter', async () => {
       const { onTabChange } = await renderPage();
       const tablist = screen.getByRole('tablist', { name: 'Creator Fund sections' });
       const leaderboard = within(tablist).getByRole('tab', { name: 'Leaderboard' });
@@ -100,12 +138,23 @@ describe('JoinedPage', () => {
       fireEvent.keyDown(leaderboard, { key: 'ArrowRight' });
       expect(document.activeElement).toBe(myPlaces);
 
-      fireEvent.click(myPlaces);
+      pressEnter(myPlaces);
       expect(onTabChange).toHaveBeenCalledWith('my_places');
     });
   });
 
   describe('when the More options menu is used', () => {
+    it('should point the More options button at the menu it opens', async () => {
+      await renderPage();
+      const button = screen.getByRole('button', { name: 'More options' });
+
+      fireEvent.click(button);
+      const menu = await screen.findByRole('menu');
+
+      expect(menu.id).not.toBe('');
+      expect(button.getAttribute('aria-controls')).toBe(menu.id);
+    });
+
     it('should offer Read Terms and Contact Support, and open the terms read only', async () => {
       await renderPage();
 
@@ -143,11 +192,25 @@ describe('JoinedPage', () => {
     it('should offer support only from the More options menu, not from a header button', async () => {
       await renderPage();
 
-      expect(screen.queryByRole('button', { name: 'Contact support' })).toBeNull();
+      const moreOptions = screen.getByRole('button', { name: 'More options' });
+      expect(within(screen.getByRole('banner')).getAllByRole('button')).toEqual([moreOptions]);
       fireEvent.click(screen.getByRole('button', { name: 'More options' }));
       fireEvent.click(await screen.findByRole('menuitem', { name: 'Contact Support' }));
 
       expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/help/');
+    });
+
+    it('should keep focus and the header in place when My Places is selected', async () => {
+      await renderPage();
+      const header = screen.getByRole('banner');
+      const myPlaces = screen.getByRole('tab', { name: 'My Places' });
+
+      myPlaces.focus();
+      pressEnter(myPlaces);
+
+      expect(screen.getByRole('tab', { name: 'My Places', selected: true })).toBe(myPlaces);
+      expect(document.activeElement).toBe(myPlaces);
+      expect(screen.getByRole('banner')).toBe(header);
     });
   });
 });

@@ -8,7 +8,7 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { EarnHeader } from './joined/EarnHeader';
 import { LeaderboardTab } from './joined/LeaderboardTab';
-import { GetReadyPage, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
+import { Page, SectionTabs, TabPanel } from './JoinedPage.styled';
 
 export type JoinedTab = 'leaderboard' | 'my_places';
 
@@ -32,9 +32,8 @@ export function JoinedPage({
       state.creatorFund.cycles.status === 'succeeded' &&
       !selectors.getLatestClosedCycle(state),
   );
-  const Shell = gettingReady ? GetReadyPage : Page;
   return (
-    <Shell>
+    <Page bottom={gettingReady ? 'flush' : 'padded'}>
       <EarnHeader />
       <SectionTabs
         value={tab}
@@ -59,6 +58,6 @@ export function JoinedPage({
       >
         {tab === 'leaderboard' ? <LeaderboardTab /> : null}
       </TabPanel>
-    </Shell>
+    </Page>
   );
 }
