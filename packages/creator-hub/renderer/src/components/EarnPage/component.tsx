@@ -97,6 +97,7 @@ function EarnContent() {
       );
       if (actions.saveEnrollment.fulfilled.match(result)) {
         setReaccepting(false);
+        setTab('my_places');
         return;
       }
       const failure = result.payload;
