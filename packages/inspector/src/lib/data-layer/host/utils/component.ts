@@ -12,9 +12,11 @@ import type {
   EditorComponentsTypes,
   SceneAgeRating,
   SceneComponent,
+  SceneSpawnPoint,
 } from '../../../sdk/components';
 import { SceneCategory } from '../../../sdk/components';
 import { getConfig } from '../../../logic/config';
+import { isAddress } from '../../../logic/ethereum';
 import type { TransitionMode } from '../../../sdk/components/SceneMetadata';
 
 export function isEqual(
@@ -76,7 +78,67 @@ type SceneWithRating = Scene & {
   rating: SceneAgeRating;
   skyboxConfig?: { fixedTime?: number; transitionMode?: TransitionMode };
   landscapeTerrain?: boolean;
+  authoritativeMultiplayer?: boolean;
+  logsPermissions?: string[];
 };
+
+const HEX_PREFIX = /^0x/i;
+
+function toAllowlist(addresses: readonly string[] | undefined): string[] {
+  const normalized = (addresses ?? [])
+    .filter(address => isAddress(address))
+    .map(address => `0x${address.replace(HEX_PREFIX, '')}`);
+  return Array.from(new Set(normalized));
+}
+
+export type SceneJsonSpawnPoint = NonNullable<Scene['spawnPoints']>[number];
+
+export function fromSceneSpawnPoint(
+  spawnPoint: DeepReadonlyObject<SceneSpawnPoint>,
+): SceneJsonSpawnPoint {
+  const { x, y, z } = spawnPoint.position;
+  const hasRange = x.$case === 'range' || y.$case === 'range' || z.$case === 'range';
+  return {
+    name: spawnPoint.name,
+    default: spawnPoint.default,
+    position: hasRange
+      ? {
+          x: x.$case === 'range' ? [...x.value] : [x.value, x.value],
+          y: y.$case === 'range' ? [...y.value] : [y.value, y.value],
+          z: z.$case === 'range' ? [...z.value] : [z.value, z.value],
+        }
+      : {
+          x: x.value as number,
+          y: y.value as number,
+          z: z.value as number,
+        },
+    cameraTarget: spawnPoint.cameraTarget ? { ...spawnPoint.cameraTarget } : undefined,
+  };
+}
+
+export function toSceneSpawnPoint(spawnPoint: SceneJsonSpawnPoint, index: number): SceneSpawnPoint {
+  return {
+    name: spawnPoint.name || `Spawn Point ${index + 1}`,
+    default: spawnPoint.default,
+    position: {
+      x: Array.isArray(spawnPoint.position.x)
+        ? { $case: 'range', value: spawnPoint.position.x }
+        : { $case: 'single', value: spawnPoint.position.x },
+      y: Array.isArray(spawnPoint.position.y)
+        ? { $case: 'range', value: spawnPoint.position.y }
+        : { $case: 'single', value: spawnPoint.position.y },
+      z: Array.isArray(spawnPoint.position.z)
+        ? { $case: 'range', value: spawnPoint.position.z }
+        : { $case: 'single', value: spawnPoint.position.z },
+    },
+    cameraTarget: spawnPoint.cameraTarget,
+  };
+}
+
+export function isSceneSpawnAxis(value: unknown): value is number | [number, number] {
+  if (Array.isArray(value)) return value.length === 2 && value.every(Number.isFinite);
+  return Number.isFinite(value);
+}
 
 export function fromSceneComponent(
   value: DeepReadonlyObject<EditorComponentsTypes['Scene']>,
@@ -94,6 +156,7 @@ export function fromSceneComponent(
     value.layout.parcels.map($ => `${$.x},${$.y}`),
     value.layout.base ? `${value.layout.base.x},${value.layout.base.y}` : undefined,
   );
+  const allowlist = toAllowlist(value.logsPermissions);
   const scene: Partial<SceneWithRating> = {
     display: {
       title: value.name || '',
@@ -110,28 +173,7 @@ export function fromSceneComponent(
       email: value.email || '',
     },
     tags,
-    spawnPoints: value.spawnPoints
-      ? value.spawnPoints.map(spawnPoint => {
-          const { x, y, z } = spawnPoint.position;
-          const hasRange = x.$case === 'range' || y.$case === 'range' || z.$case === 'range';
-          return {
-            name: spawnPoint.name,
-            default: spawnPoint.default,
-            position: hasRange
-              ? {
-                  x: x.$case === 'range' ? [...x.value] : [x.value, x.value],
-                  y: y.$case === 'range' ? [...y.value] : [y.value, y.value],
-                  z: z.$case === 'range' ? [...z.value] : [z.value, z.value],
-                }
-              : {
-                  x: x.value as number,
-                  y: y.value as number,
-                  z: z.value as number,
-                },
-            cameraTarget: spawnPoint.cameraTarget ? { ...spawnPoint.cameraTarget } : undefined,
-          };
-        })
-      : [],
+    spawnPoints: value.spawnPoints ? value.spawnPoints.map(fromSceneSpawnPoint) : [],
     featureToggles: {
       voiceChat: value.silenceVoiceChat ? 'disabled' : 'enabled',
       portableExperiences: value.disablePortableExperiences ? 'disabled' : 'enabled',
@@ -143,6 +185,8 @@ export function fromSceneComponent(
       transitionMode: value.skyboxConfig?.transitionMode,
     },
     landscapeTerrain: !value.hideLandscapeTerrain,
+    authoritativeMultiplayer: !!value.multiplayerServer,
+    logsPermissions: allowlist.length ? allowlist : undefined,
   };
 
   if (config.segmentAppId && config.projectId) {
@@ -158,6 +202,7 @@ export function fromSceneComponent(
 
 export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
   const { parcels, base } = getValidParcels(value.scene?.parcels, value.scene?.base);
+  const rawLogsPermissions = (value as SceneWithRating).logsPermissions;
   const categories: SceneCategory[] = [];
   const tags: string[] = [];
 
@@ -186,27 +231,16 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     disablePortableExperiences: value.featureToggles?.portableExperiences === 'disabled',
     disableNearbyVoiceChat: value.featureToggles?.nearbyVoiceChat === 'disabled',
     hideLandscapeTerrain: (value as SceneWithRating).landscapeTerrain === false,
+    multiplayerServer: (value as SceneWithRating).authoritativeMultiplayer === true,
+    logsPermissions: toAllowlist(
+      Array.isArray(rawLogsPermissions) ? rawLogsPermissions : undefined,
+    ),
     ageRating: (value as SceneWithRating).rating,
     skyboxConfig: {
       fixedTime: (value as SceneWithRating).skyboxConfig?.fixedTime,
       transitionMode: (value as SceneWithRating).skyboxConfig?.transitionMode,
     },
-    spawnPoints: value.spawnPoints?.map((spawnPoint, index) => ({
-      name: spawnPoint.name || `Spawn Point ${index + 1}`,
-      default: spawnPoint.default,
-      position: {
-        x: Array.isArray(spawnPoint.position.x)
-          ? { $case: 'range', value: spawnPoint.position.x }
-          : { $case: 'single', value: spawnPoint.position.x },
-        y: Array.isArray(spawnPoint.position.y)
-          ? { $case: 'range', value: spawnPoint.position.y }
-          : { $case: 'single', value: spawnPoint.position.y },
-        z: Array.isArray(spawnPoint.position.z)
-          ? { $case: 'range', value: spawnPoint.position.z }
-          : { $case: 'single', value: spawnPoint.position.z },
-      },
-      cameraTarget: spawnPoint.cameraTarget,
-    })),
+    spawnPoints: value.spawnPoints?.map(toSceneSpawnPoint),
   };
 
   return scene;
