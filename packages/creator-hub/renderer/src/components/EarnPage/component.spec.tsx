@@ -95,6 +95,12 @@ function page(entry: Entry = '/earn') {
   return { ...view, rerenderPage: () => view.rerender(tree()) };
 }
 
+/*
+ * Each case renders MUI modals and queries them by role and accessible name, which takes seconds
+ * on a loaded CI runner; vitest's default 5 s cut cases off there while they were passing.
+ */
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('EarnPage', () => {
   beforeAll(() => {
     setCurrentLocale('en', flatten(en));
