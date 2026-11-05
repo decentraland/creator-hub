@@ -1,14 +1,18 @@
 .Header.Navbar > .user > .SignInButton {
   background-color: transparent !important;
   color: var(--text) !important;
-  border: 1px solid var(--transparent-gray-light);
+  border: 1.5px solid var(--palette-whiteTransparent-blurry);
   border-radius: 12px;
   box-shadow: none;
   font-weight: 600;
   font-size: 16px;
+  line-height: 16px;
+  font-optical-sizing: none;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  padding: 7px 16px;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 10.5px 22.5px;
 }
 
 .Header.Navbar > .user > .SignInButton:hover {
@@ -23,6 +27,12 @@
 
 .Header.Navbar > .user > .AvatarButton:hover {
   background-color: transparent;
+}
+
+.Header.Navbar > .user > .SignInButton:focus-visible,
+.Header.Navbar > .user > .AvatarButton:focus-visible {
+  outline: 2px solid var(--palette-info-light);
+  outline-offset: 2px;
 }
 
 .Header.Navbar > .user > .AvatarButton .MuiAvatar-root {

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 
 import { useNavigate } from 'react-router-dom';
 import { captureException, setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
-import { useDispatch } from '#store';
+import { useDispatch, useSelector } from '#store';
 import { analytics, auth, misc } from '#preload';
 import { config } from '/@/config';
 import { AuthServerProvider, SignInError } from '/@/lib/auth';
@@ -13,6 +13,8 @@ import {
   actions as managementActions,
 } from '/@/modules/store/management';
 import { actions as ensActions } from '/@/modules/store/ens';
+import { actions as creatorFundActions } from '/@/modules/store/creatorFund';
+import { FeatureFlag } from '/@/modules/store/featureFlags';
 import { identify } from '/@/modules/store/analytics';
 import { AuthContext } from '/@/contexts/AuthContext';
 import { isNavigatorOnline } from '/@/lib/connection';
@@ -199,6 +201,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsSignedIn(false);
     AuthServerProvider.deactivate();
     dispatch(managementActions.clearUserManagedProjects());
+    dispatch(creatorFundActions.clearState());
   }, []);
 
   const changeNetwork = useCallback(async (chainId: ChainId = DEFAULT_CHAIN_ID) => {
@@ -240,6 +243,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser({ id: wallet });
     }
   }, [wallet, chainId, dispatch]);
+
+  const creatorFundEnabled = useSelector(
+    state => state.featureFlags.flags[FeatureFlag.CREATOR_FUND] === true,
+  );
+  const lastWalletRef = useRef(wallet);
+  useEffect(() => {
+    const previous = lastWalletRef.current;
+    lastWalletRef.current = wallet;
+    if (previous && wallet && previous !== wallet) dispatch(creatorFundActions.clearState());
+  }, [wallet, dispatch]);
+  useEffect(() => {
+    if (wallet && creatorFundEnabled) void dispatch(creatorFundActions.fetchEnrollment());
+  }, [wallet, creatorFundEnabled, dispatch]);
 
   useEffect(() => {
     const handleOnline = () => {

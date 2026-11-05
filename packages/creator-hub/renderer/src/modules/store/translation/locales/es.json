@@ -306,9 +306,11 @@
       "collections": "Colecciones",
       "analytics": "Analíticas",
       "manage": "Gestionar",
+      "earn": "Ganar",
       "learn": "Aprender",
       "more": "Más"
     },
+    "earn_not_joined": "EARN, aún no te uniste",
     "feedback": "Darnos feedback",
     "report_an_issue": "Informar un problema",
     "user_menu": {
@@ -318,6 +320,7 @@
     },
     "create": {
       "label": "Crear",
+      "options": "Opciones de creación",
       "new_scene": "Nueva Escena",
       "import_scene": "Importar Escena"
     },

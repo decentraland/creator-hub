@@ -1,9 +1,12 @@
 import { Button, Menu, styled } from 'decentraland-ui2';
 
-// A plain flex row, not MuiButtonGroup: the theme's ButtonGroup styling keeps each
-// grouped button independently pill-shaped with a gap between them, which fights the
-// single seamless-pill look this control needs. Zeroing each button's own radius below
-// and letting this wrapper's radius + overflow:hidden define the shape avoids that.
+import { ICON_ONLY_QUERY } from './breakpoints';
+
+const focusRingInset = {
+  outline: '2px solid var(--palette-info-light)',
+  outlineOffset: -2,
+};
+
 const StyledButtonRow = styled('div')(() => ({
   display: 'flex',
   alignItems: 'center',
@@ -11,34 +14,52 @@ const StyledButtonRow = styled('div')(() => ({
   overflow: 'hidden',
 }));
 
-// decentraland-ui2's theme overrides Button's radius via a 3-class compound selector
-// (.css-hash.MuiButton-sizeMedium.MuiButton-containedPrimary), a global adjacent-
-// sibling rule (.MuiButton-root + .MuiButton-root) adds a 10px gap between any two
-// buttons in a row, and an even more specific hover rule
-// (.css-hash.MuiButton-sizeMedium.MuiButton-containedPrimary:not(.Mui-disabled):not(.Mui-focusVisible):hover)
-// sets the hover background. All three outrank a plain single-class override, so `&&&`
-// (three chained classes) is needed for the base styles and `&&&&&&:hover` (six chained
-// classes) for hover specifically, to actually win.
 const StyledLabelButton = styled(Button)(({ theme }) => ({
   '&&&': {
-    width: 130,
+    minWidth: 0,
     height: 40,
     margin: 0,
     padding: `0 ${theme.spacing(1.75)}`,
     gap: theme.spacing(0.75),
     fontSize: 16,
     fontWeight: 600,
+    lineHeight: '22px',
+    letterSpacing: 0,
+    fontOpticalSizing: 'none',
+    '& .MuiButton-startIcon': { margin: 0 },
+    '& .MuiButton-startIcon > *:nth-of-type(1)': { fontSize: 18 },
     textTransform: 'uppercase',
     borderRadius: 0,
     backgroundColor: theme.palette.primary.main,
     color: 'var(--text-on-primary)',
     boxShadow: 'none',
+    [`@media ${ICON_ONLY_QUERY}`]: {
+      width: 40,
+      minWidth: 40,
+      padding: 0,
+      gap: 0,
+    },
   },
   '&&&&&&:hover': {
-    backgroundColor: '#F70038',
+    backgroundColor: 'var(--dcl-hover)',
     boxShadow: 'none',
   },
+  '&&&:focus-visible': focusRingInset,
 }));
+
+const StyledLabelText = styled('span')({
+  [`@media ${ICON_ONLY_QUERY}`]: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    margin: -1,
+    padding: 0,
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
+  },
+});
 
 const StyledToggleButton = styled(Button)(({ theme }) => ({
   '&&&': {
@@ -49,23 +70,24 @@ const StyledToggleButton = styled(Button)(({ theme }) => ({
     padding: 0,
     borderRadius: 0,
     backgroundColor: theme.palette.primary.main,
-    borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
+    borderLeft: '1px solid var(--palette-whiteTransparent-soft)',
     boxShadow: 'none',
   },
   '&&&&&&:hover': {
-    backgroundColor: '#F70038',
+    backgroundColor: 'var(--dcl-hover)',
     boxShadow: 'none',
   },
+  '&&&:focus-visible': focusRingInset,
 }));
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
   '& .MuiPaper-root': {
-    backgroundColor: '#35333B',
+    backgroundColor: 'var(--menu-bg)',
     backgroundImage: 'none',
     borderRadius: 12,
     minWidth: 217,
     marginTop: theme.spacing(0.5),
-    boxShadow: '0px 4px 8px 0px rgba(0, 0, 0, 0.4)',
+    boxShadow: 'var(--menu-shadow)',
   },
   '& .MuiList-root': {
     display: 'flex',
@@ -86,4 +108,4 @@ const StyledMenu = styled(Menu)(({ theme }) => ({
   },
 }));
 
-export { StyledButtonRow, StyledLabelButton, StyledMenu, StyledToggleButton };
+export { StyledButtonRow, StyledLabelButton, StyledLabelText, StyledMenu, StyledToggleButton };

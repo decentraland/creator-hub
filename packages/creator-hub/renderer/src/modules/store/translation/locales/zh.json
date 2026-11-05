@@ -306,9 +306,11 @@
       "collections": "收藏",
       "analytics": "数据分析",
       "manage": "管理",
+      "earn": "赚取",
       "learn": "学习",
       "more": "更多"
     },
+    "earn_not_joined": "EARN，尚未加入",
     "feedback": "给我们反馈",
     "report_an_issue": "报告问题",
     "user_menu": {
@@ -318,6 +320,7 @@
     },
     "create": {
       "label": "创建",
+      "options": "创建选项",
       "new_scene": "新建场景",
       "import_scene": "导入场景"
     },

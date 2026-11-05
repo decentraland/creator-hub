@@ -2,7 +2,7 @@ import type { MockedClass, MockedObject } from 'vitest';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { BrowserWindow } from 'electron';
 
-import { restoreOrCreateMainWindow } from '../src/mainWindow';
+import { MAIN_WINDOW_MIN_WIDTH, restoreOrCreateMainWindow } from '../src/mainWindow';
 import { destroyAllWindows } from '../src/modules/window';
 
 /**
@@ -54,6 +54,14 @@ test('Should create the main window', async () => {
   } else {
     expect(instance.loadFile).toHaveBeenCalledWith(expect.stringMatching(/index\.html$/));
   }
+});
+
+test('Should keep the main window at least 1080px wide', async () => {
+  await restoreOrCreateMainWindow();
+
+  const [options] = vi.mocked(BrowserWindow).mock.calls[0];
+  expect(MAIN_WINDOW_MIN_WIDTH).toBe(1080);
+  expect(options).toMatchObject({ minWidth: 1080 });
 });
 
 test('Should restore an existing window', async () => {

@@ -307,9 +307,11 @@
       "collections": "Collections",
       "analytics": "Analytics",
       "manage": "Manage",
+      "earn": "Earn",
       "learn": "Learn",
       "more": "More"
     },
+    "earn_not_joined": "EARN, not joined yet",
     "feedback": "Submit feedback",
     "report_an_issue": "Report an Issue",
     "user_menu": {
@@ -319,6 +321,7 @@
     },
     "create": {
       "label": "Create",
+      "options": "Create options",
       "new_scene": "New Scene",
       "import_scene": "Import Scene"
     },

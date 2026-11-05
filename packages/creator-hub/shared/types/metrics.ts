@@ -7,9 +7,6 @@
  *
  * Signing stays in the renderer: the auth identity lives in its local storage,
  * and only the resulting ADR-44 headers cross the IPC boundary — never the key.
- *
- * The service exposes a single endpoint, `POST /v1/metrics`, so every request
- * made here is a POST.
  */
 export type MetricsRequest = {
   /** Absolute base URL of the API, e.g. `https://creators-data.decentraland.org/v1`. */
@@ -18,8 +15,12 @@ export type MetricsRequest = {
   path: string;
   /** ADR-44 signed-fetch headers built by the renderer. */
   headers?: Record<string, string>;
+  /** Defaults to `POST`. A `GET` sends no body; `POST` and `PUT` send it as JSON. */
+  method?: 'GET' | 'POST' | 'PUT';
   /** Serialized as JSON. Outside the signature — the payload covers the pathname only. */
   body?: unknown;
+  /** An already-serialized JSON body, sent byte for byte; wins over `body`. For a body whose hash is signed. */
+  rawBody?: string;
 };
 
 export type MetricsResponse<T = unknown> =
@@ -28,4 +29,4 @@ export type MetricsResponse<T = unknown> =
    * Failures come back as values rather than thrown errors: an unauthorized or
    * not-yet-deployed endpoint is an expected state the UI renders, not a crash.
    */
-  | { ok: false; status: number; error: string };
+  | { ok: false; status: number; error: string; body?: unknown };
