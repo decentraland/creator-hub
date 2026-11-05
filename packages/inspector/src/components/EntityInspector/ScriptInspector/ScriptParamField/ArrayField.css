@@ -4,6 +4,23 @@
   gap: 8px;
 }
 
+.ArrayFieldRow.leaf {
+  align-items: flex-end;
+}
+
+/* With an error line under the input, the label above and the message below are about the same
+   height, so centering keeps the button beside the input. */
+.ArrayFieldRow.leaf:has(.Message) {
+  align-items: center;
+}
+
+/* Same height as the field's input box, so the two line up edge to edge. */
+.ArrayFieldRow.leaf .ArrayFieldRemove {
+  height: 24px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .ArrayFieldRow > *:first-child {
   flex: 1;
   min-width: 0;
