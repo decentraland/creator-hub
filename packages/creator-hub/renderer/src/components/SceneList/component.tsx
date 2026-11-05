@@ -73,6 +73,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
               className="action-button import-button"
               startIcon={<i className="icon import-icon" />}
               color="secondary"
+              data-testid="scene-list-import-button"
               onClick={importProject}
             >
               {t('scene_list.import_scene')}
@@ -81,6 +82,7 @@ export function SceneList({ projects, sortBy, onSort }: Props) {
               className="action-button templates-button"
               startIcon={<i className="icon template-icon" />}
               color="primary"
+              data-testid="scene-list-templates-button"
               onClick={() => navigate('/templates')}
             >
               {t('scene_list.templates')}

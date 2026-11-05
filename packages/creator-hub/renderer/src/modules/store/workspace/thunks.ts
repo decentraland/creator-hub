@@ -60,7 +60,10 @@ export const unlistProjects = createAsyncThunk(
 export const openFolder = createAsyncThunk('workspace/openFolder', workspace.openFolder);
 export const fetchSdkCommandsVersion = createAsyncThunk(
   'workspace/fetchSdkCommandsVersion',
-  async (path: string) => (await pkg.getPackageVersion(path, PACKAGES.SDK_PACKAGE)) ?? null,
+  async (path: string) => ({
+    version: (await pkg.getPackageVersion(path, PACKAGES.SDK_PACKAGE)) ?? null,
+    hasAuthServer: await pkg.hasModuleEntry(path, PACKAGES.SDK_PACKAGE, 'server/index.js'),
+  }),
 );
 
 export const installProject = createAsyncThunk(
@@ -76,7 +79,7 @@ export const installProject = createAsyncThunk(
       throw error;
     }
     await npm.getContextFiles(path);
-    dispatch(fetchSdkCommandsVersion(path));
+    await dispatch(fetchSdkCommandsVersion(path));
   },
 );
 export const saveThumbnail = createAsyncThunk('workspace/saveThumbnail', workspace.saveThumbnail);
@@ -102,6 +105,22 @@ export const updatePackages = createAsyncThunk(
       ([pkg, { latest }]) => `${pkg}@${latest}`,
     );
     await dispatch(installProject({ path: project.path, packages: latestPackages })).unwrap();
+  },
+);
+const MULTIPLAYER_PACKAGES = ['@dcl/sdk@auth-server', '@dcl/js-runtime@auth-server'];
+const LATEST_SDK_PACKAGES = ['@dcl/sdk@latest', '@dcl/js-runtime@latest'];
+
+export const installMultiplayerSdk = createAsyncThunk(
+  'workspace/installMultiplayerSdk',
+  async (project: Project, { dispatch }) => {
+    await dispatch(installProject({ path: project.path, packages: MULTIPLAYER_PACKAGES })).unwrap();
+  },
+);
+
+export const uninstallMultiplayerSdk = createAsyncThunk(
+  'workspace/uninstallMultiplayerSdk',
+  async (project: Project, { dispatch }) => {
+    await dispatch(installProject({ path: project.path, packages: LATEST_SDK_PACKAGES })).unwrap();
   },
 );
 export const updateAvailableDependencyUpdates = createAsyncThunk(
@@ -210,7 +229,7 @@ export const runProject = createAsyncThunk(
 
     // Only fetch SDK version when installProject was not called
     if (hasNodeModules) {
-      dispatch(fetchSdkCommandsVersion(project.path));
+      await dispatch(fetchSdkCommandsVersion(project.path));
     }
     return updatedProject;
   },

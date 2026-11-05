@@ -1,17 +1,14 @@
 import { type Page } from 'playwright';
 import { App } from './pageObjects/App';
 import { UIDesigner } from './pageObjects/UIDesigner';
+import { expect, test } from './fixtures';
 
 declare const page: Page;
-declare const __e2eNavUrl: string;
 
 const ROOT = 'MainUI';
 
-describe('UI Designer empty state', () => {
-  beforeAll(async () => {
-    await page.goto(`${__e2eNavUrl}&uiEditorEnabled=true&uiEditorSupported=true`, {
-      timeout: 90_000,
-    });
+test.describe('UI Designer empty state', () => {
+  test.beforeAll(async () => {
     await App.waitUntilReady();
     await UIDesigner.open();
   });
@@ -45,8 +42,8 @@ describe('UI Designer empty state', () => {
   });
 });
 
-describe('UI Designer left panel', () => {
-  beforeAll(async () => {
+test.describe('UI Designer left panel', () => {
+  test.beforeAll(async () => {
     await App.waitUntilReady();
     await UIDesigner.open();
     await UIDesigner.addWidget('Container');
@@ -140,4 +137,8 @@ describe('UI Designer left panel', () => {
       .waitFor({ state: 'attached', timeout: 10_000 });
     await expect(UIDesigner.rootNames()).resolves.toEqual([]);
   });
+});
+
+test.afterAll(async () => {
+  await UIDesigner.close();
 });

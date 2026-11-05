@@ -95,3 +95,32 @@ describe('AI chat panel', () => {
     });
   });
 });
+
+describe('AI chat panel with no CLI installed', () => {
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  describe('when access for outside agents is off', () => {
+    it('should say how to turn it on instead of showing a connection', async () => {
+      vi.spyOn(ai, 'getMcpServerInfo').mockResolvedValue(null);
+
+      renderWith({ available: false });
+
+      expect(await screen.findByText('editor.ai.setup.alt_access_off')).toBeTruthy();
+      expect(screen.queryByText('editor.ai.setup.alt_copy')).toBeNull();
+    });
+  });
+
+  describe('when access for outside agents is on', () => {
+    it('should show the connection to copy', async () => {
+      vi.spyOn(ai, 'getMcpServerInfo').mockResolvedValue({ url: 'http://x/mcp', token: 'tok' });
+
+      renderWith({ available: false });
+
+      expect(await screen.findByText('editor.ai.setup.alt_copy')).toBeTruthy();
+      expect(screen.queryByText('editor.ai.setup.alt_access_off')).toBeNull();
+    });
+  });
+});

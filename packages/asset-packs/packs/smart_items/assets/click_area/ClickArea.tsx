@@ -1,5 +1,5 @@
-import type { Entity } from '@dcl/sdk/ecs';
-import { InputAction, pointerEventsSystem } from '@dcl/sdk/ecs';
+import type { Entity, InputAction } from '@dcl/sdk/ecs';
+import { pointerEventsSystem } from '@dcl/sdk/ecs';
 
 /**
  * An invisible clickable area. It does nothing on its own — describe a reaction (or wire an
