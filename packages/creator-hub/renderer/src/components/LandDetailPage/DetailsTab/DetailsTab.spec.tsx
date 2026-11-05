@@ -10,6 +10,7 @@ import { useAuth } from '/@/hooks/useAuth';
 import { LandType, RoleType, type Land } from '/@/lib/land';
 import { buildUpdateLandMetadata, sendLandTransaction } from '/@/lib/landTransactions';
 import { actions as ensActions } from '/@/modules/store/ens';
+import { encodeLandRedirect } from '/@/modules/store/ens/names';
 import { ENSProvider, type ENS } from '/@/modules/store/ens/types';
 import { toLandProject } from '/@/modules/store/management/utils';
 import { en } from '/@/modules/store/translation/locales';
@@ -34,13 +35,6 @@ vi.mock('../../Button', async importOriginal => ({
     />
   ),
 }));
-vi.mock('/@/lib/ens', async importOriginal => ({
-  ...(await importOriginal<object>()),
-  LandRedirections: class {
-    fetchHashes = async () => ({});
-    create = async () => REDIRECT_HASH;
-  },
-}));
 vi.mock('/@/modules/store/ens', async importOriginal => ({
   ...(await importOriginal<object>()),
   fetchENSList: () => ({ type: 'test/fetchENSList' }),
@@ -49,8 +43,6 @@ vi.mock('/shared/utils', async importOriginal => ({
   ...(await importOriginal<object>()),
   pollUntil: vi.fn(async (check: () => Promise<boolean>) => check()),
 }));
-
-const REDIRECT_HASH = `0x${'cd'.repeat(32)}`;
 vi.mock('/@/lib/landTransactions', async importOriginal => ({
   ...(await importOriginal<object>()),
   sendLandTransaction: vi.fn(() => new Promise(() => {})),
@@ -169,7 +161,7 @@ describe('DetailsTab', () => {
         ensOwnerAddress: '0xme',
         tokenId: '1',
         resolver: '0x0000000000000000000000000000000000000001',
-        content: REDIRECT_HASH,
+        content: encodeLandRedirect({ x: 96, y: 15 }),
       };
       const store = createTestStore();
       store.dispatch(ensActions.fetchENSList.fulfilled([name], 'test', { address: '0xme' }));

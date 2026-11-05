@@ -1,3 +1,4 @@
+import { LandType, type Land } from '/@/lib/land';
 import { getNameUsage } from '/@/modules/store/ens/names';
 import { ENSProvider, type ENS } from '/@/modules/store/ens/types';
 import type { TranslationPath } from '/@/modules/store/translation/types';
@@ -35,7 +36,7 @@ type DomainState =
 type DomainContext = {
   self: string;
   landId: string;
-  landIdByHash: Record<string, string>;
+  landIdByParcel: Record<string, string>;
   publishedWorlds: Set<string>;
   landNameById: Record<string, string>;
 };
@@ -53,7 +54,7 @@ export function getDomainState(names: ENS[], context: DomainContext): DomainStat
   const options = owned.map((item): NameOption => {
     const usage = getNameUsage(
       { ...item, content: item.content ?? '' },
-      context.landIdByHash,
+      context.landIdByParcel,
       context.publishedWorlds,
     );
     if (usage.landId === context.landId) current = item.subdomain;
@@ -66,4 +67,15 @@ export function getDomainState(names: ENS[], context: DomainContext): DomainStat
   });
 
   return current ? { kind: 'set', name: current, options } : { kind: 'none', options };
+}
+
+/** Each parcel's LAND id, an estate's parcels included, for reading which LAND a NAME jumps to. */
+export function toLandIdByParcel(lands: Land[]): Record<string, string> {
+  return Object.fromEntries(
+    lands.flatMap(land =>
+      (land.type === LandType.ESTATE ? (land.parcels ?? []) : [{ x: land.x!, y: land.y! }]).map(
+        ({ x, y }) => [`${x},${y}`, land.id],
+      ),
+    ),
+  );
 }
