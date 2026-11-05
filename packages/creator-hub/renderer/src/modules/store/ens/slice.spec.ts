@@ -13,10 +13,11 @@ import type * as SharedFetch from '/shared/fetch';
 import type * as EnsLib from '/@/lib/ens';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { ens as ensContract, dclRegistrar } from './contracts';
-import { actions, fetchDCLNames } from './slice';
+import { actions, fetchDCLNames, fetchENSList } from './slice';
 import { resolveContent } from './resolveContent';
 import type * as ResolveContent from './resolveContent';
 import { ENS_RECORD_TIMEOUT_MS } from './ccipRead';
+import { USER_PERMISSIONS } from './types';
 
 vi.mock('./resolveContent', async importOriginal => ({
   ...(await importOriginal<typeof ResolveContent>()),
@@ -34,6 +35,8 @@ const registryResolverMock = vi.fn();
 
 const getContractMock = vi.fn();
 const fetchNamesMock = vi.fn();
+const fetchNamesOwnersMock = vi.fn();
+const fetchContributableDomainsMock = vi.fn();
 const fetchMock = vi.fn();
 
 vi.mock('viem', async importOriginal => ({
@@ -46,6 +49,17 @@ vi.mock('/@/lib/ens', async importOriginal => ({
   ...(await importOriginal<typeof EnsLib>()),
   DCLNames: class {
     fetchNames = fetchNamesMock;
+    fetchNamesOwners = fetchNamesOwnersMock;
+  },
+  ENS: class {
+    fetchNames = async () => [];
+    fetchNamesOwners = async () => ({});
+  },
+}));
+
+vi.mock('/@/lib/worlds', () => ({
+  Worlds: class {
+    fetchContributableDomains = fetchContributableDomainsMock;
   },
 }));
 
@@ -277,5 +291,74 @@ describe('when fetching DCL names', () => {
       `ENS contract for chainId ${ChainId.MATIC_MAINNET} not found.`,
     );
     expect(getEnsAddressMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('fetchENSList', () => {
+  let store: ReturnType<typeof createTestStore>;
+
+  beforeEach(() => {
+    store = createTestStore();
+    store.dispatch(actions.setChainId(ChainId.ETHEREUM_MAINNET));
+    fakeContracts(ChainId.ETHEREUM_MAINNET);
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+    registryResolverMock.mockResolvedValue(CURRENT_RESOLVER);
+    vi.mocked(resolveContent).mockResolvedValue({
+      content: CONTENT_HASH,
+      resolver: CURRENT_RESOLVER,
+    });
+    getEnsAddressMock.mockResolvedValue(RECORD_ADDRESS);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('when the wallet owns a NAME and is also on its World deployment allow-list', () => {
+    beforeEach(() => {
+      fetchNamesMock.mockResolvedValue(['fixtureone.dcl.eth']);
+      fetchNamesOwnersMock.mockResolvedValue({ fixtureone: OWNER, fixturetwo: '0xother' });
+      fetchContributableDomainsMock.mockResolvedValue([
+        {
+          name: 'fixtureone.dcl.eth',
+          user_permissions: [USER_PERMISSIONS.DEPLOYMENT],
+          owner: OWNER,
+          size: '10',
+        },
+        {
+          name: 'fixturetwo.dcl.eth',
+          user_permissions: [USER_PERMISSIONS.DEPLOYMENT],
+          owner: '0xother',
+          size: '20',
+        },
+      ]);
+    });
+
+    it("should keep the owned entry's on-chain records", async () => {
+      await store.dispatch(fetchENSList({ address: OWNER })).unwrap();
+
+      expect(store.getState().ens.data['fixtureone.dcl.eth']).toMatchObject({
+        ensOwnerAddress: OWNER,
+        resolver: CURRENT_RESOLVER,
+        content: CONTENT_HASH,
+      });
+    });
+
+    it('should list the owned NAME once', async () => {
+      const list = await store.dispatch(fetchENSList({ address: OWNER })).unwrap();
+
+      expect(list.filter(({ subdomain }) => subdomain === 'fixtureone.dcl.eth')).toHaveLength(1);
+    });
+
+    it('should keep the NAMEs it can only contribute to', async () => {
+      await store.dispatch(fetchENSList({ address: OWNER })).unwrap();
+
+      expect(store.getState().ens.data['fixturetwo.dcl.eth']).toMatchObject({
+        nftOwnerAddress: '0xother',
+        userPermissions: [USER_PERMISSIONS.DEPLOYMENT],
+        size: '20',
+      });
+    });
   });
 });

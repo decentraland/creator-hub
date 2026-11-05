@@ -1,9 +1,3 @@
-.ManagedProjectsList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
 .ManagedProjectsList .LoadMoreContainer {
   width: 100%;
   flex-shrink: 0;
