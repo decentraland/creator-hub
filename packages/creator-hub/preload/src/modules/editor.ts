@@ -4,11 +4,9 @@ import type { DeployOptions } from '/shared/types/deploy';
 import {
   BEVY_REALM_BUILD_EVENT,
   BEVY_REALM_EXIT_EVENT,
-  PREVIEW_PROGRESS_EVENT,
   PROJECT_ASSETS_CHANGED_EVENT,
   type BevyRealmBuildEvent,
   type BevyRealmExitEvent,
-  type PreviewProgress,
   type ProjectAssetsChangedEvent,
 } from '/shared/types/ipc';
 import type { MobileDebugSessionInfo } from '/shared/types/ipc';
@@ -136,28 +134,6 @@ export async function runScene({
 }) {
   const port = await invoke('cli.start', path, opts, mobile);
   return port;
-}
-
-export function subscribePreviewProgress(
-  path: string,
-  cb: (progress: PreviewProgress | null) => void,
-): { cleanup: () => void } {
-  const handler = (
-    _: IpcRendererEvent,
-    payload: { path: string; progress: PreviewProgress | null },
-  ) => {
-    if (payload.path === path) cb(payload.progress);
-  };
-  ipcRenderer.on(PREVIEW_PROGRESS_EVENT, handler);
-  return { cleanup: () => ipcRenderer.off(PREVIEW_PROGRESS_EVENT, handler) };
-}
-
-export async function cancelPreview(path: string) {
-  return invoke('cli.cancelPreview', path);
-}
-
-export async function supportsAssetBundles(path: string) {
-  return invoke('cli.supportsAssetBundles', path);
 }
 
 export async function killPreviewScene(path: string) {
