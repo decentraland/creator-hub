@@ -1,6 +1,6 @@
 ---
 name: figma
-description: Project umbrella for Figma→code work in the inspector / Creator Hub. Read this FIRST whenever a task involves Figma — a figma.com URL, the word "figma", "design from figma", "match the design", or restyling/building UI to a spec. It establishes the two loops that make visual work autonomous (pull the Figma source of truth; verify against the real running app), delegates the core spec→code flow to the installed figma-implement-design / figma-create-design-system-rules skills, and adds this repo's browser fallback, palette→docs sync, live verification, and SVG/CSS gotchas.
+description: Project umbrella for Figma→code work in the inspector / Creator Hub. Read this FIRST whenever a task involves Figma — a figma.com URL, the word "figma", "design from figma", "match the design", or restyling/building UI to a spec. It sets the design loop (Match → user answers → Spec → test-first implementation → Validate against the live Figma frame → user sign-off → decisions in docs/DESIGN.md), the MCP budget (structure from the MCP, values from the browser), and links the references for browser extraction, screenshots, the multi-page sync, change detection and SVG/CSS gotchas.
 ---
 
 # Figma → code (project workflow)
@@ -9,68 +9,46 @@ description: Project umbrella for Figma→code work in the inspector / Creator H
 
 Any visual/design task tied to Figma: a figma.com URL, "figma", "design from figma", "match the design", or restyling a panel / building icons / tuning colours-sizes-spacing to a spec. NOT for logic changes or refactors.
 
-Visual pixel-match is a render→adjust loop. Run it against the **source of truth** (Figma) and the **real render** (the running app) — never guess-and-check through the user. If you have neither, you become the spec sheet and the screen.
+Visual pixel-match is a render→adjust loop. Run it against **Figma** and the **real render** (the running app) — never guess-and-check through the user. If you have neither, you become the spec sheet and the screen. Figma wins where it draws: where Figma draws a value or a control, the code follows it.
 
-## Core spec→code flow → the installed leaf skills
+`dcl-designer-specialist` (`.claude/agents/`) is the agent that owns this loop end to end: it turns a frame into a spec for the inspector and Creator Hub specialists, syncs Figma into `docs/DESIGN.md` and the token files, and validates the implemented render. This skill is the how-to it follows; each step below links the reference that holds its full procedure.
 
-Delegate the mechanics to the OpenAI leaf skills (in `.claude/skills/`):
+## The loop
 
-- **figma-implement-design** — `get_design_context` → (`get_metadata` to drill if large) → `get_screenshot` → download assets → translate to this project's tokens/components → validate against the design.
-- **figma-create-design-system-rules** — generate/refresh design-system rules for this repo.
+Work in **units, small to big**: one Figma component set per unit (primitives, then the composites built from them), then one **assembly unit** per surface, validated against the board that draws every variant of it. Each unit gets its own Match, spec, Validate, sign-off and spoke PR. Full rules: [`references/design-loop.md`](references/design-loop.md).
 
-They are third-party skills pinned in `skills-lock.json` (repo skills like this one live in `.ai/skills/`). If missing, run `make install-skills`, then `/reload-skills`.
+1. **Match.** Read the unit's set and its board fresh, state the frame ↔ screen mapping, and compare them with the running code in a short match / mismatch table. Where Figma draws a value or a control, a mismatch is a fix, never a question. List every question about what Figma doesn't draw (focus, drop, keyboard, user-facing names, behaviour, which board governs), each with a recommended default. Change detection tells you what moved since the last read: [`references/change-detection.md`](references/change-detection.md). Mapping and reuse rules: [`references/mapping-and-reuse.md`](references/mapping-and-reuse.md).
+2. **User answers.** The lead asks the questions interactively in one sitting (AskUserQuestion, up to four per call, recommended option first). No spec or code starts until the answers are in, and each is written into `docs/DESIGN.md` as the current rule before the spec.
+3. **Spec.** From the board, not from its parts: list every board variant with its node id, re-confirm each standing decision against it, and write the spec in the fixed format of [`references/spec-template.md`](references/spec-template.md), at `docs/specs/<unit>/spec.md` (excluded locally, never committed). Grep `vars.css` / `theme.css` for every literal first, and check `components/ui/` for a control that already exists. Compute every contrast on the real surface with [`scripts/wcag.mjs`](scripts/wcag.mjs) (`node .ai/skills/figma/scripts/wcag.mjs <fg> <bg> [alpha]`).
+4. **Implement test-first.** The inspector or Creator Hub specialist writes the failing test, then the code, from the spec. Code ships in a **spoke** PR; docs, skills and agents ship in the **hub**. The hub writes the `docs/DESIGN.md` row (marked `ships in #<spoke>`); the spoke changes the value and touches none of `docs .ai .claude .github skills-lock.json CLAUDE.md '**/*.md'` (`git diff --name-only <base>...HEAD -- docs .ai .claude .github skills-lock.json CLAUDE.md '*.md'` prints nothing).
+5. **Validate, at most three rounds.** Re-read the set and the board, then judge the running render against the Figma frame itself, never the spec alone. Shoot every state on the standalone inspector and the key surfaces inside Creator Hub ([`references/screenshots.md`](references/screenshots.md)), check the accessibility tree, and class each mismatch: code drift → the implementer, doc drift → the designer, Figma silent or defective → the user. An accepted ✱ deviation, or a row in `docs/DESIGN.md` → Open items, is not drift. Report each round in [`references/validate-report.md`](references/validate-report.md). After three rounds without a pass, stop and ask the user.
+6. **User sign-off.** Show the user one Before | After | Figma grid per component, a row per state, and ask whether it is what they meant, before the PR is opened or marked done.
+7. **Decisions in `docs/DESIGN.md`.** Every answer from the match pass, the rounds and the sign-off becomes the current rule: in the value row it governs, or a `| Topic | Rule |` row in the component's **Decisions** table, marked ✱ where it departs from Figma and "user decision" where it was the user's call. No dates, question numbers or earlier answers. The next unit and the next session grep `docs/DESIGN.md` before asking again.
 
-## What the leaf skills do NOT cover — do these (repo-specific)
+Figma moves while you work: re-read the set and its board at the start of Spec, right before handing to the implementer, and at the start of every Validate round, and record the read time and the diff in the spec's §0.
 
-### 1. Pull the design directly, with a browser fallback
+## MCP for structure, browser for values
 
-Never hand-type values you can extract.
+- **The budget.** The Figma MCP allows **20 read calls a month** on this account's seats, and every read tool counts, `get_metadata` included. `whoami` is free and lists the seats; nothing reports the remaining count. Never spend a call to probe the budget, pace calls ≥ 10 s apart, and on `reached the Figma MCP tool call limit` put the error text in the handoff and finish in the browser.
+- **Spend calls on structure.** `get_metadata` for a page's sets, variants and node ids, and `get_design_context` / `get_variable_defs` on a dense, new or ambiguous set. Node-addressed calls serve any page; only the no-`nodeId` page listing is pinned to COVER. Pass a frame or set id, never a page id, to `get_variable_defs`. Page ids are in `docs/DESIGN.md` → "Pages inventory".
+- **Read values in the browser.** Claude-in-Chrome on the `?node-id=` URL, with the Properties panel as the value source, Figma's client store for the page list, and canvas zooms labelled "canvas measurement (±2px)": [`references/browser-extraction.md`](references/browser-extraction.md).
+- **Leaf skills are checklists only.** The installed `figma-implement-design` skill and the MCP server's `/figma-design-to-code` describe what a design-to-code pass covers; their fetch order ("Always fetch `get_design_context` and `get_screenshot` first") does not apply here, because the budget above overrides it. This skill wins wherever they differ. The downloaded skills are pinned in `skills-lock.json`; `web-design-guidelines` is vendored in `.ai/skills/` at a fixed commit. If missing, run `make install-skills`, then `/reload-skills`.
+- **A multi-page sync** (the Design System → `docs/DESIGN.md`) follows [`references/extraction-runbook.md`](references/extraction-runbook.md).
 
-- **Figma MCP first**: `get_design_context`, `get_variable_defs`, `get_screenshot`, `download_assets`. Extract every state and all tokens in one pass; ask for the frame/node link if not given.
-- **MCP unavailable / capped → Claude-in-Chrome (ALL of it).** The Figma MCP seat is View-tier and returns `reached the Figma MCP tool call limit` on _every_ call (`get_metadata` included — the cap is account-wide). Fall back to the browser: open the `?node-id=` URL in Chrome, enumerate the component's variants in the Layers panel, `shift+2` to zoom to selection, and read the **designs, colours, CSS values, and icon SVGs** directly. (This expands the CLAUDE.md "Design handoff" note into an actionable procedure.)
+## References
 
-### 2. Validate frame ↔ screen
-
-Before editing, confirm the Figma node maps to the **exact** app surface you are changing (which panel / component / screen). State the mapping so a wrong frame is caught before any code changes.
-
-- **Placeholder data is not spec.** A truncated address like `40f5...4tgh` (`4tgh` isn't hex) is filler — reuse the existing format, don't invent one.
-- **Absence is not removal.** A control missing from one frame isn't evidence it was cut; confirm before deleting anything.
-
-### 3. Reuse before you write — a mock can't tell you what already exists
-
-Before adding any CSS or a new control, prove it isn't already built:
-
-- **Creator Hub surfaces use a different token system.** The `vars.css` rules in this skill are inspector-only. For Creator Hub renderer UI, map each literal to the `decentraland-ui2` theme or `renderer/src/themes/theme.css`, and update the table in `docs/DESIGN.md` → "Creator Hub (renderer)". No token crosses the iframe.
-- **grep `theme/vars.css` for every literal in the spec** (hex, px, radius) before writing a rule — the value is often already a token (the spec's `#43404A` is `--gray-0`), so the "new" style is zero new CSS.
-- **check `components/ui/` for a component that already renders this control** — a plain box in the mock may already exist as e.g. `WalletField` (validates on blur, shows an error) that a bare `TextField` would silently drop.
-- **state the finding explicitly** — a mock can't express validation, focus order, or that a value is already a token, so "match the mock" silently becomes "re-implement what exists."
-
-### 4. Sync the palette into the design system
-
-When colours change, reconcile into BOTH, kept in sync:
-
-- `packages/inspector/src/theme/vars.css` — the **source of truth** (`:root`; the 21-step `--base-01 … --base-21` light→dark ramp, role tokens like `--primary-main`, and the `--ui-designer-*` family). No hardcoded hex in inspector CSS — if a colour isn't a token, add one here.
-- `docs/DESIGN.md` — the human doc: role tables (`| Token | Value | Use |`) under "Palette by role", plus the "neutral ramp runs LIGHT → DARK" section. Always update it when tokens change. Refresh the WCAG contrast notes where accent luminance changes.
-
-Respect intentional deviations (e.g. `--ui-designer-panel-bg` deliberately reuses `--base-19` `#242129`, not Figma's `#25212a`) — don't blindly overwrite. Use the `figma-create-design-system-rules` skill to (re)generate the rules doc.
-
-### 5. Verify against the REAL render — not a mock
-
-Preferred: run the Creator Hub app and navigate to the inspector, rather than spinning the inspector server each time.
-
-- `cd packages/creator-hub && npm run start`. CH loads the inspector from `packages/inspector/public` at runtime, so rebuilding the inspector's `public/` (its own `npm run start` watch in `packages/inspector`) refreshes it with **no CH rebuild**.
-- Reach 2D: the toolbar **ModeSwitcher "2D"** tab (needs scene `@dcl/sdk` ≥ 7.26.0).
-- **Tradeoff:** CH is an Electron window that Chrome automation can't attach to. For pure 2D visual checks (canvas, panels, toolbar layout — no Bevy run controls, no persistence), the **standalone inspector dev server** (`cd packages/inspector && npm run start`, set `VITE_INSPECTOR_PORT` for a fixed port) is the browser-automatable surface — Babylon-only, non-persistent fixture. Use CH for anything touching Bevy scene-run or mode persistence.
-- **Screenshots are ground truth.** `getComputedStyle` over CDP is unreliable for `:hover` / `:focus-within`.
-
-### 6. SVG / CSS gotchas (learned on the UI Designer toolbar)
-
-- **viewBox padding shrinks icons** — an icon drawn in the centre ~60% of its viewBox renders ~40% smaller than one filling its box at the same size. Crop the viewBox to the artwork (e.g. `0 0 16 16` → `3 3 10 10`).
-- **SVG inner-shadow ≠ CSS `box-shadow`** — a `feComposite` inner-shadow renders weaker than `box-shadow: inset` at the same numbers, and CSS `blur ≈ 2 × feGaussianBlur stdDeviation`. Match the _look_ in the browser, not the number.
-- **`fill="currentColor"` + state cascade** — a higher-specificity state rule (`.active { color: … }`) silently overrides the base colour whenever that state is on. Check every state's _resolved_ colour.
-- **Element-type selectors defeat class-scoped overrides.** A panel rule like `.Container.Scene .content svg { … }` (specificity 0,3,1) reaches a subcomponent's icon and out-ranks a `.Parent > .Child` override (0,2,0) — renaming the class can't dodge it. When nesting a subcomponent under a panel, grep for element-type selectors (`svg`, `input`, `img`) scoped to that panel, not just class names.
-- **Relabelling a control can strip its accessible name.** In `CheckboxField` the visible `Label` is a sibling with no `htmlFor`, so `aria-label` is the input's only accessible name; deleting it as "redundant" after a rename passes typecheck, eslint, tests, and a grep for the old string. Verify the accessible name still **exists**, not just that the old string is gone.
-- **CSS/TSX slip past the repo gates** — `make lint` skips `.tsx`, and neither `make lint` nor `make format` covers `.css`. Run `npx prettier --check` on touched `.css`, and `npx eslint` on touched `.tsx`, explicitly. The `.tsx` glob carries a standing baseline of pre-existing problems (never zero) — capture the count before editing, diff against it, and never `--fix` across the glob.
+| File | Holds |
+| --- | --- |
+| [`references/design-loop.md`](references/design-loop.md) | Units, the star PR layout, the match pass, decisions, board reads, mismatch classes, the stop condition |
+| [`references/mapping-and-reuse.md`](references/mapping-and-reuse.md) | Frame ↔ screen mapping, the reuse audit, palette sync, verifying against the real render |
+| [`references/browser-extraction.md`](references/browser-extraction.md) | The MCP budget in full and the Claude-in-Chrome Properties-panel procedure |
+| [`references/change-detection.md`](references/change-detection.md) | The page, set and value diffs that decide what to re-read |
+| [`references/extraction-runbook.md`](references/extraction-runbook.md) | Running a multi-page sync into `docs/DESIGN.md` |
+| [`references/screenshots.md`](references/screenshots.md) | Capture, grids, Creator Hub shots, the fully-visible guard, uploading to the PR body |
+| [`references/svg-css-gotchas.md`](references/svg-css-gotchas.md) | Glyph export, viewBox, `currentColor`, selector specificity, accessible names, the gates CSS slips past |
+| [`references/spec-template.md`](references/spec-template.md) | The spec's fixed sections |
+| [`references/validate-report.md`](references/validate-report.md) | The Validate round's table and verdict |
+| [`scripts/wcag.mjs`](scripts/wcag.mjs) | `node wcag.mjs <fg> <bg> [alpha]`, and `--self-test` |
 
 ## After the change, verify these are still TRUE
 

@@ -2,23 +2,32 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 16px 24px;
-  border-radius: 12px;
-  background-color: var(--background);
 }
 
 .HeroStat .Value {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 0.25em;
+  color: var(--palette-neutral-softWhite);
+  font-size: var(--type-h1-semi-size);
+  line-height: normal;
+  letter-spacing: var(--type-h1-semi-letter-spacing);
+  font-variant-numeric: tabular-nums;
+}
+
+.HeroStat .Value .MuiTypography-root {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
 }
 
 .HeroStat .Value .MuiTypography-h4 {
-  font-weight: 600;
+  font-weight: var(--type-h1-semi-weight);
 }
 
-.HeroStat .Unit {
-  color: var(--secondary-text);
+.HeroStat .Unit.MuiTypography-root {
+  font-weight: var(--type-h6-regular-weight);
 }
 
 .HeroStat .Delta {

@@ -1,6 +1,11 @@
 import log from 'electron-log/main';
 
-import { BEVY_REALM_BUILD_EVENT, type BevyRealmBuildEvent } from '/shared/types/ipc';
+import {
+  BEVY_REALM_BUILD_EVENT,
+  BEVY_REALM_EXIT_EVENT,
+  type BevyRealmBuildEvent,
+  type BevyRealmExitEvent,
+} from '/shared/types/ipc';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { run, type Child } from './bin';
@@ -8,6 +13,7 @@ import { getAvailablePort } from './port';
 import { getProjectId, track } from './analytics';
 import { getWindow } from './window';
 import { createLineBuffer, parseSceneBuildEvents } from './bevy-realm-build-events';
+import { clearAllRealmDown, clearRealmDown, markRealmDown } from './realm-status';
 
 /**
  * The Bevy editor renderer loads the scene from an HTTP realm, and the inspector
@@ -44,6 +50,7 @@ const realms: Map<string, Realm> = new Map();
 // toggle) so a second caller reuses the first's pending server instead of
 // spawning a duplicate, and lets kill() cancel a start that hasn't resolved yet.
 const starting: Map<string, Promise<{ url: string; wsUrl: string }>> = new Map();
+let shuttingDown = false;
 
 function isRealmRunning(realm?: Realm): realm is Realm {
   return !!(realm?.child.alive() && realm.url);
@@ -86,7 +93,7 @@ export function start(path: string): Promise<{ url: string; wsUrl: string }> {
 }
 
 async function startInternal(path: string): Promise<{ url: string; wsUrl: string }> {
-  await kill(path);
+  await stopRealm(path);
 
   const port = await getAvailablePort();
   const url = `http://localhost:${port}`;
@@ -110,8 +117,14 @@ async function startInternal(path: string): Promise<{ url: string; wsUrl: string
   // `--no-client` means no deep-link / browser open, so we wait for the
   // server-ready line sdk-commands prints once it's serving.
   const serverReady = /Preview server is now running/i;
+  // waitFor only watches output, so a process that dies without printing a matching
+  // line (a crash on boot, a kill mid-boot) would leave it pending forever.
+  const exitedBeforeReady = child.wait().then(() => {
+    throw new Error('The scene server exited before it was ready.');
+  });
+  exitedBeforeReady.catch(() => {});
   try {
-    await child.waitFor(serverReady, /CliError|error:/i);
+    await Promise.race([child.waitFor(serverReady, /CliError|error:/i), exitedBeforeReady]);
   } catch (err) {
     // Startup failed or the child was killed mid-boot — make sure it's gone and
     // the entry doesn't linger as a half-alive realm. Guard the delete so a
@@ -122,6 +135,8 @@ async function startInternal(path: string): Promise<{ url: string; wsUrl: string
   }
 
   log.info(`[BevyRealm] Serving ${path} at ${url}`);
+  clearRealmDown(path);
+  watchExit(path, child);
 
   // Usage analytics (fire-and-forget): a realm only starts when the Bevy renderer is the
   // active renderer for this project, so one event per successful start is "Bevy renderer
@@ -155,9 +170,25 @@ function relayBuildEvents(path: string, child: Child): void {
   });
 }
 
-export async function kill(path: string): Promise<void> {
-  // Drop any in-flight start so a subsequent start() spawns fresh rather than
-  // joining the server we're about to kill.
+function watchExit(path: string, child: Child): void {
+  const servingSince = Date.now();
+  const onExit = (message: string) => {
+    if (shuttingDown || realms.get(path)?.child !== child) return;
+    realms.delete(path);
+    markRealmDown(path);
+    log.error(`[BevyRealm] ${path} exited unexpectedly: ${message}`);
+    const window = getWindow(MAIN_WINDOW_ID);
+    if (!window || window.isDestroyed()) return;
+    const payload: BevyRealmExitEvent = { path, message, uptimeMs: Date.now() - servingSince };
+    window.webContents.send(BEVY_REALM_EXIT_EVENT, payload);
+  };
+  void child.wait().then(
+    () => onExit('The scene server exited.'),
+    err => onExit(err instanceof Error ? err.message : String(err)),
+  );
+}
+
+async function stopRealm(path: string): Promise<void> {
   starting.delete(path);
   const realm = realms.get(path);
   const promise = realm?.child.kill().catch(() => {});
@@ -165,9 +196,20 @@ export async function kill(path: string): Promise<void> {
   await promise;
 }
 
+export async function kill(path: string): Promise<void> {
+  await stopRealm(path);
+  clearRealmDown(path);
+}
+
 export async function killAllRealms(): Promise<void> {
-  for (const path of realms.keys()) {
-    await kill(path);
+  shuttingDown = true;
+  try {
+    for (const path of realms.keys()) {
+      await kill(path);
+    }
+    realms.clear();
+    clearAllRealmDown();
+  } finally {
+    shuttingDown = false;
   }
-  realms.clear();
 }

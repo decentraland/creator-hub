@@ -17,7 +17,12 @@ export function HeroStat({ value, unit, delta }: Props) {
   return (
     <Box className="HeroStat">
       <Box className="Value">
-        <Typography variant="h4">{value}</Typography>
+        <Typography
+          variant="h4"
+          component="p"
+        >
+          {value}
+        </Typography>
         {unit && (
           <Typography
             variant="body1"

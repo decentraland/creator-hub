@@ -45,9 +45,11 @@
         "back": "Volver a escenas",
         "retry": "Reintentar",
         "outdated_deps": "Las dependencias de esta escena están desactualizadas y no son compatibles con el renderizador Bevy. Actualízalas para continuar.",
-        "update_deps": "Actualizar dependencias"
+        "update_deps": "Actualizar dependencias",
+        "data_layer_crashed": "La escena se detiene inesperadamente una y otra vez. Vuelve atrás y ábrela de nuevo, o revisa los registros."
       }
     },
+    "realm_restarted": "La escena se detuvo inesperadamente y se recargó. Es posible que los cambios de los últimos segundos no se hayan guardado.",
     "header": {
       "actions": {
         "code": "Código",
@@ -111,6 +113,7 @@
       "billing_title": "Sobre el uso de la IA",
       "billing": "El Asistente IA consume tokens de tu cuenta conectada. Vigila el uso de tu cuenta.",
       "billing_dismiss": "Entendido",
+      "outdated": "Tu Claude CLI (v{version}) está desactualizado: ejecuta \"claude update\" en una terminal para usar los modelos más recientes.",
       "screenshot_alt": "Captura de pantalla del asistente",
       "attach": {
         "button": "Adjuntar archivos",
@@ -128,6 +131,8 @@
       },
       "retry": "Reintentar",
       "revert": "Deshacer los cambios de la IA",
+      "revert_blocked": "No se pudo deshacer: otra app de IA cambió la escena después, y deshacer ahora también quitaría sus cambios. Usa Deshacer en el editor.",
+      "revert_failed": "No se pudieron deshacer los cambios de la IA. Usa Deshacer en el editor.",
       "selection": "Selección: {names}",
       "selection_clear": "Limpiar",
       "asset_mention": "Recurso: {name}",
@@ -149,6 +154,9 @@
         "signin_cancel": "Cancelar inicio de sesión",
         "signin_starting": "Iniciando sesión…",
         "signin_browser": "Termina de iniciar sesión en tu navegador y vuelve.",
+        "signin_code_hint": "¿El navegador no te trajo de vuelta? Abre el enlace de arriba, inicia sesión y pega el código que muestra la página.",
+        "signin_code_placeholder": "Pega el código",
+        "signin_code_submit": "Enviar código",
         "manual_title": "¿Prefieres la terminal? Instálalo e inicia sesión tú mismo:",
         "recheck": "Volver a comprobar",
         "ready": "Listo",
@@ -157,8 +165,9 @@
         "alt_copy": "Copiar configuración",
         "alt_copied": "Copiado",
         "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia.",
+        "alt_access_off": "Para conectar una, activa “Permitir que otras apps de IA editen tus escenas” en Ajustes → IA.",
         "install_guide": "Si no funciona, sigue la guía de instalación de {provider}",
-        "desktop_detected": "Claude Desktop está instalado, pero el asistente necesita Claude Code, la herramienta de terminal de Anthropic. El inicio de sesión de Desktop no se comparte con ella, así que instala Claude Code e inicia sesión una vez:",
+        "desktop_detected": "Claude Desktop está instalado, pero el asistente necesita Claude Code, la herramienta de terminal de Anthropic. El inicio de sesión de Desktop no se comparte con ella, así que inicia sesión en Claude Code una vez.",
         "gemini_plan_note": "Gemini CLI ahora solo funciona con una clave de API de Gemini de pago o una licencia de Gemini Code Assist Standard/Enterprise.",
         "needs_login_status": "Inicio de sesión necesario",
         "needs_login_title": "{provider} te pidió que inicies sesión",
@@ -166,6 +175,9 @@
         "needs_login_managed_help": "Puede que su inicio de sesión guardado haya caducado, aunque apareciera como conectado. En Configuración → IA, haz clic en Cerrar sesión y luego en Iniciar sesión, y vuelve a enviar tu mensaje.",
         "api_key_alternative": "O usa una clave de API: define {envVar} y activa \"{setting}\" en Configuración → IA."
       }
+    },
+    "publish": {
+      "save_failed": "No se pudo guardar tu escena antes de publicar, así que se detuvo la publicación para no desplegar contenido anterior. {reason}"
     }
   },
   "scene_list": {
@@ -296,6 +308,7 @@
     "menu": {
       "home": "Inicio",
       "scenes": "Escenas",
+      "templates": "Plantillas",
       "collections": "Colecciones",
       "analytics": "Analíticas",
       "manage": "Gestionar",
@@ -512,7 +525,8 @@
           "url": "La URL para acceder a tu {target} es:",
           "world": "Mundo",
           "land": "Tierra",
-          "jump_in": "Entrar"
+          "jump_in": "Entrar",
+          "indexing_note": "La escena ya está publicada. Su tarjeta en el explorador (título, descripción y miniatura) se indexa por separado y puede tardar unos minutos en actualizarse."
         }
       }
     },
@@ -591,16 +605,20 @@
         "experimental": {
           "label": "Funciones experimentales"
         },
+        "dev_asset_catalog": {
+          "toggle": "Usar CDN de activos de desarrollo",
+          "help": "Carga los smart items desde el CDN de desarrollo en lugar del de producción, para probar activos subidos desde un pull request antes de publicarlos. Reinicia el editor y vuelve a agregar los items después de cambiar esto. Solo en compilaciones de desarrollo."
+        },
         "ai_assistant": {
           "label": "Activar el Asistente IA",
           "help": "Ejecuta tu CLI de Claude, Codex, Cursor o Gemini instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
         },
         "mcp_server": {
-          "label": "Exponer el servidor MCP del asistente de IA",
-          "help": "Permite que un agente de IA externo a Creator Hub controle la escena abierta. Pega esto en la configuración MCP del agente.",
+          "label": "Permitir que otras apps de IA editen tus escenas",
+          "help": "Permite que las apps de IA que usas en esta computadora, como Claude Code o Codex, vean y cambien la escena que tienes abierta. Claude Code se conecta solo si lo abres en la carpeta de tu escena. Al desactivarlo se desconectan al instante. El Asistente de IA de arriba no lo necesita.",
           "copy": "Copiar configuración",
           "copied": "¡Copiado!",
-          "note": "Solo localhost. La URL y el token cambian cada vez que se reinicia Creator Hub."
+          "note": "Solo pueden conectarse apps de esta computadora. Estos datos cambian cada vez que Creator Hub se reinicia o se desactiva esta opción."
         },
         "ai_api_key": {
           "label": "Facturar a una clave de API en su lugar",
@@ -611,6 +629,7 @@
           "connected": "Conectado",
           "sign_in": "Iniciar sesión",
           "sign_out": "Cerrar sesión",
+          "sign_out_shared": "También cierra tu sesión de {agent} en el resto de esta computadora (app de escritorio, extensión del editor, terminal).",
           "cancel": "Cancelar",
           "via_terminal": "Desde la terminal",
           "install": "Instalar",
@@ -956,6 +975,13 @@
         "discard_all": "Descartar todas"
       }
     },
+    "external_agent_access": {
+      "title": "Una app de IA de esta computadora quiere ver y cambiar tu escena abierta.",
+      "actions": {
+        "allow": "Permitir",
+        "deny": "No permitir"
+      }
+    },
     "new_dependency_version": {
       "title": "Se detectó una nueva versión de dependencias",
       "actions": {
@@ -1202,19 +1228,14 @@
         "visits": "Visitas",
         "engagement": "Interacción"
       },
-      "date_range": {
-        "title": "Rango de Fechas",
-        "last_7_days": "Últimos 7 Días",
-        "last_30_days": "Últimos 30 Días",
-        "last_60_days": "Últimos 60 Días"
-      },
       "place": {
         "access": "Acceso",
         "private": "Privado",
         "public": "Público",
         "published_in": "Publicado en",
         "last_published_by": "Última publicación por",
-        "last_update": "Última Actualización"
+        "last_update": "Última Actualización",
+        "genesis_city": "Genesis City"
       },
       "actions": {
         "create_event": "Crear Evento",
@@ -1232,12 +1253,35 @@
         "description": "Entendé qué porcentaje de usuarios vuelve después de su primera sesión.",
         "platforms": {
           "title": "Plataformas",
-          "description": "Tu promedio móvil de 60 días, comparado entre mobile y escritorio."
+          "description": "Tu promedio móvil de {days} días, comparado entre móvil y escritorio.",
+          "tooltips": {
+            "all": "Retención Día 7 de todos los usuarios nuevos, sin importar el cliente que usaron.",
+            "desktop": "Retención Día 7 de los usuarios nuevos que visitaron por primera vez desde un cliente de escritorio.",
+            "mobile": "Retención Día 7 de los usuarios nuevos que visitaron por primera vez desde un cliente móvil."
+          }
+        },
+        "day_3": {
+          "title": "Retención Día 3",
+          "description": "Porcentaje de usuarios nuevos que volvieron dentro de los 3 días posteriores a su primera visita, comparado entre móvil y escritorio.",
+          "tooltips": {
+            "all": "Retención Día 3 de todos los usuarios nuevos, sin importar el cliente que usaron.",
+            "desktop": "Retención Día 3 de los usuarios nuevos que visitaron por primera vez desde un cliente de escritorio.",
+            "mobile": "Retención Día 3 de los usuarios nuevos que visitaron por primera vez desde un cliente móvil."
+          }
+        },
+        "day_3_cohort": {
+          "title": "Retención Día 3 por Semana de Cohorte",
+          "description": "Porcentaje de usuarios nuevos que volvieron al menos una vez durante los 3 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
+          "benchmark": "{value}% Día 3 KR"
         },
         "day_7_cohort": {
           "title": "Retención Día 7 por Semana de Cohorte",
-          "description": "Porcentaje de usuarios que volvieron al menos una vez durante los 7 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
-          "benchmark": "{value}% Día 7 KR"
+          "description": "Porcentaje de usuarios nuevos que volvieron al menos una vez durante los 7 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
+          "benchmark": "{value}% Día 7 KR",
+          "settling": {
+            "tooltip": "Todavía en curso: esta cohorte empezó hace menos de 14 días, así que sus regresos se siguen contando.",
+            "caption": "Línea punteada: cohortes de los últimos 14 días, cuyos regresos se siguen contando."
+          }
         },
         "churn": {
           "title": "Tasa de Abandono Semanal",
@@ -1286,7 +1330,7 @@
         },
         "social": {
           "title": "Interacciones Sociales",
-          "description": "Las interacciones se cuentan por realm (una copia en ejecución del place), así que el juego repartido entre realms se ve un poco más bajo.",
+          "description": "Porcentaje de los visitantes de cada semana que chatearon o usaron emotes al menos una vez.",
           "totals_title": "Totales Semanales de Interacciones Sociales",
           "rate_title": "Tasa de Interacción Social de Visitantes",
           "messages": {
@@ -1300,7 +1344,19 @@
           "friendships": {
             "label": "Nuevas Amistades",
             "tooltip": "Solicitudes de amistad aceptadas entre visitantes de tu place."
+          },
+          "engaged": {
+            "label": "Visitantes Socialmente Activos",
+            "tooltip": "Porcentaje de los visitantes de cada semana que chatearon o usaron emotes al menos una vez."
           }
+        },
+        "playtime": {
+          "title": "Tiempo de Juego Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place en una sola visita."
+        },
+        "afk": {
+          "title": "Tiempo AFK Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place sin interactuar."
         }
       },
       "platforms": {
@@ -1313,6 +1369,15 @@
       },
       "error": {
         "title": "No pudimos cargar las analíticas de este Place"
+      },
+      "window": {
+        "title": "Período",
+        "last_30_days": "Últimos 30 Días",
+        "last_60_days": "Últimos 60 Días"
+      },
+      "not_found": {
+        "title": "Escena no encontrada",
+        "description": "Esta escena no está entre las publicadas por tu cuenta."
       }
     },
     "metrics": {
@@ -1324,21 +1389,29 @@
         "label": "Visitas Únicas",
         "tooltip": "Usuarios distintos que visitaron tu place, contados una sola vez."
       },
+      "new_players": {
+        "label": "Nuevos Jugadores de Decentraland",
+        "tooltip": "Wallets nuevas en Decentraland cuyo primer día transcurrió mayormente en tu place."
+      },
       "new_users": {
         "label": "Usuarios Nuevos",
         "tooltip": "Usuarios que visitaron tu place por primera vez."
       },
       "concurrent_users": {
         "label": "Usuarios Simultáneos",
-        "tooltip": "La mayor cantidad de usuarios en tu place al mismo tiempo."
+        "tooltip": "Número promedio de usuarios en tu place al mismo tiempo."
       },
       "revenue": {
         "label": "Ingresos",
         "tooltip": "MANA ganado en tu place."
       },
+      "day_3_retention": {
+        "label": "Retención Día 3",
+        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place dentro de los 3 días posteriores a su primera visita."
+      },
       "day_7_retention": {
         "label": "Retención Día 7",
-        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place al menos una vez durante los 7 días posteriores a su primera visita."
+        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place dentro de los 7 días posteriores a su primera visita."
       },
       "median_playtime": {
         "label": "Mediana de Tiempo de Juego",
@@ -1355,6 +1428,10 @@
       "mobile": {
         "label": "Móvil",
         "tooltip": "Usuarios que visitaron tu place desde un cliente móvil."
+      },
+      "peak_concurrent_users": {
+        "label": "Pico de Usuarios Simultáneos",
+        "tooltip": "La mayor cantidad de usuarios en tu place al mismo tiempo."
       }
     },
     "list": {
@@ -1370,17 +1447,25 @@
       },
       "columns": {
         "place": "Place",
-        "total_visits": "Visitas Únicas",
+        "total_visits": "Visitas Totales",
         "new_users": "Usuarios Nuevos",
         "day_7_retention": "Retención D7",
         "revenue": "Ingresos",
-        "median_playtime": "Mediana de Tiempo de Juego"
+        "median_playtime": "Mediana de Tiempo de Juego",
+        "concurrent_users": "Usuarios Simultáneos"
       },
       "actions": {
         "pin_to_watchlist": "Fijar a la Watchlist",
         "unpin_from_watchlist": "Quitar de la Watchlist"
-      }
-    }
+      },
+      "genesis_city": "Genesis City ({coords})"
+    },
+    "sign_in": {
+      "title": "Inicia sesión para ver las analíticas de tus Places"
+    },
+    "no_data_yet": "Aún no hay datos",
+    "no_data_yet_description": "Esta escena no tiene datos en la última exportación. Si se publicó hace poco, vuelve a revisar después de la próxima.",
+    "exported_at": "Datos al {date}"
   },
   "connection": {
     "offline": {

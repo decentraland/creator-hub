@@ -66,6 +66,15 @@ export type SceneBuildEvent = { kind: 'rebuild'; file: string } | { kind: 'bundl
 
 export type BevyRealmBuildEvent = SceneBuildEvent & { path: string };
 
+export const BEVY_REALM_EXIT_EVENT = 'bevyRealm.exit';
+
+export type BevyRealmExitEvent = {
+  path: string;
+  message: string;
+  /** How long the realm had been serving before it exited. */
+  uptimeMs: number;
+};
+
 // Asset files added/changed/removed in a project's `assets/` tree from OUTSIDE the editor
 // (main → renderer → the inspector, which re-fetches its asset catalog). Lets the project
 // explorer auto-refresh when a user drops a file into the folder from Finder/Explorer,
@@ -93,6 +102,16 @@ export const AI_ASK_REQUEST = 'ai.askRequest';
 // question was dismissed). The renderer closes that prompt so it can't take an answer that
 // nothing is waiting for any more.
 export const AI_ASK_EXPIRED = 'ai.askExpired';
+// Main granted or revoked access to the MCP server for agents outside the Hub
+// (mcp-discovery.ts): Settings refetches the connection details.
+export const AI_EXTERNAL_ACCESS_CHANGED = 'ai.externalAccessChanged';
+// An agent outside the Hub asked for access (mcp-discovery.ts). The renderer calls
+// `ai.takeExternalAccessRequest` and, if it's still pending, asks the creator to allow it.
+export const AI_EXTERNAL_ACCESS_REQUESTED = 'ai.externalAccessRequested';
+
+// What `ai.revertTurn` did: 'blocked' means an outside agent edited the scene after the turn
+// started, so nothing was undone (undoing would have removed the agent's edits instead).
+export type AiRevertResult = 'reverted' | 'blocked';
 
 export type AiAskExpired = { id: string };
 
@@ -132,11 +151,14 @@ export type ConsoleMirrorState = { previewRunning: boolean };
 // AI sign-in without a pre-installed CLI (#1531). Users with a Claude/ChatGPT subscription
 // who never installed a CLI can sign in from the setup panel: main installs the official CLI
 // into an app-managed dir (using the bundled Node) and drives its own subscription login
-// (`claude setup-token` / `codex login`). `ai.signInCli` runs install-if-needed + login,
+// (`claude auth login` / `codex login`). `ai.signInCli` runs install-if-needed + login,
 // streaming its steps — progress messages and the browser URL to open — over this channel.
+// `acceptsCode` means the login also takes the code that URL's page shows (`ai.submitSignInCode`).
 export const AI_CLI_LOGIN_EVENTS = 'ai.cliLogin';
 
-export type AiCliLoginEvent = { type: 'progress'; message: string } | { type: 'auth'; url: string };
+export type AiCliLoginEvent =
+  | { type: 'progress'; message: string }
+  | { type: 'auth'; url: string; acceptsCode: boolean };
 
 // Per-provider setup state for the managed (app-installed) CLIs.
 export type AiCliState = Record<AiProvider, { installed: boolean; signedIn: boolean }>;
@@ -224,7 +246,7 @@ export interface Ipc {
 
   // AI scene assistant. `ai.send` streams its result over AI_STREAM_EVENT (payload
   // AiEvent) to the calling WebContents; the returned turnId correlates the stream.
-  'ai.detectProviders': () => Promise<AiProviderInfo[]>;
+  'ai.detectProviders': (apiKeyFromEnv?: boolean) => Promise<AiProviderInfo[]>;
   'ai.send': (path: string, params: AiSendParams) => Promise<{ turnId: string }>;
   'ai.stop': () => Promise<void>;
   'ai.reset': (path?: string) => Promise<void>;
@@ -233,12 +255,22 @@ export interface Ipc {
   'ai.isBusy': () => Promise<boolean>;
   // Revert the scene-graph changes an AI turn made, by undoing `count` steps (the value
   // the `done` event reported as `mutations`).
-  'ai.revertTurn': (count: number) => Promise<void>;
-  'ai.getMcpServerInfo': () => Promise<{ url: string; token: string }>;
+  'ai.revertTurn': (count: number) => Promise<AiRevertResult>;
+  // Connection details for agents outside the Hub; null while `exposeMcpServer` is off.
+  'ai.getMcpServerInfo': () => Promise<{ url: string; token: string } | null>;
+  // The editor window's open scene: points the MCP server at it and, while `exposeMcpServer` is
+  // on, writes its connection into the scene (`.mcp.json`) for Claude Code. sceneClosed detaches
+  // the server and removes that file.
+  'ai.sceneOpened': (path: string) => Promise<void>;
+  'ai.sceneClosed': (path: string) => Promise<void>;
+  // True once while an outside agent's access request awaits the creator's answer (see
+  // AI_EXTERNAL_ACCESS_REQUESTED).
+  'ai.takeExternalAccessRequest': () => Promise<boolean>;
   // AI sign-in without a CLI (#1531). signInCli installs the official CLI (if needed) and
   // drives its subscription login, streaming steps over AI_CLI_LOGIN_EVENTS; signOutCli
   // clears the managed sign-in; getCliState reports install/sign-in status per provider.
   'ai.signInCli': (provider: AiProvider) => Promise<void>;
+  'ai.submitSignInCode': (code: string) => Promise<void>;
   'ai.cancelSignInCli': () => Promise<void>;
   'ai.signOutCli': (provider: AiProvider) => Promise<void>;
   'ai.getCliState': () => Promise<AiCliState>;
