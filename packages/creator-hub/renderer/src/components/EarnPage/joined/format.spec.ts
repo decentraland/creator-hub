@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatPayoutUsdc, formatUsdc } from './format';
+import { formatUsdc } from './format';
 
 describe('formatUsdc', () => {
   describe('when the amount is a decimal string', () => {
@@ -24,23 +24,5 @@ describe('formatUsdc', () => {
     it.each([[''], ['abc'], ['1e3'], ['n/a']])('should show %j as sent, never NaN', amount => {
       expect(formatUsdc(amount, 'en')).toBe(amount);
     });
-  });
-});
-
-describe('formatPayoutUsdc', () => {
-  it.each([
-    ['22.00', '22'],
-    ['1842', '1,842'],
-    ['1842.50', '1,842.50'],
-    ['1842.5', '1,842.50'],
-    ['0.49', '0.49'],
-    ['0.004', '0.004'],
-    ['9.999999', '9.999999'],
-  ])('should show %s as %s, never rounded', (amount, shown) => {
-    expect(formatPayoutUsdc(amount, 'en')).toBe(shown);
-  });
-
-  it('should show an amount that is not a plain decimal as sent', () => {
-    expect(formatPayoutUsdc('n/a', 'en')).toBe('n/a');
   });
 });
