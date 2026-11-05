@@ -48,9 +48,11 @@ import {
   DATA_LAYER_DOWN,
   DATA_LAYER_STOPPED_DURING_OP,
   ensureSceneMcpServer,
+  getExternalMcpInfo,
   getTurnMutations,
   resetTurnMutations,
   resolveSceneOp,
+  setExternalMcpAccess,
   setSceneMcpProject,
   stopSceneMcpServer,
   type SceneMcpInfo,
@@ -164,6 +166,20 @@ describe('scene-mcp server', () => {
     await client.close();
   });
 
+  it('resolves entity_detail by a numeric id, as create_entity returns it', async () => {
+    const client = await open(info.token);
+    const res = (await client.callTool({
+      name: 'entity_detail',
+      arguments: { entity: 512 },
+    })) as {
+      content: { type: string; text: string }[];
+      isError?: boolean;
+    };
+    expect(res.isError).toBeFalsy();
+    expect(JSON.parse(res.content[0].text).id).toBe(512);
+    await client.close();
+  });
+
   // Regression guard for the session-routing fix: a second independent client must be able
   // to `initialize` too. The original bug shared ONE transport across requests, so the
   // second initialize was rejected with "Server already initialized"; per-session transports
@@ -216,6 +232,58 @@ describe('scene-mcp server', () => {
 
     await vi.waitFor(() => expect(changed).toBeGreaterThan(0)); // list_changed was pushed
     await client.close();
+  });
+});
+
+describe('access for agents outside the Hub', () => {
+  afterEach(() => {
+    setExternalMcpAccess(false);
+  });
+
+  describe('while it is off', () => {
+    it('should have no connection details to hand out', async () => {
+      expect(await getExternalMcpInfo()).toBeNull();
+    });
+  });
+
+  describe('when it is granted', () => {
+    it('should hand out a token of its own that connects to the same server', async () => {
+      setExternalMcpAccess(true);
+
+      const external = await getExternalMcpInfo();
+
+      expect(external?.url).toBe(info.url);
+      expect(external?.token).not.toBe(info.token);
+      const client = await open(external!.token);
+      expect((await client.listTools()).tools.length).toBeGreaterThan(0);
+      await client.close();
+    });
+  });
+
+  describe('when it is revoked', () => {
+    it('should cut off outside sessions and reject their token, keeping the assistant connected', async () => {
+      setExternalMcpAccess(true);
+      const { token } = (await getExternalMcpInfo())!;
+      const outside = await open(token);
+      const assistant = await open(info.token);
+
+      setExternalMcpAccess(false);
+
+      await expect(outside.listTools()).rejects.toBeTruthy();
+      await expect(open(token)).rejects.toBeTruthy();
+      expect((await assistant.listTools()).tools.length).toBeGreaterThan(0);
+      await assistant.close();
+    });
+
+    it('should mint a new token when access is granted again', async () => {
+      setExternalMcpAccess(true);
+      const first = (await getExternalMcpInfo())!.token;
+      setExternalMcpAccess(false);
+
+      setExternalMcpAccess(true);
+
+      expect((await getExternalMcpInfo())!.token).not.toBe(first);
+    });
   });
 });
 
