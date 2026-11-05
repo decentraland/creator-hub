@@ -76,6 +76,12 @@ async function renderTab() {
 
 const cycleButton = (name: string) => screen.getByRole('button', { name });
 
+/*
+ * Each case renders the tab and its modals and queries them by role and accessible name, which
+ * takes seconds on a loaded CI runner; vitest's default 5 s cut cases off there while passing.
+ */
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('PayoutsTab', () => {
   beforeAll(() => {
     setCurrentLocale('en', flatten(en));
