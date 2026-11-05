@@ -31,6 +31,11 @@
   --text-dim: rgba(255, 255, 255, 0.6); /* Transparencies/White 60: resting chip / pill labels */
   --header-hover-bg-color: #38222d;
   --disabled-bg-color: #323036;
+  /* Row hover in list controls. Same white-overlay convention as the
+     --ui-designer-control-*-bg tokens but role-scoped, not
+     subsystem-scoped: --ui-designer-control-hover-bg is the closest of the
+     three and differs only by one point of opacity. */
+  --row-hover-bg: rgba(255, 255, 255, 0.05);
 
   --controlHeight-small: 26px;
   --controlHeight-medium: 40px;
