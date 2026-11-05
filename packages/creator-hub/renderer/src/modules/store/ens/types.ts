@@ -37,6 +37,11 @@ export type ENS = {
   provider: ENSProvider;
   /** The NFT's token id that represents the ENS name */
   tokenId: string;
+  /**
+   * For DCL names, the effective resolver returned by content resolution on success;
+   * otherwise the direct registry resolver, which may be zero for wildcard names.
+   * External names do not populate this field. Do not use it to select a write target.
+   */
   resolver: string;
   content: string;
 
@@ -51,18 +56,6 @@ export type ENS = {
   userPermissions?: string[];
   size?: string;
 };
-
-export type ENSError = {
-  message: string;
-  code?: number;
-  origin?: ENSOrigin;
-};
-
-export enum ENSOrigin {
-  RESOLVER = 'Resolver',
-  CONTENT = 'Content',
-  ADDRESS = 'Address',
-}
 
 export enum USER_PERMISSIONS {
   DEPLOYMENT = 'deployment',

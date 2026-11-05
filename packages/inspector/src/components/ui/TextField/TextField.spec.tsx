@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 
@@ -54,5 +55,42 @@ describe('TextField committing on blur only', () => {
 
       expect(getInput(container).value).toBe('metalcase');
     });
+  });
+});
+
+describe('TextField when the parent swaps the value as focus begins', () => {
+  function Swapping({ full, short }: { full: string; short: string }) {
+    const [focused, setFocused] = React.useState(false);
+    return (
+      <TextField
+        value={focused ? full : short}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+      />
+    );
+  }
+
+  it('should show the editable value once focused', () => {
+    const { container } = render(
+      <Swapping
+        full="0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed"
+        short="0x5aAeb6053F...Ef1BeAed"
+      />,
+    );
+    const input = getInput(container);
+
+    fireEvent.focus(input);
+
+    expect(input.value).toBe('0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed');
+  });
+
+  it('should still ignore a value change that arrives while typing', () => {
+    const { container, rerender } = render(<TextField value="Door" />);
+    const input = getInput(container);
+
+    type(input, 'metal');
+    rerender(<TextField value="Gate" />);
+
+    expect(input.value).toBe('metal');
   });
 });
