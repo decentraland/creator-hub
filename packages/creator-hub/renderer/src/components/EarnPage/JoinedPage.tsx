@@ -10,7 +10,7 @@ import { EarnHeader } from './joined/EarnHeader';
 import { LeaderboardTab } from './joined/LeaderboardTab';
 import { MyPlacesTab } from './joined/MyPlacesTab';
 import { PayoutsTab } from './joined/PayoutsTab';
-import { GetReadyPage, GradientDefs, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
+import { GradientDefs, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
 
 export type JoinedTab = 'leaderboard' | 'my_places' | 'payouts';
 
@@ -40,9 +40,8 @@ export function JoinedPage({
       ? state.creatorFund.cycles.status === 'succeeded' && !selectors.getLatestClosedCycle(state)
       : tab === 'payouts' && state.creatorFund.payouts.data?.payouts.length === 0,
   );
-  const Shell = fillsWindow ? GetReadyPage : Page;
   return (
-    <Shell>
+    <Page bottom={fillsWindow ? 'flush' : 'padded'}>
       <GradientDefs aria-hidden>
         <defs>
           <linearGradient
@@ -87,6 +86,6 @@ export function JoinedPage({
       >
         {PANELS[tab]()}
       </TabPanel>
-    </Shell>
+    </Page>
   );
 }

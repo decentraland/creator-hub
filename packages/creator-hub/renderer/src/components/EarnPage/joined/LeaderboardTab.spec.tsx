@@ -332,4 +332,20 @@ describe('LeaderboardTab', () => {
       expect(screen.queryByRole('complementary', { name: 'News' })).toBeNull();
     });
   });
+
+  describe('when the cycles fail to load', () => {
+    beforeEach(() => {
+      vi.mocked(api.getCycles).mockResolvedValueOnce(fail());
+    });
+
+    it('should fetch the cycles again on Retry', async () => {
+      renderTab();
+
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+      await waitFor(() => expect(api.getCycles).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    });
+  });
 });
