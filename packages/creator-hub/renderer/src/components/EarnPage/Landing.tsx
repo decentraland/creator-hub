@@ -65,10 +65,11 @@ const FEATURES: {
   },
 ];
 
-export type LandingAudience = 'signed_in';
+export type LandingAudience = 'signed_in' | 'signed_out';
 
 const COPY: Record<LandingAudience, { tagline: TranslationPath; cta: TranslationPath }> = {
   signed_in: { tagline: 'earn.landing.tagline_signed_in', cta: 'earn.landing.join' },
+  signed_out: { tagline: 'earn.landing.tagline_signed_out', cta: 'earn.landing.sign_in_to_join' },
 };
 
 /**

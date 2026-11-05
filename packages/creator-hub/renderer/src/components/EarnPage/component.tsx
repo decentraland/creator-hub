@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { useDispatch, useSelector } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
@@ -15,10 +15,13 @@ import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing
 import { Spinner } from './Spinner';
 import { TermsModal } from './TermsModal';
 
+type EarnLocationState = { joinAfterSignIn?: boolean } | null;
+
 function EarnContent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isSignedIn } = useAuth();
+  const location = useLocation();
+  const { isSignedIn, isSigningIn, signIn } = useAuth();
   const enrollment = useSelector(state => state.creatorFund.enrollment.data);
   const enrollmentFailed = useSelector(state => state.creatorFund.enrollment.status === 'failed');
   const needsReaccept = useSelector(selectors.needsReaccept);
@@ -30,6 +33,7 @@ function EarnContent() {
   const [joinFailed, setJoinFailed] = useState(false);
   const [reacceptFailed, setReacceptFailed] = useState(false);
   const [reaccepting, setReaccepting] = useState(false);
+  const joinAfterSignIn = (location.state as EarnLocationState)?.joinAfterSignIn === true;
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -47,6 +51,27 @@ function EarnContent() {
     setJoinFailed(false);
     setJoining(true);
   }, []);
+
+  useEffect(() => {
+    if (!joinAfterSignIn || isSigningIn || (isSignedIn && !checked)) return;
+    navigate(location.pathname, { replace: true, state: null });
+    if (isSignedIn && !enrollmentFailed && !enrollment) startJoin();
+  }, [
+    joinAfterSignIn,
+    isSigningIn,
+    isSignedIn,
+    checked,
+    enrollment,
+    enrollmentFailed,
+    navigate,
+    location.pathname,
+    startJoin,
+  ]);
+
+  const signInToJoin = useCallback(() => {
+    navigate(location.pathname, { replace: true, state: { joinAfterSignIn: true } });
+    void signIn();
+  }, [navigate, location.pathname, signIn]);
 
   const handleExit = useCallback((outcome: JoinOutcome) => {
     setJoining(false);
@@ -89,7 +114,16 @@ function EarnContent() {
     [dispatch, enrollment],
   );
 
-  if (!isSignedIn) return null;
+  if (!isSignedIn) {
+    return (
+      <Landing audience="signed_out">
+        <LandingCtas
+          audience="signed_out"
+          onJoin={signInToJoin}
+        />
+      </Landing>
+    );
+  }
 
   if (!checked) return <Spinner label={t('earn.loading')} />;
 
