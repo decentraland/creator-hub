@@ -4,6 +4,7 @@
   align-items: center;
 }
 
-.Snackbar .MuiPaper-root button {
+/* Text buttons only: a contained button's fill is --dcl too, so its label would vanish. */
+.Snackbar .MuiPaper-root button:not(.MuiButton-contained) {
   color: var(--dcl);
 }

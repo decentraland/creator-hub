@@ -1,4 +1,5 @@
 import { type Page } from 'playwright';
+import { actUntil, openThenSelect, revealThenClick } from '../utils/interactions';
 
 declare const page: Page;
 
@@ -22,8 +23,20 @@ class UIDesignerPageObject {
 
   /** Open 2D mode and wait for the rail to mount. */
   async open() {
-    await page.locator('[role="tab"]', { hasText: '2D' }).first().click();
-    await page.locator(RAIL).waitFor({ state: 'attached', timeout: 10_000 });
+    const tab = page.locator('[role="tab"]', { hasText: '2D' }).first();
+    await actUntil(
+      () => tab.click(),
+      () => page.locator(RAIL).waitFor({ state: 'attached', timeout: 3_000 }),
+    );
+  }
+
+  /** Return to 3D mode and wait for the rail to unmount. */
+  async close() {
+    const tab = page.locator('[role="tab"]', { hasText: '3D' }).first();
+    await actUntil(
+      () => tab.click(),
+      () => page.locator(RAIL).waitFor({ state: 'detached', timeout: 3_000 }),
+    );
   }
 
   nodeRowSelector(label: string) {
@@ -60,7 +73,13 @@ class UIDesignerPageObject {
 
   async search(term: string) {
     const input = page.locator(`${RAIL} input`).first();
-    await input.click();
+    await actUntil(
+      () => input.click(),
+      () =>
+        page.waitForFunction(() => document.activeElement instanceof HTMLInputElement, undefined, {
+          timeout: 2_000,
+        }),
+    );
     await input.press('ControlOrMeta+a');
     await page.keyboard.type(term);
   }
@@ -75,28 +94,37 @@ class UIDesignerPageObject {
 
   /** The empty state's own call to action. */
   async createRootFromEmptyState() {
-    await page.locator(`${this.emptyStateSelector} button`).click();
-    await page.locator(this.emptyStateSelector).waitFor({ state: 'detached', timeout: 10_000 });
+    const button = page.locator(`${this.emptyStateSelector} button`);
+    await actUntil(
+      () => button.click(),
+      () => page.locator(this.emptyStateSelector).waitFor({ state: 'detached', timeout: 3_000 }),
+    );
   }
 
   /** Deletes via the row's trash, which is only visible while the row is hovered. */
   async removeRoot(name: string) {
     const row = this.rootRow(name);
-    await row.hover();
-    await row.locator(`[aria-label="Delete ${name}"]`).click();
-    await row.waitFor({ state: 'detached', timeout: 10_000 });
+    await revealThenClick(row, row.locator(`[aria-label="Delete ${name}"]`), () =>
+      row.waitFor({ state: 'detached', timeout: 3_000 }),
+    );
   }
 
   /** Add a widget under the current selection via the Nodes "+" picker. */
   async addWidget(widget: 'Container' | 'Image' | 'Label' | 'Button' | 'Input' | 'Dropdown') {
     const before = (await this.nodeLabels()).length;
-    await page.locator(`${RAIL} [aria-label="Add widget"]`).click();
-    await this.pickerRow(widget).click();
-    await page.waitForFunction(
-      ([selector, count]) =>
-        document.querySelectorAll(selector as string).length > (count as number),
-      [`${TREE} .Tree[data-test-label]`, before] as const,
-      { timeout: 10_000 },
+    const trigger = page.locator(`${RAIL} [aria-label="Add widget"]`);
+    const row = this.pickerRow(widget);
+    await openThenSelect(
+      trigger,
+      row,
+      () =>
+        page.waitForFunction(
+          ([selector, count]) =>
+            document.querySelectorAll(selector as string).length > (count as number),
+          [`${TREE} .Tree[data-test-label]`, before] as const,
+          { timeout: 5_000 },
+        ),
+      { opened: () => row.waitFor({ state: 'visible', timeout: 3_000 }) },
     );
   }
 
@@ -105,9 +133,21 @@ class UIDesignerPageObject {
   }
 
   async toggleHidden(label: string) {
-    const row = this.nodeRowSelector(label);
-    await page.locator(row).hover();
-    await page.locator(`${row} [aria-label="Hide node"], ${row} [aria-label="Show node"]`).click();
+    const rowSelector = this.nodeRowSelector(label);
+    const before = await this.isNodeHidden(label);
+    const row = page.locator(rowSelector);
+    const button = page.locator(
+      `${rowSelector} [aria-label="Hide node"], ${rowSelector} [aria-label="Show node"]`,
+    );
+    await revealThenClick(row, button, () =>
+      page.waitForFunction(
+        ([selector, was]) =>
+          document.querySelectorAll(`${selector as string} .action-area.is-hidden`).length > 0 !==
+          (was as boolean),
+        [rowSelector, before] as const,
+        { timeout: 3_000 },
+      ),
+    );
   }
 
   async isNodeHidden(label: string) {
@@ -118,10 +158,15 @@ class UIDesignerPageObject {
 
   /** The row context menu's entries, e.g. to assert Rename is not offered. */
   async contextMenuItems(label: string) {
-    await page
-      .locator(`${this.nodeRowSelector(label)} .selectable-area`)
-      .click({ button: 'right' });
-    await page.locator('role=menuitem').first().waitFor({ state: 'visible', timeout: 5_000 });
+    const trigger = page.locator(`${this.nodeRowSelector(label)} .selectable-area`);
+    await actUntil(
+      async () => {
+        await page.keyboard.press('Escape').catch(() => {});
+        await trigger.click({ button: 'right' });
+      },
+      () => page.locator('role=menuitem').first().waitFor({ state: 'visible', timeout: 2_000 }),
+      { retries: 4 },
+    );
     const items = await page.locator('role=menuitem').allTextContents();
     await page.keyboard.press('Escape');
     return items.map(t => t.trim());
@@ -206,16 +251,26 @@ class UIDesignerPageObject {
   }
 
   async renameNode(label: string, next: string) {
-    await page
-      .locator(`${this.nodeRowSelector(label)} .selectable-area`)
-      .click({ button: 'right' });
-    await page.locator('role=menuitem[name="Rename"]').click();
+    const trigger = page.locator(`${this.nodeRowSelector(label)} .selectable-area`);
+    const rename = page.locator('role=menuitem[name="Rename"]');
     const input = page.locator(`${TREE} input`).first();
-    await input.waitFor({ state: 'visible', timeout: 5_000 });
+    await openThenSelect(
+      trigger,
+      rename,
+      () => input.waitFor({ state: 'visible', timeout: 3_000 }),
+      {
+        triggerButton: 'right',
+        opened: () => rename.waitFor({ state: 'visible', timeout: 2_000 }),
+        reset: () => page.keyboard.press('Escape').catch(() => {}),
+        retries: 4,
+      },
+    );
     await page.waitForFunction(
       () => document.activeElement instanceof HTMLInputElement,
       undefined,
-      { timeout: 5_000 },
+      {
+        timeout: 5_000,
+      },
     );
     await input.press('ControlOrMeta+a');
     await page.keyboard.type(next);
