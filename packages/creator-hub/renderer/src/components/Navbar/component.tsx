@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { FeatureFlag } from '/@/modules/store/featureFlags';
 import type { AppState } from '#store';
+import { useAuth } from '/@/hooks/useAuth';
 import { useEditor } from '/@/hooks/useEditor';
 import { t } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/settings';
@@ -24,18 +25,29 @@ export enum NavbarItem {
   ANALYTICS = 'analytics',
   LEARN = 'learn',
   MANAGE = 'manage',
+  EARN = 'earn',
   MORE = 'more',
 }
 
-function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boolean }) {
+function MenuItem(props: {
+  item: NavbarItem;
+  active: NavbarItem;
+  disable?: boolean;
+  label?: string;
+  children?: React.ReactNode;
+}) {
   const isActive = props.active === props.item;
   return !props.disable ? (
     <Link
       to={`/${props.item}`}
       className={cx('menu-item', { active: isActive })}
       aria-current={isActive ? 'page' : undefined}
+      aria-label={props.label}
     >
-      {t(`navbar.menu.${props.item}`)}
+      <span className="label">
+        {t(`navbar.menu.${props.item}`)}
+        {props.children}
+      </span>
     </Link>
   ) : null;
 }
@@ -43,6 +55,14 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 export function Navbar(props: { active: NavbarItem }) {
   const openAppSettings = useSelector((state: AppState) => state.settings.openAppSettingsModal);
   const { isEnabled } = useFeatureFlags();
+  const { isSignedIn } = useAuth();
+  const enrollment = useSelector((state: AppState) => state.creatorFund.enrollment);
+  const showEarnDot =
+    isSignedIn &&
+    isEnabled(FeatureFlag.CREATOR_FUND) &&
+    props.active !== NavbarItem.EARN &&
+    enrollment.status === 'succeeded' &&
+    enrollment.data === null;
   const dispatch = useDispatch();
   const { version } = useEditor();
   const [openAbout, setOpenAbout] = useState(false);
@@ -108,6 +128,19 @@ export function Navbar(props: { active: NavbarItem }) {
             item={NavbarItem.MANAGE}
             active={props.active}
           />
+          <MenuItem
+            item={NavbarItem.EARN}
+            active={props.active}
+            disable={!isEnabled(FeatureFlag.CREATOR_FUND)}
+            label={showEarnDot ? t('navbar.earn_not_joined') : undefined}
+          >
+            {showEarnDot && (
+              <span
+                className="notification-dot"
+                aria-hidden="true"
+              />
+            )}
+          </MenuItem>
           <MenuItem
             item={NavbarItem.LEARN}
             active={props.active}
