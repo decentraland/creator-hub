@@ -53,7 +53,7 @@
 }
 
 .Toolbar .scene-info.active {
-  background-color: var(--primary-main) !important;
+  background-color: var(--selected-item) !important;
 }
 
 .Toolbar .CameraModeWrap {

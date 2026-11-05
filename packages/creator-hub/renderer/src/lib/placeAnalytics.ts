@@ -5,7 +5,6 @@ import FALLBACK_THUMBNAIL from '/assets/images/scene-thumbnail-fallback.png';
 
 import type { AnalyticsPlace } from './analyticsLocations';
 import { collectAnalyticsPlaces } from './analyticsLocations';
-import { devPlaces } from './placeAnalytics.dev';
 import type { LocationMetrics } from './metricsApi';
 import { fetchMetrics } from './metricsApi';
 
@@ -13,8 +12,8 @@ import { fetchMetrics } from './metricsApi';
 export type AnalyticsSnapshot = {
   /** The warehouse's export stamp — an "as of" date, not our load time. */
   exportedAt: string;
-  /** Parallel to `places`, positionally. */
   places: AnalyticsPlace[];
+  /** Keyed by `AnalyticsPlace.placeId`, so a place with no row is simply absent. */
   metricsByPlaceId: Record<string, LocationMetrics>;
 };
 
@@ -28,7 +27,7 @@ export async function fetchAnalytics(
   projects: ManagedProject[],
   lands: Land[],
 ): Promise<AnalyticsSnapshot> {
-  const places = devPlaces() ?? (await collectAnalyticsPlaces(projects, lands, FALLBACK_THUMBNAIL));
+  const places = await collectAnalyticsPlaces(projects, lands, FALLBACK_THUMBNAIL);
 
   if (places.length === 0) {
     // No scenes to ask about. Sending an empty list is a 400, and the page has an
