@@ -1,4 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
+import {
+  DEFAULT_OPTIMIZE_OPTIONS,
+  type OptimizeOptions,
+  type TextureCategory,
+  type TextureFormat,
+} from '/shared/types/optimizer';
+import type { Project } from '/shared/types/projects';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Box,
   Button,
@@ -13,18 +24,7 @@ import {
   Tooltip,
   Typography,
 } from 'decentraland-ui2';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-
-import {
-  DEFAULT_OPTIMIZE_OPTIONS,
-  type OptimizeOptions,
-  type TextureCategory,
-  type TextureFormat,
-} from '/shared/types/optimizer';
-import type { Project } from '/shared/types/projects';
 import { formatBytes } from '/shared/utils';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { misc, optimizer as optimizerPreload } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useSettings } from '/@/hooks/useSettings';

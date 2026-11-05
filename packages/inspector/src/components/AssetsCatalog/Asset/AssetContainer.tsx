@@ -212,10 +212,16 @@ type AssetContainerProps = {
 const AssetContainer: React.FC<AssetContainerProps> = ({ value, onAddToFilesystem }) => {
   const isSmartItem = useMemo(() => isSmart(value), [value]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  // The name tooltip is portaled to the body, so once the grid scrolls it follows the tile out of
+  // the panel and over the viewport. Hide it on any scroll until the pointer re-enters the tile.
+  const [hiddenByScroll, setHiddenByScroll] = useState(false);
   const assetRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   const handleInfoTooltipOpen = useCallback(() => {
+    setIsHovered(true);
+    setHiddenByScroll(false);
     if (isSmartItem) {
       timeoutRef.current = setTimeout(() => {
         setIsOpen(true);
@@ -228,7 +234,20 @@ const AssetContainer: React.FC<AssetContainerProps> = ({ value, onAddToFilesyste
       clearTimeout(timeoutRef.current);
     }
     setIsOpen(false);
+    setIsHovered(false);
+    setHiddenByScroll(false);
   }, []);
+
+  useEffect(() => {
+    if (!isHovered) return;
+    const hide = () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setIsOpen(false);
+      setHiddenByScroll(true);
+    };
+    window.addEventListener('scroll', hide, true);
+    return () => window.removeEventListener('scroll', hide, true);
+  }, [isHovered]);
 
   useEffect(() => {
     return () => {
@@ -266,6 +285,7 @@ const AssetContainer: React.FC<AssetContainerProps> = ({ value, onAddToFilesyste
         onOpen={handleInfoTooltipOpen}
         onClose={handleInfoTooltipClose}
         trigger={assetElement}
+        open={isHovered && !hiddenByScroll}
         hideOnScroll={false}
         position="top center"
         hoverable={false}

@@ -135,7 +135,9 @@ export type EditorState = {
   supportsMultiInstance: boolean;
   supportsMcp: boolean;
   supportsUiDesigner: boolean;
+  supportsAuthServer: boolean;
   project?: Project;
+  capabilityPath: string | null;
   // The scene last asked to open. Set as soon as it starts opening, unlike `project`.
   openingProjectPath?: string;
   inspectorPort: number;
@@ -166,6 +168,8 @@ const initialState: EditorState = {
   supportsMultiInstance: false,
   supportsMcp: false,
   supportsUiDesigner: false,
+  supportsAuthServer: false,
+  capabilityPath: null,
   inspectorPort: 0,
   publishPort: 0,
   loadingPublish: false,
@@ -205,12 +209,16 @@ export const slice = createSlice({
       state.supportsMultiInstance = false;
       state.supportsMcp = false;
       state.supportsUiDesigner = false;
+      state.supportsAuthServer = false;
+      state.capabilityPath = action.meta.arg.path;
       state.error = null;
     });
     builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
-      state.supportsMultiInstance = supportsMultiInstance(action.payload);
-      state.supportsMcp = supportsMcp(action.payload);
-      state.supportsUiDesigner = supportsUiDesigner(action.payload);
+      if (state.capabilityPath !== null && action.meta.arg !== state.capabilityPath) return;
+      state.supportsMultiInstance = supportsMultiInstance(action.payload.version);
+      state.supportsMcp = supportsMcp(action.payload.version);
+      state.supportsUiDesigner = supportsUiDesigner(action.payload.version);
+      state.supportsAuthServer = action.payload.hasAuthServer;
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;
