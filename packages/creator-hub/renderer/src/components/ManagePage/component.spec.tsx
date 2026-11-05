@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { Dispatch } from '@reduxjs/toolkit';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import { useAuth } from '/@/hooks/useAuth';
@@ -77,27 +78,60 @@ const ownedParcel: Land = {
   updateOperator: null,
 };
 
-const landList = (land: Land[]) =>
-  fetchLandList.fulfilled({ land, authorizations: [], rentals: [] }, 'r', { address: '' });
+const landList = (land: Land[]) => (dispatch: Dispatch) => {
+  dispatch(fetchLandList.pending('r', { address: '' }));
+  dispatch(
+    fetchLandList.fulfilled({ land, authorizations: [], rentals: [] }, 'r', { address: '' }),
+  );
+};
+
+const signedIn = (wallet?: string) =>
+  ({
+    isSignedIn: true,
+    isSigningIn: false,
+    signIn: vi.fn(),
+    wallet,
+  }) as unknown as ReturnType<typeof useAuth>;
+
+const page = (store: ReturnType<typeof createTestStore>) => (
+  <Provider store={store as never}>
+    <MemoryRouter>
+      <ThemeProvider theme={dark}>
+        <ManagePage />
+      </ThemeProvider>
+    </MemoryRouter>
+  </Provider>
+);
 
 function renderPage(auth: { isSignedIn: boolean }, store = createTestStore()) {
   vi.mocked(useAuth).mockReturnValue({
+    ...signedIn(undefined),
     isSignedIn: auth.isSignedIn,
-    isSigningIn: false,
-    signIn: vi.fn(),
-    wallet: undefined,
-  } as unknown as ReturnType<typeof useAuth>);
-  render(
-    <Provider store={store as never}>
-      <MemoryRouter>
-        <ThemeProvider theme={dark}>
-          <ManagePage />
-        </ThemeProvider>
-      </MemoryRouter>
-    </Provider>,
+  });
+  render(page(store));
+  return store;
+}
+
+function storeWithLandList() {
+  const store = createTestStore();
+  store.dispatch(managementActions.setTab('lands'));
+  store.dispatch(landList([ownedParcel]));
+  store.dispatch(fetchLandProjects.pending('r'));
+  store.dispatch(
+    fetchLandProjects.fulfilled(
+      { projects: [toLandProject(ownedParcel, [], hash => hash)], deployments: {} },
+      'r',
+    ),
   );
   return store;
 }
+
+const refetchStaysInFlight = () =>
+  vi
+    .spyOn(managementActions, 'fetchLandProjects')
+    .mockImplementation(
+      (() => (dispatch: Dispatch) => dispatch(fetchLandProjects.pending('refetch'))) as never,
+    );
 
 describe('ManagePage', () => {
   beforeAll(() => {
@@ -128,11 +162,17 @@ describe('ManagePage', () => {
   describe('when the signed-in account has no Worlds at all', () => {
     it('should show the empty Worlds view without the Space Used bar', () => {
       const store = createTestStore();
+      store.dispatch({ type: fetchStorageStats.pending.type, meta: { requestId: 'r' } });
       store.dispatch({
         type: fetchStorageStats.fulfilled.type,
         payload: { usedSpace: '0', maxAllowedSpace: String(100 * 1024 * 1024) },
+        meta: { requestId: 'r' },
       });
-      store.dispatch({ type: fetchManagedProjectsFiltered.fulfilled.type });
+      store.dispatch({ type: fetchManagedProjectsFiltered.pending.type, meta: { requestId: 'r' } });
+      store.dispatch({
+        type: fetchManagedProjectsFiltered.fulfilled.type,
+        meta: { requestId: 'r' },
+      });
 
       renderPage({ isSignedIn: true }, store);
 
@@ -214,6 +254,47 @@ describe('ManagePage', () => {
       expect(document.activeElement).toBe(
         screen.getByRole('heading', { level: 1, name: 'Manage' }),
       );
+    });
+  });
+
+  describe('when the LANDS tab is opened again with its list already loaded', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should refetch the list on every visit while keeping the cards on screen', () => {
+      const refetch = refetchStaysInFlight();
+      const store = storeWithLandList();
+      renderPage({ isSignedIn: true }, store);
+
+      act(() => {
+        store.dispatch(managementActions.setTab('worlds'));
+      });
+      act(() => {
+        store.dispatch(managementActions.setTab('lands'));
+      });
+
+      expect(refetch).toHaveBeenCalledTimes(2);
+      expect(store.getState().management.lands.status).toBe('loading');
+      expect(within(screen.getByRole('article')).getByText('Land Name')).toBeTruthy();
+    });
+  });
+
+  describe('when the signed-in wallet changes while the LANDS tab is open', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should refetch the list for the new wallet', () => {
+      const refetch = refetchStaysInFlight();
+      const store = storeWithLandList();
+      vi.mocked(useAuth).mockReturnValue(signedIn('0xprevious'));
+      const { rerender } = render(page(store));
+
+      vi.mocked(useAuth).mockReturnValue(signedIn('0xnext'));
+      rerender(page(store));
+
+      expect(refetch).toHaveBeenCalledTimes(2);
     });
   });
 
