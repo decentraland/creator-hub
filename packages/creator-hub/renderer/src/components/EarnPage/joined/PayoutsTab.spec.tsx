@@ -74,7 +74,10 @@ async function renderTab() {
   return store;
 }
 
-const cycleButton = (name: string) => screen.getByRole('button', { name });
+const cycleButton = (table: HTMLElement, name: string) =>
+  within(table).getByRole('button', { name });
+const walletCard = async () => within(await screen.findByTestId('payouts-wallet-card'));
+const contactCard = async () => within(await screen.findByTestId('payouts-contact-card'));
 
 /*
  * Each case renders the tab and its modals and queries them by role and accessible name, which
@@ -110,8 +113,12 @@ describe('PayoutsTab', () => {
           .getAllByRole('columnheader')
           .map(header => header.textContent),
       ).toEqual(['Cycle', 'Status', 'Paid Places', 'Amount', 'Transaction']);
-      expect(cycleButton('Oct 16 - Oct 31, 2026').getAttribute('aria-expanded')).toBe('true');
-      expect(cycleButton('Oct 1 - Oct 15, 2026').getAttribute('aria-expanded')).toBe('false');
+      expect(cycleButton(table, 'Oct 16 - Oct 31, 2026').getAttribute('aria-expanded')).toBe(
+        'true',
+      );
+      expect(cycleButton(table, 'Oct 1 - Oct 15, 2026').getAttribute('aria-expanded')).toBe(
+        'false',
+      );
       expect(within(table).getByText('22 USDC')).toBeTruthy();
       expect(within(table).getByText('9 USDC')).toBeTruthy();
       expect(within(table).getByText('Example Place A')).toBeTruthy();
@@ -139,12 +146,14 @@ describe('PayoutsTab', () => {
 
     it('should open a second row while the first stays open', async () => {
       await renderTab();
-      await screen.findByRole('table', { name: 'Payouts' });
+      const table = await screen.findByRole('table', { name: 'Payouts' });
 
-      fireEvent.click(cycleButton('Oct 1 - Oct 15, 2026'));
+      fireEvent.click(cycleButton(table, 'Oct 1 - Oct 15, 2026'));
 
-      expect(cycleButton('Oct 1 - Oct 15, 2026').getAttribute('aria-expanded')).toBe('true');
-      expect(cycleButton('Oct 16 - Oct 31, 2026').getAttribute('aria-expanded')).toBe('true');
+      expect(cycleButton(table, 'Oct 1 - Oct 15, 2026').getAttribute('aria-expanded')).toBe('true');
+      expect(cycleButton(table, 'Oct 16 - Oct 31, 2026').getAttribute('aria-expanded')).toBe(
+        'true',
+      );
       expect(screen.getByText('Example Place B')).toBeTruthy();
     });
 
@@ -206,15 +215,16 @@ describe('PayoutsTab', () => {
       await renderTab();
 
       const address = await screen.findByText('0x00000...00dEaD');
+      const wallet = await walletCard();
       expect(address.getAttribute('title')).toBe(WALLET.address);
-      expect(screen.getByRole('button', { name: 'Copy wallet address' })).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Edit' })).toBeTruthy();
-      expect(screen.queryByRole('button', { name: 'Add wallet' })).toBeNull();
+      expect(wallet.getByRole('button', { name: 'Copy wallet address' })).toBeTruthy();
+      expect(wallet.getByRole('button', { name: 'Edit' })).toBeTruthy();
+      expect(wallet.queryByRole('button', { name: 'Add wallet' })).toBeNull();
     });
 
     it('should copy the whole address from a real button, not one nested in another', async () => {
       await renderTab();
-      const copy = await screen.findByRole('button', { name: 'Copy wallet address' });
+      const copy = await (await walletCard()).findByRole('button', { name: 'Copy wallet address' });
 
       fireEvent.click(copy);
 
@@ -228,16 +238,15 @@ describe('PayoutsTab', () => {
         ok({ address: NEW_ADDRESS, updated_at: '2026-11-04T10:00:00Z' }),
       );
       await renderTab();
-      fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+      const edit = await (await walletCard()).findByRole('button', { name: 'Edit' });
+      fireEvent.click(edit);
       const dialog = await screen.findByRole('dialog', { name: 'Change payout wallet' });
       fireEvent.change(within(dialog).getByLabelText('Wallet address'), {
         target: { value: NEW_ADDRESS },
       });
       fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
-      await waitFor(() =>
-        expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit' })),
-      );
+      await waitFor(() => expect(document.activeElement).toBe(edit));
     });
 
     it('should change it and say so', async () => {
@@ -245,7 +254,7 @@ describe('PayoutsTab', () => {
         ok({ address: NEW_ADDRESS, updated_at: '2026-11-04T10:00:00Z' }),
       );
       await renderTab();
-      fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+      fireEvent.click(await (await walletCard()).findByRole('button', { name: 'Edit' }));
       const dialog = await screen.findByRole('dialog', { name: 'Change payout wallet' });
 
       fireEvent.change(within(dialog).getByLabelText('Wallet address'), {
@@ -268,14 +277,15 @@ describe('PayoutsTab', () => {
     it('should offer only ADD WALLET', async () => {
       await renderTab();
 
-      expect(await screen.findByRole('button', { name: 'Add wallet' })).toBeTruthy();
-      expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Copy wallet address' })).toBeNull();
+      const wallet = await walletCard();
+      expect(await wallet.findByRole('button', { name: 'Add wallet' })).toBeTruthy();
+      expect(wallet.queryByRole('button', { name: 'Edit' })).toBeNull();
+      expect(wallet.queryByRole('button', { name: 'Copy wallet address' })).toBeNull();
     });
 
     it('should hold the submit until the address is valid and flag a bad one on blur', async () => {
       await renderTab();
-      fireEvent.click(await screen.findByRole('button', { name: 'Add wallet' }));
+      fireEvent.click(await (await walletCard()).findByRole('button', { name: 'Add wallet' }));
       const dialog = await screen.findByRole('dialog', { name: 'Add payout wallet' });
       const field = within(dialog).getByLabelText('Wallet address');
       const submit = within(dialog).getByRole('button', { name: 'Add wallet' });
@@ -302,7 +312,7 @@ describe('PayoutsTab', () => {
         ok({ address: NEW_ADDRESS, updated_at: '2026-11-04T10:00:00Z' }, 201),
       );
       await renderTab();
-      fireEvent.click(await screen.findByRole('button', { name: 'Add wallet' }));
+      fireEvent.click(await (await walletCard()).findByRole('button', { name: 'Add wallet' }));
       const dialog = await screen.findByRole('dialog', { name: 'Add payout wallet' });
 
       fireEvent.change(within(dialog).getByLabelText('Wallet address'), {
@@ -310,13 +320,11 @@ describe('PayoutsTab', () => {
       });
       fireEvent.click(within(dialog).getByRole('button', { name: 'Add wallet' }));
 
-      await waitFor(() =>
-        expect(screen.getByRole('status').textContent).toBe('Payout wallet added'),
-      );
+      const status = await screen.findByRole('status');
+      await waitFor(() => expect(status.textContent).toBe('Payout wallet added'));
       expect(api.putPayoutWallet).toHaveBeenCalledWith({ address: NEW_ADDRESS });
-      await waitFor(() =>
-        expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit' })),
-      );
+      const edit = await (await walletCard()).findByRole('button', { name: 'Edit' });
+      await waitFor(() => expect(document.activeElement).toBe(edit));
     });
 
     it('should show the refusal of an address on the field', async () => {
@@ -325,7 +333,7 @@ describe('PayoutsTab', () => {
         body: { error: 'invalid_address' },
       });
       await renderTab();
-      fireEvent.click(await screen.findByRole('button', { name: 'Add wallet' }));
+      fireEvent.click(await (await walletCard()).findByRole('button', { name: 'Add wallet' }));
       const dialog = await screen.findByRole('dialog', { name: 'Add payout wallet' });
 
       fireEvent.change(within(dialog).getByLabelText('Wallet address'), {
@@ -345,7 +353,7 @@ describe('PayoutsTab', () => {
 
     it('should close on Escape', async () => {
       await renderTab();
-      fireEvent.click(await screen.findByRole('button', { name: 'Add wallet' }));
+      fireEvent.click(await (await walletCard()).findByRole('button', { name: 'Add wallet' }));
       const dialog = await screen.findByRole('dialog', { name: 'Add payout wallet' });
 
       fireEvent.keyDown(dialog, { key: 'Escape' });
@@ -370,12 +378,12 @@ describe('PayoutsTab', () => {
 
     async function openVerify() {
       await renderTab();
-      fireEvent.click(await screen.findByRole('button', { name: 'Verify email' }));
+      fireEvent.click(await (await contactCard()).findByRole('button', { name: 'Verify email' }));
       return screen.findByRole('dialog', { name: 'Verify your email' });
     }
 
     const typeCode = (dialog: HTMLElement, code: string) =>
-      fireEvent.paste(within(dialog).getByRole('textbox', { name: 'Digit 1 of 6' }), {
+      fireEvent.paste(within(dialog).getByLabelText('Digit 1 of 6'), {
         clipboardData: { getData: () => code },
       });
 
@@ -392,14 +400,9 @@ describe('PayoutsTab', () => {
 
       expect(api.postEmailVerification).toHaveBeenCalledTimes(1);
       expect(within(dialog).getByText('jane.doe@example.com').tagName).toBe('B');
-      expect(document.activeElement).toBe(
-        within(dialog).getByRole('textbox', { name: 'Digit 1 of 6' }),
-      );
-      await waitFor(() =>
-        expect(
-          within(dialog).getByRole('button', { name: 'Resend Code' }).getAttribute('aria-disabled'),
-        ).toBe('true'),
-      );
+      expect(document.activeElement).toBe(within(dialog).getByLabelText('Digit 1 of 6'));
+      const resend = within(dialog).getByRole('button', { name: 'Resend Code' });
+      await waitFor(() => expect(resend.getAttribute('aria-disabled')).toBe('true'));
       expect(within(dialog).getByRole('button', { name: 'Verify' }).hasAttribute('disabled')).toBe(
         true,
       );
@@ -414,15 +417,13 @@ describe('PayoutsTab', () => {
       typeCode(dialog, '000000');
       fireEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
 
-      await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Email verified'));
+      const status = await screen.findByRole('status');
+      await waitFor(() => expect(status.textContent).toBe('Email verified'));
       expect(api.putEmailVerification).toHaveBeenCalledWith({ code: '000000' });
       expect(screen.queryByText('Unverified')).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Verify email' })).toBeNull();
-      await waitFor(() =>
-        expect(document.activeElement).toBe(
-          screen.getByRole('heading', { level: 2, name: 'Contact Information' }),
-        ),
-      );
+      expect((await contactCard()).queryByRole('button', { name: 'Verify email' })).toBeNull();
+      const heading = screen.getByRole('heading', { level: 2, name: 'Contact Information' });
+      await waitFor(() => expect(document.activeElement).toBe(heading));
     });
 
     it('should keep Resend Code under an expired code and let it send a new one', async () => {
@@ -501,9 +502,9 @@ describe('PayoutsTab', () => {
       fireEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
 
       expect((await within(dialog).findByRole('alert')).textContent).toBe(message);
-      expect(
-        within(dialog).getByRole('textbox', { name: 'Digit 1 of 6' }).getAttribute('aria-invalid'),
-      ).toBe('true');
+      expect(within(dialog).getByLabelText('Digit 1 of 6').getAttribute('aria-invalid')).toBe(
+        'true',
+      );
       expect(within(dialog).queryByRole('button', { name: 'Resend Code' })).toBeNull();
     });
   });
@@ -527,10 +528,10 @@ describe('PayoutsTab', () => {
   describe('when a cycle row is closed', () => {
     it('should point its disclosure at no rows, and span the place cell over three columns', async () => {
       await renderTab();
-      await screen.findByRole('table', { name: 'Payouts' });
+      const table = await screen.findByRole('table', { name: 'Payouts' });
 
-      expect(cycleButton('Oct 1 - Oct 15, 2026').hasAttribute('aria-controls')).toBe(false);
-      const controls = cycleButton('Oct 16 - Oct 31, 2026').getAttribute('aria-controls')!;
+      expect(cycleButton(table, 'Oct 1 - Oct 15, 2026').hasAttribute('aria-controls')).toBe(false);
+      const controls = cycleButton(table, 'Oct 16 - Oct 31, 2026').getAttribute('aria-controls')!;
       expect(controls.split(' ').every(id => document.getElementById(id))).toBe(true);
       expect(
         within(document.getElementById(controls.split(' ')[0])!)
@@ -550,7 +551,7 @@ describe('PayoutsTab', () => {
 
       expect(await screen.findByText('Jane Doe')).toBeTruthy();
       expect(screen.queryByText('Unverified')).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Verify email' })).toBeNull();
+      expect((await contactCard()).queryByRole('button', { name: 'Verify email' })).toBeNull();
     });
   });
 });
