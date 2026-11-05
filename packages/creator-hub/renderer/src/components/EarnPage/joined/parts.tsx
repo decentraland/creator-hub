@@ -1,20 +1,157 @@
 import { useState } from 'react';
-import { MenuItem, Select } from 'decentraland-ui2';
+import { MenuItem, Select, Tooltip } from 'decentraland-ui2';
 
-import type { CreatorFundPlace } from '/shared/types/creator-fund';
+import type { CreatorFundPlace, PlaceReason } from '/shared/types/creator-fund';
 
 import { misc } from '#preload';
 import { getSceneJumpInDeeplink } from '/@/modules/utils';
+import type { TranslationPath } from '/@/modules/store/translation/types';
 import { t } from '/@/modules/store/translation/utils';
 
-import { ModalCta } from '../EarnModal.styled';
-import { ArrowDownIcon, CheckmarkIcon, JumpInIcon } from '../icons';
+import { ModalCta, VisuallyHidden } from '../EarnModal.styled';
+import { ArrowDownIcon, CheckmarkIcon, InProgramIcon, JumpInIcon, NotEligibleIcon } from '../icons';
 import { StatusLine } from '../Landing.styled';
 import { Spinner } from '../Spinner';
 import { fontFace } from '../tokens';
 
 import { jumpInLocation, placeTitle } from './format';
-import { CycleSelectBox, FilterGroup, FilterLabel, JumpIn, StateBox } from './parts.styled';
+import {
+  Chip,
+  CycleSelectBox,
+  FilterGroup,
+  FilterLabel,
+  JumpIn,
+  Metric,
+  MetricLabel,
+  MetricLabelText,
+  MetricValue,
+  StateBox,
+  TooltipLine,
+} from './parts.styled';
+
+const REASONS: Record<PlaceReason, TranslationPath> = {
+  content_policy: 'earn.joined.my_places.reasons.content_policy',
+  excluded: 'earn.joined.my_places.reasons.excluded',
+  not_owner: 'earn.joined.my_places.reasons.not_owner',
+  creator_not_eligible: 'earn.joined.my_places.reasons.creator_not_eligible',
+  terms_outdated: 'earn.joined.my_places.reasons.terms_outdated',
+};
+
+const reasonLines = (reasons: string[]) => [
+  ...new Set(
+    (reasons.length ? reasons : ['unknown']).map(
+      reason => REASONS[reason as PlaceReason] ?? 'earn.joined.my_places.reasons.unknown',
+    ),
+  ),
+];
+
+const TOOLTIP_SLOTS = {
+  tooltip: {
+    sx: {
+      ...fontFace,
+      backgroundColor: 'var(--onyx)',
+      borderRadius: 'var(--shape-borderRadiusLarge)',
+      padding: '16px 20px',
+      maxWidth: 340,
+      fontSize: 'var(--type-h7-regular-size)',
+      fontWeight: 'var(--type-h7-regular-weight)',
+      lineHeight: 'normal',
+      color: 'var(--gray)',
+      boxShadow: 'var(--shadow-tooltip)',
+    },
+  },
+  arrow: { sx: { color: 'var(--onyx)' } },
+};
+
+export type ChipProps =
+  | { status: 'in_program' }
+  | { status: 'not_eligible'; reasons: string[] }
+  | { status: 'replaced' };
+
+function ExplainedChip({
+  status,
+  icon,
+  title,
+}: {
+  status: 'not_eligible' | 'replaced';
+  icon?: React.ReactNode;
+  title: React.ReactNode;
+}) {
+  return (
+    <Tooltip
+      title={title}
+      placement="top"
+      arrow
+      describeChild
+      slotProps={TOOLTIP_SLOTS}
+    >
+      <Chip
+        data-status={status}
+        tabIndex={0}
+      >
+        {icon}
+        {t(`earn.joined.my_places.status.${status}`)}
+      </Chip>
+    </Tooltip>
+  );
+}
+
+/** The program status of one of the user's places; the other statuses explain themselves in a tooltip. */
+export function StatusChip(props: ChipProps) {
+  if (props.status === 'in_program') {
+    return (
+      <Chip data-status="in_program">
+        <InProgramIcon />
+        {t('earn.joined.my_places.status.in_program')}
+      </Chip>
+    );
+  }
+  if (props.status === 'replaced') {
+    return (
+      <ExplainedChip
+        status="replaced"
+        title={t('earn.joined.my_places.replaced_tooltip')}
+      />
+    );
+  }
+  return (
+    <ExplainedChip
+      status="not_eligible"
+      icon={<NotEligibleIcon />}
+      title={reasonLines(props.reasons).map(reason => (
+        <TooltipLine key={reason}>{t(reason)}</TooltipLine>
+      ))}
+    />
+  );
+}
+
+/** One metric of a place; a missing value shows "-", named "No data". */
+export function MetricStat({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | null;
+}) {
+  return (
+    <Metric>
+      <MetricLabel>
+        {icon}
+        <MetricLabelText title={label}>{label}</MetricLabelText>
+      </MetricLabel>
+      <MetricValue>
+        {value ?? (
+          <>
+            <span aria-hidden>-</span>
+            <VisuallyHidden>{t('earn.joined.my_places.metrics.no_data')}</VisuallyHidden>
+          </>
+        )}
+      </MetricValue>
+    </Metric>
+  );
+}
 
 /**
  * Opens a place in the explorer: a scene in a World of several scenes at its own position.

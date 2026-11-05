@@ -1566,7 +1566,8 @@
       },
       "filter": {
         "cycle": "Cycle",
-        "all_cycles": "All cycles"
+        "all_cycles": "All cycles",
+        "current_cycle": "Current cycle"
       },
       "leaderboard": {
         "sentence": "The top 20 places with the highest payouts this cycle",
@@ -1604,6 +1605,33 @@
       },
       "news": {
         "title": "News"
+      },
+      "my_places": {
+        "sentence": "Performance of your Places participating in the program",
+        "last_update": "Last update {time}",
+        "status": {
+          "in_program": "In program",
+          "not_eligible": "Not eligible",
+          "replaced": "Replaced"
+        },
+        "reasons": {
+          "content_policy": "This scene doesn't meet the Content Policy.",
+          "excluded": "This scene is excluded from the Creator Fund.",
+          "not_owner": "Only the owner earns from this place. You're a collaborator.",
+          "creator_not_eligible": "Your account isn't eligible, so this place can't take part.",
+          "terms_outdated": "Accept the updated Program Terms to take part.",
+          "unknown": "This scene can't take part right now."
+        },
+        "metrics": {
+          "new_players": "New Players Attributable",
+          "d3_retention": "D3 Retention",
+          "playtime": "Total Playtime",
+          "minutes": "{value} min",
+          "no_data": "No data"
+        },
+        "empty": "None of your places are in the program yet. Publish a scene on LAND or an open World and it joins automatically.",
+        "error": "Couldn't load your places.",
+        "replaced_tooltip": "This place was republished as a new one. Its earlier numbers are kept."
       }
     },
     "errors": {

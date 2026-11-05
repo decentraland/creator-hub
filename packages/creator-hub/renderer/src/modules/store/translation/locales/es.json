@@ -1540,7 +1540,8 @@
       },
       "filter": {
         "cycle": "Ciclo",
-        "all_cycles": "Todos los ciclos"
+        "all_cycles": "Todos los ciclos",
+        "current_cycle": "Ciclo actual"
       },
       "leaderboard": {
         "sentence": "Los 20 lugares con los pagos más altos de este ciclo",
@@ -1578,6 +1579,33 @@
       },
       "news": {
         "title": "Novedades"
+      },
+      "my_places": {
+        "sentence": "Rendimiento de tus lugares que participan en el programa",
+        "last_update": "Última actualización {time}",
+        "status": {
+          "in_program": "En el programa",
+          "not_eligible": "No elegible",
+          "replaced": "Reemplazado"
+        },
+        "reasons": {
+          "content_policy": "Esta escena no cumple la Política de contenido.",
+          "excluded": "Esta escena está excluida del Creator Fund.",
+          "not_owner": "Solo el propietario gana con este lugar. Eres colaborador.",
+          "creator_not_eligible": "Tu cuenta no es elegible, así que este lugar no puede participar.",
+          "terms_outdated": "Acepta los Términos del Programa actualizados para participar.",
+          "unknown": "Esta escena no puede participar por ahora."
+        },
+        "metrics": {
+          "new_players": "Nuevos jugadores atribuibles",
+          "d3_retention": "Retención D3",
+          "playtime": "Tiempo de juego total",
+          "minutes": "{value} min",
+          "no_data": "Sin datos"
+        },
+        "empty": "Ninguno de tus lugares está en el programa todavía. Publica una escena en LAND o en un World abierto y se unirá automáticamente.",
+        "error": "No se pudieron cargar tus lugares.",
+        "replaced_tooltip": "Este lugar se volvió a publicar como uno nuevo. Se conservan sus cifras anteriores."
       }
     },
     "errors": {

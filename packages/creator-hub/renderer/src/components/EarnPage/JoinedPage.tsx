@@ -8,7 +8,8 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { EarnHeader } from './joined/EarnHeader';
 import { LeaderboardTab } from './joined/LeaderboardTab';
-import { GetReadyPage, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
+import { MyPlacesTab } from './joined/MyPlacesTab';
+import { GetReadyPage, GradientDefs, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
 
 export type JoinedTab = 'leaderboard' | 'my_places';
 
@@ -35,6 +36,26 @@ export function JoinedPage({
   const Shell = gettingReady ? GetReadyPage : Page;
   return (
     <Shell>
+      <GradientDefs aria-hidden>
+        <defs>
+          <linearGradient
+            id="cf-cerise"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop
+              offset="0"
+              stopColor="var(--primary)"
+            />
+            <stop
+              offset="1"
+              stopColor="var(--lavender)"
+            />
+          </linearGradient>
+        </defs>
+      </GradientDefs>
       <EarnHeader />
       <SectionTabs
         value={tab}
@@ -57,7 +78,7 @@ export function JoinedPage({
         id={`${id}-panel`}
         aria-labelledby={`${id}-${tab}`}
       >
-        {tab === 'leaderboard' ? <LeaderboardTab /> : null}
+        {tab === 'leaderboard' ? <LeaderboardTab /> : <MyPlacesTab />}
       </TabPanel>
     </Shell>
   );

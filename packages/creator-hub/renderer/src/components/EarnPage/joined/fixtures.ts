@@ -4,7 +4,10 @@ import type {
   Cycle,
   Leaderboard,
   LeaderboardCycle,
+  MyPlaces,
 } from '/shared/types/creator-fund';
+
+import type { MetricsBatch } from '/@/lib/metricsApi';
 
 const cycle = (id: number, start: string, end: string, status: Cycle['status']): Cycle => ({
   id,
@@ -62,6 +65,43 @@ export const leaderboard = (cycleId: LeaderboardCycle, count = 20): Leaderboard 
         ? place(`place-${index}`, { title: `Example Place ${index + 1}`, base_position: '23,-14' })
         : exampleWorld(`place-${index}`, { title: `Example World ${index + 1}` }),
     earned_usdc: index === 0 ? '1842.50' : `${(1000 - index * 10).toFixed(2)}`,
+  })),
+});
+
+export const myPlaces = (places: CreatorFundPlace[], forCycle: Cycle = RUNNING): MyPlaces => ({
+  cycle: forCycle,
+  places,
+});
+
+type Values = Partial<
+  Record<
+    'new_decentraland_players_30d' | 'd3_retention_rate_30d' | 'avg_playtime_seconds_30d',
+    number
+  >
+>;
+
+/** A metrics answer for `places`, positionally; each place gets `values` unless overridden. */
+export const metricsBatch = (
+  places: CreatorFundPlace[],
+  values: Values = {
+    new_decentraland_players_30d: 1234,
+    d3_retention_rate_30d: 0.102,
+    avg_playtime_seconds_30d: 7680,
+  },
+): MetricsBatch => ({
+  exported_at: '2026-11-03T15:24:00Z',
+  source: 'test',
+  locations: places.map(entry => ({
+    location_key: entry.base_position,
+    builder_project_id: null,
+    x: 0,
+    y: 0,
+    metrics: Object.fromEntries(
+      Object.entries(values).map(([name, value]) => [
+        name,
+        [{ series: 'all', period: null, value }],
+      ]),
+    ),
   })),
 });
 
