@@ -15,7 +15,7 @@ import { ens as ensContract, ensUniversalResolver, dclRegistrar } from './contra
 import { getEnsProvider, isValidENSName } from './utils';
 import { isMissingENSRecordError, resolveContent } from './resolveContent';
 import { withENSRecordClient } from './ccipRead';
-import { USER_PERMISSIONS, type ENS, type ENSError } from './types';
+import { USER_PERMISSIONS, type ENS } from './types';
 
 const DEFAULT_CHAIN_ID: ChainId = Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 const REQUESTS_BATCH_SIZE = 25;
@@ -254,7 +254,6 @@ export const fetchENSList = createAsyncThunk(
 export type ENSState = {
   chainId: ChainId;
   data: Record<string, ENS>;
-  error: ENSError | null;
 };
 
 export const initialState: Async<ENSState> = {
@@ -294,7 +293,10 @@ export const slice = createSlice({
       })
       .addCase(fetchENSList.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = null;
+        // Kept rather than nulled: the UI needs to tell "the lookup failed" apart from "you
+        // own no NAMEs", which previously rendered the same empty screen. Sentry alone is
+        // not enough — the user is the one who has to decide whether to retry.
+        state.error = action.error.message ?? 'Failed to load NAMEs';
         captureException(action.error, {
           tags: { source: 'ens', event: 'fetch-ens-list' },
         });

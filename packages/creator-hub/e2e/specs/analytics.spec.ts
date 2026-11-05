@@ -1,7 +1,7 @@
+import { expect, test } from '@playwright/test';
 import type { ElectronApplication, Page } from 'playwright';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { launchApp } from './helpers/app';
-import { Auth } from './pageObjects/Auth';
+import { launchApp } from '../helpers/app';
+import { Auth } from '../pages/Auth';
 
 const ANALYTICS_LINK = 'a.menu-item[href="/analytics"]';
 const SIGN_IN_CARD = '.SignInCard';
@@ -11,6 +11,8 @@ let electronApp: ElectronApplication;
 let cleanup: () => void;
 let page: Page;
 
+test.describe.configure({ mode: 'serial' });
+
 /**
  * The Analytics page while signed out. `status` starts at `idle` and the fetch is
  * gated on being signed in, so the page used to render a spinner that nothing
@@ -18,8 +20,8 @@ let page: Page;
  * card's styles moved out of `ManagePage`, and only a real render proves they
  * still apply.
  */
-describe('analytics (signed out)', () => {
-  beforeAll(async () => {
+test.describe('analytics (signed out)', { tag: '@offline' }, () => {
+  test.beforeAll(async () => {
     ({ electronApp, cleanup } = await launchApp());
     page = await electronApp.firstWindow();
 
@@ -46,17 +48,12 @@ describe('analytics (signed out)', () => {
       };
     });
     await page.reload();
-    await Auth.waitUntilReady(page);
-  }, 120_000);
+    await new Auth(page).waitUntilReady();
+  });
 
-  afterAll(async () => {
-    try {
-      await electronApp?.close();
-    } catch {
-      // ignore teardown errors so they don't cascade into the next spec file
-    } finally {
-      cleanup?.();
-    }
+  test.afterAll(async () => {
+    await electronApp?.close().catch(() => undefined);
+    cleanup?.();
   });
 
   test('shows the Analytics entry once the flag is on', async () => {
