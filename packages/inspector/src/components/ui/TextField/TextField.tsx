@@ -56,10 +56,18 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
   //   flight. The old `inputValue !== value` check fired in that window and
   //   clobbered the committed value — a visible flicker on slow machines, and
   //   the cause of the e2e "rotation reads 0" flake on the CI runner.
+  //
+  // The render in which focus begins is the exception: nothing has been typed yet, and a
+  // parent may swap the display value for the editable one in that same render
+  // (`WalletField` shows a shortened address until focused). Skipping it would leave the
+  // shortened text in the input, and its blur would commit that instead.
+  const wasFocusedRef = useRef(isFocused);
   useEffect(() => {
     const externalChange = value !== lastValueRef.current;
     lastValueRef.current = value;
-    if (isFocused) return;
+    const focusJustBegan = isFocused && !wasFocusedRef.current;
+    wasFocusedRef.current = isFocused;
+    if (isFocused && !focusJustBegan) return;
     if (externalChange && inputValue !== value) {
       setInputValue(value);
     }
