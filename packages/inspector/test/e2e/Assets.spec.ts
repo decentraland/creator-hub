@@ -4,11 +4,12 @@ import { App } from './pageObjects/App';
 import { Assets } from './pageObjects/Assets';
 import { Hierarchy } from './pageObjects/Hierarchy';
 import { installMouseHelper } from './utils/install-mouse-helper';
+import { expect, test } from './fixtures';
 
 declare const page: Page;
 
-describe('Assets', () => {
-  beforeAll(async () => {
+test.describe('Assets', () => {
+  test.beforeAll(async () => {
     await installMouseHelper(page);
     // Page is already navigated in setup
     await App.waitUntilReady();

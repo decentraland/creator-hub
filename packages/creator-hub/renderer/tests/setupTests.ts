@@ -1,3 +1,4 @@
+import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
 // Mock preload modules
@@ -25,5 +26,10 @@ vi.mock('#preload', async () => {
 });
 
 afterEach(() => {
+  // Vitest runs without globals, so testing-library never registers its own
+  // auto-cleanup and rendered trees would pile up across tests. Unmount BEFORE
+  // clearing mocks: unmount effects call mocks (e.g. usePreviewCleanup kills the
+  // preview), and clearing first would leak those calls into the next test.
+  cleanup();
   vi.clearAllMocks();
 });
