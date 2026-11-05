@@ -161,11 +161,17 @@ describe('ManagePage', () => {
   describe('when the signed-in account has no Worlds at all', () => {
     it('should show the empty Worlds view without the Space Used bar', () => {
       const store = createTestStore();
+      store.dispatch({ type: fetchStorageStats.pending.type, meta: { requestId: 'r' } });
       store.dispatch({
         type: fetchStorageStats.fulfilled.type,
         payload: { usedSpace: '0', maxAllowedSpace: String(100 * 1024 * 1024) },
+        meta: { requestId: 'r' },
       });
-      store.dispatch({ type: fetchManagedProjectsFiltered.fulfilled.type });
+      store.dispatch({ type: fetchManagedProjectsFiltered.pending.type, meta: { requestId: 'r' } });
+      store.dispatch({
+        type: fetchManagedProjectsFiltered.fulfilled.type,
+        meta: { requestId: 'r' },
+      });
 
       renderPage({ isSignedIn: true }, store);
 

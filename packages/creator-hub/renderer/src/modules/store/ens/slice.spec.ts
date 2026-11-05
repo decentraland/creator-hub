@@ -11,10 +11,12 @@ import type * as Viem from 'viem';
 import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import type * as SharedFetch from '/shared/fetch';
 import type * as EnsLib from '/@/lib/ens';
+import { FilterBy } from '/shared/types/manage';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { accountChanged } from '../account';
+import { actions as managementActions, fetchManagedProjectsFiltered } from '../management';
 import { ens as ensContract, dclRegistrar } from './contracts';
-import { actions, fetchContributableNames, fetchDCLNames, fetchENSList, slice } from './slice';
+import { actions, fetchDCLNames, fetchENSList, slice } from './slice';
 import { resolveContent } from './resolveContent';
 import type * as ResolveContent from './resolveContent';
 import { ENS_RECORD_TIMEOUT_MS } from './ccipRead';
@@ -64,6 +66,8 @@ vi.mock('/@/lib/worlds', () => ({
     fetchContributableDomains = fetchContributableDomainsMock;
   },
 }));
+
+vi.mock('/@/lib/auth', () => ({ AuthServerProvider: { getAccount: () => OWNER } }));
 
 vi.mock('/shared/fetch', async importOriginal => ({
   ...(await importOriginal<typeof SharedFetch>()),
@@ -365,6 +369,24 @@ describe('fetchENSList', () => {
   });
 });
 
+describe('when the Manage list loads its first page of unpublished Worlds', () => {
+  beforeEach(async () => {
+    const store = createTestStore();
+    store.dispatch(actions.setChainId(ChainId.ETHEREUM_MAINNET));
+    fakeContracts(ChainId.ETHEREUM_MAINNET);
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+    fetchNamesMock.mockResolvedValue([]);
+    fetchContributableDomainsMock.mockResolvedValue([]);
+    store.dispatch(managementActions.setPublishFilter(FilterBy.UNPUBLISHED));
+
+    await store.dispatch(fetchManagedProjectsFiltered()).unwrap();
+  });
+
+  it('should ask for the contributable names once', () => {
+    expect(fetchContributableDomainsMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('ens reducer', () => {
   describe('when the account changes while the NAME requests are in flight', () => {
     const args = { address: '0xprevious' };
@@ -374,24 +396,46 @@ describe('ens reducer', () => {
       fetchENSList.pending('loaded', args),
       fetchENSList.fulfilled([name], 'loaded', args),
       fetchENSList.pending('late', args),
-      fetchContributableNames.pending('late-contributable', args),
       accountChanged(),
       fetchENSList.fulfilled([name], 'late', args),
-      fetchContributableNames.fulfilled(
-        { names: [], streamOnly: ['previous-stream.dcl.eth'] },
-        'late-contributable',
-        args,
-      ),
     ].reduce(slice.reducer, slice.getInitialState());
 
     it('should drop the previous account NAMEs and their late answers', () => {
       expect(state.data).toEqual({});
-      expect(state.streamOnlyWorlds).toEqual([]);
       expect(state.status).toBe('idle');
     });
 
     it('should keep the network, which belongs to no account', () => {
       expect(state.chainId).toBe(ChainId.ETHEREUM_SEPOLIA);
+    });
+  });
+
+  describe('when two NAME requests overlap and the newer one fails after the older one lands', () => {
+    const args = { address: OWNER };
+    const state = [
+      fetchENSList.pending('older', args),
+      fetchENSList.pending('newer', args),
+      fetchENSList.fulfilled([{ subdomain: 'older.dcl.eth' } as ENS], 'older', args),
+      fetchENSList.rejected(new Error('boom'), 'newer', args),
+    ].reduce(slice.reducer, slice.getInitialState());
+
+    it('should keep the older NAMEs as loaded ones', () => {
+      expect(Object.keys(state.data)).toEqual(['older.dcl.eth']);
+      expect(state.status).toBe('succeeded');
+    });
+  });
+
+  describe('when an older NAME request answers after a newer one', () => {
+    const args = { address: OWNER };
+    const state = [
+      fetchENSList.pending('older', args),
+      fetchENSList.pending('newer', args),
+      fetchENSList.fulfilled([{ subdomain: 'newer.dcl.eth' } as ENS], 'newer', args),
+      fetchENSList.fulfilled([{ subdomain: 'older.dcl.eth' } as ENS], 'older', args),
+    ].reduce(slice.reducer, slice.getInitialState());
+
+    it('should keep the newer NAMEs', () => {
+      expect(Object.keys(state.data)).toEqual(['newer.dcl.eth']);
     });
   });
 });

@@ -15,7 +15,8 @@ import {
   type Land,
   type Rental,
 } from '/@/lib/land';
-import { accountChanged } from '/@/modules/store/account';
+import { accountChanged, isSignedInAccount } from '/@/modules/store/account';
+import { settleRequest, settleRequestAndOlder } from '/@/modules/store/requests';
 
 // actions
 export const fetchTiles = createAsyncThunk('land/fetchTiles', async () => {
@@ -55,6 +56,7 @@ export const fetchLandList = createAsyncThunk(
       rentals: rentals.tenantRentals.concat(rentals.lessorRentals),
     };
   },
+  { condition: isSignedInAccount },
 );
 
 // selectors
@@ -117,7 +119,8 @@ export type LandState = {
   rentals: Rental[];
   tiles: Record<string, AtlasTileProps>;
   error: string | null;
-  requestId: string | null;
+  /** Land list requests still in flight for the current account, oldest first. */
+  requestIds: string[];
 };
 
 export const initialState: Async<LandState> = {
@@ -127,7 +130,7 @@ export const initialState: Async<LandState> = {
   tiles: {},
   status: 'idle',
   error: null,
-  requestId: null,
+  requestIds: [],
 };
 
 // slice
@@ -140,33 +143,31 @@ export const slice = createSlice({
       .addCase(accountChanged, state => ({ ...initialState, tiles: state.tiles }))
       .addCase(fetchLandList.pending, (state, action) => {
         state.status = 'loading';
-        state.requestId = action.meta.requestId;
+        state.requestIds.push(action.meta.requestId);
       })
       .addCase(fetchLandList.fulfilled, (state, action) => {
-        if (action.meta.requestId !== state.requestId) return;
+        if (!settleRequestAndOlder(state.requestIds, action.meta.requestId)) return;
         state.data = [...action.payload.land];
         state.authorizations = action.payload.authorizations;
         state.rentals = action.payload.rentals;
         state.status = 'succeeded';
       })
-      .addCase(fetchTiles.pending, state => {
-        state.status = 'loading';
-      })
       .addCase(fetchTiles.fulfilled, (state, action) => {
         state.tiles = { ...action.payload };
-        state.status = 'succeeded';
       })
       .addCase(fetchLandList.rejected, (state, action) => {
-        if (action.meta.requestId !== state.requestId) return;
-        state.status = 'failed';
+        if (!settleRequest(state.requestIds, action.meta.requestId)) return;
+        state.status = state.requestIds.length
+          ? 'loading'
+          : state.data.length
+            ? 'succeeded'
+            : 'failed';
         state.error = action.error.message || 'Failed to fetch land list';
         captureException(action.error, {
           tags: { source: 'land', event: 'fetch-land-list' },
         });
       })
-      .addCase(fetchTiles.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message || 'Failed to fetch tiles';
+      .addCase(fetchTiles.rejected, (_state, action) => {
         captureException(action.error, {
           tags: { source: 'land', event: 'fetch-tiles' },
         });

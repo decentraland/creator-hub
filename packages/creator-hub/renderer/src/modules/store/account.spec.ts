@@ -5,11 +5,22 @@ import { LandType, RoleType, type Authorization, type Land } from '/@/lib/land';
 import { fetchAnalytics as fetchAnalyticsSnapshot } from '/@/lib/placeAnalytics';
 import type * as ManagementUtils from '/@/modules/store/management/utils';
 import { createTestStore } from '../../../tests/utils/testStore';
-import { accountChanged } from './account';
-import { fetchLandProjects } from './management';
+import { accountChanged, isSignedInAccount } from './account';
+import { fetchContributableNames, fetchDCLNames, fetchENS, fetchENSList } from './ens';
+import { fetchLandList } from './land';
+import {
+  fetchAccountHoldings,
+  fetchAllManagedProjectsData,
+  fetchEmptyWorlds,
+  fetchLandProjects,
+  fetchStorageStats,
+  fetchStreamOnlyWorlds,
+  fetchWorlds,
+} from './management';
 import { fetchAnalytics } from './placeAnalytics';
 
 const PREVIOUS_ACCOUNT = '0x00000000000000000000000000000000000000a1';
+const NEXT_ACCOUNT = '0x00000000000000000000000000000000000000b2';
 
 const previousAccountLand: Land = {
   id: '96,15',
@@ -86,5 +97,64 @@ describe('when the account changes while the previous account LAND list is in fl
 
   it('should keep the late answer out of the analytics places', () => {
     expect(store.getState().placeAnalytics.places).toEqual([]);
+  });
+});
+
+describe('isSignedInAccount', () => {
+  describe('when the address is the signed-in account written in another letter case', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(PREVIOUS_ACCOUNT);
+    });
+
+    it('should be true', () => {
+      expect(isSignedInAccount({ address: PREVIOUS_ACCOUNT.toUpperCase() })).toBe(true);
+    });
+  });
+
+  describe('when the address is another account', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(NEXT_ACCOUNT);
+    });
+
+    it('should be false', () => {
+      expect(isSignedInAccount({ address: PREVIOUS_ACCOUNT })).toBe(false);
+    });
+  });
+
+  describe('when nobody is signed in', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(null);
+    });
+
+    it('should be false', () => {
+      expect(isSignedInAccount({ address: PREVIOUS_ACCOUNT })).toBe(false);
+    });
+  });
+});
+
+describe.each(
+  [
+    fetchENSList,
+    fetchDCLNames,
+    fetchENS,
+    fetchContributableNames,
+    fetchLandList,
+    fetchAllManagedProjectsData,
+    fetchWorlds,
+    fetchEmptyWorlds,
+    fetchStreamOnlyWorlds,
+    fetchStorageStats,
+    fetchAccountHoldings,
+  ].map(thunk => [thunk.typePrefix, thunk] as const),
+)('when %s is dispatched for an account that is no longer signed in', (_, thunk) => {
+  let result: { meta: { condition?: boolean } };
+
+  beforeEach(async () => {
+    vi.mocked(AuthServerProvider.getAccount).mockReturnValue(NEXT_ACCOUNT);
+    result = await createTestStore().dispatch(thunk({ address: PREVIOUS_ACCOUNT }));
+  });
+
+  it('should skip it before it sends anything', () => {
+    expect(result.meta.condition).toBe(true);
   });
 });

@@ -88,7 +88,14 @@ describe('LandDetailPage', () => {
     setCurrentLocale('en', flatten(en));
   });
 
-  afterEach(cleanup);
+  beforeEach(() => {
+    vi.spyOn(managementActions, 'fetchLandProjects').mockImplementation((() => () => {}) as never);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   describe('when the owner opens a LAND', () => {
     beforeEach(() => {
@@ -129,10 +136,6 @@ describe('LandDetailPage', () => {
   });
 
   describe('when a LAND is opened again with its list already loaded', () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
     it('should refetch the list while keeping the LAND on screen', () => {
       const refetch = vi
         .spyOn(managementActions, 'fetchLandProjects')
@@ -185,6 +188,50 @@ describe('LandDetailPage', () => {
         await screen.findByRole('heading', { name: 'This LAND is no longer in your list.' }),
       ).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Back to Manage' })).toBeTruthy();
+    });
+  });
+
+  describe('when the LAND projects list the LAND but the LAND list does not', () => {
+    const listInProjects = (store: ReturnType<typeof renderPage>) => {
+      store.dispatch(fetchLandProjects.pending('projects'));
+      store.dispatch(
+        fetchLandProjects.fulfilled(
+          { projects: [toLandProject(parcel(RoleType.OWNER), [], hash => hash)], deployments: {} },
+          'projects',
+        ),
+      );
+    };
+
+    describe('and the LAND list is still loading', () => {
+      beforeEach(() => {
+        const store = renderPage('/manage/land/96%2C15/details', []);
+        act(() => {
+          listInProjects(store);
+          store.dispatch(fetchLandList.pending('list', { address: '' }));
+        });
+      });
+
+      it('should keep loading instead of saying the LAND left the list', () => {
+        expect(screen.getByRole('progressbar')).toBeTruthy();
+        expect(screen.queryByText('This LAND is no longer in your list.')).toBeNull();
+      });
+    });
+
+    describe('and the LAND list failed', () => {
+      beforeEach(() => {
+        const store = renderPage('/manage/land/96%2C15/details', []);
+        act(() => {
+          listInProjects(store);
+          store.dispatch(fetchLandList.pending('list', { address: '' }));
+          store.dispatch(fetchLandList.rejected(new Error('boom'), 'list', { address: '' }));
+        });
+      });
+
+      it('should ask to try again instead of saying the LAND left the list', () => {
+        expect(screen.getByRole('heading', { name: 'Something went wrong.' })).toBeTruthy();
+        expect(screen.getByText('Please, try again.')).toBeTruthy();
+        expect(screen.queryByText('This LAND is no longer in your list.')).toBeNull();
+      });
     });
   });
 });

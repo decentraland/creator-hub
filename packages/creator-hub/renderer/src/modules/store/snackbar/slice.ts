@@ -1,9 +1,10 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, isFulfilled, isPending } from '@reduxjs/toolkit';
 
 import { isProjectError } from '/shared/types/projects';
 import { t } from '/@/modules/store/translation/utils';
 
+import { accountChanged } from '../account';
 import { actions as deploymentActions } from '../deployment';
 import { actions as editorActions } from '../editor';
 import { actions as ensActions } from '../ens';
@@ -11,6 +12,7 @@ import { actions as landActions } from '../land';
 import { actions as managementActions } from '../management';
 import { actions as workspaceActions } from '../workspace';
 import { shouldNotifyUpdates } from '../workspace/utils';
+import { settleRequest } from '../requests';
 import { createCustomNotification, createGenericNotification, sanitizePreviewError } from './utils';
 import type { Notification } from './types';
 
@@ -25,11 +27,20 @@ function sdkSkillsUpdateId(path: string) {
 // state
 export type SnackbarState = {
   notifications: Notification[];
+  /** Wallet-scoped requests in flight for the current account; only their failures are shown. */
+  accountRequestIds: string[];
 };
 
 export const initialState: SnackbarState = {
   notifications: [],
+  accountRequestIds: [],
 };
+
+const accountRequests = [
+  ensActions.fetchENSList,
+  landActions.fetchLandList,
+  managementActions.fetchManagedProjectsFiltered,
+] as const;
 
 // slice
 export const slice = createSlice({
@@ -46,6 +57,9 @@ export const slice = createSlice({
   },
   extraReducers: builder => {
     builder
+      .addCase(accountChanged, state => {
+        state.accountRequestIds = [];
+      })
       .addCase(workspaceActions.getWorkspace.fulfilled, (state, action) => {
         if (action.payload.missing.length > 0) {
           state.notifications.push(
@@ -306,7 +320,8 @@ export const slice = createSlice({
           createCustomNotification({ type: 'deploy', path }, { duration: 0, requestId: path }),
         );
       })
-      .addCase(ensActions.fetchENSList.rejected, state => {
+      .addCase(ensActions.fetchENSList.rejected, (state, action) => {
+        if (!settleRequest(state.accountRequestIds, action.meta.requestId)) return;
         state.notifications = state.notifications.filter($ => $.requestId !== 'fetchENSList');
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.fetch_ens_list_failed'), {
@@ -315,7 +330,8 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(landActions.fetchLandList.rejected, state => {
+      .addCase(landActions.fetchLandList.rejected, (state, action) => {
+        if (!settleRequest(state.accountRequestIds, action.meta.requestId)) return;
         state.notifications = state.notifications.filter($ => $.requestId !== 'fetchLandList');
         state.notifications.push(
           createGenericNotification('error', t('snackbar.generic.fetch_land_list_failed'), {
@@ -324,7 +340,8 @@ export const slice = createSlice({
           }),
         );
       })
-      .addCase(managementActions.fetchManagedProjectsFiltered.rejected, state => {
+      .addCase(managementActions.fetchManagedProjectsFiltered.rejected, (state, action) => {
+        if (!settleRequest(state.accountRequestIds, action.meta.requestId)) return;
         state.notifications = state.notifications.filter(
           $ => $.requestId !== 'fetchManagedProjectsFiltered',
         );
@@ -472,6 +489,12 @@ export const slice = createSlice({
             },
           ),
         );
+      })
+      .addMatcher(isPending(...accountRequests), (state, action) => {
+        state.accountRequestIds.push(action.meta.requestId);
+      })
+      .addMatcher(isFulfilled(...accountRequests), (state, action) => {
+        settleRequest(state.accountRequestIds, action.meta.requestId);
       });
   },
 });

@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const profile = new Profiles();
       const avatar = await profile.fetchProfile(address);
-      setAvatar(avatar);
+      if (address === walletRef.current) setAvatar(avatar);
     } catch (error) {
       console.error(error);
     }
@@ -240,6 +240,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [stopDeepLinkListener]);
 
   useEffect(() => {
+    if (!wallet) setUser(null);
     if (wallet && chainId) {
       dispatch(ensActions.setChainId(chainId));
       dispatch(fetchAllManagedProjectsData({ address: wallet }));

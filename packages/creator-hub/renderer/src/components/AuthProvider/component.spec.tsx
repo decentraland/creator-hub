@@ -3,7 +3,8 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChainId } from '@dcl/schemas';
+import { setUser } from '@sentry/electron/renderer';
+import { ChainId, type Avatar } from '@dcl/schemas';
 
 import { auth } from '#preload';
 import { useDispatch } from '#store';
@@ -38,11 +39,21 @@ vi.mock('/@/lib/auth', () => ({
   },
 }));
 
+const profileRequests: Array<{ address: string; answer: (avatar: Avatar) => void }> = [];
+
 vi.mock('/@/lib/profile', () => ({
   Profiles: class {
-    fetchProfile = async () => undefined;
+    fetchProfile = (address: string) =>
+      new Promise(answer => profileRequests.push({ address, answer }));
   },
 }));
+
+vi.mock('@sentry/electron/renderer', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  setUser: vi.fn(),
+}));
+
+const avatarOf = (address: string) => ({ name: address }) as Avatar;
 
 vi.mock('/@/modules/store/land', async importOriginal => ({
   ...((await importOriginal()) as object),
@@ -125,6 +136,7 @@ describe('AuthProvider', () => {
 
   beforeEach(async () => {
     fetches = [];
+    profileRequests.length = 0;
     vi.mocked(fetchAllManagedProjectsData).mockImplementation((({ address }: { address: string }) =>
       (_dispatch: unknown, getState: () => ReturnType<typeof store.getState>) => {
         fetches.push({ address, landsAtDispatch: getState().land.data.length });
@@ -177,11 +189,24 @@ describe('AuthProvider', () => {
     });
 
     it("should keep a page's own fetch for B, started as B arrived", () => {
-      expect(store.getState().land.requestId).toBe(`page-${ACCOUNT_B}`);
+      expect(store.getState().land.requestIds).toEqual([`page-${ACCOUNT_B}`]);
     });
 
     it('should identify the session as B', () => {
       expect(store.getState().analytics.userId).toBe(ACCOUNT_B);
+    });
+
+    describe("and A's avatar arrives after B's", () => {
+      beforeEach(async () => {
+        const answerFor = (address: string) =>
+          profileRequests.find(request => request.address === address)!.answer;
+        await act(async () => answerFor(ACCOUNT_B)(avatarOf(ACCOUNT_B)));
+        await act(async () => answerFor(ACCOUNT_A)(avatarOf(ACCOUNT_A)));
+      });
+
+      it("should keep B's avatar", () => {
+        expect(session.avatar).toEqual(avatarOf(ACCOUNT_B));
+      });
     });
   });
 
@@ -201,6 +226,10 @@ describe('AuthProvider', () => {
 
     it('should fetch nothing', () => {
       expect(fetches).toHaveLength(1);
+    });
+
+    it('should clear the Sentry user', () => {
+      expect(setUser).toHaveBeenLastCalledWith(null);
     });
   });
 

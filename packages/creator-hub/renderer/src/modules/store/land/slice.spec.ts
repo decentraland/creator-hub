@@ -6,6 +6,9 @@ import { LandType } from '/@/lib/land';
 import { accountChanged } from '../account';
 import { fetchLandList, fetchTiles, initialState, reducer } from './slice';
 
+const ARGS = { address: '0xme' };
+const listOf = (id: string) => ({ land: [{ id } as Land], authorizations: [], rentals: [] });
+
 describe('land reducer', () => {
   describe('when the land list arrives', () => {
     const authorizations: Authorization[] = [{ address: '0xmanager', type: LandType.PARCEL }];
@@ -89,6 +92,62 @@ describe('land reducer', () => {
 
     it('should keep the atlas tiles, which belong to no account', () => {
       expect(state.tiles).toEqual(tiles);
+    });
+  });
+
+  describe('when two land list requests overlap and the newer one fails after the older one lands', () => {
+    const state = [
+      fetchLandList.pending('older', ARGS),
+      fetchLandList.pending('newer', ARGS),
+      fetchLandList.fulfilled(listOf('older'), 'older', ARGS),
+      fetchLandList.rejected(new Error('boom'), 'newer', ARGS),
+    ].reduce(reducer, initialState);
+
+    it('should keep the older list as a loaded one', () => {
+      expect(state.data.map(land => land.id)).toEqual(['older']);
+      expect(state.status).toBe('succeeded');
+    });
+  });
+
+  describe('when two land list requests overlap and the newer one fails first', () => {
+    const failedFirst = [
+      fetchLandList.pending('older', ARGS),
+      fetchLandList.pending('newer', ARGS),
+      fetchLandList.rejected(new Error('boom'), 'newer', ARGS),
+    ].reduce(reducer, initialState);
+    const state = reducer(failedFirst, fetchLandList.fulfilled(listOf('older'), 'older', ARGS));
+
+    it('should keep loading while the older request is still out', () => {
+      expect(failedFirst.status).toBe('loading');
+    });
+
+    it('should then take the older list', () => {
+      expect(state.data.map(land => land.id)).toEqual(['older']);
+      expect(state.status).toBe('succeeded');
+    });
+  });
+
+  describe('when the only land list request fails', () => {
+    const state = [
+      fetchLandList.pending('only', ARGS),
+      fetchLandList.rejected(new Error('boom'), 'only', ARGS),
+    ].reduce(reducer, initialState);
+
+    it('should fail', () => {
+      expect(state.status).toBe('failed');
+      expect(state.error).toBe('boom');
+    });
+  });
+
+  describe('when the atlas tiles load while the land list is in flight', () => {
+    const state = [
+      fetchLandList.pending('list', ARGS),
+      fetchTiles.pending('tiles'),
+      fetchTiles.fulfilled({}, 'tiles'),
+    ].reduce(reducer, initialState);
+
+    it('should keep the land list loading', () => {
+      expect(state.status).toBe('loading');
     });
   });
 });

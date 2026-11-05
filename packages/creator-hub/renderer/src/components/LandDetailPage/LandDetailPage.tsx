@@ -30,7 +30,8 @@ export function LandDetailPage() {
   const project = useSelector(state =>
     state.management.lands.projects.find(item => item.id === id),
   );
-  const status = useSelector(state => state.management.lands.status);
+  const landStatus = useSelector(state => state.land.status);
+  const landProjectsStatus = useSelector(state => state.management.lands.status);
   const [transfer, setTransfer] = useState<{ open: boolean; land: Land; name: string } | null>(
     null,
   );
@@ -47,11 +48,20 @@ export function LandDetailPage() {
       />
     );
 
-  const loading = status === 'idle' || status === 'loading';
+  const statuses = [landStatus, landProjectsStatus];
+  const loading = statuses.some(status => status === 'idle' || status === 'loading');
+  const failed = statuses.includes('failed');
 
   const page = (() => {
     if (!land || !project) {
       if (loading) return <Loader size={70} />;
+      if (failed)
+        return (
+          <DetailMissing
+            message={t('manage.errors.fetch.title')}
+            description={t('manage.errors.fetch.description')}
+          />
+        );
       return <DetailMissing message={t('land_detail.not_found')} />;
     }
 
