@@ -414,7 +414,7 @@ describe('MyPlacesTab', () => {
     });
   });
 
-  describe('when there are no places', () => {
+  describe('when there are no places in the current cycle', () => {
     it('should say how places join and not ask for metrics', async () => {
       vi.mocked(api.getPlaces).mockResolvedValue(ok(myPlaces([])));
       renderTab();
@@ -423,6 +423,20 @@ describe('MyPlacesTab', () => {
         'None of your places are in the program yet. Publish a scene on LAND or an open World and it joins automatically.',
       );
       expect(metricsApi.fetchMetrics).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when there are no places in a closed cycle', () => {
+    it('should say the cycle had none', async () => {
+      vi.mocked(api.getPlaces).mockImplementation(async cycle =>
+        ok(cycle === OLDEST_CLOSED.id ? myPlaces([], OLDEST_CLOSED) : myPlaces(PLACES)),
+      );
+      renderTab();
+      await screen.findByRole('article', { name: 'Example Place a' });
+
+      await chooseCycle('Oct 1 - Oct 15, 2026');
+
+      expect((await screen.findByRole('status')).textContent).toBe('No places in this cycle.');
     });
   });
 
