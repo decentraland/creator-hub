@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { existsSync } from 'node:fs';
 
-import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { Config, EditorConfig } from '/shared/types/config';
 
-vi.mock('node:fs', () => ({ existsSync: vi.fn() }));
 vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock('../src/modules/electron', () => ({ getUserDataPath: vi.fn(() => '/user/data') }));
 vi.mock('../src/modules/migrations', () => ({ waitForMigrations: vi.fn(async () => undefined) }));
@@ -32,82 +29,40 @@ describe('getConfig', () => {
     vi.clearAllMocks();
   });
 
-  describe('when the stored config has optimize-assets entries for projects that no longer exist on disk', () => {
-    beforeEach(() => {
-      storedConfig = {
-        version: 2,
-        workspace: { paths: ['/projects/alive'] },
-        settings: {
-          scenesPath: '/user/data/Scenes',
-          dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
-          previewOptions: {
-            debugger: false,
-            skipAuthScreen: true,
-            enableLandscapeTerrains: true,
-            openNewInstance: false,
-            multiInstance: false,
-            showWarnings: true,
-            optimizedAssets: false,
-          },
-          optimizedAssetsByPath: {
-            '/projects/alive': true,
-            '/projects/gone': true,
-            '/projects/also-gone': false,
-          },
-        },
-      };
-      vi.mocked(existsSync).mockImplementation(path => path === '/projects/alive');
+  describe('when the stored config carries the retired Compress Assets keys', () => {
+    beforeEach(async () => {
+      const { getDefaultConfig } = await import('../src/modules/config');
+      storedConfig = getDefaultConfig();
+      storedConfig.settings!.aiAssistantPromoted = true;
+      storedConfig.settings!.debugConsolePromoted = true;
+      Object.assign(storedConfig.settings!.previewOptions, { optimizedAssets: true });
+      Object.assign(storedConfig.settings!, {
+        optimizedAssetsByPath: { '/projects/alive': true },
+      });
+      vi.resetModules();
     });
 
-    it('should prune the entries whose project path is missing and keep the rest', async () => {
-      const { getConfig } = await import('../src/modules/config');
-      const config = await getConfig();
-
-      expect(config.settings.optimizedAssetsByPath).toEqual({ '/projects/alive': true });
-    });
-
-    it('should persist the pruned config to storage', async () => {
+    it('should write the config back without them', async () => {
       const { getConfig } = await import('../src/modules/config');
       await getConfig();
 
-      expect(storage.setAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          settings: expect.objectContaining({
-            optimizedAssetsByPath: { '/projects/alive': true },
-          }),
-        }),
-      );
-    });
-  });
-
-  describe('when every optimize-assets entry points to an existing project', () => {
-    beforeEach(() => {
-      storedConfig = {
-        version: 2,
-        workspace: { paths: [] },
-        settings: {
-          scenesPath: '/user/data/Scenes',
-          dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
-          previewOptions: {
-            debugger: false,
-            skipAuthScreen: true,
-            enableLandscapeTerrains: true,
-            openNewInstance: false,
-            multiInstance: false,
-            showWarnings: true,
-            optimizedAssets: false,
-          },
-          optimizedAssetsByPath: { '/projects/alive': true },
-        },
-      };
-      vi.mocked(existsSync).mockReturnValue(true);
+      expect(storage.setAll).toHaveBeenCalledTimes(1);
+      const written = storage.setAll.mock.calls[0][0] as Config;
+      expect('optimizedAssetsByPath' in written.settings).toBe(false);
+      expect('optimizedAssets' in written.settings.previewOptions).toBe(false);
+      expect(written.settings.previewOptions.loadRawGltfs).toBe(false);
     });
 
-    it('should keep all entries', async () => {
-      const { getConfig } = await import('../src/modules/config');
-      const config = await getConfig();
+    it('should write nothing on the next launch', async () => {
+      const first = await import('../src/modules/config');
+      await first.getConfig();
+      vi.resetModules();
+      storage.setAll.mockClear();
 
-      expect(config.settings.optimizedAssetsByPath).toEqual({ '/projects/alive': true });
+      const second = await import('../src/modules/config');
+      await second.getConfig();
+
+      expect(storage.setAll).not.toHaveBeenCalled();
     });
   });
 });
@@ -135,7 +90,6 @@ describe('writeConfig', () => {
     vi.resetModules();
     vi.clearAllMocks();
     storedConfig = {};
-    vi.mocked(existsSync).mockReturnValue(true);
   });
 
   describe('when the submitted config carries a different editor list', () => {
@@ -219,7 +173,6 @@ describe('the one-time AI assistant promotion', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    vi.mocked(existsSync).mockReturnValue(true);
   });
 
   describe('when the stored config predates the promotion', () => {
@@ -257,7 +210,6 @@ describe('the one-time debug console promotion', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    vi.mocked(existsSync).mockReturnValue(true);
   });
 
   describe('when the stored config predates the promotion', () => {

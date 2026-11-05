@@ -94,7 +94,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
     maxWidth: 'calc(100vw - 32px)',
     margin: theme.spacing(2),
     borderRadius: 24,
-    backgroundColor: 'var(--modal-surface)',
+    backgroundColor: 'var(--modal)',
     backgroundImage: 'none',
     boxShadow: 'none',
   },
