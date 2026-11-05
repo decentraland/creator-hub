@@ -103,6 +103,31 @@ describe('TermsModal', () => {
     });
   });
 
+  describe('when the terms embed an image', () => {
+    beforeEach(() => {
+      vi.mocked(api.getTerms).mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: {
+          ...TERMS,
+          content: 'Intro.\n\n![Program banner](https://example.com/banner.png)\n\nOutro.',
+        },
+      });
+    });
+
+    it('should show the alt text and load no image', async () => {
+      const { container } = renderModal(
+        <TermsModal
+          variant="read"
+          onClose={vi.fn()}
+        />,
+      );
+
+      expect(await screen.findByText('Program banner')).toBeTruthy();
+      expect(container.querySelector('img')).toBeNull();
+    });
+  });
+
   describe('when it is read only', () => {
     it('should offer only closing, with no checkbox', async () => {
       const onClose = vi.fn();
