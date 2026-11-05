@@ -14,7 +14,10 @@ export function ScenesPage() {
   const { isLoading, projects, sortBy, setSortBy } = useWorkspace();
 
   return (
-    <main className="ScenesPage">
+    <main
+      className="ScenesPage"
+      data-testid="scenes-page"
+    >
       <Navbar active={NavbarItem.SCENES} />
       <Container>
         <TutorialsWrapper>
