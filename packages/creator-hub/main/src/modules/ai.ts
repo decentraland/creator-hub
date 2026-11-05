@@ -736,8 +736,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
   // the `thread.started` event. codex ≥0.145 removed the --ask-for-approval flag, so the
   // policy is pinned through `-c` instead (also overrides a user config.toml that asks
   // for approvals — stdin is closed right after the prompt is written, so a prompt would
-  // read EOF, not hang);
-  // `--sandbox danger-full-access` is the bypassPermissions equivalent;
+  // read EOF, not hang). The sandbox goes through `-c sandbox_mode` for the same reason:
+  // `codex exec resume` (0.166) defines no `--sandbox` flag, so the flag failed every
+  // follow-up turn with `unexpected argument '--sandbox' found`, while `-c` is accepted
+  // by both subcommands. `danger-full-access` is the bypassPermissions equivalent;
   // `--skip-git-repo-check` lets it run in a scene folder that isn't a git repo. Present
   // so a signed-in Codex works out of the box; the UI defaults to Claude.
   codex: {
@@ -756,8 +758,8 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       const args = [
         ...base,
         '--json',
-        '--sandbox',
-        'danger-full-access',
+        '-c',
+        'sandbox_mode="danger-full-access"',
         '-c',
         'approval_policy="never"',
         '--skip-git-repo-check',
