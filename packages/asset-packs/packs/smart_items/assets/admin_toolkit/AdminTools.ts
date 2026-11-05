@@ -31,6 +31,9 @@ export class AdminTools {
    * @param videoControl - Video and stream screens the admin can control.
    * @param smartItemsControl - Other smart items whose actions the admin can trigger.
    * @param rewardsControl - Reward campaigns the admin can dispense.
+   *
+   * The `@components`, `@actionsOf` and `@format` tags on the fields below only shape the
+   * editor's pickers (which entities a list offers, which actions, an address field).
    */
   constructor(
     public src: string, // DO NOT REMOVE
@@ -40,6 +43,7 @@ export class AdminTools {
       me: boolean;
       sceneOwners: boolean;
       allowList: boolean;
+      /** @format wallet */
       adminAllowList: string[];
     } = { me: true, sceneOwners: true, allowList: true, adminAllowList: [] },
     public moderationControl: {
@@ -61,7 +65,11 @@ export class AdminTools {
       disableVideoPlayersSound: boolean;
       showAuthorOnVideoPlayers: boolean;
       linkAllVideoPlayers: boolean;
-      videoPlayers: Array<{ entity: Entity; customName: string }>;
+      videoPlayers: Array<{
+        /** @components asset-packs::VideoScreen */
+        entity: Entity;
+        customName: string;
+      }>;
     } = {
       isEnabled: true,
       disableVideoPlayersSound: false,
@@ -72,11 +80,21 @@ export class AdminTools {
     public smartItemsControl: {
       isEnabled: boolean;
       linkAllSmartItems: boolean;
-      smartItems: Array<{ entity: Entity; customName: string; defaultAction: string }>;
+      smartItems: Array<{
+        /** @components asset-packs::Actions */
+        entity: Entity;
+        customName: string;
+        /** @actionsOf entity */
+        defaultAction: string;
+      }>;
     } = { isEnabled: true, linkAllSmartItems: false, smartItems: [] },
     public rewardsControl: {
       isEnabled: boolean;
-      rewardItems: Array<{ entity: Entity; customName: string }>;
+      rewardItems: Array<{
+        /** @components asset-packs::Rewards */
+        entity: Entity;
+        customName: string;
+      }>;
     } = { isEnabled: true, rewardItems: [] },
   ) {}
 

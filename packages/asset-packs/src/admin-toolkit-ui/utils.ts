@@ -59,3 +59,14 @@ export type CamelCase<T> = {
         : T[K]
       : T[K];
 };
+
+// The smart-item action dropdown. An item with no actions (anything linked that isn't a smart
+// item) must not open: an open dropdown with no options draws as an empty white box over the
+// buttons below it.
+export function getActionPickerState(hasSelection: boolean, actionCount: number) {
+  const hasNoActions = hasSelection && actionCount === 0;
+  return {
+    disabled: !hasSelection || hasNoActions,
+    emptyLabel: hasNoActions ? 'This item has no actions' : 'Select action',
+  };
+}

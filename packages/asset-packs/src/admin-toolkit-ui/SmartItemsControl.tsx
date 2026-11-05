@@ -14,6 +14,7 @@ import { COLORS, RADIUS, SPACING, TYPE } from './theme';
 import { FieldLabel } from './Primitives';
 import { PillButton } from './Controls';
 import { selectSmartItem, setSmartItemAction, setSmartItemVisibility } from './actions';
+import { getActionPickerState } from './utils';
 import { getSmartItems } from '.';
 
 type SmartItemList = NonNullable<AdminTools['smartItemsControl']['smartItems']>;
@@ -72,6 +73,8 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
       })
     : -1;
 
+  const actionPicker = getActionPickerState(hasSelection, actions.length);
+
   const selectedAction = selectedActionIndex >= 0 ? actions[selectedActionIndex] : undefined;
   const selectedSmartItem = hasSelection ? smartItems[selectedIndex] : undefined;
   const isVisible =
@@ -114,10 +117,10 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
         <FieldLabel text="Action" />
         <Dropdown
           acceptEmpty
-          emptyLabel="Select action"
+          emptyLabel={actionPicker.emptyLabel}
           options={actions.map((action: Action) => action.name)}
           selectedIndex={selectedActionIndex}
-          disabled={!hasSelection}
+          disabled={actionPicker.disabled}
           onChange={idx => {
             if (hasSelection) handleSelectAction(smartItems[selectedIndex], actions[idx]);
           }}
@@ -126,7 +129,7 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
           color={COLORS.inputText}
           uiTransform={DROPDOWN_TRANSFORM}
           uiBackground={{
-            color: hasSelection ? COLORS.inputBackground : COLORS.disabledBackground,
+            color: actionPicker.disabled ? COLORS.disabledBackground : COLORS.inputBackground,
           }}
         />
       </UiEntity>
