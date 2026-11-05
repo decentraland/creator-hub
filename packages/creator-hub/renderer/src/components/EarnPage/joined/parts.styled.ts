@@ -44,6 +44,12 @@ const FilterLabel = styled('span')({
   color: 'var(--dcl-silver)',
 });
 
+const FilterNote = styled('span')({
+  ...typeToken('h6-regular'),
+  color: 'var(--gray)',
+  marginRight: 20,
+});
+
 const CycleSelectBox = styled('div')({
   '& .MuiInput-root::before, & .MuiInput-root::after': { display: 'none' },
   '& .MuiInputBase-root': {
@@ -63,6 +69,75 @@ const CycleSelectBox = styled('div')({
     outlineOffset: 2,
   },
   '& .MuiSelect-icon': { top: 'calc(50% - 5px)', right: 10, color: 'var(--dcl-silver)' },
+});
+
+const Chip = styled('span')({
+  ...typeToken('h8-semi'),
+  display: 'inline-flex',
+  alignItems: 'center',
+  alignSelf: 'flex-start',
+  gap: 4,
+  padding: '4px 8px 4px 6px',
+  borderRadius: 'var(--r-pill)',
+  border: '1px solid',
+  textTransform: 'uppercase',
+  '&[data-status="in_program"]': {
+    color: 'var(--palette-rarity-rare)',
+    borderColor: 'var(--palette-rarity-rare)',
+    backgroundColor: 'var(--success-bg)',
+  },
+  '&[data-status="not_eligible"]': {
+    color: 'var(--error)',
+    borderColor: 'var(--error)',
+    backgroundColor: 'var(--error-bg)',
+    cursor: 'default',
+  },
+  '&[data-status="replaced"]': {
+    color: 'var(--dcl-silver)',
+    borderColor: 'var(--dcl-silver)',
+    backgroundColor: 'var(--palette-whiteTransparent-faint)',
+    cursor: 'default',
+  },
+  ...focusRing,
+});
+
+const TooltipLine = styled('span')({
+  display: 'block',
+});
+
+const Metric = styled('div')({
+  width: 220,
+  minWidth: 202,
+  flexShrink: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  margin: 0,
+});
+
+const MetricLabel = styled('dt')({
+  ...typeToken('h7-semi'),
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  height: 28,
+  minWidth: 0,
+  color: 'var(--dcl-silver)',
+  whiteSpace: 'nowrap',
+  '& svg': { flexShrink: 0 },
+});
+
+const MetricLabelText = styled('span')({
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+});
+
+const MetricValue = styled('dd')({
+  ...typeToken('h4-semi'),
+  fontVariantNumeric: 'tabular-nums',
+  margin: 0,
+  color: 'var(--palette-neutral-softWhite)',
 });
 
 const JumpIn = styled(Button)({
@@ -93,12 +168,19 @@ const StateBox = styled('div')({
 });
 
 export {
+  Chip,
   CycleSelectBox,
   FilterBar,
   FilterGroup,
   FilterLabel,
+  FilterNote,
   FilterSentence,
   JumpIn,
+  Metric,
+  MetricLabel,
+  MetricLabelText,
+  MetricValue,
   PageBackdrop,
   StateBox,
+  TooltipLine,
 };

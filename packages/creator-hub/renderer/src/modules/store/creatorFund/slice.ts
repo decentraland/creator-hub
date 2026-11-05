@@ -93,10 +93,11 @@ export const fetchLeaderboard = createAsyncThunk(
     settle(await api.getLeaderboard(cycle), rejectWithValue),
 );
 
-/** `GET /places?cycle=`: the user's places for a cycle, no paging. */
+/** `GET /places?cycle=`: the user's places for a cycle, no paging; with no cycle the service picks one. */
 export const fetchPlaces = createAsyncThunk(
   'creatorFund/fetchPlaces',
-  async (cycle: number, { rejectWithValue }) => settle(await api.getPlaces(cycle), rejectWithValue),
+  async (cycle: number | undefined, { rejectWithValue }) =>
+    settle(await api.getPlaces(cycle), rejectWithValue),
 );
 
 const locationOf = (place: CreatorFundPlace): MetricLocation => {

@@ -20,6 +20,7 @@ vi.mock('/@/lib/creatorFundApi', () => ({
   getCycles: vi.fn(),
 }));
 vi.mock('./joined/LeaderboardTab', () => ({ LeaderboardTab: () => <p>leaderboard panel</p> }));
+vi.mock('./joined/MyPlacesTab', () => ({ MyPlacesTab: () => <p>my places panel</p> }));
 vi.mock('../Modals', async importOriginal => ({
   ...((await importOriginal()) as object),
   Modal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
@@ -85,7 +86,7 @@ describe('JoinedPage', () => {
       await renderPage('my_places');
 
       expect(screen.getByRole('tab', { name: 'My Places', selected: true })).toBeTruthy();
-      expect(screen.getByRole('tabpanel').textContent).toBe('');
+      expect(screen.getByRole('tabpanel').textContent).toBe('my places panel');
     });
   });
 
