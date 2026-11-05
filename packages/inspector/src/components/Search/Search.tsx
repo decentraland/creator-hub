@@ -1,10 +1,10 @@
 import React from 'react';
 
 import { Input } from '../Input';
-import { PropTypes } from './types';
+import SearchIcon from '../Icons/Search';
+import type { PropTypes } from './types';
 
 import './Search.css';
-import SearchIcon from '../Icons/Search';
 
 function Search(props: PropTypes) {
   return (

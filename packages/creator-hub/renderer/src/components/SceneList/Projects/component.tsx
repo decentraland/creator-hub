@@ -27,6 +27,7 @@ export function Projects({ projects }: Props) {
     <>
       <div
         className="new-scene"
+        data-testid="scene-list-new-scene-tile"
         onClick={() => navigate('/templates')}
       ></div>
       {projects.map(project => (
@@ -152,6 +153,7 @@ function Project({ project }: { project: Project }) {
   return (
     <>
       <ProjectCard
+        data-testid="scene-list-project-card"
         title={project.title}
         imageUrl={thumbnailUrl}
         dropdownOptions={dropdownOptions}
@@ -221,6 +223,7 @@ function NoScenes() {
         </div>
         <div
           className="no-scenes-card-button"
+          data-testid="scene-list-new-scene-button"
           onClick={() => navigate('/templates')}
         ></div>
       </div>

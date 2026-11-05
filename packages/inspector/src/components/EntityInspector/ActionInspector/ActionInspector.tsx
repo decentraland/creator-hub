@@ -32,6 +32,7 @@ import { InfoTooltip } from '../../ui/InfoTooltip';
 import type { ScriptAction } from '../ScriptInspector/types';
 import { parseLayout } from '../ScriptInspector/utils';
 import { ScriptParamField } from '../ScriptInspector/ScriptParamField/ScriptParamField';
+import { resolveParamUpdate, type ParamUpdate } from '../ScriptInspector/ScriptParamField/update';
 import { truncateMiddle } from '../../ImportAsset/utils';
 import { PlaySoundAction } from './PlaySoundAction';
 import { TweenAction } from './TweenAction';
@@ -838,14 +839,25 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [actions, handleModifyAction],
   );
 
-  const handleChangeScriptAction = useCallback(
-    (payload: Record<string, any>, idx: number) => {
-      handleModifyAction(idx, {
-        ...actions[idx],
-        jsonPayload: JSON.stringify(payload),
-      });
+  // Builds the new action from the queued previous one, not the render closure, so two param edits
+  // that land before a re-render (e.g. sibling fields of an object param) both survive.
+  const handleChangeScriptParam = useCallback(
+    (idx: number, name: string, update: ParamUpdate, defaultValue: unknown) => {
+      modifyAction(
+        idx,
+        prev => {
+          const payload = JSON.parse(prev.jsonPayload || '{}');
+          const params = (payload.params ?? {}) as Record<string, unknown>;
+          const value = resolveParamUpdate(update, params[name] ?? defaultValue);
+          return {
+            ...prev,
+            jsonPayload: JSON.stringify({ ...payload, params: { ...params, [name]: value } }),
+          };
+        },
+        handleUpdateActions,
+      );
     },
-    [actions, handleModifyAction],
+    [modifyAction, handleUpdateActions],
   );
 
   const createHandler = <T extends ActionType>(
@@ -1307,10 +1319,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 key={name}
                 name={name}
                 param={{ ...param, value: paramValues?.[name] ?? param.value }}
-                onUpdate={value => {
-                  const updatedParams = { ...paramValues, [name]: value };
-                  handleChangeScriptAction({ scriptPath, methodName, params: updatedParams }, idx);
-                }}
+                onUpdate={update => handleChangeScriptParam(idx, name, update, param.value)}
               />
             ))}
           </div>
