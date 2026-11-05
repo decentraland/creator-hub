@@ -1,4 +1,5 @@
-import { ColliderLayer, engine, Entity, TriggerArea, triggerAreaEventsSystem } from '@dcl/sdk/ecs';
+import type { Entity } from '@dcl/sdk/ecs';
+import { ColliderLayer, engine, TriggerArea, triggerAreaEventsSystem } from '@dcl/sdk/ecs';
 
 // The collision layer the area listens on, by dropdown value. Both player options mask on
 // CL_PLAYER (which lets in every avatar, local + remote); "my player" additionally narrows to

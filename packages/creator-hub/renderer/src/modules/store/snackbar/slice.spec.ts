@@ -308,6 +308,56 @@ describe('snackbar slice', () => {
     });
   });
 
+  describe('when the multiplayer server SDK finishes installing', () => {
+    it('should show a single "Multiplayer Server SDK installed." success toast', () => {
+      const store = createTestStore();
+      const installed = workspaceActions.installMultiplayerSdk.fulfilled(
+        undefined,
+        'request',
+        projectWithOutdatedDeps,
+      );
+
+      store.dispatch(installed);
+      store.dispatch(installed);
+
+      const toasts = store
+        .getState()
+        .snackbar.notifications.filter($ => $.requestId === 'installMultiplayerSdk');
+      expect(toasts).toEqual([
+        expect.objectContaining({
+          type: 'generic',
+          severity: 'success',
+          message: 'Multiplayer Server SDK installed.',
+        }),
+      ]);
+    });
+  });
+
+  describe('when the multiplayer server SDK finishes uninstalling', () => {
+    it('should show a single "Multiplayer Server SDK removed" success toast', () => {
+      const store = createTestStore();
+      const uninstalled = workspaceActions.uninstallMultiplayerSdk.fulfilled(
+        undefined,
+        'request',
+        projectWithOutdatedDeps,
+      );
+
+      store.dispatch(uninstalled);
+      store.dispatch(uninstalled);
+
+      const toasts = store
+        .getState()
+        .snackbar.notifications.filter($ => $.requestId === 'uninstallMultiplayerSdk');
+      expect(toasts).toEqual([
+        expect.objectContaining({
+          type: 'generic',
+          severity: 'success',
+          message: 'Multiplayer Server SDK removed. Latest SDK release installed.',
+        }),
+      ]);
+    });
+  });
+
   describe('when importing a project fails because it was already imported', () => {
     it('should show a message clarifying the scene is already imported', async () => {
       vi.mocked(workspace.importProject).mockRejectedValue(
