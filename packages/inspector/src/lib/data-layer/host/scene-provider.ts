@@ -21,6 +21,9 @@ type SceneWithDefaults = Scene & {
 
 type SceneFields = Record<string, unknown>;
 
+const SCENE_READ_ATTEMPTS = 3;
+const SCENE_READ_RETRY_MS = 50;
+
 const isPlainObject = (value: unknown): value is SceneFields =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
@@ -90,14 +93,27 @@ export class SceneProvider implements StateProvider {
     return SceneProvider.augmentDefaults(scene);
   }
 
+  /**
+   * scene.json as it is on disk now, or null when there is none. A file that exists but
+   * does not parse (caught mid-write by another writer, say) is read again a few times;
+   * if it still does not parse this throws, because writing over it from the copy loaded
+   * at open would revert whatever that other writer put there.
+   */
   private async readSceneOnDisk(): Promise<Scene | null> {
-    try {
+    for (let attempt = 1; ; attempt++) {
       if (!(await this.fs.existFile('scene.json'))) return null;
-      const scene = JSON.parse(new TextDecoder().decode(await this.fs.readFile('scene.json')));
-      return isPlainObject(scene) ? (scene as Scene) : null;
-    } catch (error) {
-      console.error('Reading scene.json before saving failed:', error);
-      return null;
+      try {
+        const scene = JSON.parse(new TextDecoder().decode(await this.fs.readFile('scene.json')));
+        if (isPlainObject(scene)) return scene as Scene;
+        throw new Error('scene.json does not hold a JSON object');
+      } catch (error) {
+        if (attempt >= SCENE_READ_ATTEMPTS) {
+          throw new Error(
+            `Could not read scene.json before saving it: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        await new Promise(resolve => setTimeout(resolve, SCENE_READ_RETRY_MS));
+      }
     }
   }
 
@@ -184,12 +200,13 @@ export class SceneProvider implements StateProvider {
       // Re-read on purpose: scene.json is not the editor's alone. The host writes keys the
       // Scene component does not carry (worldConfiguration) and can rewrite ones it does
       // (the publish dialog's parcels), so writing the copy captured at load reverts them.
+      // No await between the read and the write but the write itself, to keep the window
+      // for another writer to slip in between them as short as it can be.
       const onDisk = (await this.readSceneOnDisk()) ?? this.scene;
       const next = SceneProvider.augmentDefaults(
         mergeEditorChanges(onDisk, this.synced as SceneFields, snapshot as SceneFields),
       );
-      const buffer = Buffer.from(JSON.stringify(next, null, 2), 'utf-8');
-      await this.fs.writeFile('scene.json', buffer);
+      await this.fs.writeFile('scene.json', Buffer.from(JSON.stringify(next, null, 2), 'utf-8'));
       this.synced = snapshot;
       // An edit that landed while the write was in flight is not on disk yet, so it keeps
       // the provider dirty and the next flush writes it.
