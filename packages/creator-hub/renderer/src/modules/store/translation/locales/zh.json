@@ -1601,6 +1601,7 @@
       },
       "leaderboard": {
         "sentence": "本周期收益最高的前 20 个地点",
+        "sentence_all": "所有周期中收益最高的前 20 个地点",
         "rank": "排名",
         "place": "地点",
         "earned": "收益",
