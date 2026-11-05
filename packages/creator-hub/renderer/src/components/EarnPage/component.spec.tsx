@@ -390,11 +390,12 @@ describe('EarnPage', () => {
       expect(view.getByText('home page')).toBeTruthy();
     });
 
-    it('should accept the current version and show the joined page', async () => {
+    it('should accept the current version and open the joined page on My Places', async () => {
       const view = within(page().container);
       await acceptUpdatedTerms(view);
 
-      expect(await view.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
+      const myPlaces = await view.findByRole('tab', { name: 'My Places' });
+      expect(myPlaces.getAttribute('aria-selected')).toBe('true');
       expect(api.putEnrollment).toHaveBeenCalledWith({
         first_name: 'Jane',
         last_name: 'Doe',

@@ -216,7 +216,11 @@ export function MyPlacesTab() {
     body = (
       <ListState
         kind="empty"
-        message={t('earn.joined.my_places.empty')}
+        message={t(
+          shown.cycle?.status === 'closed'
+            ? 'earn.joined.my_places.empty_closed_cycle'
+            : 'earn.joined.my_places.empty',
+        )}
       />
     );
   } else {
