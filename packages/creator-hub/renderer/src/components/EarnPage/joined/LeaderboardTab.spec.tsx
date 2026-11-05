@@ -247,6 +247,20 @@ describe('LeaderboardTab', () => {
     });
   });
 
+  describe('when the service answers with the cycle in another form', () => {
+    it.each([
+      ['a string id', '3'],
+      ['no id', null],
+    ])('should still show the board for %s', async (_, cycleId) => {
+      vi.mocked(api.getLeaderboard).mockImplementation(async cycle =>
+        ok({ ...leaderboard(cycle), cycle_id: cycleId as any }),
+      );
+      renderTab();
+
+      expect(await screen.findByText('Example Place 1')).toBeTruthy();
+    });
+  });
+
   describe('when the leaderboard is loading', () => {
     it('should show the spinner', async () => {
       vi.mocked(api.getLeaderboard).mockReturnValue(new Promise(() => {}));
