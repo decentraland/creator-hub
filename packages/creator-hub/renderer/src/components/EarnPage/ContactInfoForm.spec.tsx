@@ -27,7 +27,7 @@ const renderForm = (props: Props = {}) => {
   return { ...view, onSubmit, onCancel };
 };
 
-const field = (name: RegExp) => screen.getByRole('textbox', { name }) as HTMLInputElement;
+const field = (name: RegExp) => screen.getByLabelText<HTMLInputElement>(name);
 const submit = () => screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
 const type = (name: RegExp, value: string) => fireEvent.change(field(name), { target: { value } });
 
