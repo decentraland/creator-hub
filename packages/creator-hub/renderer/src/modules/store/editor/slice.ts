@@ -1,10 +1,9 @@
-import { createAction, createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
+import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
 import { captureException } from '@sentry/electron/renderer';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { supportsMcp, supportsMultiInstance, supportsUiDesigner } from '/shared/flags';
 import type { DeployOptions } from '/shared/types/deploy';
-import type { PreviewProgress } from '/shared/types/ipc';
 import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
 import { type PreviewOptions } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
@@ -22,32 +21,12 @@ import { actions as workspaceActions } from '../workspace';
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
 export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
-export const setPreviewProgress = createAction<PreviewProgress | null>('editor/setPreviewProgress');
 export const runScene = createAsyncThunk(
   'editor/runScene',
-  async (
-    { path, mobile, ...opts }: PreviewOptions & { path: string; mobile?: boolean },
-    { dispatch, getState, requestId },
-  ) => {
-    // Surfaces the sidecar's asset-conversion progress (a large scene's first
-    // conversion can take minutes before the preview is ready)
-    const subscription = editor.subscribePreviewProgress(path, progress =>
-      dispatch(setPreviewProgress(progress)),
-    );
-    try {
-      await editor.runScene({ path, opts, mobile });
-    } finally {
-      subscription.cleanup();
-      // a run that was superseded or left behind must not wipe the current run's progress
-      const { previewRun } = getState().editor;
-      if (!previewRun || previewRun.requestId === requestId) dispatch(setPreviewProgress(null));
-    }
+  async ({ path, mobile, ...opts }: PreviewOptions & { path: string; mobile?: boolean }) => {
+    await editor.runScene({ path, opts, mobile });
   },
 );
-// Cancels a preview that's still converting: the spawn is killed and the pending
-// runScene settles without opening the client.
-export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.cancelPreview);
-
 function isSaveSceneUnsupported(error: unknown): boolean {
   return error instanceof Error && error.message.includes('"save_scene" not implemented');
 }
@@ -146,8 +125,6 @@ export type EditorState = {
   publishError: string | null;
   loadingInspector: boolean;
   loadingPreview: boolean;
-  previewProgress: PreviewProgress | null;
-  previewCancelled: boolean;
   // The run that owns `loadingPreview`. A run that settles after the user left its scene
   // (or after a newer run took over) must not touch the state of the scene now open.
   previewRun: { requestId: string; path: string } | null;
@@ -176,8 +153,6 @@ const initialState: EditorState = {
   publishError: null,
   loadingInspector: false,
   loadingPreview: false,
-  previewProgress: null,
-  previewCancelled: false,
   previewRun: null,
   isPreviewRunning: false,
   runningPreviewPath: null,
@@ -200,9 +175,6 @@ export const slice = createSlice({
     },
   },
   extraReducers: builder => {
-    builder.addCase(setPreviewProgress, (state, action) => {
-      state.previewProgress = action.payload;
-    });
     builder.addCase(workspaceActions.runProject.pending, (state, action) => {
       state.project = undefined;
       state.openingProjectPath = action.meta.arg.path;
@@ -314,19 +286,14 @@ export const slice = createSlice({
     });
     builder.addCase(runScene.pending, (state, action) => {
       state.loadingPreview = true;
-      state.previewCancelled = false;
       state.previewRun = { requestId: action.meta.requestId, path: action.meta.arg.path };
     });
     builder.addCase(runScene.fulfilled, (state, action) => {
       if (state.previewRun?.requestId !== action.meta.requestId) return;
       state.previewRun = null;
       state.loadingPreview = false;
-      // a cancelled run settles quietly with no client opened, so it isn't "running"
-      if (!state.previewCancelled) {
-        state.isPreviewRunning = true;
-        state.runningPreviewPath = action.meta.arg.path;
-      }
-      state.previewCancelled = false;
+      state.isPreviewRunning = true;
+      state.runningPreviewPath = action.meta.arg.path;
     });
     builder.addCase(runScene.rejected, (state, action) => {
       captureException(action.error, {
@@ -335,22 +302,6 @@ export const slice = createSlice({
       if (state.previewRun?.requestId !== action.meta.requestId) return;
       state.previewRun = null;
       state.loadingPreview = false;
-      state.previewCancelled = false;
-    });
-    // The button stays blocked until the cancel completes: killPreview resolves only once
-    // the process is confirmed dead (up to the force-kill timeout), and unblocking earlier
-    // would let a Preview press ride the dying spawn and report success without starting
-    // anything — a running UI with nothing running.
-    builder.addCase(cancelPreview.pending, state => {
-      state.previewCancelled = true;
-    });
-    // guarded so a run started while the cancel was in flight (a mobile-QR start) keeps
-    // its own loading state: runScene.pending already cleared previewCancelled for it
-    builder.addCase(cancelPreview.fulfilled, state => {
-      if (state.previewCancelled) state.loadingPreview = false;
-    });
-    builder.addCase(cancelPreview.rejected, state => {
-      if (state.previewCancelled) state.loadingPreview = false;
     });
     // On pending, not fulfilled: killing waits for the process to die (up to the force-kill
     // timeout), and the scene the user moved to may start its own preview meanwhile.
@@ -359,8 +310,6 @@ export const slice = createSlice({
       if (state.previewRun?.path === path) {
         state.previewRun = null;
         state.loadingPreview = false;
-        state.previewCancelled = false;
-        state.previewProgress = null;
       }
       if (state.runningPreviewPath === path) {
         state.isPreviewRunning = false;
@@ -402,8 +351,6 @@ export const slice = createSlice({
 // exports
 export const actions = {
   ...slice.actions,
-  setPreviewProgress,
-  cancelPreview,
   fetchVersion,
   install,
   startInspector,
