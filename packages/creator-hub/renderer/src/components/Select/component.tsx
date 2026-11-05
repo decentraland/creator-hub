@@ -24,12 +24,9 @@ export function Select<T extends string | string[]>({ maxSelected, ...props }: P
         }
       }}
       MenuProps={{
-        className: 'SelectMenu',
-        /*
-         * Without this the menu locks body scroll while open, which removes the
-         * app scrollbar and shifts the whole layout sideways as it opens.
-         */
         disableScrollLock: true,
+        ...props.MenuProps,
+        className: cx('SelectMenu', props.MenuProps?.className),
       }}
     >
       {props.children}

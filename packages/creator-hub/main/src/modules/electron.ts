@@ -1,6 +1,14 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { app, BrowserWindow, clipboard, dialog, type OpenDialogOptions, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  type OpenDialogOptions,
+  type SaveDialogOptions,
+  shell,
+} from 'electron';
 import type { Env } from '/shared/types/env';
 
 // Store environment override from CLI arguments
@@ -46,6 +54,14 @@ export async function showOpenDialog(opts: Partial<OpenDialogOptions>): Promise<
 
   const { filePaths } = await dialog.showOpenDialog(window, opts);
   return filePaths;
+}
+
+export async function showSaveDialog(opts: Partial<SaveDialogOptions>): Promise<string | null> {
+  const window = BrowserWindow.getFocusedWindow();
+  if (!window) return null;
+
+  const { canceled, filePath } = await dialog.showSaveDialog(window, opts);
+  return canceled || !filePath ? null : filePath;
 }
 
 export async function openExternal(url: string) {

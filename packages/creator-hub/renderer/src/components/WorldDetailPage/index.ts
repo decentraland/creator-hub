@@ -1,0 +1,1 @@
+export { WorldDetailPage } from './WorldDetailPage';
