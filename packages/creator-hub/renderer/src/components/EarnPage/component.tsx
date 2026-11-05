@@ -30,7 +30,8 @@ function EarnContent() {
   const location = useLocation();
   const { isSignedIn, isSigningIn, signIn } = useAuth();
   const enrollment = useSelector(state => state.creatorFund.enrollment.data);
-  const enrollmentFailed = useSelector(state => state.creatorFund.enrollment.status === 'failed');
+  const enrollmentStatus = useSelector(state => state.creatorFund.enrollment.status);
+  const enrollmentFailed = enrollmentStatus === 'failed';
   const needsReaccept = useSelector(selectors.needsReaccept);
   const termsVersion = useSelector(state => state.creatorFund.terms.data?.version);
   const [refusedReasons, setRefusedReasons] = useState<string[] | null>(null);
@@ -42,6 +43,7 @@ function EarnContent() {
   const [reaccepting, setReaccepting] = useState(false);
   const [tab, setTab] = useState<JoinedTab>('leaderboard');
   const joinAfterSignIn = (location.state as EarnLocationState)?.joinAfterSignIn === true;
+  const settled = checked && (enrollmentStatus === 'succeeded' || enrollmentFailed);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -61,25 +63,25 @@ function EarnContent() {
   }, []);
 
   useEffect(() => {
-    if (!joinAfterSignIn || isSigningIn || (isSignedIn && !checked)) return;
-    navigate(location.pathname, { replace: true, state: null });
+    if (!joinAfterSignIn || isSigningIn || (isSignedIn && !settled)) return;
+    navigate(location, { replace: true, state: null });
     if (isSignedIn && !enrollmentFailed && !enrollment) startJoin();
   }, [
     joinAfterSignIn,
     isSigningIn,
     isSignedIn,
-    checked,
+    settled,
     enrollment,
     enrollmentFailed,
     navigate,
-    location.pathname,
+    location,
     startJoin,
   ]);
 
   const signInToJoin = useCallback(() => {
-    navigate(location.pathname, { replace: true, state: { joinAfterSignIn: true } });
+    navigate(location, { replace: true, state: { joinAfterSignIn: true } });
     void signIn();
-  }, [navigate, location.pathname, signIn]);
+  }, [navigate, location, signIn]);
 
   const handleExit = useCallback((outcome: JoinOutcome) => {
     setJoining(false);
@@ -134,7 +136,7 @@ function EarnContent() {
     );
   }
 
-  if (!checked) return <Spinner label={t('earn.loading')} />;
+  if (!settled) return <Spinner label={t('earn.loading')} />;
 
   if (enrollmentFailed) {
     return (
