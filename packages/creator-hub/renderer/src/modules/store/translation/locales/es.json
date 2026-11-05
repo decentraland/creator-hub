@@ -1445,6 +1445,7 @@
       "title_prefix": "Ganar",
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "Crea experiencias. Reúne jugadores. Gana USDC.",
+      "tagline_signed_out": "Crea experiencias. Reúne jugadores. Gana dinero.",
       "description": "El <hl>Decentraland Creator Fund</hl> <hl>recompensa a los propietarios de LAND y Worlds</hl> por atraer nuevos jugadores, generar actividad y hacer que los jugadores vuelvan.",
       "features": {
         "enrolment": {
@@ -1465,6 +1466,7 @@
         }
       },
       "join": "Unirse al Creators Fund",
+      "sign_in_to_join": "Inicia sesión para unirte al Creators Fund",
       "read_terms": "Leer términos",
       "status": {
         "suspended": "Tu participación en el Creator Fund está suspendida."
