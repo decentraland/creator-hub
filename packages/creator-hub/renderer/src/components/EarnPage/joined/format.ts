@@ -2,17 +2,23 @@ import type { CreatorFundPlace } from '/shared/types/creator-fund';
 
 const DECIMAL = /^-?\d+(\.\d+)?$/;
 
+/** The USDC token's precision; no amount has more decimals. */
+const USDC_DECIMALS = 6;
+
 /**
- * A USDC decimal string as `1,842.50`, formatted from the string itself: going through a float
- * would round an amount like `"0.005"` or `"1.005"` on its binary value, not its decimal one.
- * Anything that isn't a plain decimal is shown as sent rather than as `NaN`.
+ * Formats a USDC decimal string without rounding: `22`, `1,842.50`, `0.004`.
+ * @returns the input unchanged when it is not a plain decimal.
  */
-export const formatUsdc = (amount: string, locale: string) =>
-  DECIMAL.test(amount)
-    ? new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-        amount as Intl.StringNumericLiteral,
-      )
-    : amount;
+export const formatUsdc = (amount: string, locale: string) => {
+  if (!DECIMAL.test(amount)) return amount;
+  const whole = !/\.\d*[1-9]/.test(amount);
+  return new Intl.NumberFormat(
+    locale,
+    whole
+      ? { maximumFractionDigits: 0 }
+      : { minimumFractionDigits: 2, maximumFractionDigits: USDC_DECIMALS },
+  ).format(amount as Intl.StringNumericLiteral);
+};
 
 /** A date as `Oct 30, 2026`. */
 export const formatDate = (iso: string, locale: string) =>

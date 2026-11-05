@@ -142,6 +142,15 @@ describe('LeaderboardTab', () => {
       expect(within(rows[1]).getByText('example-world.dcl.eth')).toBeTruthy();
     });
 
+    it('should show a round amount whole and any other exactly', async () => {
+      renderTab();
+
+      await screen.findByText('Example Place 1');
+      const rows = screen.getAllByRole('row').slice(1);
+      expect(within(rows[0]).getByText('1,842.50 USDC')).toBeTruthy();
+      expect(within(rows[1]).getByText('990 USDC')).toBeTruthy();
+    });
+
     it('should jump in to a place through the deeplink', async () => {
       renderTab();
 
