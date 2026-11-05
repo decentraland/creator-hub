@@ -11,10 +11,10 @@ import { t } from '/@/modules/store/translation/utils';
 import { Navbar, NavbarItem } from '../Navbar';
 
 import { EarnMenu } from './joined/EarnHeader';
-import { MenuCorner } from './joined/EarnHeader.styled';
 import { JoinedPage, type JoinedTab } from './JoinedPage';
 import { IneligibleModal, JoinFlow, type JoinOutcome } from './JoinFlow';
 import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing';
+import { MenuCorner } from './component.styled';
 import { Spinner } from './Spinner';
 import { TermsModal } from './TermsModal';
 
