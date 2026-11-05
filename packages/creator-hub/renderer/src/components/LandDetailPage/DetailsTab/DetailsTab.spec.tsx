@@ -164,6 +164,7 @@ describe('DetailsTab', () => {
         content: encodeLandRedirect({ x: 96, y: 15 }),
       };
       const store = createTestStore();
+      store.dispatch(ensActions.fetchENSList.pending('test', { address: '0xme' }));
       store.dispatch(ensActions.fetchENSList.fulfilled([name], 'test', { address: '0xme' }));
       vi.mocked(sendLandTransaction).mockResolvedValueOnce({
         hash: `0x${'ab'.repeat(32)}`,
