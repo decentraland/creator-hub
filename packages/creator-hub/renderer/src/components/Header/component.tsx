@@ -14,7 +14,10 @@ export function Header({ children, classNames, hideUserMenu }: Props) {
       <div className="left">{title}</div>
       <div className="right">{actions}</div>
       {hideUserMenu ? null : (
-        <div className="user">
+        <div
+          className="user"
+          data-testid="header-user-menu"
+        >
           <UserMenu
             address={auth.wallet}
             avatar={auth.avatar}

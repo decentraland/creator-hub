@@ -22,7 +22,6 @@ You own `packages/creator-hub`. `docs/DESIGN.md` and the `theme.css` token block
 - A dev run reads `~/Library/Application Support/creator-hub/`, not the packaged product path.
 - A scene runs `sdk-commands` from its own `node_modules`, so local inspector changes only reach a running scene through `.ai/skills/local-package-chain/SKILL.md`.
 - Spec files aren't type-checked, so a passing typecheck says nothing about test fixtures.
-- Icons come from the Figma icon library: import them from `/@/components/Icons/figma` (Creator Hub's binding of `@dcl/inspector/icons`, `docs/DESIGN.md` → Icons; lands with #1733), never `react-icons` or `@mui/icons-material`. A new icon starts with a Figma export at the frame. Run `make build-inspector` first, or the binding doesn't resolve.
 
 ## Completion gate
 
@@ -30,7 +29,7 @@ Don't report success until all of these pass. Paste the tail of each output:
 
 ```bash
 (cd packages/creator-hub && npm run typecheck && npm run test:unit)
-npx eslint <every touched .tsx>    # make lint skips .tsx
+npx eslint <every touched .ts/.tsx>    # same rules as make lint, scoped to your files
 ```
 
 If `atScale.spec.tsx` times out in the full run, rerun it alone before you call it a regression.
@@ -48,7 +47,7 @@ branch:        <name>
 changed paths: <one per line>
 commits:       <sha subject> per line, or "none (under the architect)"
 tokens added:  <name = value> per line, or "none"
-UI evidence:   <screenshot path(s) or "no UI change">
+UI evidence:   <Before/After pairs per surface, one row per state, or "no UI change">
 verification:  <commands run, pass/fail>
 open risks:    <anything other layers must handle, or "none">
 ```

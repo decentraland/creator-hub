@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react';
-import { ActionPayload, ActionType, TextureMovementType } from '@dcl/asset-packs';
+import type { ActionPayload, ActionType } from '@dcl/asset-packs';
+import { TextureMovementType } from '@dcl/asset-packs';
 import { Dropdown, TextField, InfoTooltip } from '../../../ui';
-import { Props } from './types';
 import { Block } from '../../../Block';
+import type { Props } from './types';
 
 const MOVEMENT_TYPE_OPTIONS = [
   { value: TextureMovementType.TMT_OFFSET, label: 'Offset' },

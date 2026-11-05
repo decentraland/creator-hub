@@ -267,10 +267,11 @@ export function PublishToLand(props: Props) {
       size="large"
       {...props}
     >
-      <Box>
+      <Box data-testid="publish-modal-publish-to-land">
         <Box
           height={480}
           style={{ backgroundColor: 'black' }}
+          data-testid="publish-modal-publish-to-land-atlas"
         >
           {/* @ts-expect-error TODO: Update properties in UI2, making the not required `optional` */}
           <Atlas
@@ -300,7 +301,10 @@ export function PublishToLand(props: Props) {
             alignItems="baseline"
             height={45}
           >
-            <Typography variant="body1">
+            <Typography
+              variant="body1"
+              data-testid="publish-modal-publish-to-land-placement"
+            >
               {placement
                 ? t('modal.publish_project.land.select_parcel.place_scene', {
                     coords: `${placement.x},${placement.y}`,
@@ -312,6 +316,7 @@ export function PublishToLand(props: Props) {
                 variant="text"
                 size="small"
                 onClick={handleClearPlacement}
+                data-testid="publish-modal-publish-to-land-reset"
                 sx={{ marginLeft: 1, padding: 0 }}
               >
                 {t('modal.publish_project.land.select_parcel.actions.reset')}
@@ -324,6 +329,7 @@ export function PublishToLand(props: Props) {
             size="large"
             onClick={handleNext}
             disabled={!placement || isChecking || isPublishing}
+            data-testid="publish-modal-publish-to-land-action"
             sx={{ height: '45px' }}
           >
             {isChecking

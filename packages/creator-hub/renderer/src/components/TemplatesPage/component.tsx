@@ -98,7 +98,10 @@ export function TemplatesPage() {
   const count = templates.length + 1; // +1 for empty scene...
 
   return (
-    <main className="TemplatesPage">
+    <main
+      className="TemplatesPage"
+      data-testid="templates-page"
+    >
       <Navbar active={NavbarItem.TEMPLATES} />
       <Container>
         <TutorialsWrapper>
@@ -121,6 +124,7 @@ export function TemplatesPage() {
           </FiltersBar>
           <div className="template-list">
             <ProjectCard
+              data-testid="templates-page-new-scene-button"
               title={t('templates.new_scene.title')}
               description={t('templates.new_scene.description')}
               imageUrl={NewScenePng}
