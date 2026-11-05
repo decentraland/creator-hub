@@ -78,6 +78,7 @@ const landOf = (owner: string): Land => ({
   owner,
   operators: [],
   updateOperator: null,
+  deployable: true,
 });
 
 function seedWalletState(store: ReturnType<typeof createTestStore>, address: string) {

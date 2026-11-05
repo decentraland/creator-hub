@@ -110,6 +110,7 @@ describe('PublishToWorld', () => {
     store.dispatch(
       workspaceActions.createProject.fulfilled(PROJECT, 'request-id', undefined as never),
     );
+    store.dispatch(fetchENSList.pending('request-id', { address: WALLET }));
     store.dispatch(
       fetchENSList.fulfilled(
         [
