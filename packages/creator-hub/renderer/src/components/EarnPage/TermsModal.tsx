@@ -62,6 +62,19 @@ export function TermsModal(props: TermsModalProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(false);
   const [checked, setChecked] = useState(false);
+  /*
+   * The modal opens on the cached terms and refetches them. A newer version that arrives meanwhile
+   * is different text, so the scroll gate and the checkbox start over for it.
+   */
+  const version = terms.data?.version;
+  const [gateVersion, setGateVersion] = useState(version);
+  if (version !== gateVersion) {
+    setGateVersion(version);
+    if (gateVersion !== undefined) {
+      setAtBottom(false);
+      setChecked(false);
+    }
+  }
 
   const loadTerms = useCallback(() => dispatch(actions.fetchTerms()), [dispatch]);
   useEffect(() => {
