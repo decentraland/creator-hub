@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { MenuItem } from 'decentraland-ui2';
 
 import { misc } from '#preload';
@@ -24,6 +24,7 @@ import {
 
 /** The More options (⋮) button and menu: the terms, read-only, and Contact Support. */
 export function EarnMenu() {
+  const menuId = useId();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [readingTerms, setReadingTerms] = useState(false);
 
@@ -32,6 +33,7 @@ export function EarnMenu() {
       <Kebab
         aria-label={t('earn.joined.more_options')}
         aria-haspopup="menu"
+        aria-controls={anchor ? menuId : undefined}
         aria-expanded={anchor ? 'true' : 'false'}
         onClick={event => setAnchor(event.currentTarget)}
       >
@@ -42,6 +44,7 @@ export function EarnMenu() {
         open={!!anchor}
         onClose={() => setAnchor(null)}
         disableScrollLock
+        MenuListProps={{ id: menuId }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
@@ -78,6 +81,10 @@ export function EarnMenu() {
 export function EarnHeader() {
   const locale = useSelector(state => state.translation.locale);
   const enrollment = useSelector(state => state.creatorFund.enrollment.data);
+  const joinedOn =
+    enrollment && !Number.isNaN(Date.parse(enrollment.enrolled_at))
+      ? formatDate(enrollment.enrolled_at, locale)
+      : null;
 
   return (
     <Header>
@@ -93,11 +100,7 @@ export function EarnHeader() {
             label={t('earn.joined.beta')}
           />
         </TitleRow>
-        {enrollment && (
-          <JoinedLine>
-            {t('earn.joined.joined_on', { date: formatDate(enrollment.enrolled_at, locale) })}
-          </JoinedLine>
-        )}
+        {joinedOn && <JoinedLine>{t('earn.joined.joined_on', { date: joinedOn })}</JoinedLine>}
       </TitleColumn>
       <EarnMenu />
     </Header>
