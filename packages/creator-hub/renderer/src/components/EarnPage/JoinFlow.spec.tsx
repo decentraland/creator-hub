@@ -270,6 +270,43 @@ describe('JoinFlow', () => {
     }, 15_000);
   });
 
+  describe('when the flow goes back to the terms', () => {
+    it('should keep the contact details the user already typed', async () => {
+      vi.mocked(api.putEnrollment).mockResolvedValueOnce(
+        fail(400, { error: 'Bad Request', message: 'terms_version must be 2' }),
+      );
+      renderFlow();
+      await acceptTerms();
+      vi.mocked(api.getTerms).mockResolvedValue(ok({ ...TERMS, version: 2 }));
+      fillContact();
+      await screen.findByRole('button', { name: 'Accept & Join' }, { timeout: 5000 });
+
+      await acceptTerms();
+
+      const value = (name: RegExp) =>
+        (screen.getByRole('textbox', { name }) as HTMLInputElement).value;
+      expect(value(/First Name/)).toBe('Jane');
+      expect(value(/Last Name/)).toBe('Doe');
+      expect(value(/Email/)).toBe('jane.doe@example.com');
+    }, 15_000);
+  });
+
+  describe('when the user leaves while the enrollment is saved', () => {
+    it('should exit once, as cancelled, whatever the answer', async () => {
+      let answer: (value: unknown) => void = () => {};
+      vi.mocked(api.putEnrollment).mockReturnValue(new Promise(r => (answer = r)) as any);
+      const { onExit } = renderFlow();
+      await acceptTerms();
+      fillContact();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      await act(async () => answer(fail(409, { error: 'Conflict', message: 'already enrolled' })));
+
+      expect(onExit).toHaveBeenCalledTimes(1);
+      expect(onExit).toHaveBeenCalledWith('cancelled');
+    });
+  });
+
   describe('when the enrollment fails otherwise', () => {
     it('should show the generic line', async () => {
       vi.mocked(api.putEnrollment).mockResolvedValue(fail(500));

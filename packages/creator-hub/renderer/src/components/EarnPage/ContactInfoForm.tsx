@@ -87,6 +87,8 @@ export type ContactInfoFormProps = {
   onCancel: () => void;
   errors?: string[];
   status?: 'idle' | 'submitting';
+  /** What the form starts with, e.g. the details sent before the flow went back to the terms. */
+  initialValues?: ContactValues;
 };
 
 /** The Creator Fund contact form: three required fields, submitted trimmed. */
@@ -96,8 +98,9 @@ export function ContactInfoForm({
   onCancel,
   errors,
   status = 'idle',
+  initialValues = EMPTY,
 }: ContactInfoFormProps) {
-  const [values, setValues] = useState<ContactValues>(EMPTY);
+  const [values, setValues] = useState<ContactValues>(initialValues);
   const [emailBlurred, setEmailBlurred] = useState(false);
 
   const set = (field: ContactField) => (value: string) =>
