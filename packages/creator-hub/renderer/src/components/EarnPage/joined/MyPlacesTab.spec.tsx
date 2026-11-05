@@ -303,6 +303,20 @@ describe('MyPlacesTab', () => {
       ).toBe(true);
     });
 
+    it('should hold every metric in a busy placeholder named "Loading" while the metrics load', async () => {
+      vi.mocked(metricsApi.fetchMetrics).mockReturnValue(new Promise(() => {}));
+      renderTab();
+
+      const entry = await screen.findByRole('article', { name: 'Example Place a' });
+      const loading = within(entry).getAllByText('Loading');
+      expect(loading).toHaveLength(3);
+      expect(
+        loading.every(label => label.closest('dd')?.getAttribute('aria-busy') === 'true'),
+      ).toBe(true);
+      expect(within(entry).queryByText('-')).toBeNull();
+      expect(within(entry).queryByText('No data')).toBeNull();
+    });
+
     it('should show "-" for every metric when the metrics fail', async () => {
       vi.mocked(metricsApi.fetchMetrics).mockRejectedValue(new Error('down'));
       renderTab();

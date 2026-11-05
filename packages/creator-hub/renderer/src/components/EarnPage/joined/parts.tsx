@@ -24,6 +24,7 @@ import {
   Metric,
   MetricLabel,
   MetricLabelText,
+  MetricSkeleton,
   MetricValue,
   StateBox,
   TooltipLine,
@@ -125,15 +126,38 @@ export function StatusChip(props: ChipProps) {
   );
 }
 
-/** One metric of a place; a missing value shows "-", named "No data". */
+export type MetricReading = { status: 'loading' } | { status: 'ready'; value: string | null };
+
+function MetricReadingValue({ reading }: { reading: MetricReading }) {
+  if (reading.status === 'loading') {
+    return (
+      <MetricValue aria-busy="true">
+        <MetricSkeleton aria-hidden />
+        <VisuallyHidden>{t('earn.loading')}</VisuallyHidden>
+      </MetricValue>
+    );
+  }
+  return (
+    <MetricValue>
+      {reading.value ?? (
+        <>
+          <span aria-hidden>-</span>
+          <VisuallyHidden>{t('earn.joined.my_places.metrics.no_data')}</VisuallyHidden>
+        </>
+      )}
+    </MetricValue>
+  );
+}
+
+/** One metric of a place: a skeleton named "Loading" while it loads, "-" named "No data" when absent. */
 export function MetricStat({
   icon,
   label,
-  value,
+  reading,
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string | null;
+  reading: MetricReading;
 }) {
   return (
     <Metric>
@@ -141,14 +165,7 @@ export function MetricStat({
         {icon}
         <MetricLabelText title={label}>{label}</MetricLabelText>
       </MetricLabel>
-      <MetricValue>
-        {value ?? (
-          <>
-            <span aria-hidden>-</span>
-            <VisuallyHidden>{t('earn.joined.my_places.metrics.no_data')}</VisuallyHidden>
-          </>
-        )}
-      </MetricValue>
+      <MetricReadingValue reading={reading} />
     </Metric>
   );
 }

@@ -1,4 +1,4 @@
-import { Button, styled } from 'decentraland-ui2';
+import { Button, Skeleton, styled } from 'decentraland-ui2';
 
 import background from '/assets/images/background.png';
 
@@ -133,6 +133,10 @@ const MetricLabelText = styled('span')({
   textOverflow: 'ellipsis',
 });
 
+const MetricSkeleton = styled(Skeleton)({
+  width: 72,
+});
+
 const MetricValue = styled('dd')({
   ...typeToken('h4-semi'),
   fontVariantNumeric: 'tabular-nums',
@@ -179,6 +183,7 @@ export {
   Metric,
   MetricLabel,
   MetricLabelText,
+  MetricSkeleton,
   MetricValue,
   PageBackdrop,
   StateBox,

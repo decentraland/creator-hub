@@ -32,7 +32,14 @@ import {
   WhereText,
 } from './MyPlacesTab.styled';
 import { FilterBar, FilterGroup, FilterNote, FilterSentence } from './parts.styled';
-import { CycleSelect, ListState, MetricStat, StatusChip, type ChipProps } from './parts';
+import {
+  CycleSelect,
+  ListState,
+  MetricStat,
+  StatusChip,
+  type ChipProps,
+  type MetricReading,
+} from './parts';
 import { useWorldSceneCounts } from './useWorldSceneCounts';
 
 const SECONDS_PER_MINUTE = 60;
@@ -47,10 +54,15 @@ const chipOf = (place: CreatorFundPlace): ChipProps => {
 const hasStats = (place: CreatorFundPlace) =>
   place.status === 'in_program' || place.status === 'replaced';
 
-function PlaceStats({ metrics, locale }: { metrics: LocationMetrics | undefined; locale: string }) {
-  const stat = (name: string, format: (value: number) => string) => {
-    const value = metricValue(metrics, name);
-    return value === null ? null : format(value);
+type PlaceMetricsReading =
+  | { status: 'loading' }
+  | { status: 'ready'; metrics: LocationMetrics | undefined };
+
+function PlaceStats({ reading, locale }: { reading: PlaceMetricsReading; locale: string }) {
+  const stat = (name: string, format: (value: number) => string): MetricReading => {
+    if (reading.status === 'loading') return reading;
+    const value = metricValue(reading.metrics, name);
+    return { status: 'ready', value: value === null ? null : format(value) };
   };
   return (
     <Stats>
@@ -58,17 +70,17 @@ function PlaceStats({ metrics, locale }: { metrics: LocationMetrics | undefined;
         <MetricStat
           icon={<NewPlayersIcon />}
           label={t('earn.joined.my_places.metrics.new_players')}
-          value={stat('new_decentraland_players_30d', value => formatCount(value, locale))}
+          reading={stat('new_decentraland_players_30d', value => formatCount(value, locale))}
         />
         <MetricStat
           icon={<RetentionIcon />}
           label={t('earn.joined.my_places.metrics.d3_retention')}
-          value={stat('d3_retention_rate_30d', value => formatRatio(value, locale))}
+          reading={stat('d3_retention_rate_30d', value => formatRatio(value, locale))}
         />
         <MetricStat
           icon={<PlaytimeIcon />}
           label={t('earn.joined.my_places.metrics.playtime')}
-          value={stat('avg_playtime_seconds_30d', value =>
+          reading={stat('avg_playtime_seconds_30d', value =>
             t('earn.joined.my_places.metrics.minutes', {
               value: formatCount(value / SECONDS_PER_MINUTE, locale),
             }),
@@ -155,6 +167,7 @@ export function MyPlacesTab() {
   }, [running, shown, dispatch]);
 
   const metrics = running && placeMetrics.status === 'succeeded' ? placeMetrics.data : null;
+  const metricsPending = placeMetrics.status === 'idle' || placeMetrics.status === 'loading';
 
   const sceneCounts = useWorldSceneCounts(shown?.places ?? []);
 
@@ -217,7 +230,11 @@ export function MyPlacesTab() {
           >
             {running && hasStats(place) && (
               <PlaceStats
-                metrics={metrics?.byPlaceId[place.id]}
+                reading={
+                  metricsPending
+                    ? { status: 'loading' }
+                    : { status: 'ready', metrics: metrics?.byPlaceId[place.id] }
+                }
                 locale={locale}
               />
             )}
