@@ -2,11 +2,19 @@ import type { CreatorFundPlace } from '/shared/types/creator-fund';
 
 import type { LocationMetrics } from '/@/lib/metricsApi';
 
-/** A USDC decimal string as `1,842.50`. */
+const DECIMAL = /^-?\d+(\.\d+)?$/;
+
+/**
+ * A USDC decimal string as `1,842.50`, formatted from the string itself: going through a float
+ * would round an amount like `"0.005"` or `"1.005"` on its binary value, not its decimal one.
+ * Anything that isn't a plain decimal is shown as sent rather than as `NaN`.
+ */
 export const formatUsdc = (amount: string, locale: string) =>
-  new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-    Number(amount),
-  );
+  DECIMAL.test(amount)
+    ? new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+        amount as Intl.StringNumericLiteral,
+      )
+    : amount;
 
 /** An integer with grouping, as `1,234`. */
 export const formatCount = (value: number, locale: string) =>
