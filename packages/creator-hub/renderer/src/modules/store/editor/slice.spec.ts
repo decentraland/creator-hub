@@ -597,6 +597,27 @@ describe('editor slice publish with a placement picked in the publish dialog', (
     });
   });
 
+  describe('when the editor reloads twice in a row while the placement is handed over', () => {
+    let client: SceneRpcClient;
+
+    beforeEach(() => {
+      client = { saveScene, setSceneSettings, getSceneSettings } as unknown as SceneRpcClient;
+      setActiveSceneClient(client);
+      const lostToReload = () => {
+        order.push('lost');
+        setTimeout(() => notifyActiveSceneReady(client), 10);
+        return new Promise(() => undefined);
+      };
+      setSceneSettings.mockImplementationOnce(lostToReload).mockImplementationOnce(lostToReload);
+    });
+
+    it('should hand it to the editor that finally stays up', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['lost', 'lost', 'push', 'save', 'write', 'publish']);
+    });
+  });
+
   describe('when the editor reloads while it is being flushed', () => {
     let client: SceneRpcClient;
 

@@ -44,14 +44,14 @@ const FLUSH_BUDGET_MS = 60_000;
 const never = new Promise<never>(() => undefined);
 
 /**
- * Sends a request the open editor must answer within `budgetMs`, resending it once to the
- * reloaded editor if the inspector iframe reloads first. Under Bevy an edit can reload the
- * iframe in place; a request sent to the page on its way out is never answered, so after a
- * reload the old request is abandoned rather than waited on. Both requests this carries
- * are idempotent, so a resend is safe.
+ * Sends a request the open editor must answer within `budgetMs`, resending it to the
+ * reloaded editor every time the inspector iframe reloads first. Under Bevy storing a new
+ * base reloads the iframe, sometimes twice in a row; a request sent to a page on its way
+ * out is never answered, so after a reload it is abandoned rather than waited on. Both
+ * requests this carries are idempotent, so resending is safe.
  *
  * Settles with the editor's answer, rejects with the editor's own error when it answered
- * with one, and with `SceneRpcTimeoutError` when neither an answer nor a reload came.
+ * with one, and with `SceneRpcTimeoutError` when no answer came within the budget.
  */
 async function sendSurvivingReload<T>(
   scene: SceneRpcClient,
@@ -59,27 +59,31 @@ async function sendSurvivingReload<T>(
   send: (scene: SceneRpcClient) => Promise<T>,
   budgetMs: number,
 ): Promise<T> {
-  const reload = waitForActiveSceneReady();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => reject(new SceneRpcTimeoutError(method)), budgetMs);
   });
   try {
-    // An unanswered first request may have reached a page that is reloading: keep waiting
-    // for the reload until the deadline instead of giving up on the client's own timeout.
-    const answer = send(scene).catch((error: unknown) => {
-      if (error instanceof SceneRpcTimeoutError) return never;
-      throw error;
-    });
-    const outcome = await Promise.race([
-      answer.then(value => ({ value })),
-      reload.ready.then(() => null),
-      deadline,
-    ]);
-    if (outcome) return outcome.value;
-    return await Promise.race([send(getActiveSceneClient() ?? scene), deadline]);
+    for (let target = scene; ; target = getActiveSceneClient() ?? target) {
+      const reload = waitForActiveSceneReady();
+      try {
+        // An unanswered request may have reached a page that is reloading: keep waiting
+        // for the reload until the deadline instead of giving up on the client's timeout.
+        const answer = send(target).catch((error: unknown) => {
+          if (error instanceof SceneRpcTimeoutError) return never;
+          throw error;
+        });
+        const outcome = await Promise.race([
+          answer.then(value => ({ value })),
+          reload.ready.then(() => null),
+          deadline,
+        ]);
+        if (outcome) return outcome.value;
+      } finally {
+        reload.cancel();
+      }
+    }
   } finally {
-    reload.cancel();
     clearTimeout(timer);
   }
 }
