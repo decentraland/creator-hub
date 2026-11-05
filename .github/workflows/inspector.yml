@@ -177,7 +177,15 @@ jobs:
           safe_branch=${branch//\//-}  # replace / with -
           echo "safe_branch=$safe_branch" >> $GITHUB_OUTPUT
 
+      # gh-pages is one branch shared by every PR's preview (each under its own folder), so
+      # when several PRs run CI at once their pushes race and the loser gets
+      # "rejected (fetch first)". Each attempt clones gh-pages fresh, so retrying after a
+      # random wait lands on top of the other run's commit. Not a `concurrency` group:
+      # GitHub keeps only one pending run per group and cancels the rest, which would turn
+      # the race into cancelled publish jobs.
       - name: deploy to gh-pages
+        id: gh-pages-1
+        continue-on-error: true
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -189,6 +197,39 @@ jobs:
           # wasm bundle + editor-agent realm (webgpu_build_bg.wasm is ~105MB, over
           # GitHub's 100MB per-file push limit; both are runtime assets in the npm
           # tarball / creator-hub, not needed to render the Babylon inspector).
+          exclude_assets: '.github,*.map,bevy-engine,bevy-engine/**,bevy-agent,bevy-agent/**'
+
+      - name: wait before retrying gh-pages deploy
+        if: ${{ steps.gh-pages-1.outcome == 'failure' }}
+        run: sleep $((15 + RANDOM % 30))
+
+      - name: deploy to gh-pages (attempt 2)
+        id: gh-pages-2
+        if: ${{ steps.gh-pages-1.outcome == 'failure' }}
+        continue-on-error: true
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./packages/inspector/public
+          destination_dir: inspector/${{ steps.sanitize-branch.outputs.safe_branch }}
+          keep_files: true
+          # Same exclusions as the first attempt.
+          exclude_assets: '.github,*.map,bevy-engine,bevy-engine/**,bevy-agent,bevy-agent/**'
+
+      - name: wait before retrying gh-pages deploy
+        if: ${{ steps.gh-pages-2.outcome == 'failure' }}
+        run: sleep $((15 + RANDOM % 30))
+
+      - name: deploy to gh-pages (attempt 3)
+        id: gh-pages-3
+        if: ${{ steps.gh-pages-2.outcome == 'failure' }}
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./packages/inspector/public
+          destination_dir: inspector/${{ steps.sanitize-branch.outputs.safe_branch }}
+          keep_files: true
+          # Same exclusions as the first attempt.
           exclude_assets: '.github,*.map,bevy-engine,bevy-engine/**,bevy-agent,bevy-agent/**'
 
       - name: set preview url
