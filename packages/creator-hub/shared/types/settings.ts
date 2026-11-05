@@ -23,7 +23,9 @@ export type PreviewOptions = {
   multiInstance: boolean;
   mcp: boolean;
   showWarnings: boolean;
-  optimizedAssets: boolean;
+  // Unity explorer opt-out from the local asset bundles it builds by default in Local Scene
+  // Development (desktop preview only).
+  loadRawGltfs: boolean;
   client: PREVIEW_CLIENT;
 };
 
@@ -45,10 +47,6 @@ export type AppSettings = {
   // Console" checkbox was removed, so this is now the only way an existing install gets it
   // turned on) — see `promoteDebugConsoleSetting`.
   debugConsolePromoted?: boolean;
-  // Per-project Optimize Assets preference, keyed by project path. `previewOptions.optimizedAssets`
-  // is the ephemeral value for the open project; this map is the persisted per-project source of
-  // truth so the toggle comes back on for a project that had it on, without carrying across projects.
-  optimizedAssetsByPath?: Record<string, boolean>;
   // Opt-in to experimental features. Gates the renderer picker in settings — off
   // means the stable default renderer (Babylon), no picker shown. Kept as its own
   // persisted flag (not derived from `renderer`) so the picker stays visible when
