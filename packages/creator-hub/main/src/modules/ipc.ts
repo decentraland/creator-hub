@@ -19,9 +19,10 @@ import * as ai from './ai';
 import * as aiCli from './ai-cli';
 import * as aiWindow from './ai-window';
 import * as consoleWindow from './console-window';
+import * as mcpDiscovery from './mcp-discovery';
 import {
   captureViewport,
-  ensureSceneMcpServer,
+  getExternalMcpInfo,
   resolveEditorScreenshot,
   resolveSceneOp,
   resolveUserPrompt,
@@ -80,7 +81,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
   handle('cli.start', (_event, path, opts, mobile) => cli.start(path, { ...opts, mobile }));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
-  handle('cli.killPreview', (_event, path) => cli.killPreview(path));
+  handle('cli.killPreview', (_event, path) => cli.stopPreview(path));
   handle('cli.cancelPreview', (_event, path) => cli.cancelPreview(path));
   handle('cli.supportsAssetBundles', (_event, path) => cli.supportsAssetBundles(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
@@ -114,7 +115,14 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
 
   // config
   handle('config.getConfig', () => config.getConfig());
-  handle('config.writeConfig', (_event, _config) => config.writeConfig(_config));
+  handle('config.writeConfig', async (_event, _config) => {
+    const wasExposed = (await config.getConfig()).settings.exposeMcpServer;
+    await config.writeConfig(_config);
+    // Outside access to the MCP server follows the setting, so a flip takes effect at once
+    // (and revokes it when turned off). Only on a flip: most writes are about something else.
+    if (_config.settings.exposeMcpServer !== wasExposed)
+      void mcpDiscovery.syncExposeMcpServer(_config.settings.exposeMcpServer);
+  });
 
   // bin
   handle('bin.install', () => bin.install());
@@ -176,12 +184,13 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));
   handle('ai.askResult', (_event, id, answer) => resolveUserPrompt(id, answer));
   handle('ai.revertTurn', (_event, count) => revertTurn(count));
-  // Reveal the CH MCP server's URL + token so an external agent can register it (gated in
-  // the UI behind the exposeMcpServer setting). Starts the server if it isn't up yet.
-  handle('ai.getMcpServerInfo', async () => {
-    const { url, token } = await ensureSceneMcpServer();
-    return { url, token };
-  });
+  // The details an agent outside the Hub connects with; null while outside access is off.
+  handle('ai.getMcpServerInfo', () => getExternalMcpInfo());
+  // The editor window reports which scene it has open, so the MCP server targets it and,
+  // while outside access is on, Claude Code in that folder finds it (mcp-discovery).
+  handle('ai.sceneOpened', (_event, path) => mcpDiscovery.sceneOpened(path));
+  handle('ai.sceneClosed', async (_event, path) => mcpDiscovery.sceneClosed(path));
+  handle('ai.takeExternalAccessRequest', async () => mcpDiscovery.takeExternalAccessRequest());
   // Detached AI window (#1504): lifecycle + the mirror/command relay between the two
   // renderer windows (see ai-window.ts).
   handle('ai.openWindow', (_event, locale) => aiWindow.openAiWindow(locale));
