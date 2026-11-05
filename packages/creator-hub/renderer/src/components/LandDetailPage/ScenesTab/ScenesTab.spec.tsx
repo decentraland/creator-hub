@@ -71,6 +71,7 @@ const land: Land = {
   description: null,
   owner: '0xme',
   operators: [],
+  deployable: true,
   updateOperator: null,
 };
 

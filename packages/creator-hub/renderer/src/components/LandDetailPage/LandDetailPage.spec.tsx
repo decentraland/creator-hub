@@ -46,6 +46,7 @@ const parcel = (role: RoleType): Land => ({
   description: null,
   owner: OWNER,
   operators: [],
+  deployable: true,
   updateOperator: null,
 });
 

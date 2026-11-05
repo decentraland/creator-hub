@@ -31,6 +31,7 @@ const estate = (updateOperator: string | null, parcelOperators: Array<string | n
   description: null,
   owner: '0xowner',
   operators: [],
+  deployable: true,
   updateOperator,
 });
 

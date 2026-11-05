@@ -60,6 +60,7 @@ const land: Land = {
   description: 'A square',
   owner: '0xme',
   operators: [],
+  deployable: true,
   updateOperator: null,
 };
 

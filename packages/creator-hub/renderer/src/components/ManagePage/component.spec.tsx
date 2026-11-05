@@ -74,6 +74,7 @@ const ownedParcel: Land = {
   description: null,
   owner: '0x1234567890123456789012345678901234567890',
   operators: [],
+  deployable: true,
   updateOperator: null,
 };
 
