@@ -1,6 +1,7 @@
 import { areConnected } from '@dcl/ecs';
 import type { EditorComponentsTypes, SceneCategory } from '../../../lib/sdk/components';
 import { SceneAgeRating } from '../../../lib/sdk/components';
+import { isAddress, normalizeAddress } from '../../../lib/logic/ethereum';
 import type { Coords } from '../../../lib/utils/layout';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
@@ -193,3 +194,105 @@ export async function validateThumbnailPath(path: string): Promise<ValidationErr
 
 export const MIDDAY_SECONDS = 43200;
 export const MIDNIGHT_SECONDS = 86400;
+
+export type MultiplayerSdkChange = 'install' | 'uninstall';
+
+/**
+ * The component patch a Multiplayer Server toggle produces, and which SDK swap the host
+ * must run: `install` puts the authoritative-server SDK in, `uninstall` puts the latest
+ * release back. Switching on waits for the install (the flag is written by
+ * `enableMultiplayerWithInstall`); switching off writes the flag at once and then swaps.
+ */
+export function nextMultiplayerValue(
+  enabled: boolean,
+  authServerSupported: boolean,
+): { sdk: MultiplayerSdkChange | null; patch: Partial<EditorComponentsTypes['Scene']> | null } {
+  if (!enabled) {
+    return { sdk: authServerSupported ? 'uninstall' : null, patch: { multiplayerServer: false } };
+  }
+  if (authServerSupported) return { sdk: null, patch: { multiplayerServer: true } };
+  return { sdk: 'install', patch: null };
+}
+
+/**
+ * Turn the Multiplayer Server on for a scene that still needs the auth-server SDK.
+ *
+ * The flag is written BEFORE the install, not after it: a successful install flips the
+ * host's `authServerSupported`, which changes the inspector URL and reloads this iframe
+ * before the RPC answers, so a write placed after the await never lands. A failed install
+ * does not reload the iframe, so the flag can be turned back off.
+ */
+export async function enableMultiplayerWithInstall(
+  setEnabled: (enabled: boolean) => void,
+  install: () => Promise<{ ok: boolean } | undefined>,
+): Promise<boolean> {
+  setEnabled(true);
+  let ok = false;
+  try {
+    ok = !!(await install())?.ok;
+  } catch {
+    ok = false;
+  }
+  if (!ok) setEnabled(false);
+  return ok;
+}
+
+/**
+ * Turn the Multiplayer Server off and put the latest SDK release back.
+ *
+ * The flag is written before the swap for the same reason as the install: a successful
+ * swap flips `authServerSupported` and reloads the iframe. It stays off when the swap
+ * fails, since the scene then simply keeps the auth-server SDK, which still runs a
+ * single-player scene; the caller reports the failure so the creator can retry.
+ */
+export async function disableMultiplayerWithUninstall(
+  setEnabled: (enabled: boolean) => void,
+  uninstall: () => Promise<{ ok: boolean } | undefined>,
+): Promise<boolean> {
+  setEnabled(false);
+  try {
+    return !!(await uninstall())?.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** One entry per distinct address, in stored order and stored spelling, blanks dropped. */
+export const dedupeAddresses = (stored: string[] = []): string[] => {
+  const seen = new Set<string>();
+  return stored.filter(address => {
+    if (!address) return false;
+    const key = normalizeAddress(address);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+/** Whether `address` is already stored, under any spelling. */
+export const containsAddress = (stored: string[] = [], address: string): boolean =>
+  stored.some(entry => normalizeAddress(entry) === normalizeAddress(address));
+
+/** Whether `typed` is a valid address already stored, under any spelling. */
+export const isDuplicateAddress = (stored: string[] = [], typed: string): boolean => {
+  const address = typed.trim();
+  return !!address && isAddress(address) && containsAddress(stored, address);
+};
+
+/**
+ * The allowlist after a committed `typed` value: `null` when nothing changes (empty text
+ * or an address already on the list, which `duplicate` tells apart).
+ */
+export function addLogsPermission(
+  stored: string[] = [],
+  typed: string,
+): { next: string[] | null; duplicate: boolean } {
+  const address = typed.trim();
+  if (!address) return { next: null, duplicate: false };
+  if (containsAddress(stored, address)) return { next: null, duplicate: true };
+  return { next: [...stored, address], duplicate: false };
+}
+
+/** Every stored entry that is not `address`, under any spelling. */
+export const withoutAddress = (stored: string[] = [], address: string): string[] =>
+  stored.filter(entry => normalizeAddress(entry) !== normalizeAddress(address));

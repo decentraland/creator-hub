@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import cx from 'classnames';
-import { isAddress } from '../../../lib/logic/ethereum';
+import { formatAddress, isAddress } from '../../../lib/logic/ethereum';
 import { TextField } from '../TextField';
 import type { Props } from './types';
 
@@ -10,6 +10,7 @@ export const WalletField: React.FC<Props> = ({
   onChange,
   onBlur: externalOnBlur,
   onFocus: externalOnFocus,
+  onKeyDown: externalOnKeyDown,
   ...props
 }) => {
   const [wallet, setWallet] = useState<string>(value?.toString() ?? '');
@@ -30,33 +31,46 @@ export const WalletField: React.FC<Props> = ({
     [externalOnFocus],
   );
 
+  // Blur and Enter both commit. The consumer reads `event.target.value`, so the synthetic
+  // event carries the trimmed text: a pasted address often brings a trailing space.
+  const commit = useCallback(
+    (event: React.SyntheticEvent<HTMLInputElement>, raw: string) => {
+      const value = raw.trim();
+      if (value && !isAddress(value)) {
+        setError('Not a valid Ethereum address.');
+        return;
+      }
+      setError(undefined);
+      const syntheticChangeEvent = {
+        ...event,
+        type: 'change',
+        target: { value },
+        currentTarget: { value },
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
+      onChange?.(syntheticChangeEvent);
+    },
+    [onChange],
+  );
+
   const handleBlur = useCallback(
     (event: React.FocusEvent<HTMLInputElement>) => {
-      const { value } = event.target;
       setIsFocused(false);
-
-      if (!value || isAddress(value)) {
-        setError(undefined);
-
-        const syntheticChangeEvent = {
-          ...event,
-          type: 'change',
-        } as unknown as React.ChangeEvent<HTMLInputElement>;
-        onChange?.(syntheticChangeEvent);
-      } else {
-        setError('Not a valid Ethereum address.');
-      }
+      commit(event, event.target.value);
       externalOnBlur?.(event);
     },
-    [onChange, externalOnBlur],
+    [commit, externalOnBlur],
+  );
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter') commit(event, event.currentTarget.value);
+      externalOnKeyDown?.(event);
+    },
+    [commit, externalOnKeyDown],
   );
 
   const formattedWallet = useMemo(() => {
-    return isFocused
-      ? wallet
-      : isAddress(wallet)
-        ? `${wallet.slice(0, 12)}...${wallet.slice(-8)}`
-        : wallet;
+    return isFocused ? wallet : formatAddress(wallet);
   }, [wallet, isFocused]);
 
   return (
@@ -68,6 +82,7 @@ export const WalletField: React.FC<Props> = ({
       onChange={handleChange}
       onBlur={handleBlur}
       onFocus={handleFocus}
+      onKeyDown={handleKeyDown}
       error={error}
       {...props}
       autoSelect

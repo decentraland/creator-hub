@@ -25,6 +25,7 @@ import { useDispatch, useSelector } from '#store';
 import { config } from '/@/config';
 import { formatWorldSize, getBaseParcel, getWorldDimensions } from '/@/modules/world';
 import { t } from '/@/modules/store/translation/utils';
+import { fetchENSList } from '/@/modules/store/ens';
 import { ENSProvider } from '/@/modules/store/ens/types';
 import { getEnsProvider } from '/@/modules/store/ens/utils';
 import type { ParcelsPermission, WorldSettingsState } from '/@/modules/store/management';
@@ -77,7 +78,22 @@ export function PublishToWorld(props: Props) {
     managementSelectors.getParcelsStateForAddress(state, wallet || ''),
   );
   const [step, setStep] = useState<Step>(Step.SELECTION);
-  const emptyNames = Object.keys(names).length === 0;
+
+  /**
+   * The NAME list has four outcomes and they are not interchangeable. Deriving everything
+   * from `names` being empty made "still loading", "the subgraph failed" and "you own no
+   * NAMEs" render the same screen — so a slow load looked like an empty account, and a
+   * `.zone` subgraph outage looked like one too. `status` is what tells them apart.
+   */
+  const namesStatus = useSelector(state => state.ens.status);
+  const hasNames = Object.keys(names).length > 0;
+  const isLoadingNames = !hasNames && (namesStatus === 'idle' || namesStatus === 'loading');
+  const namesFailed = !hasNames && namesStatus === 'failed';
+  const emptyNames = !hasNames && namesStatus === 'succeeded';
+
+  const handleRetryNames = useCallback(() => {
+    if (wallet) dispatch(fetchENSList({ address: wallet }));
+  }, [dispatch, wallet]);
 
   const isOwner: boolean = useMemo(() => {
     if (!name || !wallet) return false;
@@ -169,11 +185,18 @@ export function PublishToWorld(props: Props) {
   return (
     <PublishModal
       title={t('modal.publish_project.worlds.select_world.title')}
+      data-testid="publish-modal-publish-to-world"
       size="large"
       {...props}
       onBack={handleBack}
     >
-      {!emptyNames && project ? (
+      {isLoadingNames ? (
+        <LoadingNames />
+      ) : namesFailed ? (
+        <NamesError onRetry={handleRetryNames} />
+      ) : emptyNames ? (
+        <EmptyNames />
+      ) : hasNames && project ? (
         <ProjectStepWrapper
           isWorld
           name={name}
@@ -212,9 +235,7 @@ export function PublishToWorld(props: Props) {
             />
           )}
         </ProjectStepWrapper>
-      ) : (
-        emptyNames && <EmptyNames />
-      )}
+      ) : null}
     </PublishModal>
   );
 }
@@ -335,7 +356,10 @@ function SelectWorld({
   const projectIsReady = project.status !== 'loading';
 
   return (
-    <div className="SelectWorld">
+    <div
+      className="SelectWorld"
+      data-testid="publish-modal-publish-to-world-select-world"
+    >
       <div className="selection">
         <Typography
           variant="h6"
@@ -348,17 +372,24 @@ function SelectWorld({
             variant="outlined"
             color="secondary"
             className="SelectWorld-ENSProvider"
+            data-testid="publish-modal-publish-to-world-select-world-ens-provider"
             value={ensProvider}
             onChange={handleChangeSelectProvider}
           >
-            <MenuItem value={ENSProvider.DCL}>
+            <MenuItem
+              value={ENSProvider.DCL}
+              data-testid="publish-modal-publish-to-world-select-world-ens-provider-dcl"
+            >
               <img
                 className="SelectWorld-ENSProvider-Img"
                 src={LogoDCLSVG}
               />
               {t(`modal.publish_project.worlds.select_world.ens_providers.${ENSProvider.DCL}`)}
             </MenuItem>
-            <MenuItem value={ENSProvider.ENS}>
+            <MenuItem
+              value={ENSProvider.ENS}
+              data-testid="publish-modal-publish-to-world-select-world-ens-provider-ens"
+            >
               <img
                 className="SelectWorld-ENSProvider-Img"
                 src={LogoENSSVG}
@@ -370,6 +401,7 @@ function SelectWorld({
             variant="outlined"
             color="secondary"
             className="SelectWorld-WorldName"
+            data-testid="publish-modal-publish-to-world-select-world-select"
             displayEmpty
             value={name}
             onChange={handleChangeSelectName}
@@ -393,6 +425,7 @@ function SelectWorld({
               <MenuItem
                 key={_world}
                 value={_world}
+                data-testid={`publish-modal-publish-to-world-select-world-select-item-${_world.toLowerCase()}`}
               >
                 {_world}
               </MenuItem>
@@ -480,6 +513,7 @@ function SelectWorld({
       )}
       <div className="actions">
         <Button
+          data-testid="publish-modal-publish-to-world-select-world-action"
           onClick={handleNext}
           size="large"
           disabled={!projectIsReady || !name}
@@ -832,6 +866,55 @@ function ConfirmOverwrite({
   );
 }
 
+/** Shown while the NAME list is still being fetched, so a slow load is not mistaken for an
+ *  account that owns nothing. */
+function LoadingNames() {
+  return (
+    <div
+      className="LoadingNames"
+      data-testid="publish-modal-names-loading"
+    >
+      <Loader />
+      <Typography
+        variant="h6"
+        textAlign="center"
+      >
+        {t('modal.publish_project.worlds.loading_names.title')}
+      </Typography>
+    </div>
+  );
+}
+
+/** Shown when the NAME lookup failed (typically a subgraph outage). Without this the user
+ *  saw "you have no Worlds" and had no way to retry. */
+function NamesError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      className="NamesError"
+      data-testid="publish-modal-names-error"
+    >
+      <Typography
+        variant="h6"
+        textAlign="center"
+      >
+        {t('modal.publish_project.worlds.names_error.title')}
+      </Typography>
+      <Typography
+        variant="body2"
+        textAlign="center"
+      >
+        {t('modal.publish_project.worlds.names_error.description')}
+      </Typography>
+      <Button
+        data-testid="publish-modal-names-error-retry"
+        onClick={onRetry}
+      >
+        {t('modal.publish_project.worlds.names_error.action')}
+      </Button>
+    </div>
+  );
+}
+
 function EmptyNames() {
   const handleClick = useCallback(() => {
     misc.openExternal('https://decentraland.org/marketplace/names/claim');
@@ -844,7 +927,10 @@ function EmptyNames() {
   }, []);
 
   return (
-    <div className="EmptyNames">
+    <div
+      className="EmptyNames"
+      data-testid="publish-modal-empty-names"
+    >
       <Typography
         variant="h6"
         textAlign="center"
