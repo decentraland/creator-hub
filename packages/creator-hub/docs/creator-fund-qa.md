@@ -1,43 +1,80 @@
-# Creator Fund: local QA guide
+# Creator Fund: QA guide
 
-This guide runs Creator Hub's **EARN** section against a local mock of the Creator Fund API, so you can walk every Creator Fund flow with no backend, no special wallet and no real places. Plan for about 10 minutes of setup and 40 minutes for the full walk.
+This guide runs Creator Hub's **EARN** section against fixture data built into this PR's build, so you can walk every Creator Fund flow with no backend, no special wallet and no real places. Plan for about 10 minutes of setup and 40 minutes for the full walk.
 
-The mock is `scripts/creator-fund-mock.mjs`: a small Node server on `http://localhost:8788` with made-up places, cycles, payouts and News. Requests take the app's real path (signed in the renderer, sent by the main process), so what you see is what the app does against the real service. The mock reads which wallet is asking from the sign-in, but never checks the signature, so any account you sign in with works. Nothing you do touches production or the shared services.
+The fixtures are a small server inside the app. When the app starts with `CREATOR_FUND_FIXTURES=1`, it starts that server on a free local port and sends every Creator Fund call, the My Places metric cards and the World scene counts to it. Requests still take the app's real path (signed in the app window, sent by the app's main process), so what you see is what the app does against the real service. The fixtures read which account is asking from your sign-in but never check the signature, so any account works. Started without the variable, the build behaves like any other Creator Hub.
 
 ## What you need
 
-- macOS or Windows with **Node 22+** and **git**.
-- A checkout of **creator-hub** on the top of the Creator Fund stack.
+- macOS (Apple silicon or Intel) or Windows 10/11.
 - Any Decentraland account you can sign in with. It doesn't need LAND, NAMEs or funds.
+- This PR's build (next section).
 
-## 1. Start the app with the mock
+## 1. Download and install
 
-In the **creator-hub** checkout:
+The PR's **build comment** (posted by github-actions) links one download per platform.
 
-1. Install and build once: `make init`.
-2. Start the mock and the app together:
+**macOS**
+
+1. Download **mac-arm64** (Apple silicon) or **mac-x64** (Intel) and unzip it.
+2. Move **Decentraland Creator Hub.app** to **Applications**. If you already have Creator Hub installed, this replaces it; reinstall the normal one when you're done.
+3. The build is unsigned, so clear the download flag once, in Terminal:
    ```bash
-   cd packages/creator-hub && npm run start:earn-mock
+   xattr -cr "/Applications/Decentraland Creator Hub.app"
    ```
-   The first line reads `Creator Fund mock on http://localhost:8788`. The app starts once the mock is listening, and quitting the app stops the mock.
-3. Turn the EARN feature flag on. Open DevTools (**View → Toggle Developer Tools**, or `Cmd+Option+I` / `Ctrl+Shift+I`) and run:
-   ```js
-   localStorage.setItem(
-     'creator-hub:feature-flags',
-     JSON.stringify({ 'creatorhub-creator-fund': true }),
-   );
-   location.reload();
-   ```
-   The EARN tab appears after MANAGE.
-4. Sign in the usual way, from the avatar menu.
 
-`start:earn-mock` points the dev build at the mock through three environment variables: `CREATOR_FUND_API_URL=http://localhost:8788`, `METRICS_API_URL=http://localhost:8788/v2` (the My Places metric cards) and `WORLDS_CONTENT_SERVER_URL=http://localhost:8788` (the scene count behind the multi-scene World labels). Only dev builds read them. A release build ignores them.
+**Windows**
 
-To run the mock on its own, for example while the app runs from another terminal with the variables above, use `npm run mock:creator-fund`.
+1. Download **win-x64** and run the installer. It puts a **Decentraland Creator Hub** shortcut on the Desktop.
 
-## 2. Mock switches
+## 2. Launch with the fixtures
 
-Each switch is an environment variable set on the start command, for example `MOCK_ENROLLMENT=active npm run start:earn-mock`, and they combine. The mock keeps its state in memory, per wallet, so a restart forgets every join: add `MOCK_ENROLLMENT=active` to land on the joined page directly.
+Quit Creator Hub first if it's running (`Cmd+Q` on macOS; on Windows, close the window). Creator Hub runs one copy at a time: launching it again while it's open only brings the open one forward, without the fixtures.
+
+**macOS** (Terminal):
+
+```bash
+open -n --env CREATOR_FUND_FIXTURES=1 "/Applications/Decentraland Creator Hub.app"
+```
+
+Pass each variable with its own `--env`. If a variable ever doesn't reach the app, quit it and run the binary inside the bundle instead; Terminal stays attached until you quit:
+
+```bash
+CREATOR_FUND_FIXTURES=1 "/Applications/Decentraland Creator Hub.app/Contents/MacOS/Decentraland Creator Hub"
+```
+
+**Windows** (PowerShell):
+
+```powershell
+$app = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Decentraland Creator Hub.lnk").TargetPath
+$env:CREATOR_FUND_FIXTURES = '1'
+& $app
+```
+
+**Windows** (cmd):
+
+```bat
+set CREATOR_FUND_FIXTURES=1
+start "" "%LOCALAPPDATA%\Programs\creator-hub\Decentraland Creator Hub.exe"
+```
+
+If that path doesn't exist, right-click the Desktop shortcut, choose **Properties**, and use the path in **Target**. On Windows the variables stay set in that window until you close it.
+
+Then:
+
+1. Sign in the usual way, from the avatar menu.
+2. Open **EARN** (after MANAGE). The EARN feature flag is on for QA. If the tab is missing, open DevTools (**View → Toggle Developer Tools**) and run `localStorage.setItem('creator-hub:feature-flags', JSON.stringify({ 'creatorhub-creator-fund': true })); location.reload();`.
+3. Check the fixtures are on: **Read Terms** shows "Example Creator Fund Program Terms (Beta)". The app's log also has a line `[CreatorFund] Fixtures on http://127.0.0.1:<port>` (`~/Library/Logs/creator-hub/main.log` on macOS, `%APPDATA%\creator-hub\logs\main.log` on Windows).
+
+## 3. Fixture switches
+
+Each switch is another environment variable, set the same way as `CREATOR_FUND_FIXTURES=1`, and they combine:
+
+- macOS: `open -n --env CREATOR_FUND_FIXTURES=1 --env MOCK_ENROLLMENT=active "/Applications/Decentraland Creator Hub.app"`
+- PowerShell: `$env:MOCK_ENROLLMENT = 'active'` before `& $app`; `Remove-Item Env:MOCK_ENROLLMENT` to drop it.
+- cmd: `set MOCK_ENROLLMENT=active` before `start`; `set MOCK_ENROLLMENT=` to drop it.
+
+The fixtures keep their state in memory, per account, so quitting the app forgets every join. To change switches, quit and launch again; add `MOCK_ENROLLMENT=active` to land on the joined page directly.
 
 | Switch | State it produces |
 | --- | --- |
@@ -45,9 +82,9 @@ Each switch is an environment variable set on the start command, for example `MO
 | `MOCK_INELIGIBLE=excluded` | Joining shows "You can't join yet" with "Your account isn't eligible for the Creator Fund." |
 | `MOCK_INELIGIBLE=internal` | The same, with "Foundation and Regenesis Labs accounts can't join the Creator Fund." |
 | `MOCK_INELIGIBLE=suspended` | The same, with "Your account is suspended from the Creator Fund." |
-| `MOCK_ENROLLMENT=active` | Already joined (on Oct 20, 2026) with a fake contact (`jane.doe@example.com`), email unverified |
+| `MOCK_ENROLLMENT=active` | Already joined (on Oct 20, 2026) with a fake contact (`jane.doe@example.com`), email unverified. EARN opens on the Leaderboard |
 | `MOCK_ENROLLMENT=suspended` | Joined but suspended: the landing says "Your Creator Fund participation is suspended." |
-| `MOCK_ENROLLMENT=active MOCK_INELIGIBLE=excluded` | Joined, then excluded: every owned place is **Not eligible** with "Your account isn't eligible, so this place can't take part." |
+| `MOCK_ENROLLMENT=active` + `MOCK_INELIGIBLE=excluded` | Joined, then excluded: every owned place is **Not eligible** with "Your account isn't eligible, so this place can't take part." |
 | `MOCK_TERMS_VERSION=2` | Publishes terms version 2 as soon as anyone joins, so the next visit asks to re-accept |
 | `MOCK_NO_CLOSED_CYCLE=1` | No cycle has closed yet: Leaderboard shows **Get ready!** |
 | `MOCK_NO_RUNNING=1` | Only an upcoming cycle: Leaderboard shows **Get ready!**, My Places lists places with no metric cards |
@@ -56,15 +93,16 @@ Each switch is an environment variable set on the start command, for example `MO
 | `MOCK_NO_PAYOUTS=1` | No payouts yet: the Payouts empty state |
 | `MOCK_RESEND_S=5` | A sent code holds off **Resend Code** for 5 s instead of 60 s |
 | `MOCK_CODE_TTL_S=20` | A sent code expires after 20 s instead of 10 minutes |
-| `PORT=8790` | Runs the mock (and points the app) on another port |
+
+An invalid value (say `MOCK_INELIGIBLE=nope`) shows a "Creator Fund fixtures did not start" message on launch, and the app then runs without fixtures.
 
 The email verification code is always **`000000`**. Any other code is incorrect.
 
-## 3. The walk
+## 4. The walk
 
 Check each step against **Expected**. Note anything different with a screenshot.
 
-### 3.1 Signed out
+### 4.1 Signed out
 
 | Do | Expected |
 | --- | --- |
@@ -72,7 +110,7 @@ Check each step against **Expected**. Note anything different with a screenshot.
 | Click **Read Terms** | "Example Creator Fund Program Terms (Beta)" open read-only: no checkbox, only **Close** |
 | Click **Sign in to join Creators Fund** | Sign-in starts |
 
-### 3.2 Not eligible (`MOCK_INELIGIBLE=excluded`)
+### 4.2 Not eligible (`MOCK_INELIGIBLE=excluded`)
 
 | Do | Expected |
 | --- | --- |
@@ -82,7 +120,7 @@ Check each step against **Expected**. Note anything different with a screenshot.
 
 Repeat with `internal` and `suspended` for their own sentences.
 
-### 3.3 Join (no switches)
+### 4.3 Join (no switches)
 
 | Do | Expected |
 | --- | --- |
@@ -96,7 +134,7 @@ Repeat with `internal` and `suspended` for their own sentences.
 | Click **Let's go** | The joined page opens on **My Places** |
 | Look at the header and the tab | "Earn · Creator Fund", **Beta**, "Joined on {today}". The red dot is gone |
 
-### 3.4 My Places
+### 4.4 My Places
 
 | Do | Expected |
 | --- | --- |
@@ -113,7 +151,7 @@ Repeat with `internal` and `suspended` for their own sentences.
 
 With `MOCK_ENROLLMENT=active` (joined on Oct 20, 2026), **Oct 16 - Oct 31, 2026** lists 13 cards (your owned places, no collaborator one) and **Oct 1 - Oct 15, 2026** says "No places in this cycle."
 
-### 3.5 Leaderboard
+### 4.5 Leaderboard
 
 | Do | Expected |
 | --- | --- |
@@ -125,11 +163,11 @@ With `MOCK_ENROLLMENT=active` (joined on Oct 20, 2026), **Oct 16 - Oct 31, 2026*
 | Pick an older cycle | Its own top 20, labelled with that cycle |
 | Click **Jump In** on a Genesis City row | Opens the explorer at that place's coordinates |
 | The **News** panel | Six items, newest first ("Cycle Nov 1 – Nov 15 is live" on top) |
-| Restart with `MOCK_ENROLLMENT=active MOCK_NO_CLOSED_CYCLE=1` | **Get ready!** with its four steps instead of the table |
+| Relaunch with `MOCK_ENROLLMENT=active MOCK_NO_CLOSED_CYCLE=1` | **Get ready!** with its four steps instead of the table |
 
-### 3.6 Payouts
+### 4.6 Payouts
 
-Start with no switches and join (3.3), or use `MOCK_ENROLLMENT=active`.
+Start with no switches and join (4.3), or use `MOCK_ENROLLMENT=active`.
 
 | Do | Expected |
 | --- | --- |
@@ -145,14 +183,14 @@ Start with no switches and join (3.3), or use `MOCK_ENROLLMENT=active`.
 | Enter `123456`, **Verify** | "Incorrect Code. Check the email and try again." |
 | Click **Resend Code** at once | Nothing: it is held for 60 s (`MOCK_RESEND_S` shortens it) |
 | Enter `000000`, **Verify** | Snackbar "Email verified"; **Unverified** is gone |
-| Restart with `MOCK_ENROLLMENT=active MOCK_CODE_TTL_S=20`, open **Verify email**, wait 25 s, enter `000000` | "This code has expired. Resend a new one." |
+| Relaunch with `MOCK_ENROLLMENT=active MOCK_CODE_TTL_S=20`, open **Verify email**, wait 25 s, enter `000000` | "This code has expired. Resend a new one." |
 | Six wrong codes in a row | The sixth answers "Something went wrong. Please try again." (locked; even `000000` is refused until a resend) |
-| Restart with `MOCK_ENROLLMENT=active MOCK_NO_PAYOUTS=1` | "Your rewards journey starts here!" and "Your first payout is coming after the Nov 1 - Nov 15, 2026 cycle ends." |
-| Restart with `MOCK_ENROLLMENT=suspended`, open EARN | The suspended landing, with the ⋮ menu; no Payouts tab |
+| Relaunch with `MOCK_ENROLLMENT=active MOCK_NO_PAYOUTS=1` | "Your rewards journey starts here!" and "Your first payout is coming after the Nov 1 - Nov 15, 2026 cycle ends." |
+| Relaunch with `MOCK_ENROLLMENT=suspended`, open EARN | The suspended landing, with the ⋮ menu; no Payouts tab |
 
-### 3.7 Updated terms (re-accept)
+### 4.7 Updated terms (re-accept)
 
-Restart with `MOCK_TERMS_VERSION=2` and join (3.3). Joining publishes version 2.
+Relaunch with `MOCK_TERMS_VERSION=2` and join (4.3). Joining publishes version 2.
 
 | Do | Expected |
 | --- | --- |
@@ -161,21 +199,27 @@ Restart with `MOCK_TERMS_VERSION=2` and join (3.3). Joining publishes version 2.
 | Open EARN again | The same modal again |
 | Scroll to the end, tick the checkbox, click **Accept** | The joined page opens on **My Places**; the places are **In program** again; "Joined on" keeps the original date |
 
-## 4. Reset and clean up
+## 5. Reset and clean up
 
-- **Start over:** quit the app (or `Ctrl+C` the command); the mock goes with it and forgets every wallet. Start the command again.
-- **Turn EARN off:** in DevTools, `localStorage.removeItem('creator-hub:feature-flags'); location.reload();`.
-- Nothing else to undo: no config file was edited.
+- **Start over:** quit the app (`Cmd+Q`, or close the window on Windows). The fixtures stop with it and forget every account. Launch again.
+- **Back to normal:** launch Creator Hub the usual way (Dock, Start menu, shortcut). Without `CREATOR_FUND_FIXTURES=1` no fixture server starts. Reinstall the regular Creator Hub when you're done with this build.
 
-## 5. Against a local creators-data instead
+## 6. From source
 
-To check the app against the real service, run creators-data locally (its own `docs/creator-fund-qa.md` loads fixtures and starts it on port 8787), then start the app with `CREATOR_FUND_API_URL=http://localhost:8787 npm run start` from `packages/creator-hub`. creators-data does not serve the Leaderboard, Payouts, payout wallet or email verification routes yet, so those tabs show their error state there.
+For developers, with a checkout of this branch and `make init` done:
+
+```bash
+cd packages/creator-hub && npm run start:earn-mock
+```
+
+That is `npm run start` with `CREATOR_FUND_FIXTURES=1`; put switches in front (`MOCK_ENROLLMENT=active npm run start:earn-mock`). `npm run mock:creator-fund` runs the same fixtures as a standalone server on `http://localhost:8788` (`PORT` changes it), and `npm run test:scripts` runs their tests.
+
+To check against a real local creators-data instead (its own `docs/creator-fund-qa.md` loads fixtures and starts it on port 8787), run `CREATOR_FUND_API_URL=http://localhost:8787 npm run start`. Only builds from source read that variable. creators-data does not serve the Leaderboard, Payouts, payout wallet or email verification routes yet, so those tabs show their error state there.
 
 ## Known limits
 
-- **Every wallet sees the same places, Leaderboard and payouts.** The fixtures are shared; only the enrollment, payout wallet and email verification are kept per wallet.
-- **The `terms_outdated` reason can't be seen.** The mock sets it while the terms are out of date, but the re-accept modal stands in front of My Places until you accept.
-- **Publishing to a World fails** while `start:earn-mock` runs, because it points the Worlds content server at the mock. Jump In to a fixture World finds nothing for the same reason, and because the Worlds are made up.
-- **Stop with `Ctrl+C` or by quitting the app.** Killing the `start:earn-mock` process from elsewhere stops the mock but leaves the app window open, as with `npm run start`.
+- **Every account sees the same places, Leaderboard and payouts.** The fixtures are shared; only the enrollment, payout wallet and email verification are kept per account.
+- **The `terms_outdated` reason can't be seen.** The fixtures set it while the terms are out of date, but the re-accept modal stands in front of My Places until you accept.
+- **Publishing to a World fails** while the fixtures run, because the Worlds content server points at them. Jump In to a fixture World finds nothing for the same reason, and because the Worlds are made up.
 - **Responses take 0.3 to 0.8 s** on purpose, so loading states are visible.
-- A **"We couldn't check for updates"** notice can appear when running from source. It's unrelated to EARN.
+- A **"We couldn't check for updates"** notice can appear on this build. It's unrelated to EARN.
