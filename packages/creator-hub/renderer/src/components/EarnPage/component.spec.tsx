@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
@@ -69,6 +69,8 @@ const enrollment = (termsVersion: number, status: 'active' | 'suspended' = 'acti
   email_verified_at: null,
 });
 
+const ACCEPT_LABEL = 'I have read and accept the Creator Fund Program Terms';
+
 type Entry = string | { pathname: string; state: unknown };
 
 function page(entry: Entry = '/earn') {
@@ -101,6 +103,14 @@ function page(entry: Entry = '/earn') {
  */
 vi.setConfig({ testTimeout: 15_000 });
 
+async function acceptUpdatedTerms(view: ReturnType<typeof within>) {
+  const checkbox = await view.findByLabelText(ACCEPT_LABEL);
+  const accept = view.getByRole('button', { name: 'Accept' });
+  fireEvent.click(checkbox);
+  fireEvent.click(accept);
+  return accept;
+}
+
 describe('EarnPage', () => {
   beforeAll(() => {
     setCurrentLocale('en', flatten(en));
@@ -109,6 +119,9 @@ describe('EarnPage', () => {
   beforeEach(() => {
     auth.isSignedIn = false;
     auth.isSigningIn = false;
+    [api.getEnrollment, api.getTerms, api.getEligibility, api.putEnrollment].forEach(mock =>
+      vi.mocked(mock).mockReset(),
+    );
     vi.mocked(api.getEnrollment).mockResolvedValue({
       ok: false as const,
       status: 404,
@@ -336,30 +349,29 @@ describe('EarnPage', () => {
     });
 
     it('should block the page behind the re-accept modal', async () => {
-      page();
+      const view = within(page().container);
 
-      expect(await screen.findByRole('heading', { name: 'Program Terms updated' })).toBeTruthy();
-      expect(screen.queryByRole('tab', { name: 'My Places' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+      expect(await view.findByRole('heading', { name: 'Program Terms updated' })).toBeTruthy();
+      expect(view.queryByRole('tab', { name: 'My Places' })).toBeNull();
+      expect(view.queryByRole('button', { name: 'Close' })).toBeNull();
 
-      fireEvent.keyDown(screen.getByRole('region', { name: 'Program Terms' }), { key: 'Escape' });
-      expect(screen.getByRole('heading', { name: 'Program Terms updated' })).toBeTruthy();
+      fireEvent.keyDown(view.getByRole('region', { name: 'Program Terms' }), { key: 'Escape' });
+      expect(view.getByRole('heading', { name: 'Program Terms updated' })).toBeTruthy();
     });
 
     it('should go home from NOT NOW', async () => {
-      page();
+      const view = within(page().container);
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Not now' }));
+      fireEvent.click(await view.findByRole('button', { name: 'Not now' }));
 
-      expect(screen.getByText('home page')).toBeTruthy();
+      expect(view.getByText('home page')).toBeTruthy();
     });
 
     it('should accept the current version and show the joined page', async () => {
-      page();
-      fireEvent.click(await screen.findByRole('checkbox'));
-      fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      const view = within(page().container);
+      await acceptUpdatedTerms(view);
 
-      expect(await screen.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
+      expect(await view.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
       expect(api.putEnrollment).toHaveBeenCalledWith({
         first_name: 'Jane',
         last_name: 'Doe',
@@ -370,13 +382,12 @@ describe('EarnPage', () => {
 
     it('should accept only once when ACCEPT is pressed twice', async () => {
       vi.mocked(api.putEnrollment).mockReturnValue(new Promise(() => {}));
-      page();
-      fireEvent.click(await screen.findByRole('checkbox'));
-      fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      const view = within(page().container);
+      const accept = await acceptUpdatedTerms(view);
+      fireEvent.click(accept);
 
       expect(api.putEnrollment).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole('button', { name: 'Accept' }).getAttribute('aria-busy')).toBe('true');
+      expect(accept.getAttribute('aria-busy')).toBe('true');
     });
 
     it("should say only the generic line on a 400, never the service's message", async () => {
@@ -386,11 +397,10 @@ describe('EarnPage', () => {
         error: 'x',
         body: { error: 'Bad Request', message: 'email must be a valid address' },
       });
-      page();
-      fireEvent.click(await screen.findByRole('checkbox'));
-      fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      const view = within(page().container);
+      await acceptUpdatedTerms(view);
 
-      expect((await screen.findByRole('alert')).textContent).toBe(
+      expect((await view.findByRole('alert')).textContent).toBe(
         'Something went wrong. Please try again.',
       );
     });
@@ -404,19 +414,21 @@ describe('EarnPage', () => {
           body: { error: 'Bad Request', message: 'terms_version must be 3' },
         })
         .mockResolvedValue(ok(enrollment(3)));
-      page();
-      fireEvent.click(await screen.findByRole('checkbox'));
+      const view = within(page().container);
+      const checkbox = await view.findByLabelText(ACCEPT_LABEL);
+      const accept = view.getByRole('button', { name: 'Accept' });
+      fireEvent.click(checkbox);
       vi.mocked(api.getTerms).mockResolvedValue(ok({ ...TERMS, version: 3 }));
-      fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      fireEvent.click(accept);
 
-      const checkbox = await screen.findByRole('checkbox');
-      await act(async () => {});
-      expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(false);
-      expect(screen.queryByRole('alert')).toBeNull();
-      fireEvent.click(checkbox.isConnected ? checkbox : screen.getByRole('checkbox'));
-      fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      await waitFor(() => expect(api.getTerms).toHaveBeenCalledTimes(2));
+      const reloaded = await view.findByLabelText<HTMLInputElement>(ACCEPT_LABEL);
+      await waitFor(() => expect(reloaded.checked).toBe(false));
+      expect(view.queryByRole('alert')).toBeNull();
+      fireEvent.click(reloaded);
+      fireEvent.click(view.getByRole('button', { name: 'Accept' }));
 
-      expect(await screen.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
+      expect(await view.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
       expect(vi.mocked(api.putEnrollment).mock.calls.map(([body]) => body.terms_version)).toEqual([
         2, 3,
       ]);
@@ -429,29 +441,27 @@ describe('EarnPage', () => {
         error: 'Forbidden',
         body: { error: 'Forbidden', reasons: ['excluded'] },
       });
-      page();
-      fireEvent.click(await screen.findByRole('checkbox'));
-      fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      const view = within(page().container);
+      await acceptUpdatedTerms(view);
 
-      const dialog = await screen.findByRole('alertdialog', { name: "You can't join yet" });
+      const dialog = await view.findByRole('alertdialog', { name: "You can't join yet" });
       expect(dialog.textContent).toContain("Your account isn't eligible for the Creator Fund.");
-      expect(screen.queryByRole('heading', { name: 'Program Terms updated' })).toBeNull();
+      expect(view.queryByRole('heading', { name: 'Program Terms updated' })).toBeNull();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
+      fireEvent.click(view.getByRole('button', { name: 'Got it' }));
 
-      expect(screen.getByText('home page')).toBeTruthy();
+      expect(view.getByText('home page')).toBeTruthy();
     });
 
     it('should keep the modal and say so when accepting fails', async () => {
       vi.mocked(api.putEnrollment).mockResolvedValue({ ok: false, status: 500, error: 'x' });
-      page();
-      fireEvent.click(await screen.findByRole('checkbox'));
-      fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      const view = within(page().container);
+      await acceptUpdatedTerms(view);
 
-      expect((await screen.findByRole('alert')).textContent).toBe(
+      expect((await view.findByRole('alert')).textContent).toBe(
         'Something went wrong. Please try again.',
       );
-      expect(screen.getByRole('heading', { name: 'Program Terms updated' })).toBeTruthy();
+      expect(view.getByRole('heading', { name: 'Program Terms updated' })).toBeTruthy();
     });
   });
 });
