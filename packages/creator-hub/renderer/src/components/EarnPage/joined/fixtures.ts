@@ -5,6 +5,7 @@ import type {
   Leaderboard,
   LeaderboardCycle,
   MyPlaces,
+  Payout,
 } from '/shared/types/creator-fund';
 
 import type { MetricsBatch } from '/@/lib/metricsApi';
@@ -103,6 +104,21 @@ export const metricsBatch = (
       ]),
     ),
   })),
+});
+
+/** A payout for `forCycle`, one place per amount; paid ones carry an obviously fake hash. */
+export const payout = (
+  forCycle: Cycle,
+  status: Payout['status'],
+  places: [CreatorFundPlace, number][],
+): Payout => ({
+  cycle: forCycle,
+  status,
+  paid_places: places.length,
+  amount_usdc: places.reduce((total, [, amount]) => total + amount, 0).toFixed(2),
+  transaction_hash: status === 'paid' ? `0x${String(forCycle.id).padStart(64, '0')}` : null,
+  paid_at: status === 'paid' ? forCycle.end_at : null,
+  places: places.map(([entry, amount]) => ({ place: entry, amount_usdc: amount.toFixed(2) })),
 });
 
 export const ok = <T>(data: T, status = 200) => ({ ok: true as const, status, data });

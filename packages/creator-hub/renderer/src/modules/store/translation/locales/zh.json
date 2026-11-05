@@ -1526,7 +1526,8 @@
       "sections": "Creator Fund 版块",
       "tabs": {
         "my_places": "我的地点",
-        "leaderboard": "排行榜"
+        "leaderboard": "排行榜",
+        "payouts": "付款"
       },
       "title_prefix": "赚取",
       "title": "Creator Fund",
@@ -1606,6 +1607,74 @@
         "empty": "你的地点尚未加入计划。在 LAND 或开放的 World 上发布场景，它会自动加入。",
         "error": "无法加载你的地点。",
         "replaced_tooltip": "此地点已作为新地点重新发布。其之前的数据会保留。"
+      },
+      "payouts": {
+        "wallet": {
+          "title": "收款钱包",
+          "info_label": "关于收款钱包",
+          "info": "数字钱包用于存储和管理你的数字资产。你可以用它安全地发送、接收和追踪资金，包括你的 Creator Fund USDC 奖励。",
+          "learn_more": "了解更多",
+          "copy": "复制钱包地址",
+          "edit": "编辑",
+          "add": "添加钱包"
+        },
+        "contact": {
+          "title": "联系信息",
+          "full_name": "全名",
+          "email": "电子邮箱",
+          "unverified": "未验证",
+          "verify": "验证邮箱"
+        },
+        "table": {
+          "label": "付款",
+          "cycle": "周期",
+          "status": "状态",
+          "paid_places": "已付款地点",
+          "amount": "金额",
+          "transaction": "交易",
+          "pending": "待处理",
+          "paid": "已支付",
+          "usdc": "{amount} USDC",
+          "view_transaction": "在 Etherscan 上查看交易"
+        },
+        "empty": {
+          "title": "你的奖励之旅从这里开始！",
+          "first_payout": "你的首笔付款将在 {cycle} 周期结束后到来。",
+          "body": "继续创作，聚集玩家，打造让他们想要再次回访的体验！"
+        },
+        "add": {
+          "title": "添加收款钱包",
+          "body": "我们会将你的 Creator Fund 付款以 USDC 发送到这里。",
+          "submit": "添加钱包"
+        },
+        "change": {
+          "title": "更换收款钱包",
+          "body": "保存后，后续付款将发送到此钱包。",
+          "submit": "保存"
+        },
+        "wallet_field": {
+          "label": "钱包地址",
+          "placeholder": "0x…",
+          "invalid": "钱包地址无效。应以 0x 开头，长度为 42 个字符。"
+        },
+        "erc20": "请确保此钱包可以在以太坊（ERC-20）上接收 USDC。发送到不支持的钱包的资金无法找回。",
+        "verify": {
+          "title": "验证你的邮箱",
+          "body_sent": "6 位验证码已发送至 <b>{email}</b>。",
+          "body_instruction": "请在下方输入验证码以完成验证。",
+          "digit": "第 {n} 位，共 6 位",
+          "resend": "重新发送验证码",
+          "incorrect": "验证码错误。请检查邮件后重试。",
+          "expired": "此验证码已过期。请重新发送。",
+          "submit": "验证"
+        },
+        "snackbar": {
+          "wallet_added": "已添加收款钱包",
+          "wallet_updated": "已更新收款钱包",
+          "email_verified": "邮箱已验证"
+        },
+        "cancel": "取消",
+        "error": "无法加载你的付款。"
       }
     },
     "errors": {

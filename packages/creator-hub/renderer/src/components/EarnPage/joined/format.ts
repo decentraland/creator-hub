@@ -1,5 +1,7 @@
 import type { CreatorFundPlace } from '/shared/types/creator-fund';
 
+type Located = Pick<CreatorFundPlace, 'world' | 'world_name' | 'base_position'>;
+
 import type { LocationMetrics } from '/@/lib/metricsApi';
 
 /** A USDC decimal string as `1,842.50`. */
@@ -29,13 +31,14 @@ export const formatTime = (iso: string, locale: string) =>
  * than one scene, `world - x,y`.
  * @param scenesInWorld - the World's scene count, when known.
  */
-export const placeLocation = (place: CreatorFundPlace, scenesInWorld = 0) => {
+export const placeLocation = (place: Located, scenesInWorld = 0) => {
   if (!place.world || !place.world_name) return place.base_position;
   return scenesInWorld > 1 ? `${place.world_name} - ${place.base_position}` : place.world_name;
 };
 
 /** A place's title, or its location when Places has none. */
-export const placeTitle = (place: CreatorFundPlace) => place.title ?? placeLocation(place);
+export const placeTitle = (place: Located & Pick<CreatorFundPlace, 'title'>) =>
+  place.title ?? placeLocation(place);
 
 /** The jump-in target for a place. */
 export const jumpInLocation = (place: CreatorFundPlace) => {
