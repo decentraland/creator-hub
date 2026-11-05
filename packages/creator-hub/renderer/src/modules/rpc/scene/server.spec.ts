@@ -73,3 +73,46 @@ describe('SceneRpcServer notify_scene_metadata', () => {
     });
   });
 });
+
+describe('SceneRpcServer notify_scene_metadata from an editor that never took the pick', () => {
+  let inspector: RPC<string, any, any>;
+
+  beforeEach(() => {
+    const host = new InMemoryTransport();
+    const iframe = new InMemoryTransport();
+    host.connect(iframe);
+    iframe.connect(host);
+    store.dispatch(
+      workspaceActions.createProject.fulfilled(PROJECT, 'request-id', undefined as never),
+    );
+    new SceneRpcServer(host, PROJECT);
+    inspector = new RPC('SceneRpcOutbound', iframe);
+    store.dispatch(
+      workspaceActions.updateProject({ ...PROJECT, scene: { base: '50,60', parcels: ['50,60'] } }),
+    );
+  });
+
+  afterEach(() => {
+    store.dispatch(workspaceActions.updateProject({ ...PROJECT }));
+  });
+
+  describe('when its first notice still carries the layout it opened with', () => {
+    beforeEach(async () => {
+      await inspector.request('notify_scene_metadata', {
+        title: 'Renamed',
+        scene: { parcels: ['0,0'], base: '0,0' },
+      });
+    });
+
+    it('should keep the parcels picked for publishing', () => {
+      expect(store.getState().editor.project?.scene).toEqual({
+        base: '50,60',
+        parcels: ['50,60'],
+      });
+    });
+
+    it('should take the title', () => {
+      expect(store.getState().editor.project?.title).toBe('Renamed');
+    });
+  });
+});
