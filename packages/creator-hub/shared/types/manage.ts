@@ -6,6 +6,8 @@ export enum FilterBy {
   UNPUBLISHED = 'unpublished',
 }
 
+export type ManageTab = 'worlds' | 'lands';
+
 export enum SortBy {
   LATEST = 'last_deployed_at',
   NAME = 'name',
@@ -21,6 +23,12 @@ export type ManagedProject = {
   displayName: string;
   type: ManagedProjectType;
   role: LandRoleType | WorldRoleType;
+  /** A World's own name, from its Details (the World settings title); unset when it has none. */
+  title?: string;
+  /** What the account may do in a World it doesn't own: publish (`deploy`, the default) or only stream (`stream`). */
+  access?: 'deploy' | 'stream';
+  /** A World's owner address, when known. */
+  owner?: string;
   deployment?: ProjectDeployment;
   /**
    * Base coordinate of each scene deployed in this world. A world can hold
@@ -28,7 +36,13 @@ export type ManagedProject = {
    * coordinates are needed to ask about it — most are `0,0`, but far from all.
    */
   scenes?: Array<{ x: number; y: number }>;
+  place?: LandPlace;
 };
+
+/** Where a LAND sits: a parcel at its coordinates, or an estate of `size` parcels with its lowest parcel as `base`. */
+export type LandPlace =
+  | { kind: 'parcel'; x: number; y: number }
+  | { kind: 'estate'; size: number; base: { x: number; y: number } };
 
 export type ProjectDeployment = {
   title: string;
@@ -43,11 +57,3 @@ export type SceneDeployment = {
   publishedAt: number;
   parcels: string[];
 };
-
-export enum WorldSettingsTab {
-  DETAILS = 'details',
-  LAYOUT = 'layout',
-  GENERAL = 'general',
-  VARIABLES = 'variables',
-  PERMISSIONS = 'permissions',
-}
