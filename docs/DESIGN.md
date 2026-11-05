@@ -18,12 +18,11 @@ Each value names its token. A value that differs from the token file carries its
 
 ### Open token PRs
 
-Two token-value PRs are open; every other block describes `main`. A `ships in #<PR>` marker names one of them.
+One token-value PR is open; every other block describes `main`. A `ships in #1731` marker names it.
 
 | Unit | PR | Base | Blocks it changes |
 | --- | --- | --- | --- |
-| Token values | #1703 | `main` | Every row marked "ships in #1703" in [Colors](#colors) and the role tables |
-| Token sync: `--modal` and the AI panel | #1731 | #1703 | `--modal`, `--modal-content-bg-color`, `--ai-menu-bg`, `--ai-input-bg`, `--ai-warning-bg`: DefaultModal, AiChat, Menu (AI Assistant), ChatInput |
+| Token sync: `--modal` and the AI panel | #1731 | `main` | `--modal`, `--modal-content-bg-color`, `--ai-menu-bg`, `--ai-input-bg`, `--ai-warning-bg`: DefaultModal, AiChat, Menu (AI Assistant), ChatInput |
 
 ### Sections index
 
@@ -157,13 +156,13 @@ A canonical token name is its name in dcl-one's [`apps/ui3`](https://github.com/
 | `--primary-dark` | inspector | `--brand-dark` | `#f70038` | `#d80029` (`#f70038` in ui3's `.ui2` scope) | drift |
 | `--dcl-hover` | Creator Hub | `--brand-dark` | `#f70038` | `#d80029` (`#f70038` in `.ui2`) | drift |
 | `--palette-primary-light` | inspector | `--brand-light` | `#ff6280` | `#f8919d` | drift |
-| `--primary-hover` | Creator Hub | `--brand-hover` | `#ff3d61` (`#ff6280` ships in #1703) | `#ff4d70` (`var(--brand-light)` in `.ui2`) | drift |
+| `--primary-hover` | Creator Hub | `--brand-hover` | `#ff6280` | `#ff4d70` (`var(--brand-light)` in `.ui2`) | drift |
 | `--text-on-primary` | Creator Hub | `--on-brand` | `#ffffff` | `#fff` | match |
 | `--secondary-main` | inspector | `--accent` | `#ff7439` | `#ff7439` | match |
-| `--success-main` | inspector | `--success` | `#4caf50` (`#34ce77` ships in #1703) | `#34ce77` | drift |
+| `--success-main` | inspector | `--success` | `#34ce77` | `#34ce77` | match |
 | `--success` | Creator Hub | `--success` (already the ui3 name) | `#34ce77` | `#34ce77` | match |
-| `--warning-main` | inspector | `--warning` | `#ffc95b` (`#fe9c2a` ships in #1703) | `#fe9c2a` | drift |
-| `--danger` | Creator Hub | `--warning` | `#ffa900` (`#fe9c2a` ships in #1703) | `#fe9c2a` | drift |
+| `--warning-main` | inspector | `--warning` | `#fe9c2a` | `#fe9c2a` | match |
+| `--danger` | Creator Hub | `--warning` | `#fe9c2a` | `#fe9c2a` | match |
 | `--palette-info-main` | inspector | `--info` | `#2196f3` | `#2196f3` | match |
 | `--tree-bg-color` | inspector | `--panel` | `#161518` (`--base-20`) | `#161518` | match |
 | `--black` | Creator Hub | `--panel` | `#161518` | `#161518` | match |
@@ -190,8 +189,8 @@ A canonical token name is its name in dcl-one's [`apps/ui3`](https://github.com/
 | `--font-family` | both | `--font-sans` (ui3 defines `--font-family: var(--font-sans)` too) | `"Inter", system-ui, …, sans-serif` | `Inter, system-ui, sans-serif` | drift (fallbacks only) |
 | `--font-monospace` | both | `--font-mono` | `"Inconsolata", "Consolas", …, monospace` | `ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace` | drift |
 | `--lavender` | both | `--lavender` (already the ui3 name) | `#c640cd` | `#c640cd` | match |
-| `--error-main` | inspector | `--error` | `#f44336` (`#fb3b3b` ships in #1703) | `#fb3b3b` | drift (user decision: both worlds take `--error`) |
-| `--error` | Creator Hub | `--error` (already the ui3 name) | `#ff0000` (`#fb3b3b` ships in #1703) | `#fb3b3b` | drift (user decision: Creator Hub keeps its own `--error`) |
+| `--error-main` | inspector | `--error` | `#fb3b3b` | `#fb3b3b` | match (user decision: both worlds take `--error`) |
+| `--error` | Creator Hub | `--error` (already the ui3 name) | `#fb3b3b` | `#fb3b3b` | match (user decision: Creator Hub keeps its own `--error`) |
 | `--text` | Creator Hub | `--text` (already the ui3 name) | `#ffffff` (White) | `#fcfcfc` (Snow) | drift (user decision: White stays; the Snow tokens `--palette-neutral-softWhite` and `--ui-designer-text` stay separate, not aliased) |
 | `--purple` | inspector | `--purple` (already the ui3 name) | `#691fa9` | `#982de2` | drift (user decision: same role) |
 | `--menu-bg` | Creator Hub | none | `#35333b` (the Onix menu surface) | ui3 uses `--menu-bg` for a different surface, the Explorer menu's radial-gradient backdrop | name clash (user decision): ours stays and is renamed at migration |
@@ -202,7 +201,7 @@ Where our CSS already used a ui3 name, the row says how the user settled it. New
 
 Read October 27, 2026 from the Colors page ([node `20752:6024`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20752-6024), frame "Colors Dark" [`20755:6429`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20755-6429), 12 columns). Variable names come from the frame's variable definitions; fills and alphas come from the swatches, since INFO and three Neutrals swatches are raw fills with no variable. One table per Figma column group, in Figma's order.
 
-Status: **match** (same value), **ships in #1703** (the spoke `feat/design-tokens-figma-values` sets Figma's value; the table shows that value), **ships in #1731** (the spoke `feat/design-token-sync`, stacked on #1703, sets it; the table shows that value), **drift → X (pending spoke)** (a token holds another value; a later spoke changes it), **missing** (no token in that world), **✱ deviation** (documented and kept on purpose), **PROPOSED** (a new token; the name is the user's call). A `—` means the world has no token for it and needs none yet. ui2 paths name `decentraland-ui2`'s dark theme (`theme/colorSchemes.js`, `theme/colors.js`); ui2 reads none of these through a `--mui-*` variable except `--mui-palette-action-disabled` and `--mui-palette-secondary-contrast`, so a ui2 drift is fixed upstream.
+Status: **match** (same value), **ships in #1731** (the spoke `feat/design-token-sync` sets it; the table shows that value), **drift → X (pending spoke)** (a token holds another value; a later spoke changes it), **missing** (no token in that world), **✱ deviation** (documented and kept on purpose), **PROPOSED** (a new token; the name is the user's call). A `—` means the world has no token for it and needs none yet. ui2 paths name `decentraland-ui2`'s dark theme (`theme/colorSchemes.js`, `theme/colors.js`); ui2 reads none of these through a `--mui-*` variable except `--mui-palette-action-disabled` and `--mui-palette-secondary-contrast`, so a ui2 drift is fixed upstream.
 
 Swatch chrome on the page (not tokens): radius 8px, a 312 × 82 fill, the name in Inter Bold 16 / 1.75 / 0.15px, the value in `Body/Body - 14`, a 4px gap, and the column heading in `Other/Overline`. Light swatches carry a 1px Black 10 border; Pale Black a 1px White 20.
 
@@ -213,12 +212,12 @@ Swatch chrome on the page (not tokens): radius 8px, a 312 × 82 fill, the name i
 | Primary/Primary · Brand/Ruby | `#FF2D55` | Brand pink — **CTAs and main buttons only**, plus the "armed/active tool" signal: the `.Button.primary` fill and the `text` + `primary` label. Not for panel chrome (that's `--ui-designer-control-accent`); don't use it for field errors. | `--brand` (legacy `--primary-main`) `#ff2d55` | `--brand` (legacy `--primary`), `--brand` (legacy `--dcl`) `#ff2d55` · ui2 `palette.primary.main` | match |
 | Primary/Primary Dark 1 | `#F70038` | `.Button.primary` pressed; ui2's contained-primary hover | `--brand-dark` (legacy `--primary-dark`) `#f70038` | `--brand-dark` (legacy `--dcl-hover`) `#f70038` (no consumer) · ui2 `palette.primary.dark` | match |
 | Primary/Primary Dark 2 | `#D80029` | — | `--palette-primary-dark2` `#d80029` | ui2 `colors.base.primaryDark2` `#D80029` | match |
-| Primary/Primary Light 1 | `#FF6280` | `.Button.primary` hover and active fill, and the `text` + `primary` hover label (ui2 theme-path name); Creator Hub's primary hover | `--brand-light` (legacy `--palette-primary-light`) `#ff6280` | `--brand-hover` (legacy `--primary-hover`) `#ff6280` · ui2 `palette.primary.light` `#F26276` · ui2 `colors.base.primaryLight1` `#F8919D` | match in inspector; `--primary-hover` ships in #1703; ui2 drifts (upstream) |
+| Primary/Primary Light 1 | `#FF6280` | `.Button.primary` hover and active fill, and the `text` + `primary` hover label (ui2 theme-path name); Creator Hub's primary hover | `--brand-light` (legacy `--palette-primary-light`) `#ff6280` | `--brand-hover` (legacy `--primary-hover`) `#ff6280` · ui2 `palette.primary.light` `#F26276` · ui2 `colors.base.primaryLight1` `#F8919D` | match; ui2 drifts (upstream) |
 | Primary/Primary Light 2 | `#FF93A8` | — | `--palette-primary-light2` `#ff93a8` | ui2 `colors.base.primaryLight2` `#FFC9D5` | match in inspector; ui2 drifts (upstream) |
 | Primary Alt/Primary Alt · Brand/Orange | `#FF7439` | Brand orange | `--accent` (legacy `--secondary-main`) `#ff7439` | — · ui2 `brand.orange` | match |
-| Primary Alt/Primary Alt Dark 1 | `#F45708` | Brand orange shade (no consumers yet) | `--secondary-dark` `#f45708` | — | ships in #1703 |
+| Primary Alt/Primary Alt Dark 1 | `#F45708` | Brand orange shade (no consumers yet) | `--secondary-dark` `#f45708` | — | match |
 | Primary Alt/Primary Alt Dark 2 | `#D84900` | — | `--palette-primaryAlt-dark2` `#d84900` | — | match |
-| Primary Alt/Primary Alt Light 1 | `#FFAD8D` | Brand orange shade (no consumers yet) | `--secondary-light` `#ffad8d` | — | ships in #1703 |
+| Primary Alt/Primary Alt Light 1 | `#FFAD8D` | Brand orange shade (no consumers yet) | `--secondary-light` `#ffad8d` | — | match |
 | Primary Alt/Primary Alt Light 2 | `#FFCDBA` | — | `--palette-primaryAlt-light2` `#ffcdba` | — | match |
 
 #### Neutrals (text, surfaces, borders)
@@ -238,7 +237,7 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Onix (swatch) | `#35333B` | Figma Neutrals/Onyx: field and control chrome, UI Designer menus (`--ui-designer-control-bg`), and the 1px border of an unselected UI Designer tab toggle, at rest, on hover and disabled (1.27:1 against the panel: an edge, not the state cue) | `--palette-neutral-onyx` `#35333b`, `--ui-designer-control-bg` `#35333b` | — | match in inspector; missing in Creator Hub |
 | Onix Dark 1 (swatch) | `#2D2A33` | Title-bar button, the 2D viewport fill, `InputAction` rest, the AI `ChatInput` container | `--palette-neutral-onyxDark1` `#2d2a33` | `--title-bar-button` `#2d2a33` | match |
 | Charcoal (swatch) | `#25212A` | Panel frame | `--panel-2` (legacy `--ui-designer-panel-bg`) → `--base-19` `#242129` | `--panel-2` (legacy `--card`), `--secondary`, `--panel-2` (legacy `--darker-gray`) `#242129` · ui2 `neutral.softBlack2` `#242129` | **✱ deviation**: both worlds follow ui2's `#242129`, 1/255 from Figma; keep (`--modal` is not one: its value is Figma's `#181225`) |
-| Neutrals/Shadow | `#161518` | Tree and page surface | `--base-20` `#161518`, `--panel` (legacy `--tree-bg-color`) | `--panel` (legacy `--black`) `#161518`, `--bg` and `--background` `#161518` · ui2 `neutral.softBlack1` | match in inspector; `--bg` ships in #1703, `--background` ships in #1703 |
+| Neutrals/Shadow | `#161518` | Tree and page surface | `--base-20` `#161518`, `--panel` (legacy `--tree-bg-color`) | `--panel` (legacy `--black`) `#161518`, `--bg` and `--background` `#161518` · ui2 `neutral.softBlack1` | match |
 | Neutrals/Black | `#000000` | — | `--black` `#000000`, `--base-21` | `--bg-inspector` `#000` · ui2 `neutral.black` | match |
 | — | `#676370` | Secondary text and lines in Creator Hub | `--neutral-grey-4` `#676370` | `--secondary-text`, `--text-area-border`, `--popup` `#676370`, and the `#676370xx` alpha family (`--divider`, `--secondary-on-modal`, `--card-on-modal`) | **not in Figma**; nearest is Graffito `#5E5B67` |
 
@@ -269,23 +268,23 @@ Figma names four steps per base colour, Backdrop 60% · Blurry 40% · Soft 20% �
 
 #### System status (success, warning, error)
 
-ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.warning` / `.error`, each with `main`, `dark` = Dark 1, `light` = Light 1), so Creator Hub reads status colours from the theme. The inspector's status tokens take the same values (ships in #1703). The error role is System/Red `#FB3B3B`; `DCL/Red` `#FF0000` is a legacy variable, not the error role.
+ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.warning` / `.error`, each with `main`, `dark` = Dark 1, `light` = Light 1), so Creator Hub reads status colours from the theme. The inspector's status tokens take the same values. The error role is System/Red `#FB3B3B`; `DCL/Red` `#FF0000` is a legacy variable, not the error role.
 
 | Figma variable | Value | Use | `vars.css` | `theme.css` / ui2 | Status |
 | --- | --- | --- | --- | --- | --- |
-| System/Green | `#34CE77` | Success | `--success` (legacy `--success-main`) `#34ce77` | `--success` `#34ce77` · ui2 `palette.success.main` | `--success-main` ships in #1703; match in Creator Hub |
-| System/Green Dark 1 | `#00B453` | Status shade (no consumers yet) | `--success-dark` `#00b453` | ui2 `palette.success.dark` | ships in #1703 |
-| System/Green Light 1 | `#65D890` | Status shade (no consumers yet) | `--success-light` `#65d890` | ui2 `palette.success.light` | ships in #1703 |
+| System/Green | `#34CE77` | Success | `--success` (legacy `--success-main`) `#34ce77` | `--success` `#34ce77` · ui2 `palette.success.main` | match |
+| System/Green Dark 1 | `#00B453` | Status shade (no consumers yet) | `--success-dark` `#00b453` | ui2 `palette.success.dark` | match |
+| System/Green Light 1 | `#65D890` | Status shade (no consumers yet) | `--success-light` `#65d890` | ui2 `palette.success.light` | match |
 | System/Green Dark 2 | `#00A146` | — | `--palette-success-dark2` `#00a146` | `--palette-success-dark2` `#00a146` · ui2 alert success background `rgba(0,161,70,.24)` | match |
 | System/Green Light 2 | `#C1EECF` | — | `--palette-success-light2` `#c1eecf` | `--palette-success-light2` `#c1eecf` · ui2 light-scheme alert | match |
-| System/Orange | `#FE9C2A` | Warning | `--warning` (legacy `--warning-main`) `#fe9c2a` | `--warning` (legacy `--danger`) `#fe9c2a` · ui2 `palette.warning.main` | ships in #1703 (both) |
-| System/Orange Dark 1 | `#F38025` | Warning shade (no consumers yet) | `--warning-dark` `#f38025` | ui2 `palette.warning.dark` | ships in #1703 |
+| System/Orange | `#FE9C2A` | Warning | `--warning` (legacy `--warning-main`) `#fe9c2a` | `--warning` (legacy `--danger`) `#fe9c2a` · ui2 `palette.warning.main` | match (both) |
+| System/Orange Dark 1 | `#F38025` | Warning shade (no consumers yet) | `--warning-dark` `#f38025` | ui2 `palette.warning.dark` | match |
 | System/Orange Light 1 | `#FFB95B` | — | `--palette-warning-light` `#ffb95b` | ui2 `palette.warning.light` | match |
 | System/Orange Dark 2 | `#EC7122` | — | `--palette-warning-dark2` `#ec7122` | `--palette-warning-dark2` `#ec7122` · ui2 alert warning background `rgba(236,113,34,.24)` | match |
 | System/Orange Light 2 | `#FFCD88` | — | `--palette-warning-light2` `#ffcd88` | `--palette-warning-light2` `#ffcd88` · ui2 alert warning text | match |
-| System/Red | `#FB3B3B` | Error | `--error` (legacy `--error-main`) `#fb3b3b` | `--error` `#fb3b3b` · ui2 `palette.error.main` | ships in #1703 (both) |
-| System/Red Dark 1 | `#EC303A` | Error shade (no consumers yet) | `--error-dark` `#ec303a` | ui2 `palette.error.dark` | ships in #1703 |
-| System/Red Light 1 | `#E97177` | The hover and focus border of an errored field, and the 10–13px error text | `--error-light` `#e97177` | ui2 `palette.error.light` | ships in #1703 |
+| System/Red | `#FB3B3B` | Error | `--error` (legacy `--error-main`) `#fb3b3b` | `--error` `#fb3b3b` · ui2 `palette.error.main` | match (both) |
+| System/Red Dark 1 | `#EC303A` | Error shade (no consumers yet) | `--error-dark` `#ec303a` | ui2 `palette.error.dark` | match |
+| System/Red Light 1 | `#E97177` | The hover and focus border of an errored field, and the 10–13px error text | `--error-light` `#e97177` | ui2 `palette.error.light` | match |
 | System/Red Dark 2 | `#CC1D2C` | — | `--palette-error-dark2` `#cc1d2c` | `--palette-error-dark2` `#cc1d2c` · ui2 alert error background `rgba(204,29,44,.24)` | match |
 | System/Red Light 2 | `#FFCDD4` | — | `--palette-error-light2` `#ffcdd4` | `--palette-error-light2` `#ffcdd4` | match |
 | `DCL/Red` (legacy) | `#FF0000` | Not the error role | — | — | legacy variable |
@@ -323,7 +322,7 @@ Contrast of the status text and icon colours at these values, on the surfaces th
 | Brand/Ruby | `#FF2D55` | Brand pink | `--brand` (legacy `--primary-main`) `#ff2d55` | `--brand` (legacy `--primary`) `#ff2d55` · ui2 `brand.ruby` | match |
 | Brand/Lavender | `#C640CD` | The smart-item disc | `--lavender` `#c640cd`, `--smart-item-icon-bg-color` `#c640cd` | ui2 `brand.lavander` | match |
 | Brand/Violet | `#A524B3` | — | `--violet` `#a524b3` | ui2 `brand.voilet` | match |
-| Brand/Purple | `#691FA9` | — | `--purple` `#691fa9` | `--purple-banner` `#691fa9` (no consumer) · ui2 `brand.purpel` | match in inspector; `--purple-banner` ships in #1703 |
+| Brand/Purple | `#691FA9` | — | `--purple` `#691fa9` | `--purple-banner` `#691fa9` (no consumer) · ui2 `brand.purpel` | match |
 
 #### Rarities
 
@@ -751,7 +750,7 @@ A pill: 100px radius, padding 4 / 10, label `H6 Regular` (Inter 16/400/normal/0)
 | Variant | Fill | Border | Radius | Text | Padding | Inspector token | Creator Hub token | Contrast |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Owner ("Owner") | `rgba(255,255,255,0.1)` Transparencies/White 10 | none | 100px | `H6 Regular` · `#FCFCFC` Snow | 4 / 10 | fill `--palette-whiteTransparent-subtle`; text `--ui-designer-text`; radius `--shape-borderRadiusPill` | ui2 `neutral.softWhite`, `whiteTransparent.subtle`; `theme.css` `--palette-whiteTransparent-subtle`; the rest missing | Snow on the composite (`#2D2C2F` over `#161518`) 13.53:1; over `#242129` 11.40:1 |
-| Tenat ("Tenant") | `rgba(254,156,42,0.2)` System/Orange at 20% | none | 100px | `H6 Regular` · `#FE9C2A` System/Orange | 4 / 10 | text `--warning-main` (ships in #1703); fill `color-mix` of `--warning-main` at 20% | `--danger` (ships in #1703) · ui2 `palette.warning.main` | `#FE9C2A` on `#44301C` (over `#161518`) 5.94:1; on `#503A29` (over `#242129`) 5.06:1 |
+| Tenat ("Tenant") | `rgba(254,156,42,0.2)` System/Orange at 20% | none | 100px | `H6 Regular` · `#FE9C2A` System/Orange | 4 / 10 | text `--warning-main`; fill `color-mix` of `--warning-main` at 20% | `--danger` · ui2 `palette.warning.main` | `#FE9C2A` on `#44301C` (over `#161518`) 5.94:1; on `#503A29` (over `#242129`) 5.06:1 |
 | Collaborator | `rgba(26,117,210,0.2)` Blue Dark 1 `#1A75D2` at 20% | none | 100px | `H6 Regular` · `#63B4F6` System/Blue Light 1 | 4 / 10 | text `--palette-info-light`; fill `color-mix` of `--palette-info-dark1` at 20% | ui2 `palette.info.light`; fill ui2 `palette.info.dark` at 20% | `#63B4F6` on `#17283D` (over `#161518`) 6.67:1; on `#22324B` (over `#242129`) 5.78:1 |
 
 ## Feedback
@@ -969,12 +968,12 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Modals
 | `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — ✱ deviation (1/255) | `--darker-gray`, `--card` `#242129` — same ✱ deviation |
 | `#244B7D` AI-toggle selected | System/Blue Dark 2 | `--palette-system-blueDark2` | `--ai-session-selected` |
 | `#243852` AI-toggle selected + hover | System/Blue Dark 3 | `--palette-system-blueDark3` | `--ai-session-selected-hover` |
-| `#FF6280` publish split-button hover | Primary/Primary Light 1 | `--palette-primary-light` | `--primary-hover` (ships in #1703) |
+| `#FF6280` publish split-button hover | Primary/Primary Light 1 | `--palette-primary-light` | `--primary-hover` |
 | `#5E5B67` `.dcl.eth` suffix | Neutrals/Graffito | `--palette-neutral-gray1` | `--light-gray` |
-| `#34CE77` online dot | System/Green | `--success-main` (ships in #1703) | `--success` |
-| `#FE9C2A` away dot | System/Orange | `--warning-main` (ships in #1703; the warning role, no presence token) | `--danger` (ships in #1703; the warning role) |
+| `#34CE77` online dot | System/Green | `--success-main` | `--success` |
+| `#FE9C2A` away dot | System/Orange | `--warning-main` (the warning role, no presence token) | `--danger` (the warning role) |
 | `#28AC00` online dot on the 28px avatar only | DCL/Grass (a legacy-library variable, shown with `?` in the panel) | missing | missing — Figma drift, see ProfilePic |
-| `#FF0000` blocked ring | DCL/Red (legacy; the error role is System/Red `#FB3B3B`) | `--error-main` (ships in #1703) | `--error` (ships in #1703) |
+| `#FF0000` blocked ring | DCL/Red (legacy; the error role is System/Red `#FB3B3B`) | `--error-main` | `--error` |
 | `#FF4BED` @ 30% + layer blur 500 modal glow | DCL/Rarities/Mythic (legacy) | missing; ship as an asset | missing; ship as an asset |
 | `#FFD079 → #DA36FF` AI sparkle gradient | — (raw linear gradient) | missing | missing (`components/Icons/AssistantIcon` paints its own gradient) |
 | `rgba(0,0,0,.2)` background overlay, modal title-bar fill | Transparencies/Black 20 | `--palette-blackTransparent-soft` | `--palette-blackTransparent-soft` |
@@ -1464,8 +1463,8 @@ Four components back the table — `BackCTA`, `AIToggle` (`Selected` Yes/No × `
 | `<Code>` rounded-button-contained | as Optimize, `Code` glyph | as Optimize (White 10 replaces the fill); "Code" tooltip | — | 32 × 32, 8px | as Optimize | `<button aria-label="Open in code editor">` | as Optimize | as Optimize |
 | `<Preview>` Button-Multiple-Options | Onix Dark 1; `Left` padding 0 / 10, gap 6: `Icon` 18 + "PLAY" uppercase Snow (`button/small` 13 / 600 / 24 / 0.46 in the Editor Toolbar set; Inter 14 / 600, line-height normal, on this board); `Right` 32 × 32, 1px White 10 left border, chevron 8.5 × 5 Snow | `HoverLeft`: the left segment takes White 10 | — | Hug 113 × 32, 8px, clips | label 13.73:1; divider 1.36:1 on Onix Dark 1, decorative | split control: `<button>Play</button>` + `<button aria-label="Play options" aria-haspopup="menu">` sharing one 8px frame; the right segment is 32 × 32 | `--palette-neutral-onyxDark1`; `--palette-whiteTransparent-subtle` | `--title-bar-button` |
 | `<PreviewOptions>` Button-Multiple-Options | as Preview | `HoverRight`: the right segment takes White 10; "Play Options" tooltip | — | same | as Preview | — | as Preview | as Preview |
-| `<Publish>` Button-Multiple-Options | Primary fill; `Left` padding 0 / 14 on this board (0 / 10 in the Editor Toolbar set): "PUBLISH" `button/small` 13 / 600 / 24 / 0.46 uppercase Snow + `Icon` 18; `Right` chevron Snow, 1px White 20 divider | `HoverLeft`: the left segment takes Primary Light 1 | — | Hug 143 × 32, 8px, clips | Primary vs Black 5.76:1; **"PUBLISH" Snow on Primary 3.55:1 — fails 4.5:1** (13px / 600); divider 1.20:1 | `<button>Publish</button>` + options button | `--primary-main`, `--palette-primary-light` (hover), `--palette-whiteTransparent-soft` (divider) | `--primary`, `--primary-hover` (ships in #1703) |
-| `<PublishOptions>` Button-Multiple-Options | as Publish | `HoverRight`: right segment Primary Light 1; "Publish Options" tooltip | — | same | **Snow chevron on Primary Light 1 2.80:1 — fails 3:1 non-text**; Primary Light 1 vs Black 7.31:1 | — | `--primary-main`, `--palette-primary-light` | `--primary`, `--primary-hover` (ships in #1703) |
+| `<Publish>` Button-Multiple-Options | Primary fill; `Left` padding 0 / 14 on this board (0 / 10 in the Editor Toolbar set): "PUBLISH" `button/small` 13 / 600 / 24 / 0.46 uppercase Snow + `Icon` 18; `Right` chevron Snow, 1px White 20 divider | `HoverLeft`: the left segment takes Primary Light 1 | — | Hug 143 × 32, 8px, clips | Primary vs Black 5.76:1; **"PUBLISH" Snow on Primary 3.55:1 — fails 4.5:1** (13px / 600); divider 1.20:1 | `<button>Publish</button>` + options button | `--primary-main`, `--palette-primary-light` (hover), `--palette-whiteTransparent-soft` (divider) | `--primary`, `--primary-hover` |
+| `<PublishOptions>` Button-Multiple-Options | as Publish | `HoverRight`: right segment Primary Light 1; "Publish Options" tooltip | — | same | **Snow chevron on Primary Light 1 2.80:1 — fails 3:1 non-text**; Primary Light 1 vs Black 7.31:1 | — | `--primary-main`, `--palette-primary-light` | `--primary`, `--primary-hover` |
 | any | ✱ press / focus / disabled | — | — | — | — | not drawn; focus ring `--ui-designer-control-accent` / ui2 `palette.info.light` 9.39:1 on Black; disabled = 20% opacity as the ReportBug SUBMIT, plus `aria-disabled` | — | — |
 
 ### Play Options menus (TitleBar)
@@ -1493,8 +1492,8 @@ A 10 × 10 dot with a 2px Shadow `#161518` outer ring drawn in the SVG; `Profile
 
 | Variant | Fill | Border | Size | Contrast | A11y | Inspector token | Creator Hub token |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Online | System/Green `#34CE77` | 2px Shadow, outer | 10 × 10 (6 × 6 on small avatars) | Green vs page 8.91:1; Shadow ring vs Green 8.87:1, vs Lavender 4.34:1 — the ring is what separates the dot from the avatar | not a control; the avatar's accessible name carries "online" | `--success-main` (ships in #1703) | `--success` |
-| Away | System/Orange `#FE9C2A` | same | same | Orange vs page 8.71:1; ring vs Orange 8.66:1 | **Green vs Orange 1.02:1 — status is colour-only; the name must say "away"** | `--warning-main` (ships in #1703; the warning role, no presence token) | `--danger` (ships in #1703; the warning role) |
+| Online | System/Green `#34CE77` | 2px Shadow, outer | 10 × 10 (6 × 6 on small avatars) | Green vs page 8.91:1; Shadow ring vs Green 8.87:1, vs Lavender 4.34:1 — the ring is what separates the dot from the avatar | not a control; the avatar's accessible name carries "online" | `--success-main` | `--success` |
+| Away | System/Orange `#FE9C2A` | same | same | Orange vs page 8.71:1; ring vs Orange 8.66:1 | **Green vs Orange 1.02:1 — status is colour-only; the name must say "away"** | `--warning-main` (the warning role, no presence token) | `--danger` (the warning role) |
 | ✱ Offline | — | — | — | — | not drawn (the `DisconnectedOverlay` below is the offline treatment) | — | — |
 
 ### ProfilePic (Profile Snapshot)
@@ -1510,7 +1509,7 @@ Circle, fill Brand/Lavender, White 40 inner ring (3px at 60, 2px below), `Avatar
 | 32 | default | Lavender | 2px White 40 | 28 × 28 at 2 / 2 | 6 × 6 at right 0 / top 0, Green | 32 × 32 | as 60 | 32px target (≥ 24) | as 60 | as 60 |
 | 28 | default | Lavender | 2px White 40 | 24 × 24 at 2 / 2 | none visible; a hidden 6 × 6 dot at 19 / 1, **`DCL/Grass` `#28AC00` with a `DCL/Shadow` ring — the only variant off System/Green; Figma drift, treat as Green** | 28 × 28 | Grass vs page 6.08:1; ring vs Grass 6.06:1 | 28px target | as 60 | as 60 |
 | 40 / 32 / 28 | disconnected (hidden layer) | Lavender under `#000000` 60% | same | dimmed | — | — | the overlay dims the raster; add "offline" to the name | `aria-label` carries the state | — | — |
-| 32 / 28 | blocked (hidden layer) | Lavender | `DCL/Red` 3px (32) / 2px (28) replaces the White 40 ring | same | — | — | **Red vs Lavender 1.05:1 — the blocked ring is invisible against the fill; Red vs page 4.57:1 is what you see at the outer edge**; pair it with an icon or text | `aria-label` carries "blocked" | `DCL/Red` is legacy; the error role is `--error-main` (System/Red, ships in #1703) | `--error` (ships in #1703) |
+| 32 / 28 | blocked (hidden layer) | Lavender | `DCL/Red` 3px (32) / 2px (28) replaces the White 40 ring | same | — | — | **Red vs Lavender 1.05:1 — the blocked ring is invisible against the fill; Red vs page 4.57:1 is what you see at the outer edge**; pair it with an icon or text | `aria-label` carries "blocked" | `DCL/Red` is legacy; the error role is `--error-main` (System/Red) | `--error` |
 | any | ✱ hover / focus | — | ✱ White 60 ring | — | — | — | ring ui2 `palette.info.light` 8.13:1 on `#16141a` | `:focus-visible` 2px outline, offset 2px, when the avatar is a button | — | — |
 
 ## Inputs
@@ -1578,7 +1577,7 @@ On `main`, inspector `components/Button` takes `type` (`danger` | `dark` | `blue
 | Variant | State | Fill | Border | Label | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Primary | default | Primary `#FF2D55` | — | Snow | `--primary-main` · `--primary`, ui2 `palette.primary.main` | **Snow on Primary 3.55:1 — fails 4.5:1** (16px / 600 is not large text); Primary vs `#161518` 4.99:1, vs `#16141a` 5.01:1, vs card `#242129` 4.35:1 | `<button>`; 46px target |
-| Primary | hover | Primary Light 1 `#FF6280` | — | Snow | `--palette-primary-light` · `--primary-hover` (ships in #1703) | **Snow on Primary Light 1 2.80:1 — fails**; fill vs `#161518` 6.33:1 | — |
+| Primary | hover | Primary Light 1 `#FF6280` | — | Snow | `--palette-primary-light` · `--primary-hover` | **Snow on Primary Light 1 2.80:1 — fails**; fill vs `#161518` 6.33:1 | — |
 | PrimaryBlocked | blocked | Primary, node opacity 20% (fill **and** label: sampled fill a = 0.21, label Snow at 20%) | — | Snow at 20% | `--primary-main` + `opacity: 0.2` · ui2 disabled | disabled, exempt; label 1.50:1 on the 20% fill, 1.85:1 on `#161518`. Code matches: `.Button:disabled { opacity: 0.2 }` dims the whole node, on every variant. | `aria-disabled="true"` |
 | Secondary | default | White 10 | — | Snow | `--palette-whiteTransparent-subtle` · `--dark-gray` (drift) | 13.53:1 on `#161518` (13.50 on `#16141a`) | — |
 | Secondary | hover | White 20 | — | Snow | `--palette-whiteTransparent-soft` · `--palette-whiteTransparent-soft` | 9.44:1 | — |
@@ -1602,7 +1601,7 @@ Fills and borders match Button-Contained-Text. The ReportBug Attach instance ove
 | Variant | State | Fill | Border | Content | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Primary | default | Primary | — | icon White + label Snow | `--primary-main`, icon `--white` · `--primary`, `--white` | label 3.55:1 — **fails 4.5:1**; icon White on Primary ≥ 3.55:1 passes non-text | visible label names the control; icon `aria-hidden` |
-| Primary | hover | Primary Light 1 | — | same | `--palette-primary-light` · `--primary-hover` (ships in #1703) | label 2.80:1 — **fails** | — |
+| Primary | hover | Primary Light 1 | — | same | `--palette-primary-light` · `--primary-hover` | label 2.80:1 — **fails** | — |
 | Secondary | default / hover | White 10 / White 20 | — | same | `--palette-whiteTransparent-subtle` / `-soft` · `--palette-whiteTransparent-subtle` | 13.53:1 / 9.44:1 | — |
 | Terciary | default / hover | none | 1.5px White 40 / 1.5px Snow | same | `--palette-whiteTransparent-blurry` / `--ui-designer-text` · `--palette-whiteTransparent-blurry`; the rest missing | 3.84:1 / 17.73:1 border | — |
 | Quaternary | default / hover | Black 40 / White 10 | — | same | `--palette-blackTransparent-blurry` / `--palette-whiteTransparent-subtle` · `--palette-blackTransparent-blurry`, `--palette-whiteTransparent-subtle` | 13.53:1 on hover | — |
@@ -1656,8 +1655,8 @@ Creator Hub `CreateButton` (`StyledLabelButton` 130 × 40, 16 / 600 uppercase, 1
 | Variant | State | Left / right fill | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
 | Default | default | Primary / Primary | — · `--primary` | label 3.55:1 — **fails 4.5:1**; divider White 20 over Primary 1.20:1, decorative | `<button>` + `<button aria-haspopup="menu" aria-label>` in one frame |
-| HoverLeft | hover left | Primary Light 1 / Primary | — · `--primary-hover` (ships in #1703) | **label 2.80:1 — fails** | — |
-| HoverRight | hover right | Primary / Primary Light 1 | — · `--primary-hover` (ships in #1703) | chevron Snow on Primary Light 1 2.80:1 — **fails 3:1 non-text** | — |
+| HoverLeft | hover left | Primary Light 1 / Primary | — · `--primary-hover` | **label 2.80:1 — fails** | — |
+| HoverRight | hover right | Primary / Primary Light 1 | — · `--primary-hover` | chevron Snow on Primary Light 1 2.80:1 — **fails 3:1 non-text** | — |
 | any | ✱ blocked / focus | — | — | — | not drawn |
 
 ### ButtonContainedVertical (24 Caps) (Buttons)
@@ -1688,7 +1687,7 @@ Set [`20926:242`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 | Variant | State | Fill | Token (inspector · Creator Hub) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
 | Default | default | Primary | `--primary-main` · `--primary` | **Snow on Primary 3.55:1 — fails 4.5:1** (700 / 16px is not large text) | `<button>`; the icon is decorative (`aria-hidden`) |
-| Hover | hover | Primary Light 1 | `--palette-primary-light` · `--primary-hover` (ships in #1703) | **2.80:1 — fails** | — |
+| Hover | hover | Primary Light 1 | `--palette-primary-light` · `--primary-hover` | **2.80:1 — fails** | — |
 | any | ✱ focus / press / disabled | — | — | — | not drawn |
 
 ### ToggleLabel (Buttons)
@@ -1959,7 +1958,7 @@ Inspector `TextField` `size="large"` serves the five form sites (`UrlInputModal`
 | Editing | typing | 1.5px Snow | "Text" Snow + 1px Snow caret (right) | `--ui-designer-text` · ui2 `neutral.softWhite` | text 17.73:1 | `Container` is Fixed 46 while the variant is Hug — treat as the same box |
 | Input Highlighted | focus, text selected | 1.5px Snow | "Text" Snow (`H6 Regular`) on a `TxtInput` box Hug × 20 filled `System/Blue Dark 2` `#244B7D` (its 1px right border weight has no colour — treat as none) | `--palette-system-blueDark2` · `--ai-session-selected` | selected text 8.61:1 on Blue Dark 2; the highlight vs the field's surface 2.06:1 on `#161518`, 1.79 on `#242129` — and on the dense fills only 1.15:1 (`--gray-0`) and 1.41 (Onix) | the text's own `::selection`; selection is not the focus indicator, the Snow border is |
 | Filled | filled, idle | 1px White 60 | "Text" Snow | `--palette-whiteTransparent-backdrop` · `--palette-whiteTransparent-backdrop` | border 7.07:1; text 17.73:1 | the White 60 border is the only cue that a value is set |
-| Error | error | 1.5px `System/Red` `#FB3B3B` | "Text" Snow + rotated `Line 1` caret | `--error-main` (ships in #1703) · ui2 `palette.error.main` | border 5.02:1 on `#161518` (5.04 on `#16141a`, **4.37 on card**); message 5.02:1 on `#161518` (**4.37 on card — fails 4.5:1**) | `aria-invalid="true"`, message linked by `aria-describedby`, `role="alert"` on change; colour alone is not the cue, the message text is |
+| Error | error | 1.5px `System/Red` `#FB3B3B` | "Text" Snow + rotated `Line 1` caret | `--error-main` · ui2 `palette.error.main` | border 5.02:1 on `#161518` (5.04 on `#16141a`, **4.37 on card**); message 5.02:1 on `#161518` (**4.37 on card — fails 4.5:1**) | `aria-invalid="true"`, message linked by `aria-describedby`, `role="alert"` on change; colour alone is not the cue, the message text is |
 | any | ✱ disabled / read-only | — | — | — | — | not drawn; 46px target |
 
 ## Graphic Assets
@@ -2086,7 +2085,7 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | White 40 / 60 | `rgba(255,255,255,.4 / .6)` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | match: placeholders, the Scale Slider hover track, scrollbar-handle borders, bound-input borders |
 | White 8 (raw alpha, no variable) | `rgba(255,255,255,.08)` | `--palette-whiteTransparent-hint` | — | match: the `InputAction` and MobileHUD `TextureInput` fill (code paints `--ui-designer-control-bg`) |
 | Black 40 | `rgba(0,0,0,.4)` | `--palette-blackTransparent-blurry` | `--palette-blackTransparent-blurry` | match: scrollbar handles in the bottom panels and the MobileHUD list |
-| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(254,156,42,.1)` | `--warning-main` ships in #1703; `--ai-warning-bg` ships in #1731, Figma's banner is `#FE9C2A` at 10% |
+| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(254,156,42,.1)` | `--warning-main` match; `--ai-warning-bg` ships in #1731, Figma's banner is `#FE9C2A` at 10% |
 | System/Blue · Rarities/Epic Light | `#2196F3` · `#81E1FF` | `--palette-info-main` · `--palette-rarity-epic-light` | `--palette-rarity-epic-light` · ui2 `palette.info.main` | match: pinned-edge colours in `ConstraintsIcons` |
 | Brand/Lavender | `#C640CD` | — | `--lavender` | demo colour in `ColourPanel` and `AspectRatio/Colour`, not a UI token |
 | Menu shadow | `0 4px 8px rgba(0,0,0,.4)` | `--menu-shadow` | `--menu-shadow` | match: `EventsMenu`, `VariableMenu`, the AI chat-history `Menu` |
@@ -3042,11 +3041,11 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 
 | Role | Tokens | Status |
 | --- | --- | --- |
-| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--secondary` `#242129`, `--modal` `#181225`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` | `--bg` ships in #1703, `--background` ships in #1703, `--modal` ships in #1731 (`#242129` on `main`); `#242129` is the Charcoal **✱ deviation** |
+| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--secondary` `#242129`, `--modal` `#181225`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` | `--modal` ships in #1731 (`#242129` on `main`); `#242129` is the Charcoal **✱ deviation** |
 | Text | `--text` `#ffffff`, `--palette-neutral-softWhite` `#fcfcfc` (Snow), `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` | match |
 | Charts | `--chart-reference` `#a99afe` (benchmark lines on the Analytics detail charts) | raw Figma fill, no variable |
-| Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) | `--primary-hover` ships in #1703 |
-| Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` | `--danger` ships in #1703, `--error` ships in #1703 |
+| Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) | match |
+| Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` | match |
 | Lines | `--divider` `#67637033`, `--text-area-border` `#676370`, `--clear-divider` `#a09ba8` | match |
 | AI assistant | `--ai-selected` `#214272`, `--ai-selected-hover` `#2e4a7a`, `--ai-session-selected` `#244b7d`, `--ai-session-selected-hover` `#243852`, `--ai-menu-bg` `#35333b`, `--ai-input-bg` `#2d2a33`, `--ai-warning-bg` `rgba(254,156,42,.1)` | `--ai-menu-bg` ships in #1731, `--ai-input-bg` ships in #1731, `--ai-warning-bg` ships in #1731 |
 | Palette (the inspector's names) | `--palette-neutral-softWhite` `#fcfcfc` (Snow: the navbar's active label and underline), `--palette-info-light` `#63b4f6` (System/Blue Light 1: the navbar focus ring, 8.13:1 on `#161518`) | match |
@@ -3055,7 +3054,7 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 
 The brand pink matches the inspector's `--primary-main`, but it's defined separately on each side of the iframe. Change both, or neither.
 
-**Figma alignment of the status, surface, and hover tokens.** `--error`, `--danger`, `--background`, `--bg`, `--primary-hover` and `--purple-banner` carry Figma's System/Red, System/Orange, Neutrals/Shadow, Primary Light 1 and Brand/Purple values, which ship in #1703. Names are unchanged.
+**Figma alignment of the status, surface, and hover tokens.** `--error`, `--danger`, `--background`, `--bg`, `--primary-hover` and `--purple-banner` carry Figma's System/Red, System/Orange, Neutrals/Shadow, Primary Light 1 and Brand/Purple values.
 
 - `--primary-hover` is the primary-button hover at five sites: the wrapper `components/Button` (`.Button.MuiButton-colorPrimary:hover`), the editor header actions (`EditorPage/styles.css`), both `CreateButton` segments, and the AI `SendButton`; those sites don't read the token yet (drift). Raw ui2 contained-primary `Button`s (`SignInPage`, `UpdateAvailable`, `WarningModal` and others) hover to ui2 `palette.primary.dark` `#F70038`. `--dcl-hover` and `--dcl-dark` have no consumers left; removing them is a naming decision for the user. White text on `#ff6280` measures 2.87:1 (Snow `#fcfcfc` 2.80:1); the value is the user's pick from Figma and a known trade-off, not a pass. The fill itself is 6.36:1 against the page.
 - `--bg` and `--purple-banner` have no consumer.
