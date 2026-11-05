@@ -108,7 +108,10 @@ export function WalletCard({
 }) {
   const titleId = useId();
   return (
-    <Card aria-labelledby={titleId}>
+    <Card
+      aria-labelledby={titleId}
+      data-testid="payouts-wallet-card"
+    >
       <CardHeader>
         <CardTitle id={titleId}>{t('earn.joined.payouts.wallet.title')}</CardTitle>
         <WalletInfo />
@@ -159,7 +162,10 @@ export function ContactCard({
   const titleId = useId();
   const unverified = !!enrollment && !enrollment.email_verified_at;
   return (
-    <Card aria-labelledby={titleId}>
+    <Card
+      aria-labelledby={titleId}
+      data-testid="payouts-contact-card"
+    >
       <CardHeader>
         <CardTitle
           id={titleId}
