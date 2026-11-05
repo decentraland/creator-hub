@@ -946,6 +946,8 @@
       "delete_scene": "删除场景...",
       "delete_scene_failed": "删除场景失败",
       "dependencies_updated": "場景相依性已更新",
+      "multiplayer_sdk_installed": "已安装 Multiplayer Server SDK。",
+      "multiplayer_sdk_uninstalled": "已移除 Multiplayer Server SDK，并安装了最新的 SDK 版本。",
       "updating_sdk_skills": "正在安裝最新的 AI 技能...",
       "sdk_skills_updated": "AI 技能已是最新版本",
       "sdk_skills_update_failed": "無法安裝 AI 技能",
