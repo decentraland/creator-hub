@@ -9,6 +9,7 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
+import { actions } from '/@/modules/store/creatorFund';
 
 import { createTestStore } from '../../../tests/utils/testStore';
 import { EarnPage } from '.';
@@ -93,7 +94,7 @@ function page(entry: Entry = '/earn') {
     </Provider>
   );
   const view = render(tree());
-  return { ...view, rerenderPage: () => view.rerender(tree()) };
+  return { ...view, store, rerenderPage: () => view.rerender(tree()) };
 }
 
 /*
@@ -229,6 +230,28 @@ describe('EarnPage', () => {
       );
 
       expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
+    });
+
+    it('should not start the join when a later status request finds an active enrollment', async () => {
+      auth.isSignedIn = true;
+      let answerLatest: (value: unknown) => void = () => {};
+      vi.mocked(api.getEnrollment)
+        .mockResolvedValueOnce({
+          ok: false as const,
+          status: 404,
+          error: 'Not Found',
+          body: { error: 'Not Found', message: 'not enrolled' },
+        })
+        .mockReturnValueOnce(new Promise(resolve => (answerLatest = resolve)) as any);
+      const { container, store } = page({ pathname: '/earn', state: { joinAfterSignIn: true } });
+      const view = within(container);
+
+      void store.dispatch(actions.fetchEnrollment());
+      await act(async () => {});
+      await act(async () => answerLatest(ok(enrollment(2))));
+
+      expect(view.queryByRole('progressbar', { name: 'Checking eligibility' })).toBeNull();
+      expect(api.getEligibility).not.toHaveBeenCalled();
     });
   });
 
