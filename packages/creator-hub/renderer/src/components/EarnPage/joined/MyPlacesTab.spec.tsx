@@ -303,6 +303,20 @@ describe('MyPlacesTab', () => {
       ).toBe(true);
     });
 
+    it('should hold every metric in a busy placeholder named "Loading" while the metrics load', async () => {
+      vi.mocked(metricsApi.fetchMetrics).mockReturnValue(new Promise(() => {}));
+      renderTab();
+
+      const entry = await screen.findByRole('article', { name: 'Example Place a' });
+      const loading = within(entry).getAllByText('Loading');
+      expect(loading).toHaveLength(3);
+      expect(
+        loading.every(label => label.closest('dd')?.getAttribute('aria-busy') === 'true'),
+      ).toBe(true);
+      expect(within(entry).queryByText('-')).toBeNull();
+      expect(within(entry).queryByText('No data')).toBeNull();
+    });
+
     it('should show "-" for every metric when the metrics fail', async () => {
       vi.mocked(metricsApi.fetchMetrics).mockRejectedValue(new Error('down'));
       renderTab();
@@ -310,6 +324,19 @@ describe('MyPlacesTab', () => {
       const entry = await screen.findByRole('article', { name: 'Example Place a' });
       await waitFor(() => expect(within(entry).getAllByText('No data')).toHaveLength(3));
       expect(screen.queryByText(/^Last update /)).toBeNull();
+    });
+  });
+
+  describe('when a place is eligible', () => {
+    it('should chip it as in the program, never as not eligible', async () => {
+      vi.mocked(api.getPlaces).mockResolvedValue(
+        ok(myPlaces([place('a', { status: 'eligible' })])),
+      );
+      renderTab();
+
+      const entry = await screen.findByRole('article', { name: 'Example Place a' });
+      expect(within(entry).getByText('In program')).toBeTruthy();
+      expect(within(entry).queryByText('Not eligible')).toBeNull();
     });
   });
 
