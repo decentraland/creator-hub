@@ -49,9 +49,14 @@ export const getSceneJumpInUrl = (location: { world?: string; x: number; y: numb
   return `${base}/jump?position=${location.x},${location.y}`;
 };
 
-export const getSceneJumpInDeeplink = (location: { world?: string; x: number; y: number }) => {
+export const getSceneJumpInDeeplink = (
+  location: { world?: string; x: number; y: number },
+  { position = false }: { position?: boolean } = {},
+) => {
   const dclEnv = env.getEnv() === 'dev' ? 'zone' : 'org';
-  return location.world
-    ? getJumpInDeeplink(location.world)
-    : `decentraland://?position=${location.x},${location.y}&dclenv=${dclEnv}`;
+  if (!location.world)
+    return `decentraland://?position=${location.x},${location.y}&dclenv=${dclEnv}`;
+  return position
+    ? `decentraland://?realm=${location.world}&position=${location.x},${location.y}&dclenv=${dclEnv}`
+    : getJumpInDeeplink(location.world);
 };
