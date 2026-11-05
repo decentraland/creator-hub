@@ -8,7 +8,8 @@ export type CustomNotificationType =
   | { type: 'new-dependency-version'; project: Project }
   // `installed`: the scene has the skills and they are outdated, else it has none.
   | { type: 'sdk-skills'; project: Project; installed: boolean }
-  | { type: 'deploy'; path: string };
+  | { type: 'deploy'; path: string }
+  | { type: 'external-agent-access' };
 
 export type Opts = {
   requestId?: string;

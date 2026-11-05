@@ -107,7 +107,13 @@ function parseJsonPayload(payload: string): unknown {
 
 const SCRIPT_LAYOUT_KEY = 'layout';
 
-type ScriptParam = { type?: unknown; value?: unknown };
+type ScriptParam = {
+  type?: unknown;
+  value?: unknown;
+  // Object params describe their fields, list params their item; the value holds plain data.
+  fields?: Record<string, ScriptParam>;
+  item?: ScriptParam;
+};
 type ScriptLayout = { params?: Record<string, ScriptParam> };
 
 function isScriptLayout(
@@ -118,15 +124,53 @@ function isScriptLayout(
   return key === SCRIPT_LAYOUT_KEY && typeof child === 'string' && typeof owner.path === 'string';
 }
 
-type FileParam = { name: string; value: string; file: string };
+type ValuePath = [string, ...(string | number)[]];
+type FileParam = { path: ValuePath; value: string; file: string };
 
+function collectFileParams(
+  param: ScriptParam | undefined,
+  value: unknown,
+  path: ValuePath,
+  scriptPath: string,
+  into: FileParam[],
+): void {
+  if (param?.type === 'string' && typeof value === 'string') {
+    const file = resolveScriptFile(scriptPath, value);
+    if (file) into.push({ path, value, file });
+  } else if (param?.type === 'object' && value && typeof value === 'object') {
+    for (const [key, field] of Object.entries(param.fields ?? {})) {
+      collectFileParams(
+        field,
+        (value as Record<string, unknown>)[key],
+        [...path, key],
+        scriptPath,
+        into,
+      );
+    }
+  } else if (param?.type === 'array' && Array.isArray(value)) {
+    value.forEach((item, index) =>
+      collectFileParams(param.item, item, [...path, index], scriptPath, into),
+    );
+  }
+}
+
+/** Every string a Script parameter holds that names a file, including inside object and list params. */
 function getFileParams(layout: string, scriptPath: string): FileParam[] {
   const { params } = (parseJsonPayload(layout) ?? {}) as ScriptLayout;
-  return Object.entries(params ?? {}).flatMap(([name, param]) => {
-    if (param?.type !== 'string' || typeof param.value !== 'string') return [];
-    const file = resolveScriptFile(scriptPath, param.value);
-    return file ? [{ name, value: param.value, file }] : [];
-  });
+  const into: FileParam[] = [];
+  for (const [name, param] of Object.entries(params ?? {})) {
+    collectFileParams(param, param?.value, [name], scriptPath, into);
+  }
+  return into;
+}
+
+function setIn(container: unknown, [key, ...rest]: (string | number)[], value: string): unknown {
+  const child = rest.length
+    ? setIn((container as Record<string | number, unknown>)?.[key], rest, value)
+    : value;
+  if (Array.isArray(container))
+    return container.map((item, index) => (index === key ? child : item));
+  return { ...(container as Record<string, unknown>), [key]: child };
 }
 
 function replaceScriptParams(
@@ -137,8 +181,8 @@ function replaceScriptParams(
 ): string {
   const newFolder = getParentPath(map(scriptPath) ?? scriptPath);
   const prefix = newFolder ? `${newFolder}/` : '';
-  const values: Record<string, string> = {};
-  for (const { name, value, file } of getFileParams(layout, scriptPath)) {
+  const updates: { path: ValuePath; value: string }[] = [];
+  for (const { path, value, file } of getFileParams(layout, scriptPath)) {
     const moved = map(file);
     if (!moved) continue;
     if (!moved.toLowerCase().startsWith(prefix.toLowerCase())) {
@@ -146,12 +190,18 @@ function replaceScriptParams(
       continue;
     }
     const next = moved.slice(prefix.length);
-    if (next !== value) values[name] = next;
+    if (next !== value) updates.push({ path, value: next });
   }
-  if (!Object.keys(values).length) return layout;
+  if (!updates.length) return layout;
   const parsed = parseJsonPayload(layout) as ScriptLayout;
   const params = { ...parsed.params };
-  for (const [name, value] of Object.entries(values)) params[name] = { ...params[name], value };
+  for (const {
+    path: [name, ...inner],
+    value,
+  } of updates) {
+    const next = inner.length ? setIn(params[name].value, inner, value) : value;
+    params[name] = { ...params[name], value: next };
+  }
   return JSON.stringify({ ...parsed, params });
 }
 

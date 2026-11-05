@@ -5,7 +5,7 @@ import { determineAssetType } from '../../ImportAsset/utils';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
-import type { ScriptItem, ScriptLayout } from './types';
+import type { ScriptItem, ScriptLayout, ScriptParamUnion } from './types';
 
 export function fromNumber(value: number): string {
   return value.toString();
@@ -65,6 +65,40 @@ export async function readScript(
   return content;
 }
 
+// Reconciles a stored value against a freshly-parsed param shape: the structure/defaults
+// come from `sourceParam` (current script source), the data from `storedValue` (the user's
+// edits). For containers it recurses — keeping stored keys/elements that still exist,
+// dropping removed keys, adding new keys with the source default. Leaf values are kept if
+// present, with enum/slider validated against the fresh options/range.
+function reconcileValue(sourceParam: ScriptParamUnion, storedValue: unknown): unknown {
+  switch (sourceParam.type) {
+    case 'object': {
+      const stored =
+        storedValue && typeof storedValue === 'object' && !Array.isArray(storedValue)
+          ? (storedValue as Record<string, unknown>)
+          : {};
+      const result: Record<string, unknown> = {};
+      for (const [key, fieldParam] of Object.entries(sourceParam.fields)) {
+        result[key] = key in stored ? reconcileValue(fieldParam, stored[key]) : fieldParam.value;
+      }
+      return result;
+    }
+    case 'array':
+      if (!Array.isArray(storedValue)) return sourceParam.value;
+      return storedValue.map(element => reconcileValue(sourceParam.item, element));
+    case 'enum':
+      return typeof storedValue === 'string' && sourceParam.options.includes(storedValue)
+        ? storedValue
+        : sourceParam.value;
+    case 'slider': {
+      const n = typeof storedValue === 'number' ? storedValue : sourceParam.value;
+      return Math.min(Math.max(n, sourceParam.min), sourceParam.max);
+    }
+    default:
+      return storedValue !== undefined ? storedValue : sourceParam.value;
+  }
+}
+
 export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptLayout {
   const layout: ScriptLayout = { params: {}, actions: [] };
 
@@ -72,6 +106,18 @@ export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptL
     const targetParam = target.params[name];
     if (!targetParam || value.type !== targetParam.type) {
       layout.params[name] = value; // keep source if param not in target or if param types are different
+    } else if (value.type === 'object' && targetParam.type === 'object') {
+      // fresh `fields`/defaults from source; stored values reconciled key-by-key
+      layout.params[name] = {
+        ...value,
+        value: reconcileValue(value, targetParam.value) as Record<string, unknown>,
+      };
+    } else if (value.type === 'array' && targetParam.type === 'array') {
+      // fresh `item` shape from source; stored rows reconciled element-by-element
+      layout.params[name] = {
+        ...value,
+        value: reconcileValue(value, targetParam.value) as unknown[],
+      };
     } else if (value.type === 'slider' && targetParam.type === 'slider') {
       // min/max/step always come from the fresh parse; keep the stored value clamped to the new range
       const storedValue = typeof targetParam.value === 'number' ? targetParam.value : value.value;

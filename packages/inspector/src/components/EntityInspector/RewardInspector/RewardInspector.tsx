@@ -1,5 +1,5 @@
 import React from 'react';
-import { Entity } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
