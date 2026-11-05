@@ -1,0 +1,312 @@
+import { Provider } from 'react-redux';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { flatten } from 'flat';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
+
+import { en } from '/@/modules/store/translation/locales';
+import { setCurrentLocale } from '/@/modules/store/translation/utils';
+import * as api from '/@/lib/creatorFundApi';
+
+import { createTestStore } from '../../../tests/utils/testStore';
+import { JoinFlow } from './JoinFlow';
+
+vi.mock('/@/lib/creatorFundApi', () => ({
+  getTerms: vi.fn(),
+  getEligibility: vi.fn(),
+  putEnrollment: vi.fn(),
+}));
+vi.mock('../Modals', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  Modal: ({
+    open,
+    children,
+    className,
+  }: {
+    open: boolean;
+    children: React.ReactNode;
+    className?: string;
+  }) => (open ? <div className={className}>{children}</div> : null),
+}));
+
+const TERMS = {
+  version: 1,
+  published_at: '2026-11-03T00:00:00Z',
+  title: 'Example Program Terms (Beta)',
+  content: '## 1. About the Program\n\nPlaceholder.',
+};
+
+const ok = <T,>(data: T, status = 200) => ({ ok: true as const, status, data });
+const fail = (status: number, body?: object) => ({
+  ok: false as const,
+  status,
+  error: (body as { message?: string })?.message ?? 'boom',
+  body: body as any,
+});
+
+const ENROLLMENT = {
+  status: 'active' as const,
+  enrolled_at: '2026-11-03T10:00:00Z',
+  terms_version: 1,
+  first_name: 'Jane',
+  last_name: 'Doe',
+  email: 'jane.doe@example.com',
+  email_verified_at: null,
+};
+
+const renderFlow = () => {
+  const onExit = vi.fn();
+  const store = createTestStore();
+  render(
+    <Provider store={store}>
+      <ThemeProvider theme={dark}>
+        <JoinFlow onExit={onExit} />
+      </ThemeProvider>
+    </Provider>,
+  );
+  return { onExit, store };
+};
+
+async function acceptTerms() {
+  fireEvent.click(await screen.findByRole('checkbox'));
+  fireEvent.click(screen.getByRole('button', { name: 'Accept & Join' }));
+}
+
+function fillContact() {
+  const type = (name: RegExp, value: string) =>
+    fireEvent.change(screen.getByRole('textbox', { name }), { target: { value } });
+  type(/First Name/, 'Jane');
+  type(/Last Name/, 'Doe');
+  type(/Email/, 'jane.doe@example.com');
+  fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+}
+
+describe('JoinFlow', () => {
+  beforeAll(() => {
+    setCurrentLocale('en', flatten(en));
+  });
+
+  beforeEach(() => {
+    vi.mocked(api.getTerms).mockResolvedValue(ok(TERMS));
+    vi.mocked(api.getEligibility).mockResolvedValue(ok({ eligible: true, reasons: [] }));
+    vi.mocked(api.putEnrollment).mockResolvedValue(ok(ENROLLMENT, 201));
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  describe('when it starts', () => {
+    it('should check eligibility behind a single labelled spinner', async () => {
+      vi.mocked(api.getEligibility).mockReturnValue(new Promise(() => {}));
+      renderFlow();
+
+      const progressbar = screen.getByRole('progressbar', { name: 'Checking eligibility' });
+      expect(screen.getAllByRole('progressbar')).toHaveLength(1);
+      expect(progressbar.querySelector('svg')?.closest('[aria-hidden="true"]')).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Decentraland Creator Fund' })).toBeTruthy();
+      expect(api.getEligibility).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the user closes the check', () => {
+    it('should cancel and ignore the answer', async () => {
+      let answer: (value: unknown) => void = () => {};
+      vi.mocked(api.getEligibility).mockReturnValue(new Promise(r => (answer = r)) as any);
+      const { onExit } = renderFlow();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      await act(async () => answer(ok({ eligible: true, reasons: [] })));
+
+      expect(onExit).toHaveBeenCalledWith('cancelled');
+      expect(onExit).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('region', { name: 'Program Terms' })).toBeNull();
+    });
+  });
+
+  describe('when the check fails', () => {
+    it('should exit as failed', async () => {
+      vi.mocked(api.getEligibility).mockResolvedValue(fail(500));
+      const { onExit } = renderFlow();
+
+      await waitFor(() => expect(onExit).toHaveBeenCalledWith('failed'));
+    });
+  });
+
+  describe('when the user is not eligible', () => {
+    it.each([
+      ['internal', "Foundation and Regenesis Labs accounts can't join the Creator Fund."],
+      ['suspended', 'Your account is suspended from the Creator Fund.'],
+      ['excluded', "Your account isn't eligible for the Creator Fund."],
+      ['a_new_code', "Your account can't join the Creator Fund right now."],
+    ])('should explain %s', async (reason, copy) => {
+      vi.mocked(api.getEligibility).mockResolvedValue(ok({ eligible: false, reasons: [reason] }));
+      const { onExit } = renderFlow();
+
+      const dialog = await screen.findByRole('alertdialog', { name: "You can't join yet" });
+      const description = document.getElementById(dialog.getAttribute('aria-describedby')!);
+      expect(description?.textContent).toBe(copy);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
+      expect(onExit).toHaveBeenCalledWith('cancelled');
+    });
+
+    it('should list every reason', async () => {
+      vi.mocked(api.getEligibility).mockResolvedValue(
+        ok({ eligible: false, reasons: ['internal', 'excluded'] }),
+      );
+      renderFlow();
+
+      await screen.findByRole('alertdialog', { name: "You can't join yet" });
+      expect(
+        screen.getByText("Foundation and Regenesis Labs accounts can't join the Creator Fund."),
+      ).toBeTruthy();
+      expect(screen.getByText("Your account isn't eligible for the Creator Fund.")).toBeTruthy();
+    });
+  });
+
+  describe('when the user is eligible', () => {
+    it('should ask to accept the terms', async () => {
+      renderFlow();
+
+      expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Accept & Join' })).toBeTruthy();
+    });
+
+    it('should exit as cancelled from NOT NOW', async () => {
+      const { onExit } = renderFlow();
+      fireEvent.click(await screen.findByRole('button', { name: 'Not now' }));
+      expect(onExit).toHaveBeenCalledWith('cancelled');
+    });
+  });
+
+  describe('when the terms are accepted and the contact info sent', () => {
+    it('should PUT the enrollment once on the accepted version and welcome the user', async () => {
+      renderFlow();
+      await acceptTerms();
+      fillContact();
+
+      expect(
+        await screen.findByRole('heading', { name: 'Welcome to the Creator Fund' }),
+      ).toBeTruthy();
+      expect(api.putEnrollment).toHaveBeenCalledTimes(1);
+      expect(api.putEnrollment).toHaveBeenCalledWith({
+        terms_version: 1,
+        first_name: 'Jane',
+        last_name: 'Doe',
+        email: 'jane.doe@example.com',
+      });
+    });
+
+    it.each([["Let's go"], ['Close']])('should land on My Places from %s', async name => {
+      const { onExit } = renderFlow();
+      await acceptTerms();
+      fillContact();
+      await screen.findByRole('heading', { name: 'Welcome to the Creator Fund' });
+
+      fireEvent.click(screen.getByRole('button', { name }));
+
+      expect(onExit).toHaveBeenCalledWith('joined');
+    });
+  });
+
+  describe('when SUBMIT is pressed twice while the enrollment runs', () => {
+    it('should PUT only once', async () => {
+      vi.mocked(api.putEnrollment).mockReturnValue(new Promise(() => {}));
+      renderFlow();
+      await acceptTerms();
+      fillContact();
+      fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+      expect(api.putEnrollment).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('button', { name: 'Submit' }).getAttribute('aria-busy')).toBe('true');
+    });
+  });
+
+  describe('when the enrollment is refused as a bad request', () => {
+    it("should show only the generic line, never the service's message", async () => {
+      vi.mocked(api.putEnrollment).mockResolvedValue(
+        fail(400, { error: 'Bad Request', message: 'email must be a valid address' }),
+      );
+      renderFlow();
+      await acceptTerms();
+      fillContact();
+
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'Something went wrong. Please try again.',
+      );
+      expect(screen.queryByText('email must be a valid address')).toBeNull();
+    });
+  });
+
+  describe('when the terms changed while the user filled the contact info', () => {
+    it('should load the new terms and go back to accept them', async () => {
+      vi.mocked(api.putEnrollment)
+        .mockResolvedValueOnce(
+          fail(400, { error: 'Bad Request', message: 'terms_version must be 2' }),
+        )
+        .mockResolvedValue(ok(ENROLLMENT, 201));
+      renderFlow();
+      await acceptTerms();
+      vi.mocked(api.getTerms).mockResolvedValue(ok({ ...TERMS, version: 2 }));
+      fillContact();
+
+      expect(
+        await screen.findByRole('button', { name: 'Accept & Join' }, { timeout: 5000 }),
+      ).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+      await acceptTerms();
+      fillContact();
+
+      await screen.findByRole(
+        'heading',
+        { name: 'Welcome to the Creator Fund' },
+        { timeout: 5000 },
+      );
+      expect(vi.mocked(api.putEnrollment).mock.calls.map(([body]) => body.terms_version)).toEqual([
+        1, 2,
+      ]);
+    }, 15_000);
+  });
+
+  describe('when the enrollment fails otherwise', () => {
+    it('should show the generic line', async () => {
+      vi.mocked(api.putEnrollment).mockResolvedValue(fail(500));
+      renderFlow();
+      await acceptTerms();
+      fillContact();
+
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'Something went wrong. Please try again.',
+      );
+    });
+  });
+
+  describe('when the enrollment finds the user ineligible', () => {
+    it('should show the reasons', async () => {
+      vi.mocked(api.putEnrollment).mockResolvedValue(
+        fail(403, { error: 'Forbidden', message: 'Not eligible', reasons: ['excluded'] }),
+      );
+      renderFlow();
+      await acceptTerms();
+      fillContact();
+
+      expect(await screen.findByRole('alertdialog', { name: "You can't join yet" })).toBeTruthy();
+      expect(screen.getByText("Your account isn't eligible for the Creator Fund.")).toBeTruthy();
+    });
+  });
+
+  describe('when the enrollment is suspended or left', () => {
+    it('should exit as a conflict so the page can show the status', async () => {
+      vi.mocked(api.putEnrollment).mockResolvedValue(
+        fail(409, { error: 'Conflict', message: 'x' }),
+      );
+      const { onExit } = renderFlow();
+      await acceptTerms();
+      fillContact();
+
+      await waitFor(() => expect(onExit).toHaveBeenCalledWith('conflict'));
+    });
+  });
+});
