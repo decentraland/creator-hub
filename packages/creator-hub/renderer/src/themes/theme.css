@@ -8,7 +8,7 @@
 
 :root {
   /* Colors */
-  --bg: #16141a;
+  --bg: #161518;
   --bg-inspector: #000;
   --metaverse-gradient: linear-gradient(to bottom, #060d2b, #132d7d 52%, #9763c1);
   --gradient-flare: linear-gradient(135deg, #ff2d55, #ffbc5b);
@@ -24,7 +24,7 @@
     #714171 86.5%,
     #40247b 100%
   );
-  --purple-banner: #691ea9;
+  --purple-banner: #691fa9;
   --lavender: #c640cd;
   --purplish-grey-raw: 115, 110, 125;
   --white: #ffffff;
@@ -197,15 +197,15 @@
   --type-button-small-line-height: 24px;
   --type-button-small-letter-spacing: 0.46px;
 
-  --background: #18141a;
-  --warning: #ffa900;
+  --background: #161518;
+  --warning: #fe9c2a;
   --danger: var(--warning);
-  --error: #ff0000;
+  --error: #fb3b3b;
   --success: #34ce77;
   --brand: #ff2d55;
   --primary: var(--brand);
   --secondary: #242129;
-  --brand-hover: #ff3d61;
+  --brand-hover: #ff6280;
   --primary-hover: var(--brand-hover);
   --secondary-hover: #28262c;
   --secondary-on-modal: #67637033;
