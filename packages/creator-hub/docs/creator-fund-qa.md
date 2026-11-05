@@ -63,7 +63,7 @@ If that path doesn't exist, right-click the Desktop shortcut, choose **Propertie
 Then:
 
 1. Sign in the usual way, from the avatar menu.
-2. Open **EARN** (after MANAGE). The EARN feature flag is on for QA. If the tab is missing, open DevTools (**View → Toggle Developer Tools**) and run `localStorage.setItem('creator-hub:feature-flags', JSON.stringify({ 'creatorhub-creator-fund': true })); location.reload();`.
+2. Open **EARN** (after MANAGE). The EARN feature flag is on for QA. If the tab is missing, your account isn't covered by the flag: report it with the wallet address you signed in with. The DevTools flag override doesn't work in this downloaded build; it only works when running from source (section 6).
 3. Check the fixtures are on: **Read Terms** shows "Example Creator Fund Program Terms (Beta)". The app's log also has a line `[CreatorFund] Fixtures on http://127.0.0.1:<port>` (`~/Library/Logs/creator-hub/main.log` on macOS, `%APPDATA%\creator-hub\logs\main.log` on Windows).
 
 ## 3. Fixture switches
