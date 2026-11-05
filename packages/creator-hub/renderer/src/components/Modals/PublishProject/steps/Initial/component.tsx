@@ -20,10 +20,14 @@ export function Initial(props: Props) {
         size="tiny"
         {...rest}
       >
-        <div className="Initial">
+        <div
+          className="Initial"
+          data-testid="publish-modal-initial"
+        >
           <Button
             color="primary"
             variant="contained"
+            data-testid="publish-modal-initial-sign-in-button"
             onClick={signIn}
           >
             {t('home.cards.sign_in.action')}
@@ -38,12 +42,19 @@ export function Initial(props: Props) {
         subtitle={t('modal.publish_project.select')}
         {...rest}
       >
-        <div className="Initial">
-          <div className="options">
+        <div
+          className="Initial"
+          data-testid="publish-modal-initial"
+        >
+          <div
+            className="options"
+            data-testid="publish-modal-initial-options"
+          >
             <OptionBox
               thumbnailSrc={WorldsPng}
               title={t('modal.publish_project.worlds.title')}
               description={t('modal.publish_project.worlds.description')}
+              data-testid="publish-modal-initial-option-box-worlds"
               buttonText={t('modal.publish_project.worlds.action')}
               onClickPublish={() => props.onStep('publish-to-world')}
               learnMoreUrl="https://docs.decentraland.org/creator/worlds/about/#publish-a-world"
@@ -52,6 +63,7 @@ export function Initial(props: Props) {
               thumbnailSrc={LandPng}
               title={t('modal.publish_project.land.title')}
               description={t('modal.publish_project.land.description')}
+              data-testid="publish-modal-initial-option-box-land"
               buttonText={t('modal.publish_project.land.action')}
               onClickPublish={() => props.onStep('publish-to-land')}
               learnMoreUrl="https://docs.decentraland.org/creator/scenes-sdk7/publishing/publishing-options#land-permission-options"
