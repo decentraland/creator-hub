@@ -1606,6 +1606,7 @@
       "title_prefix": "Earn",
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "Create experiences. Bring players together. Earn USDC.",
+      "tagline_signed_out": "Create experiences. Bring players together. Earn money.",
       "description": "The <hl>Decentraland Creator Fund</hl> <hl>rewards LAND and World owners</hl> for bringing in new players, building activity, and keeping players coming back.",
       "features": {
         "enrolment": {
@@ -1626,6 +1627,7 @@
         }
       },
       "join": "Join Creators Fund",
+      "sign_in_to_join": "Sign in to join Creators Fund",
       "read_terms": "Read Terms",
       "status": {
         "suspended": "Your Creator Fund participation is suspended."

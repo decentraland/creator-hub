@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -143,6 +144,99 @@ describe('EarnPage', () => {
       page();
       expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
       expect(screen.getByText('home page')).toBeTruthy();
+    });
+  });
+
+  describe('when signed out', () => {
+    it('should not add a second main landmark', () => {
+      page();
+      expect(screen.queryByRole('main')).toBeNull();
+    });
+
+    it('should pitch money and ask to sign in to join', () => {
+      page();
+
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(
+        'Decentraland Creator Fund',
+      );
+      expect(screen.getByText(/Earn money\.$/)).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Sign in to join Creators Fund' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Read Terms' })).toBeTruthy();
+      expect(api.getEnrollment).not.toHaveBeenCalled();
+    });
+
+    it('should sign in, then start the join once signed in back on the page', async () => {
+      const { rerenderPage } = page();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Sign in to join Creators Fund' }));
+      expect(auth.signIn).toHaveBeenCalled();
+
+      auth.isSigningIn = false;
+      auth.isSignedIn = true;
+      rerenderPage();
+
+      expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
+      expect(api.getEligibility).toHaveBeenCalledTimes(1);
+    });
+
+    it('should open the read-only terms', async () => {
+      page();
+      fireEvent.click(screen.getByRole('button', { name: 'Read Terms' }));
+      expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
+      expect(screen.queryByRole('checkbox')).toBeNull();
+    });
+  });
+
+  describe('when back from sign in and the status requests settle out of order', () => {
+    it('should start the join once the latest status arrives', async () => {
+      auth.isSignedIn = true;
+      let answerLatest: (value: unknown) => void = () => {};
+      vi.mocked(api.getEnrollment)
+        .mockResolvedValueOnce({
+          ok: false as const,
+          status: 404,
+          error: 'Not Found',
+          body: { error: 'Not Found', message: 'not enrolled' },
+        })
+        .mockReturnValueOnce(new Promise(resolve => (answerLatest = resolve)) as any);
+
+      render(
+        <StrictMode>
+          <Provider store={createTestStore()}>
+            <ThemeProvider theme={dark}>
+              <MemoryRouter
+                initialEntries={[{ pathname: '/earn', state: { joinAfterSignIn: true } }]}
+              >
+                <Routes>
+                  <Route
+                    path="/earn"
+                    element={<EarnPage />}
+                  />
+                </Routes>
+              </MemoryRouter>
+            </ThemeProvider>
+          </Provider>
+        </StrictMode>,
+      );
+      await act(async () => {});
+      await act(async () =>
+        answerLatest({
+          ok: false as const,
+          status: 404,
+          error: 'Not Found',
+          body: { error: 'Not Found', message: 'not enrolled' },
+        }),
+      );
+
+      expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
+    });
+  });
+
+  describe('when back from a sign in that did not complete', () => {
+    it('should not start the join', async () => {
+      page({ pathname: '/earn', state: { joinAfterSignIn: true } });
+      await screen.findByRole('button', { name: 'Sign in to join Creators Fund' });
+      expect(api.getEligibility).not.toHaveBeenCalled();
     });
   });
 

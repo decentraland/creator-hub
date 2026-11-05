@@ -1606,6 +1606,7 @@
       "title_prefix": "赚取",
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "创造体验。汇聚玩家。赚取 USDC。",
+      "tagline_signed_out": "创造体验。汇聚玩家。赚取收益。",
       "description": "<hl>Decentraland Creator Fund</hl> <hl>奖励 LAND 和 World 所有者</hl>，表彰他们吸引新玩家、带动活跃度并让玩家持续回访。",
       "features": {
         "enrolment": {
@@ -1626,6 +1627,7 @@
         }
       },
       "join": "加入 Creators Fund",
+      "sign_in_to_join": "登录以加入 Creators Fund",
       "read_terms": "阅读条款",
       "status": {
         "suspended": "你在 Creator Fund 的参与已被暂停。"
