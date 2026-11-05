@@ -337,8 +337,8 @@ describe('getLandTiles, the parcels the Publish to LAND picker offers', () => {
         expect(offered(lands, tiles)).toEqual(['0,1']);
       });
 
-      it('should tag the wallet as their operator', () => {
-        expect(lands.map(land => land.role)).toEqual([RoleType.OPERATOR]);
+      it('should tag the wallet as their manager', () => {
+        expect(lands.map(land => land.role)).toEqual([RoleType.MANAGER]);
       });
     });
 
