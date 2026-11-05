@@ -1,1 +1,0 @@
-export { WorldPermissionsCollaboratorsTab } from './component';

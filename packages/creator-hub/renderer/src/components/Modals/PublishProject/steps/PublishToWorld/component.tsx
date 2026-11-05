@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowForwardIcon from '@mui/icons-material/ChevronRight';
-import WorldIcon from '@mui/icons-material/SpaceDashboard';
 import MultiSceneIcon from '@mui/icons-material/Layers';
 import ParcelsIcon from '@mui/icons-material/GridOn';
 import OutlinedParcelsIcon from '@mui/icons-material/GridViewOutlined';
@@ -17,7 +16,6 @@ import {
 } from 'decentraland-ui2';
 
 import type { Project } from '/shared/types/projects';
-import { WorldSettingsTab } from '/shared/types/manage';
 import FallbackThumbnail from '/assets/images/scene-thumbnail-fallback.png';
 import { misc } from '#preload';
 import { useDispatch, useSelector } from '#store';
@@ -48,7 +46,6 @@ import { Row } from '/@/components/Row';
 import { Button } from '/@/components/Button';
 import { Loader } from '/@/components/Loader';
 import { Image } from '/@/components/Image';
-import { WorldSettingsModal } from '/@/components/Modals/WorldSettingsModal';
 import { type AtlasScene, WorldAtlas, WorldAtlasColors } from '/@/components/WorldAtlas';
 import { PublishModal } from '../../PublishModal';
 import { ProjectStepWrapper } from '../../ProjectStepWrapper';
@@ -206,7 +203,6 @@ export function PublishToWorld(props: Props) {
             <SelectWorld
               name={name}
               project={project}
-              isOwner={isOwner}
               worldSettings={worldSettings}
               isMultiSceneEnabled={isMultiSceneEnabled}
               onChangeMultiScene={setIsMultiSceneEnabled}
@@ -243,7 +239,6 @@ export function PublishToWorld(props: Props) {
 function SelectWorld({
   name,
   project,
-  isOwner,
   worldSettings,
   hasWorldWidePermissions,
   isMultiSceneEnabled,
@@ -254,7 +249,6 @@ function SelectWorld({
 }: {
   name: string;
   project: Project;
-  isOwner: boolean;
   worldSettings: WorldSettingsState;
   hasWorldWidePermissions: boolean;
   isMultiSceneEnabled: boolean;
@@ -269,10 +263,6 @@ function SelectWorld({
       ? getEnsProvider(project.worldConfiguration?.name)
       : ENSProvider.DCL,
   );
-  const [settingsModal, setSettingsModal] = useState<{
-    isOpen: boolean;
-    activeTab: WorldSettingsTab;
-  }>({ isOpen: false, activeTab: WorldSettingsTab.DETAILS });
 
   const worldSize = useMemo(() => {
     const { width, height } = getWorldDimensions(worldSettings.scenes || []);
@@ -318,18 +308,6 @@ function SelectWorld({
     },
     [onChangeName],
   );
-
-  const handleOpenWorldSettings = useCallback(() => {
-    setSettingsModal({ isOpen: true, activeTab: WorldSettingsTab.DETAILS });
-  }, []);
-
-  const handleCloseWorldSettings = useCallback(() => {
-    setSettingsModal({ isOpen: false, activeTab: WorldSettingsTab.DETAILS });
-  }, []);
-
-  const handleSettingsModalTabClick = useCallback((tab: WorldSettingsTab) => {
-    setSettingsModal(prevState => ({ ...prevState, activeTab: tab }));
-  }, []);
 
   const handleNext = useCallback(async () => {
     const worldConfiguration: WorldConfiguration = { ...project.worldConfiguration, name };
@@ -496,17 +474,6 @@ function SelectWorld({
                   />
                 </Row>
               </div>
-              {isOwner && (
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  startIcon={<WorldIcon />}
-                  className="WorldSettingsButton"
-                  onClick={handleOpenWorldSettings}
-                >
-                  {t('modal.publish_project.worlds.select_world.multi_scene.settings_button')}
-                </Button>
-              )}
             </div>
           )}
         </div>
@@ -524,18 +491,6 @@ function SelectWorld({
             : t('modal.publish_project.worlds.select_world.actions.review')}
         </Button>
       </div>
-
-      <WorldSettingsModal
-        open={settingsModal.isOpen}
-        worldName={worldSettings.worldName}
-        worldScenes={worldSettings.scenes}
-        worldSettings={worldSettings.settings}
-        isOwner={isOwner}
-        isLoading={worldSettings.status === 'loading' || worldSettings.status === 'idle'}
-        activeTab={settingsModal.activeTab}
-        onTabClick={handleSettingsModalTabClick}
-        onClose={handleCloseWorldSettings}
-      />
     </div>
   );
 }
