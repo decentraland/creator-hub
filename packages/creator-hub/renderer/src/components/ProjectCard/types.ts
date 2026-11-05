@@ -17,5 +17,6 @@ export type Props = {
   dropdownOptions?: Option[];
   titleVariant?: TypographyProps['variant'];
   status?: Status;
+  'data-testid'?: string;
   onClick: () => void;
 };

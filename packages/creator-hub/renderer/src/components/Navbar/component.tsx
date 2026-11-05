@@ -35,6 +35,10 @@ function MenuItem(props: {
   disable?: boolean;
   label?: string;
   children?: React.ReactNode;
+  // Declared and forwarded explicitly: this component does not spread its props, so a
+  // `data-testid` passed by a caller would otherwise be dropped without a type error —
+  // TypeScript exempts hyphenated JSX attributes from excess-property checks.
+  'data-testid'?: string;
 }) {
   const isActive = props.active === props.item;
   return !props.disable ? (
@@ -43,6 +47,7 @@ function MenuItem(props: {
       className={cx('menu-item', { active: isActive })}
       aria-current={isActive ? 'page' : undefined}
       aria-label={props.label}
+      data-testid={props['data-testid']}
     >
       <span className="label">
         {t(`navbar.menu.${props.item}`)}
@@ -103,18 +108,22 @@ export function Navbar(props: { active: NavbarItem }) {
         </div>
         <div className="menu">
           <MenuItem
+            data-testid="navbar-menu-home"
             item={NavbarItem.HOME}
             active={props.active}
           />
           <MenuItem
+            data-testid="navbar-menu-scenes"
             item={NavbarItem.SCENES}
             active={props.active}
           />
           <MenuItem
+            data-testid="navbar-menu-templates"
             item={NavbarItem.TEMPLATES}
             active={props.active}
           />
           <MenuItem
+            data-testid="navbar-menu-collections"
             item={NavbarItem.COLLECTIONS}
             active={props.active}
             disable={true}
@@ -125,6 +134,7 @@ export function Navbar(props: { active: NavbarItem }) {
             disable={!isEnabled(FeatureFlag.ANALYTICS)}
           />
           <MenuItem
+            data-testid="navbar-menu-manage"
             item={NavbarItem.MANAGE}
             active={props.active}
           />
@@ -142,10 +152,12 @@ export function Navbar(props: { active: NavbarItem }) {
             )}
           </MenuItem>
           <MenuItem
+            data-testid="navbar-menu-learn"
             item={NavbarItem.LEARN}
             active={props.active}
           />
           <MenuItem
+            data-testid="navbar-menu-more"
             item={NavbarItem.MORE}
             active={props.active}
           />
