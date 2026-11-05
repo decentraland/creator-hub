@@ -313,6 +313,19 @@ describe('MyPlacesTab', () => {
     });
   });
 
+  describe('when a place is eligible', () => {
+    it('should chip it as in the program, never as not eligible', async () => {
+      vi.mocked(api.getPlaces).mockResolvedValue(
+        ok(myPlaces([place('a', { status: 'eligible' })])),
+      );
+      renderTab();
+
+      const entry = await screen.findByRole('article', { name: 'Example Place a' });
+      expect(within(entry).getByText('In program')).toBeTruthy();
+      expect(within(entry).queryByText('Not eligible')).toBeNull();
+    });
+  });
+
   describe('when a place is not eligible', () => {
     it.each([
       ['content_policy', "This scene doesn't meet the Content Policy."],
