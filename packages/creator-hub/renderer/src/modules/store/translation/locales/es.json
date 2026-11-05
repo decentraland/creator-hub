@@ -1600,6 +1600,7 @@
       },
       "leaderboard": {
         "sentence": "Los 20 lugares con los pagos más altos de este ciclo",
+        "sentence_all": "Los 20 lugares con mayores pagos en todos los ciclos",
         "rank": "Puesto",
         "place": "Lugar",
         "earned": "Ganado",

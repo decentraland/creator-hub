@@ -112,7 +112,7 @@ describe('LeaderboardTab', () => {
   });
 
   describe('when All cycles is chosen', () => {
-    it('should load the aggregate and keep the sentence', async () => {
+    it('should load the aggregate under the all-cycles sentence', async () => {
       renderTab();
       await screen.findByText('Example Place 1');
 
@@ -120,7 +120,9 @@ describe('LeaderboardTab', () => {
 
       await waitFor(() => expect(api.getLeaderboard).toHaveBeenLastCalledWith('all'));
       expect(
-        screen.getByText('The top 20 places with the highest payouts this cycle'),
+        screen.getByRole('toolbar', {
+          name: 'The top 20 places with the highest payouts across all cycles',
+        }),
       ).toBeTruthy();
     });
   });
@@ -140,6 +142,15 @@ describe('LeaderboardTab', () => {
       expect(within(rows[0]).getByText('23,-14')).toBeTruthy();
       expect(within(rows[0]).getByText('1,842.50 USDC')).toBeTruthy();
       expect(within(rows[1]).getByText('example-world.dcl.eth')).toBeTruthy();
+    });
+
+    it('should show a round amount whole and any other exactly', async () => {
+      renderTab();
+
+      await screen.findByText('Example Place 1');
+      const rows = screen.getAllByRole('row').slice(1);
+      expect(within(rows[0]).getByText('1,842.50 USDC')).toBeTruthy();
+      expect(within(rows[1]).getByText('990 USDC')).toBeTruthy();
     });
 
     it('should jump in to a place through the deeplink', async () => {
