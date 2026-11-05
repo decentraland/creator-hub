@@ -97,6 +97,7 @@
     "mock:creator-fund": "node scripts/creator-fund-mock.mjs",
     "postinstall": "cross-env ELECTRON_RUN_AS_NODE=1 electron scripts/update-electron-vendors.js",
     "start": "npm run watch",
+    "start:earn-mock": "node scripts/start-earn-mock.mjs",
     "test": "npm run test:unit",
     "test:e2e": "npm run compile && playwright test --project=electron-offline --project=electron-live",
     "test:e2e:ci": "electron-builder build --config electron-builder.cjs --dir && playwright test --project=electron-offline",

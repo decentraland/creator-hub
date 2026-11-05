@@ -19,3 +19,20 @@ export function getEnv(): Env {
 
   return import.meta.env.DEV ? Env.DEV : Env.PROD;
 }
+
+const API_URL_OVERRIDES = [
+  'CREATOR_FUND_API_URL',
+  'METRICS_API_URL',
+  'WORLDS_CONTENT_SERVER_URL',
+] as const;
+
+/**
+ * API base URLs from the environment, overriding the renderer config.
+ * @returns the set ones in a dev build; `{}` in a release build.
+ */
+export function getApiUrlOverrides(): Partial<Record<(typeof API_URL_OVERRIDES)[number], string>> {
+  if (!import.meta.env.DEV) return {};
+  return Object.fromEntries(
+    API_URL_OVERRIDES.filter(name => process.env[name]).map(name => [name, process.env[name]]),
+  );
+}
