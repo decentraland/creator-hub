@@ -67,18 +67,22 @@ const renderFlow = () => {
   return { onExit, store };
 };
 
+/*
+ * The steps below find their controls by label and text, not by role and name: computing every
+ * accessible name in the modal made each full flow take over 5 s on a loaded CI runner.
+ */
 async function acceptTerms() {
-  fireEvent.click(await screen.findByRole('checkbox'));
-  fireEvent.click(screen.getByRole('button', { name: 'Accept & Join' }));
+  fireEvent.click(await screen.findByLabelText(/I have read/));
+  fireEvent.click(screen.getByText('Accept & Join'));
 }
 
 function fillContact() {
-  const type = (name: RegExp, value: string) =>
-    fireEvent.change(screen.getByRole('textbox', { name }), { target: { value } });
+  const type = (label: RegExp, value: string) =>
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
   type(/First Name/, 'Jane');
   type(/Last Name/, 'Doe');
   type(/Email/, 'jane.doe@example.com');
-  fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+  fireEvent.click(screen.getByText('Submit'));
 }
 
 describe('JoinFlow', () => {
@@ -283,8 +287,7 @@ describe('JoinFlow', () => {
 
       await acceptTerms();
 
-      const value = (name: RegExp) =>
-        (screen.getByRole('textbox', { name }) as HTMLInputElement).value;
+      const value = (label: RegExp) => (screen.getByLabelText(label) as HTMLInputElement).value;
       expect(value(/First Name/)).toBe('Jane');
       expect(value(/Last Name/)).toBe('Doe');
       expect(value(/Email/)).toBe('jane.doe@example.com');
