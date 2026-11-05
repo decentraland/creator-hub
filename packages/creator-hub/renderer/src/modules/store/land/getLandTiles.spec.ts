@@ -72,26 +72,61 @@ const emptyResult = (): LandQueryResult => ({
 
 type Grant = LandQueryResult['operatorAuthorizations'][number];
 
+/** The land of the owners who approved the wallet, served by the grantor-land query. */
+let grantorLand: { parcels: ParcelFields[]; estates: EstateFields[] };
+
 const grant = (fields: {
   registry: string;
   type?: string;
   isApproved: boolean;
   timestamp: number;
+  owner?: string;
   parcels?: ParcelFields[];
   estates?: EstateFields[];
-}): Grant => ({
-  type: fields.type ?? 'UpdateManager',
-  isApproved: fields.isApproved,
-  tokenAddress: fields.registry,
-  timestamp: String(fields.timestamp),
-  owner: { address: OWNER, parcels: fields.parcels ?? [], estates: fields.estates ?? [] },
-});
+}): Grant => {
+  for (const land of fields.parcels ?? []) {
+    if (!grantorLand.parcels.includes(land)) grantorLand.parcels.push(land);
+  }
+  for (const land of fields.estates ?? []) {
+    if (!grantorLand.estates.includes(land)) grantorLand.estates.push(land);
+  }
+  return {
+    type: fields.type ?? 'UpdateManager',
+    isApproved: fields.isApproved,
+    tokenAddress: fields.registry,
+    timestamp: String(fields.timestamp),
+    owner: { address: fields.owner ?? OWNER },
+  };
+};
 
 const respond = (data: unknown) => ({
   ok: true,
   status: 200,
   json: () => Promise.resolve({ data }),
 });
+
+const PAGE_SIZE = 1000;
+const pageOf = (query: string) => Number(/skip: (\d+)/.exec(query)?.[1] ?? 0) / PAGE_SIZE;
+
+/** Answers the land query page by page, and the grantor-land query from `grantorLand`. */
+function serveSubgraph(landPages: Partial<LandQueryResult>[]) {
+  fetchMock.mockImplementation(async (_url: string, init: { body: string }) => {
+    const { query, variables } = JSON.parse(init.body);
+    const page = pageOf(query);
+    if (query.includes('GrantorLand')) {
+      const slice = <T>(items: T[]) => items.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+      return respond({
+        parcels: slice(
+          grantorLand.parcels.filter(({ owner }) => variables.parcelOwners.includes(owner.address)),
+        ),
+        estates: slice(
+          grantorLand.estates.filter(({ owner }) => variables.estateOwners.includes(owner.address)),
+        ),
+      });
+    }
+    return respond({ ...emptyResult(), ...landPages[page] });
+  });
+}
 
 /** The atlas tiles of an estate: `getLandTiles` reads an estate's coords from them. */
 const estateTiles = (estateId: string, coords: [number, number][]) =>
@@ -102,8 +137,8 @@ const estateTiles = (estateId: string, coords: [number, number][]) =>
     ]),
   );
 
-async function fetchLands(data: Partial<LandQueryResult>): Promise<Land[]> {
-  fetchMock.mockResolvedValueOnce(respond({ ...emptyResult(), ...data }));
+async function fetchLands(...landPages: Partial<LandQueryResult>[]): Promise<Land[]> {
+  serveSubgraph(landPages);
   const [lands] = await new Lands().fetchLand(ME);
   return lands;
 }
@@ -117,6 +152,7 @@ function offered(lands: Land[], tiles: Record<string, AtlasTileProps> = {}): str
 describe('getLandTiles, the parcels the Publish to LAND picker offers', () => {
   beforeEach(() => {
     fetchMock.mockReset();
+    grantorLand = { parcels: [], estates: [] };
   });
 
   describe('when the wallet owns a parcel outright', () => {
@@ -249,6 +285,35 @@ describe('getLandTiles, the parcels the Publish to LAND picker offers', () => {
     });
   });
 
+  describe('when the owner approved the wallet for a single estate', () => {
+    const coords: [number, number][] = [[4, 4]];
+    let lands: Land[];
+
+    beforeEach(async () => {
+      lands = await fetchLands({
+        approvedEstates: [estate('21', coords, { owner: { address: OWNER }, operator: ME })],
+      });
+    });
+
+    it("should offer the estate's parcels", () => {
+      expect(offered(lands, estateTiles('21', coords))).toEqual(['4,4']);
+    });
+  });
+
+  describe('when the wallet is the update operator of a parcel inside an estate it does not run', () => {
+    let lands: Land[];
+
+    beforeEach(async () => {
+      lands = await fetchLands({
+        updateOperatorParcels: [parcel(5, 5, { owner: { address: OWNER }, updateOperator: ME })],
+      });
+    });
+
+    it('should offer that parcel, as the Catalyst checks the parcel before its estate', () => {
+      expect(offered(lands, estateTiles('31', [[5, 5]]))).toEqual(['5,5']);
+    });
+  });
+
   describe('when an owner authorized the wallet on a registry', () => {
     const estateCoords: [number, number][] = [[0, 9]];
     const ownersLand = {
@@ -334,10 +399,92 @@ describe('getLandTiles, the parcels the Publish to LAND picker offers', () => {
       });
     });
 
+    describe('and approved the wallet as an Operator on the LAND registry', () => {
+      let lands: Land[];
+
+      beforeEach(async () => {
+        lands = await fetchLands({
+          operatorAuthorizations: [
+            grant({
+              registry: LAND_REGISTRY,
+              type: 'Operator',
+              isApproved: true,
+              timestamp: 1,
+              ...ownersLand,
+            }),
+          ],
+        });
+      });
+
+      it("should offer the owner's parcels", () => {
+        expect(offered(lands, tiles)).toEqual(['0,1']);
+      });
+    });
+
+    // Events come newest first, so a revoke can land on the first page and the grant it
+    // supersedes on a later one.
+    describe('and revoked it, with the revoke and the grant on different pages', () => {
+      let lands: Land[];
+
+      beforeEach(async () => {
+        const unrelatedRevokes = Array.from({ length: PAGE_SIZE - 1 }, (_, i) =>
+          grant({
+            registry: LAND_REGISTRY,
+            isApproved: false,
+            timestamp: 10 + i,
+            owner: `0x${(i + 1).toString(16).padStart(40, '0')}`,
+          }),
+        );
+        lands = await fetchLands(
+          {
+            operatorAuthorizations: [
+              grant({ registry: LAND_REGISTRY, isApproved: false, timestamp: 2, ...ownersLand }),
+              ...unrelatedRevokes,
+            ],
+          },
+          {
+            operatorAuthorizations: [
+              grant({ registry: LAND_REGISTRY, isApproved: true, timestamp: 1, ...ownersLand }),
+            ],
+          },
+        );
+      });
+
+      it('should not offer any of the owner’s land', () => {
+        expect(offered(lands, tiles)).toEqual([]);
+      });
+    });
+
+    describe('and the owner holds more parcels than one page', () => {
+      let lands: Land[];
+
+      beforeEach(async () => {
+        const manyParcels = Array.from({ length: PAGE_SIZE + 1 }, (_, i) =>
+          parcel(100 + Math.floor(i / 100), i % 100, { owner: { address: OWNER } }),
+        );
+        lands = await fetchLands({
+          operatorAuthorizations: [
+            grant({
+              registry: LAND_REGISTRY,
+              isApproved: true,
+              timestamp: 1,
+              parcels: manyParcels,
+            }),
+          ],
+        });
+      });
+
+      it('should offer the ones past the first page too', () => {
+        expect(offered(lands)).toHaveLength(PAGE_SIZE + 1);
+        expect(offered(lands)).toContain('110,0');
+      });
+    });
+
     it('should ask the subgraph for every kind of authorization that grants access, newest first', async () => {
       await fetchLands({});
 
       const { query } = JSON.parse(fetchMock.mock.calls[0][1].body);
+      expect(query).not.toContain('GrantorLand');
       expect(query).toContain(
         'where: { operator: $address, type_in: ["UpdateManager","ApprovalForAll","Operator"] }',
       );
