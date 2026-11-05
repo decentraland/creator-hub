@@ -17,7 +17,7 @@ import { ens as ensContract, ensUniversalResolver, dclRegistrar } from './contra
 import { getEnsProvider, getStreamOnlyWorldNames, isValidENSName } from './utils';
 import { isMissingENSRecordError, resolveContent } from './resolveContent';
 import { withENSRecordClient } from './ccipRead';
-import { USER_PERMISSIONS, type ContributableDomain, type ENS, type ENSError } from './types';
+import { USER_PERMISSIONS, type ContributableDomain, type ENS } from './types';
 
 const DEFAULT_CHAIN_ID: ChainId = Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 const REQUESTS_BATCH_SIZE = 25;
@@ -277,7 +277,6 @@ export const fetchENSList = createAsyncThunk(
 export type ENSState = {
   chainId: ChainId;
   data: Record<string, ENS>;
-  error: ENSError | null;
   /** NAME list requests still in flight for the current account, oldest first. */
   requestIds: string[];
 };
@@ -327,7 +326,7 @@ export const slice = createSlice({
           : Object.keys(state.data).length
             ? 'succeeded'
             : 'failed';
-        state.error = null;
+        state.error = action.error.message ?? 'Failed to load NAMEs';
         captureException(action.error, {
           tags: { source: 'ens', event: 'fetch-ens-list' },
         });

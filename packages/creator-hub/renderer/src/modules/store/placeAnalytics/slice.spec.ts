@@ -21,6 +21,8 @@ const place = (placeId: string, name: string): AnalyticsPlace => ({
   name,
   thumbnail: 'thumb.png',
   location: { world: name, x: 0, y: 0 },
+  publishedIn: name,
+  lastUpdatedAt: null,
 });
 
 const withVisits = (visits: number): LocationMetrics =>
@@ -224,6 +226,63 @@ describe('placeAnalytics slice', () => {
       const { status, error } = store.getState().placeAnalytics;
       expect(status).toBe('failed');
       expect(error).toMatch(/is not a valid ENS name/);
+    });
+  });
+
+  describe('when loading the project list fails', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAllDeployedWorlds).mockRejectedValue(new Error('could not load your scenes'));
+    });
+
+    it('should fail rather than report an empty list of places', async () => {
+      await store.dispatch(fetchAnalytics());
+
+      const { status, places, error } = store.getState().placeAnalytics;
+      expect(status).toBe('failed');
+      expect(places).toEqual([]);
+      expect(error).toMatch(/could not load your scenes/);
+      expect(fetchAnalyticsSnapshot).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the account is disconnected', () => {
+    beforeEach(async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+      await store.dispatch(fetchAnalytics());
+    });
+
+    it('should drop the previous account analytics', async () => {
+      expect(store.getState().placeAnalytics.places).not.toEqual([]);
+
+      store.dispatch(accountChanged());
+
+      expect(store.getState().placeAnalytics).toEqual(initialState);
+    });
+  });
+
+  describe('when the account is disconnected while a fetch is in flight', () => {
+    let resolveSnapshot: (snapshot: typeof SNAPSHOT) => void;
+
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAnalyticsSnapshot).mockReturnValue(
+        new Promise(resolve => {
+          resolveSnapshot = resolve;
+        }),
+      );
+    });
+
+    it('should not let the previous account analytics land once it settles', async () => {
+      const inFlight = store.dispatch(fetchAnalytics());
+      await vi.waitFor(() => expect(fetchAnalyticsSnapshot).toHaveBeenCalled());
+
+      store.dispatch(accountChanged());
+      resolveSnapshot(SNAPSHOT);
+      await inFlight;
+
+      expect(store.getState().placeAnalytics).toEqual(initialState);
     });
   });
 
