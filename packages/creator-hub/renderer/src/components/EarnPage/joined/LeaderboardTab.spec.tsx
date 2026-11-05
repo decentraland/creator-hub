@@ -112,7 +112,7 @@ describe('LeaderboardTab', () => {
   });
 
   describe('when All cycles is chosen', () => {
-    it('should load the aggregate and keep the sentence', async () => {
+    it('should load the aggregate under the all-cycles sentence', async () => {
       renderTab();
       await screen.findByText('Example Place 1');
 
@@ -120,7 +120,9 @@ describe('LeaderboardTab', () => {
 
       await waitFor(() => expect(api.getLeaderboard).toHaveBeenLastCalledWith('all'));
       expect(
-        screen.getByText('The top 20 places with the highest payouts this cycle'),
+        screen.getByRole('toolbar', {
+          name: 'The top 20 places with the highest payouts across all cycles',
+        }),
       ).toBeTruthy();
     });
   });
