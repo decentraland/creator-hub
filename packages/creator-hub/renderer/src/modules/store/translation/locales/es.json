@@ -1437,5 +1437,93 @@
       "NO_INTERNET_CONNECTION": "No hay conexión a internet disponible",
       "REQUEST_TIMEOUT": "La solicitud expiró. Por favor verifica tu conexión e intenta nuevamente."
     }
+  },
+  "earn": {
+    "close": "Cerrar",
+    "loading": "Cargando",
+    "landing": {
+      "title_prefix": "Ganar",
+      "title": "Decentraland Creator Fund",
+      "tagline_signed_in": "Crea experiencias. Reúne jugadores. Gana USDC.",
+      "description": "El <hl>Decentraland Creator Fund</hl> <hl>recompensa a los propietarios de LAND y Worlds</hl> por atraer nuevos jugadores, generar actividad y hacer que los jugadores vuelvan.",
+      "features": {
+        "enrolment": {
+          "title": "Inscripción automática",
+          "body": "Todas las escenas elegibles que tienes u operas se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
+        },
+        "cycles": {
+          "title": "Recompensas cada 15 días",
+          "body": "Cada mes tiene dos ciclos de recompensas: del 1 al 15 y del 16 a fin de mes."
+        },
+        "activity": {
+          "title": "Recompensas según la actividad de los jugadores",
+          "body": "Gana según los jugadores que tus escenas atraen y hacen volver."
+        },
+        "payout": {
+          "title": "Cobra directamente en USDC",
+          "body": "Los pagos se envían a la billetera que elijas dentro de los 30 días posteriores al cierre de cada ciclo."
+        }
+      },
+      "join": "Unirse al Creators Fund",
+      "read_terms": "Leer términos",
+      "status": {
+        "suspended": "Tu participación en el Creator Fund está suspendida."
+      }
+    },
+    "terms": {
+      "updated_line": "Última actualización: {date} · Versión {version}",
+      "region": "Términos del programa",
+      "hint": "Desplázate hasta el final para revisar los términos completos.",
+      "accept_checkbox": "He leído y acepto los Términos del Programa Creator Fund",
+      "gate_open": "Ya puedes aceptar los términos",
+      "not_now": "Ahora no",
+      "accept_and_join": "Aceptar y unirse",
+      "close": "Cerrar",
+      "load_error": "No se pudieron cargar los términos."
+    },
+    "reaccept": {
+      "title": "Términos del programa actualizados",
+      "subtitle": "Revisa los términos actualizados para seguir ganando.",
+      "accept": "Aceptar"
+    },
+    "checking": {
+      "title": "Decentraland Creator Fund",
+      "body_1": "Estamos verificando tu cuenta con el Creator Fund.",
+      "body_2": "Esto puede tardar unos segundos.",
+      "progress_label": "Verificando elegibilidad"
+    },
+    "not_eligible": {
+      "title": "Todavía no puedes unirte",
+      "got_it": "Entendido",
+      "reasons": {
+        "internal": "Las cuentas de la Foundation y de Regenesis Labs no pueden unirse al Creator Fund.",
+        "suspended": "Tu cuenta está suspendida del Creator Fund.",
+        "excluded": "Tu cuenta no es elegible para el Creator Fund.",
+        "unknown": "Tu cuenta no puede unirse al Creator Fund por ahora."
+      }
+    },
+    "contact": {
+      "title": "Información de contacto",
+      "body": "Necesitamos estos datos para identificarte como beneficiario del programa y contactarte sobre tu participación en el Creator Fund y tus pagos. Ten en cuenta que esta información no se puede cambiar después.",
+      "first_name": "Nombre",
+      "last_name": "Apellido",
+      "email": "Correo electrónico",
+      "first_name_placeholder": "Nombre",
+      "last_name_placeholder": "Apellido",
+      "email_placeholder": "name@email.com",
+      "invalid_email": "Correo electrónico no válido",
+      "cancel": "Cancelar",
+      "submit": "Enviar"
+    },
+    "welcome": {
+      "title": "Te damos la bienvenida al Creator Fund",
+      "body": "Prepara tus escenas, atrae jugadores y empieza a ganar recompensas en USDC.",
+      "lets_go": "Vamos"
+    },
+    "errors": {
+      "generic": "Algo salió mal. Vuelve a intentarlo.",
+      "load_status": "No se pudo cargar el Creator Fund.",
+      "retry": "Reintentar"
+    }
   }
 }
