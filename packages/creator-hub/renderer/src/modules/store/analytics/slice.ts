@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import { analytics } from '#preload';
+import { accountChanged } from '/@/modules/store/account';
 
 // actions
 export const fetchAnonymousId = createAsyncThunk(
@@ -50,6 +51,9 @@ export const slice = createSlice({
     });
     builder.addCase(identify.pending, (state, action) => {
       state.userId = action.meta.arg.userId;
+    });
+    builder.addCase(accountChanged, state => {
+      state.userId = null;
     });
   },
 });

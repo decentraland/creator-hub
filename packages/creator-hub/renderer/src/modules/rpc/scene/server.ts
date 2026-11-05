@@ -13,6 +13,7 @@ import { actions as snackbarActions } from '../../store/snackbar';
 import { createGenericNotification } from '../../store/snackbar/utils';
 import { actions as workspaceActions } from '../../store/workspace';
 import { actions as optimizerActions } from '../../store/optimizer';
+import { resolveProfiles, sanitizeProfileAddresses, type ProfileSummary } from './profiles';
 
 type NotificationRequest = {
   severity: Severity;
@@ -31,6 +32,9 @@ export enum Method {
   GET_FEATURE_FLAGS = 'get_feature_flags',
   UPDATE_SDK = 'update_sdk',
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
+  INSTALL_MULTIPLAYER = 'install_multiplayer',
+  UNINSTALL_MULTIPLAYER = 'uninstall_multiplayer',
+  GET_PROFILES = 'get_profiles',
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
   MENTION_ASSET = 'mention_asset',
@@ -48,6 +52,9 @@ export type Params = {
   [Method.GET_FEATURE_FLAGS]: Record<string, never>;
   [Method.UPDATE_SDK]: Record<string, never>;
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
+  [Method.INSTALL_MULTIPLAYER]: Record<string, never>;
+  [Method.UNINSTALL_MULTIPLAYER]: Record<string, never>;
+  [Method.GET_PROFILES]: { addresses: string[] };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
   [Method.MENTION_ASSET]: AiAssetMention;
@@ -68,6 +75,9 @@ export type Result = {
   [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
   [Method.UPDATE_SDK]: { ok: boolean };
   [Method.SET_UI_DESIGNER_MODE]: void;
+  [Method.INSTALL_MULTIPLAYER]: { ok: boolean };
+  [Method.UNINSTALL_MULTIPLAYER]: { ok: boolean };
+  [Method.GET_PROFILES]: { profiles: ProfileSummary[] };
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
   [Method.MENTION_ASSET]: void;
@@ -83,6 +93,10 @@ export type SceneRpcServerCallbacks = {
   onReady?: () => void;
 };
 
+/** Identifies a layout regardless of the order its parcels are listed in. */
+const layoutKey = (scene: { base: string; parcels: string[] } | undefined) =>
+  scene ? `${scene.base}|${[...scene.parcels].sort().join(';')}` : undefined;
+
 export class SceneRpcServer extends RPC<Method, Params, Result> {
   constructor(transport: Transport, project: Project, callbacks: SceneRpcServerCallbacks = {}) {
     super('SceneRpcOutbound', transport);
@@ -91,13 +105,21 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       callbacks.onReady?.();
     });
 
+    // The layout the editor reported last, seeded with the one it opened with. A notice
+    // repeats it whenever only the title changed, and taking it again would undo parcels
+    // picked meanwhile in the publish dialog (an editor that could not take them still
+    // holds its old layout).
+    let lastEditorLayout = layoutKey(project.scene);
     this.handle('notify_scene_metadata', async ({ title, scene }) => {
       const current = store.getState().editor.project ?? project;
+      const layout = scene && layoutKey(scene);
+      const layoutChanged = !!layout && layout !== lastEditorLayout;
+      if (layout) lastEditorLayout = layout;
       store.dispatch(
         workspaceActions.updateProject({
           ...current,
           title: title || current.title,
-          scene: scene ?? current.scene,
+          scene: layoutChanged ? scene : current.scene,
         }),
       );
     });
@@ -163,8 +185,48 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       }
     });
 
-    // Opens the model-optimization modal (rendered by EditorPage) for this scene. The
-    // heavy work runs in the CH main process — the inspector only triggers the UI here.
+    const swapSdk = async (
+      thunk:
+        | typeof workspaceActions.installMultiplayerSdk
+        | typeof workspaceActions.uninstallMultiplayerSdk,
+      failure: string,
+    ) => {
+      const state = store.getState();
+      if (state.editor.isInstallingProject) {
+        return { ok: false };
+      }
+      const currentProject = state.editor.project ?? project;
+      try {
+        await store.dispatch(thunk(currentProject)).unwrap();
+        await store
+          .dispatch(workspaceActions.fetchSdkCommandsVersion(currentProject.path))
+          .unwrap();
+        return { ok: true };
+      } catch (error) {
+        console.error(`[SceneRpc] ${failure}`, error);
+        return { ok: false };
+      }
+    };
+
+    this.handle('install_multiplayer', () =>
+      swapSdk(workspaceActions.installMultiplayerSdk, 'Failed to install the multiplayer SDK'),
+    );
+
+    this.handle('uninstall_multiplayer', () =>
+      swapSdk(workspaceActions.uninstallMultiplayerSdk, 'Failed to restore the latest SDK release'),
+    );
+
+    this.handle('get_profiles', async ({ addresses }) => {
+      const requested = sanitizeProfileAddresses(addresses);
+      if (requested.length === 0) return { profiles: [] };
+      try {
+        return { profiles: await resolveProfiles(store, requested) };
+      } catch (error) {
+        console.error('[SceneRpc] Failed to resolve profiles', error);
+        return { profiles: requested.map(address => ({ address })) };
+      }
+    });
+
     this.handle('optimize_scene', async () => {
       store.dispatch(optimizerActions.open());
     });

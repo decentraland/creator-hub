@@ -9,7 +9,6 @@
   --smart-item-icon-bg-color: #c640cd;
   --list-smart-item-hover-bg-color: #5f326a;
   --ground-icon-bg-color: #828282;
-  /* Panel accent blue with a Charcoal label (5.6:1), per docs/DESIGN.md */
   --built-in-badge-bg-color: #63b4f6;
   --built-in-badge-fg-color: #35333b;
   --panel: var(--base-20);
@@ -32,6 +31,11 @@
   --text-dim: rgba(255, 255, 255, 0.6); /* Transparencies/White 60: resting chip / pill labels */
   --header-hover-bg-color: #38222d;
   --disabled-bg-color: #323036;
+  /* Row hover in list controls. Same white-overlay convention as the
+     --ui-designer-control-*-bg tokens but role-scoped, not
+     subsystem-scoped: --ui-designer-control-hover-bg is the closest of the
+     three and differs only by one point of opacity. */
+  --row-hover-bg: rgba(255, 255, 255, 0.05);
 
   --controlHeight-small: 26px;
   --controlHeight-medium: 40px;
@@ -128,7 +132,7 @@
   --primary-dark: var(--brand-dark);
   --accent: #ff7439;
   --secondary-main: var(--accent);
-  --secondary-dark: #e65002;
+  --secondary-dark: #f45708;
   /* Color definitions */
   --white: #ffffff;
   --white-gray: #e7e7e7;
@@ -185,18 +189,18 @@
   --accent-blue-10: #062f4a;
 
   /* Status Colors */
-  --success: #4caf50;
+  --success: #34ce77;
   --success-main: var(--success);
-  --success-dark: #388e3c;
-  --success-light: #66bb6a;
-  --error: #f44336;
+  --success-dark: #00b453;
+  --success-light: #65d890;
+  --error: #fb3b3b;
   --error-main: var(--error);
-  --error-dark: #d32f2f;
-  --error-light: #ef5350;
-  --warning: #ffc95b;
+  --error-dark: #ec303a;
+  --error-light: #e97177;
+  --warning: #fe9c2a;
   --warning-main: var(--warning);
-  --warning-dark: #ef6c00;
-  --secondary-light: #ff8d5e;
+  --warning-dark: #f38025;
+  --secondary-light: #ffad8d;
 
   /* Context menu */
   --contexify-zIndex: 999;
@@ -220,7 +224,7 @@
   --contexify-activeArrow-color: var(--contexify-arrow-color);
 
   /* Modal */
-  --modal-content-bg-color: var(--tree-bg-color);
+  --modal-content-bg-color: #181225;
   --modal-content-border-color: var(--tree-border-color);
   --scrim: rgba(0, 0, 0, 0.6);
   --modal-overlay-bg-color: var(--scrim);

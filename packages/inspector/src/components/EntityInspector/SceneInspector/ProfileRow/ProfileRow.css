@@ -1,0 +1,66 @@
+.ProfileRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border-bottom: 1px solid var(--base-14);
+  box-sizing: border-box;
+}
+
+.ProfileRow:hover {
+  background: var(--row-hover-bg);
+}
+
+.ProfileRow > .Avatar {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  color: var(--base-10);
+}
+
+.ProfileRow > .Name,
+.ProfileRow > .Address {
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 100%;
+}
+
+.ProfileRow > .Name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--title);
+}
+
+.ProfileRow > .Address {
+  color: var(--sub-text);
+}
+
+.ProfileRow > .RemoveButton {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--sub-text);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.ProfileRow:hover > .RemoveButton,
+.ProfileRow > .RemoveButton:focus-visible {
+  opacity: 1;
+}
+
+.ProfileRow > .RemoveButton:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+  border-radius: 50%;
+}

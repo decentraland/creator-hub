@@ -1,8 +1,10 @@
-import type { OpenDialogOptions } from 'electron';
+import type { OpenDialogOptions, SaveDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
 import type { DeployOptions, DeployServer } from '/shared/types/deploy';
+import type { SceneExportResult, SceneSource } from '/shared/types/scene-export';
+import type { EmptySceneDeploy, EmptySceneDraft } from '/shared/types/land-unpublish';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
@@ -36,17 +38,9 @@ export type IpcError = {
   };
 };
 
-// Asset-conversion progress pushed from main to the renderer while a preview spawn is
-// converting. Shared here because preload subscribes to the channel and cannot import
-// from main, so the event name and payload shape must have a single home.
-export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
-
-export type PreviewProgress = { seconds: number; done?: number; total?: number };
-
 // AI assistant turn events pushed from main to the renderer chat panel while a turn
-// runs. Shared here for the same reason as PREVIEW_PROGRESS_EVENT: preload subscribes
-// to the channel and cannot import from main, so the event name and payload shape
-// need a single home.
+// runs. Shared here because preload subscribes to the channel and cannot import from
+// main, so the event name and payload shape need a single home.
 export const AI_STREAM_EVENT = 'ai.stream';
 
 // The `editor_screenshot` MCP tool lives in main, but only the renderer can capture the
@@ -197,6 +191,15 @@ export interface Ipc {
   'updater.getReleaseNotes': (version: string) => Promise<ReleaseNotes | undefined>;
   'electron.getWorkspaceConfigPath': (path: string) => Promise<string>;
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
+  'electron.showSaveDialog': (opts: Partial<SaveDialogOptions>) => Promise<string | null>;
+  'sceneExport.export': (
+    entityId: string,
+    title: string,
+    source: SceneSource,
+  ) => Promise<SceneExportResult | null>;
+  'sceneExport.cancel': (entityId: string) => Promise<void>;
+  'landUnpublish.prepare': (parcel: string) => Promise<EmptySceneDraft>;
+  'landUnpublish.deploy': (request: EmptySceneDeploy) => Promise<void>;
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
@@ -229,8 +232,6 @@ export interface Ipc {
 
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions, mobile?: boolean) => Promise<string>;
-  'cli.cancelPreview': (path: string) => Promise<void>;
-  'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
   'cli.deploy': (opts: DeployOptions) => Promise<DeployServer>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;

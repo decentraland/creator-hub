@@ -371,9 +371,11 @@ export class Worlds {
         json.thumbnail = this.getContentSrcUrl(json.thumbnail_hash);
       }
       return fromSnakeToCamel(json) as WorldSettings;
-    } else {
-      return null;
     }
+    // 404 is a World with no settings yet. Any other failure must not read as empty settings, or a
+    // first load shows a blank form as if it loaded and a post-save refetch never settles the draft.
+    if (result.status === 404) return null;
+    throw new Error(`Failed to fetch settings for world "${worldName}" (${result.status})`);
   }
 
   public async putWorldSettings(

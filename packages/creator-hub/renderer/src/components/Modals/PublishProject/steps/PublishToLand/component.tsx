@@ -57,24 +57,24 @@ export function PublishToLand(props: Props) {
   );
 
   const publish = useCallback(
-    async (sceneUpdates: SceneParcels) => {
+    async (scene: SceneParcels) => {
       setIsPublishing(true);
-      await updateSceneJson(project.path, { scene: sceneUpdates, worldConfiguration: undefined });
-      updateProject({
-        ...project,
-        scene: sceneUpdates,
-        worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
-        updatedAt: Date.now(),
-      });
-      publishScene({ target: CONTENT_SERVER });
+      // Cannot deploy to a LAND with a world configuration
+      const sceneUpdates = { scene, worldConfiguration: undefined };
+      // Disk first: under Bevy the store update below reloads the editor at the new base, and
+      // the reloaded editor reads scene.json, so it must already hold the pick.
+      await updateSceneJson(project.path, sceneUpdates);
+      updateProject({ ...project, ...sceneUpdates, updatedAt: Date.now() });
+      // The deploy step reports a failed publish from the store (publishError).
+      publishScene({ target: CONTENT_SERVER, sceneUpdates })?.catch(() => undefined);
       props.onStep('deploy');
     },
-    [project, props.onStep],
+    [project, publishScene, updateProject, updateSceneJson, props.onStep],
   );
 
   const handleNext = useCallback(async () => {
     if (!placement) return;
-    const sceneUpdates: SceneParcels = {
+    const scene: SceneParcels = {
       base: `${placement.x},${placement.y}`,
       parcels: calculateParcels(project, placement).map(({ x, y }) => `${x},${y}`),
     };
@@ -88,11 +88,11 @@ export function PublishToLand(props: Props) {
         calculateParcels(project, placement).map(({ x, y }): [number, number] => [x, y]),
       );
       continuityBroken = breaksLandPlaceContinuity(
-        deployed.map(scene => ({
-          base: scene.metadata?.scene?.base ?? '',
-          parcels: scene.metadata?.scene?.parcels ?? scene.pointers ?? [],
+        deployed.map(deployment => ({
+          base: deployment.metadata?.scene?.base ?? '',
+          parcels: deployment.metadata?.scene?.parcels ?? deployment.pointers ?? [],
         })),
-        sceneUpdates,
+        scene,
       );
     } catch (error) {
       // Not being able to tell must not block publishing.
@@ -103,9 +103,9 @@ export function PublishToLand(props: Props) {
 
     if (!isMountedRef.current) return;
     if (continuityBroken) {
-      setPendingScene(sceneUpdates);
+      setPendingScene(scene);
     } else {
-      await publish(sceneUpdates);
+      await publish(scene);
     }
   }, [placement, project, publish]);
 

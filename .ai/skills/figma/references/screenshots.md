@@ -11,6 +11,14 @@
 ## Capturing the render
 
 - **Screenshots are ground truth.** `getComputedStyle` over CDP is unreliable for `:hover` / `:focus-within`.
+- **Compare the full window at Figma's frame size, DPR 1.** Size the window to the frame (1920 × 1080): Playwright `page.setViewportSize` or CDP `Emulation.setDeviceMetricsOverride`, then `screenshot({ scale: 'css' })`; launch Electron with `--force-color-profile=srgb`. A window capped by the display height (953 on a laptop) is not a valid capture. Never compare crops at mismatched scales. Compare side by side, as a 50% overlay, and as per-row pixel profiles, and report measured numbers (px, alpha, ratio), not impressions.
+- **Render traps that move pixels against Figma:**
+  - Variable Inter applies its optical-size axis automatically (`opsz` = font size), rendering 2–3% narrower than Figma. `font-optical-sizing: none` gives Figma's widths.
+  - Fractional line heights (MUI h1 1.167 → 56.016px) push every rule below onto half pixels, smeared over two device rows. Pin line heights to whole px.
+  - `border-collapse: collapse` borders straddle the cell edge and smear the same way. Use `separate` and an inset `box-shadow`.
+  - Figma layer blur N = CSS `blur(N / 2)`.
+  - A centre-constrained child (a modal's glow) is positioned from the parent's centre, not its top: `top: calc(50% + offset)`.
+  - A frame's background can be a different image from the app's. Measure the wash row by row against the app's render rather than copying the layer.
 - **An element screenshot of a panel taller than its scroll area lies.** Playwright captures the element's whole box: the part clipped by the scroll container comes out as a dark band, and whatever is painted over the rest (the docked asset panel) lands in the image — it reads as a layout overlap that isn't there. Before shooting a tall panel, raise the viewport until the element sits entirely inside every `overflow` ancestor, check that in the page, and refuse the shot otherwise; shoot the Before and the After at that same viewport. An all-dark shot of a panel is this artifact, not a design. The guard, in Playwright:
 
   ```js
