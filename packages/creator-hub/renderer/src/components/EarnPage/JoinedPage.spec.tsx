@@ -1,0 +1,153 @@
+import { Provider } from 'react-redux';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { flatten } from 'flat';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
+
+import { misc } from '#preload';
+import { en } from '/@/modules/store/translation/locales';
+import { setCurrentLocale } from '/@/modules/store/translation/utils';
+import { actions } from '/@/modules/store/creatorFund';
+import * as api from '/@/lib/creatorFundApi';
+
+import { createTestStore } from '../../../tests/utils/testStore';
+import { CYCLES, ok } from './joined/fixtures';
+import { JoinedPage, type JoinedTab } from './JoinedPage';
+
+vi.mock('/@/lib/creatorFundApi', () => ({
+  getEnrollment: vi.fn(),
+  getTerms: vi.fn(),
+  getCycles: vi.fn(),
+}));
+vi.mock('./joined/LeaderboardTab', () => ({ LeaderboardTab: () => <p>leaderboard panel</p> }));
+vi.mock('../Modals', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  Modal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
+    open ? <div>{children}</div> : null,
+}));
+
+const JOINED = {
+  status: 'active' as const,
+  enrolled_at: '2026-10-30T14:02:11Z',
+  terms_version: 1,
+  first_name: 'Jane',
+  last_name: 'Doe',
+  email: 'jane.doe@example.com',
+  email_verified_at: null,
+};
+
+async function renderPage(tab: JoinedTab = 'leaderboard') {
+  const store = createTestStore();
+  await act(async () => {
+    await store.dispatch(actions.fetchEnrollment());
+    await store.dispatch(actions.fetchCycles());
+  });
+  const onTabChange = vi.fn();
+  render(
+    <Provider store={store}>
+      <ThemeProvider theme={dark}>
+        <JoinedPage
+          tab={tab}
+          onTabChange={onTabChange}
+        />
+      </ThemeProvider>
+    </Provider>,
+  );
+  return { onTabChange };
+}
+
+describe('JoinedPage', () => {
+  beforeAll(() => {
+    setCurrentLocale('en', flatten(en));
+  });
+
+  beforeEach(() => {
+    vi.mocked(api.getEnrollment).mockResolvedValue({ ok: true, status: 200, data: JOINED });
+    vi.mocked(api.getTerms).mockReturnValue(new Promise(() => {}));
+    vi.mocked(api.getCycles).mockResolvedValue(ok(CYCLES));
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  describe('when it renders', () => {
+    it('should title the page, mark it beta and say when the user joined', async () => {
+      await renderPage();
+
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Earn · Creator Fund');
+      expect(screen.getByText('Beta')).toBeTruthy();
+      expect(screen.getByText('Joined on Oct 30, 2026')).toBeTruthy();
+    });
+
+    it('should show the selected tab panel', async () => {
+      await renderPage('my_places');
+
+      expect(screen.getByRole('tab', { name: 'My Places', selected: true })).toBeTruthy();
+      expect(screen.getByRole('tabpanel').textContent).toBe('');
+    });
+  });
+
+  describe('when moving through the tabs with the keyboard', () => {
+    it('should move focus with the arrow keys and select on click', async () => {
+      const { onTabChange } = await renderPage();
+      const tablist = screen.getByRole('tablist', { name: 'Creator Fund sections' });
+      const leaderboard = within(tablist).getByRole('tab', { name: 'Leaderboard' });
+      const myPlaces = within(tablist).getByRole('tab', { name: 'My Places' });
+
+      leaderboard.focus();
+      fireEvent.keyDown(leaderboard, { key: 'ArrowRight' });
+      expect(document.activeElement).toBe(myPlaces);
+
+      fireEvent.click(myPlaces);
+      expect(onTabChange).toHaveBeenCalledWith('my_places');
+    });
+  });
+
+  describe('when the More options menu is used', () => {
+    it('should offer Read Terms and Contact Support, and open the terms read only', async () => {
+      await renderPage();
+
+      fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+      const items = await screen.findAllByRole('menuitem');
+      expect(items.map(item => item.textContent)).toEqual(['Read Terms', 'Contact Support']);
+
+      fireEvent.click(items[0]);
+
+      expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
+      expect(screen.queryByRole('checkbox')).toBeNull();
+    });
+
+    it.each(['leaderboard', 'my_places'] as const)(
+      'should open support in the browser from Contact Support on %s',
+      async tab => {
+        await renderPage(tab);
+
+        fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+        fireEvent.click(await screen.findByRole('menuitem', { name: 'Contact Support' }));
+
+        expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/help/');
+        expect(screen.queryByRole('menu')).toBeNull();
+      },
+    );
+  });
+
+  describe('when no cycle has closed yet', () => {
+    beforeEach(() => {
+      vi.mocked(api.getCycles).mockResolvedValue(
+        ok({ cycles: CYCLES.cycles.filter(cycle => cycle.status !== 'closed') }),
+      );
+    });
+
+    it('should offer support only from the More options menu, not from a header button', async () => {
+      await renderPage();
+
+      expect(screen.queryByRole('button', { name: 'Contact support' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Contact Support' }));
+
+      expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/help/');
+    });
+  });
+});

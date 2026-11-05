@@ -10,6 +10,9 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
 
+import { EarnMenu } from './joined/EarnHeader';
+import { MenuCorner } from './joined/EarnHeader.styled';
+import { JoinedPage, type JoinedTab } from './JoinedPage';
 import { IneligibleModal, JoinFlow, type JoinOutcome } from './JoinFlow';
 import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing';
 import { Spinner } from './Spinner';
@@ -33,6 +36,7 @@ function EarnContent() {
   const [joinFailed, setJoinFailed] = useState(false);
   const [reacceptFailed, setReacceptFailed] = useState(false);
   const [reaccepting, setReaccepting] = useState(false);
+  const [tab, setTab] = useState<JoinedTab>('leaderboard');
   const joinAfterSignIn = (location.state as EarnLocationState)?.joinAfterSignIn === true;
 
   useEffect(() => {
@@ -76,6 +80,7 @@ function EarnContent() {
   const handleExit = useCallback((outcome: JoinOutcome) => {
     setJoining(false);
     setJoinFailed(outcome === 'failed');
+    if (outcome === 'joined') setTab('my_places');
     if (outcome === 'conflict') setAttempt(value => value + 1);
   }, []);
 
@@ -137,9 +142,14 @@ function EarnContent() {
 
   if (enrollment && enrollment.status !== 'active') {
     return (
-      <Landing audience="signed_in">
-        <LandingStatus />
-      </Landing>
+      <>
+        <MenuCorner>
+          <EarnMenu />
+        </MenuCorner>
+        <Landing audience="signed_in">
+          <LandingStatus />
+        </Landing>
+      </>
     );
   }
 
@@ -162,7 +172,12 @@ function EarnContent() {
         error={reacceptFailed ? t('earn.errors.generic') : undefined}
         status={reaccepting ? 'submitting' : 'idle'}
       />
-    ) : null;
+    ) : (
+      <JoinedPage
+        tab={tab}
+        onTabChange={setTab}
+      />
+    );
   }
 
   return (
