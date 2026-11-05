@@ -1661,6 +1661,7 @@
           "no_data": "Sin datos"
         },
         "empty": "Ninguno de tus lugares está en el programa todavía. Publica una escena en LAND o en un World abierto y se unirá automáticamente.",
+        "empty_closed_cycle": "No hubo lugares en este ciclo.",
         "error": "No se pudieron cargar tus lugares.",
         "replaced_tooltip": "Este lugar se volvió a publicar como uno nuevo. Se conservan sus cifras anteriores."
       },

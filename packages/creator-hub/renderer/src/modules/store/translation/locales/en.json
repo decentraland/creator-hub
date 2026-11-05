@@ -1661,6 +1661,7 @@
           "no_data": "No data"
         },
         "empty": "None of your places are in the program yet. Publish a scene on LAND or an open World and it joins automatically.",
+        "empty_closed_cycle": "No places in this cycle.",
         "error": "Couldn't load your places.",
         "replaced_tooltip": "This place was republished as a new one. Its earlier numbers are kept."
       },

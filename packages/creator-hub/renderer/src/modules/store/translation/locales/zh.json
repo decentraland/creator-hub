@@ -1661,6 +1661,7 @@
           "no_data": "无数据"
         },
         "empty": "你的地点尚未加入计划。在 LAND 或开放的 World 上发布场景，它会自动加入。",
+        "empty_closed_cycle": "本周期没有地点。",
         "error": "无法加载你的地点。",
         "replaced_tooltip": "此地点已作为新地点重新发布。其之前的数据会保留。"
       },
