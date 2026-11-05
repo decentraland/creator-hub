@@ -7,6 +7,7 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
+import { actions } from '/@/modules/store/creatorFund';
 import { misc } from '#preload';
 
 import { createTestStore } from '../../../tests/utils/testStore';
@@ -216,6 +217,40 @@ describe('TermsModal', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
 
       expect(onClose).toHaveBeenCalled();
+    });
+  });
+
+  describe('when a newer version arrives after the cached terms were accepted', () => {
+    it('should close the gate again for the new text', async () => {
+      let answer: (value: unknown) => void = () => {};
+      vi.mocked(api.getTerms).mockReturnValue(new Promise(resolve => (answer = resolve)) as any);
+      const store = createTestStore();
+      store.dispatch(actions.fetchTerms.pending('cached', undefined));
+      store.dispatch(actions.fetchTerms.fulfilled(TERMS, 'cached', undefined));
+      const onAccept = vi.fn();
+      render(
+        <Provider store={store}>
+          <ThemeProvider theme={dark}>
+            <TermsModal
+              variant="accept"
+              onAccept={onAccept}
+              onClose={vi.fn()}
+            />
+          </ThemeProvider>
+        </Provider>,
+      );
+      fireEvent.click(await screen.findByRole('checkbox'));
+
+      stubScrollableBox();
+      await act(async () =>
+        answer({ ok: true, status: 200, data: { ...TERMS, version: 2, content: 'Longer.' } }),
+      );
+
+      expect(screen.queryByRole('checkbox')).toBeNull();
+      const accept = screen.getByRole('button', { name: 'Accept & Join' }) as HTMLButtonElement;
+      expect(accept.disabled).toBe(true);
+      fireEvent.click(accept);
+      expect(onAccept).not.toHaveBeenCalled();
     });
   });
 

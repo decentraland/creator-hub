@@ -91,11 +91,18 @@ export const fetchCycles = createAsyncThunk(
   async (_: void, { rejectWithValue }) => settle(await api.getCycles(), rejectWithValue),
 );
 
-/** `GET /leaderboard` for a closed cycle, or `'all'`. */
+/**
+ * `GET /leaderboard` for a closed cycle, or `'all'`. The answer is stamped with the cycle asked
+ * for: the tab matches on it, and the service may echo it in another form (`"3"`, or `null` for
+ * `all`), which would leave the tab waiting forever.
+ */
 export const fetchLeaderboard = createAsyncThunk(
   'creatorFund/fetchLeaderboard',
-  async (cycle: LeaderboardCycle, { rejectWithValue }) =>
-    settle(await api.getLeaderboard(cycle), rejectWithValue),
+  async (cycle: LeaderboardCycle, { rejectWithValue }) => {
+    const response = await api.getLeaderboard(cycle);
+    if (!response.ok) return rejectWithValue(response);
+    return { ...response.data, cycle_id: cycle };
+  },
 );
 
 /** `GET /places?cycle=`: the user's places for a cycle, no paging; with no cycle the service picks one. */
