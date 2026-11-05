@@ -36,7 +36,9 @@ export type ScriptParamUnion =
   | ScriptParamString
   | ScriptParamEnum
   | ScriptParamEntity
-  | ScriptParamAction;
+  | ScriptParamAction
+  | ScriptParamObject
+  | ScriptParamArray;
 
 export type ScriptParam = {
   optional?: boolean;
@@ -82,4 +84,25 @@ export type ScriptParamEntity = ScriptParam & {
 export type ScriptParamAction = ScriptParam & {
   type: 'action';
   value: ActionRef;
+};
+
+// A nested object param, declared with an inline type literal in the constructor
+// (e.g. `coords: { x: number; y: number; z: number }`). `value` holds the PLAIN JSON
+// object handed to the constructor at runtime; `fields` is editor-only metadata (the
+// per-key type/shape + default) that the runtime ignores. Keeping data and schema
+// apart is what preserves the "runtime spreads `value` verbatim" contract — see
+// `resolveScriptParams` in @dcl/sdk-commands.
+export type ScriptParamObject = ScriptParam & {
+  type: 'object';
+  value: Record<string, unknown>;
+  fields: Record<string, ScriptParamUnion>;
+};
+
+// A list param, declared with `T[]` or `Array<T>` in the constructor. `value` is the
+// PLAIN JSON array handed to the constructor; `item` is editor-only metadata describing
+// one element's type/shape + default (used to render each row and to seed new rows).
+export type ScriptParamArray = ScriptParam & {
+  type: 'array';
+  value: unknown[];
+  item: ScriptParamUnion;
 };
