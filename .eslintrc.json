@@ -24,6 +24,25 @@
     "**/catalog.json",
     "**/devtools-frontend/**"
   ],
+  "overrides": [
+    {
+      /**
+       * Smart-item scene sources compile JSX through an explicit
+       * `@jsx ReactEcs.createElement` pragma, which no loaded plugin teaches ESLint
+       * to see, so the factory import reads as unused.
+       */
+      "files": ["packages/asset-packs/packs/**/*.tsx"],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          {
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^(_|ReactEcs$)"
+          }
+        ]
+      }
+    }
+  ],
 
   "rules": {
     "no-inner-declarations": "off",

@@ -1,6 +1,13 @@
 import { Filter } from './Filters/types';
 import { buildAssetTree, buildBuiltInAnimationsFolder } from './utils';
-import { generateAssetTree, getEmptiedFolders, getTiles, ROOT } from './tree';
+import {
+  countMatches,
+  generateAssetTree,
+  getChildren,
+  getEmptiedFolders,
+  getTiles,
+  ROOT,
+} from './tree';
 
 const folders = buildAssetTree(['asset-packs/dance/Avatar_Dance_emote.glb', 'models/chair.glb'])
   .children as Parameters<typeof generateAssetTree>[0];
@@ -104,5 +111,49 @@ describe('when the catalog has built-in animations', () => {
       'Wave',
       'Avatar_Dance_emote.glb',
     ]);
+  });
+});
+
+describe('when filtering or searching the folder tree', () => {
+  const nested = buildAssetTree([
+    'Models/example/model.glb',
+    'Models/other/chair.glb',
+    'scene/main.composite',
+    'scene/thumb.png',
+  ]).children as Parameters<typeof generateAssetTree>[0];
+  const { tree } = generateAssetTree(nested, new Set());
+
+  const names = (nodeId: string, search: string, filter: Filter) =>
+    getTiles(nodeId, tree, search, filter).map(node => node.name);
+
+  it('should keep every folder in the tree, whatever is searched or filtered', () => {
+    const folderNames = [...tree.values()].filter(node => node.type === 'folder').map(n => n.name);
+    expect(folderNames).toEqual(expect.arrayContaining(['Models', 'example', 'other', 'scene']));
+    expect(getChildren(ROOT, tree)).toEqual(['Models', 'scene']);
+  });
+
+  it('should list matches from every folder when the root is selected', () => {
+    expect(names(ROOT, '', Filter.Models)).toEqual(['model.glb', 'chair.glb']);
+  });
+
+  it('should narrow the results to the selected folder', () => {
+    expect(names('Models/other', '', Filter.Models)).toEqual(['chair.glb']);
+    expect(names('scene', '', Filter.Models)).toEqual([]);
+  });
+
+  it('should count matches per folder, leaving out folders without any', () => {
+    const counts = countMatches(tree, '', Filter.Models);
+    expect(Object.fromEntries(counts)).toEqual({
+      Models: 2,
+      'Models/example': 1,
+      'Models/other': 1,
+    });
+  });
+
+  it('should count search matches by file name', () => {
+    expect(Object.fromEntries(countMatches(tree, 'chair', Filter.All))).toEqual({
+      Models: 1,
+      'Models/other': 1,
+    });
   });
 });
