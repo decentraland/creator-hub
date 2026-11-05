@@ -27,7 +27,12 @@ export const WorldPermissionsItem: React.FC<BaseProps> = React.memo(
           {tag}
         </Row>
         <Box>{children}</Box>
-        {menuOptions && <Dropdown options={menuOptions} />}
+        {menuOptions && (
+          <Dropdown
+            label={t('menu.options_for', { name: name || walletAddress })}
+            options={menuOptions}
+          />
+        )}
       </Box>
     );
   },
