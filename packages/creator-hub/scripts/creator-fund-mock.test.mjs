@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { after, before, describe, it } from 'node:test';
 
-import { createMockServer, mockConfigFromEnv } from './creator-fund-mock.mjs';
+import {
+  createMockServer,
+  mockConfigFromEnv,
+} from '../main/src/modules/creator-fund-fixtures/server.mjs';
 
 const SIGNER = '0x00000000000000000000000000000000000000aa';
 

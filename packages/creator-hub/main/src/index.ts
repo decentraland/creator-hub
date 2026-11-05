@@ -1,6 +1,6 @@
 import { platform } from 'node:process';
 import path from 'node:path';
-import { app } from 'electron';
+import { app, dialog } from 'electron';
 import {
   init as sentryInit,
   captureException,
@@ -32,6 +32,10 @@ import {
 } from '/@/modules/mcp-discovery';
 import { stopExplorerGateway } from '/@/modules/explorer-gateway';
 import { runMigrations } from '/@/modules/migrations';
+import {
+  startCreatorFundFixtures,
+  stopCreatorFundFixtures,
+} from '/@/modules/creator-fund-fixtures';
 import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
 import {
@@ -155,6 +159,10 @@ app
     });
     log.info('[IPC] Ready');
     void initMcpDiscovery();
+    await startCreatorFundFixtures().catch(error => {
+      log.error('[CreatorFund] Fixtures failed to start:', error);
+      dialog.showErrorBox('Creator Fund fixtures did not start', error.message);
+    });
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
     await addEditorsPathsToConfig();
@@ -251,6 +259,7 @@ app.on('before-quit', async event => {
   quitInProgress = true;
   await killAll();
   await flushTelemetry();
+  await stopCreatorFundFixtures();
   log.info('[App] Quit');
   app.exit();
 });

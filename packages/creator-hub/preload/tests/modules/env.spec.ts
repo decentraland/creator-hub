@@ -1,40 +1,28 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('electron', () => ({ ipcRenderer: { sendSync: vi.fn() } }));
+const sendSync = vi.fn();
+vi.mock('electron', () => ({ ipcRenderer: { sendSync } }));
 
 const { getApiUrlOverrides } = await import('../../src/modules/env');
 
 describe('getApiUrlOverrides', () => {
   beforeEach(() => {
-    vi.stubEnv('CREATOR_FUND_API_URL', 'http://localhost:8788');
-    vi.stubEnv('METRICS_API_URL', 'http://localhost:8788/v2');
-    vi.stubEnv('WORLDS_CONTENT_SERVER_URL', '');
-    vi.stubEnv('PEER_URL', 'http://localhost:9999');
+    sendSync.mockReset();
   });
 
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
+  describe('when main answers with overrides', () => {
+    it("should return main's overrides", () => {
+      sendSync.mockReturnValue({ CREATOR_FUND_API_URL: 'http://127.0.0.1:50123' });
 
-  describe('when the build is a dev build', () => {
-    beforeEach(() => {
-      vi.stubEnv('DEV', true);
-    });
-
-    it('should return the API base URLs set in the environment, and nothing else', () => {
-      expect(getApiUrlOverrides()).toEqual({
-        CREATOR_FUND_API_URL: 'http://localhost:8788',
-        METRICS_API_URL: 'http://localhost:8788/v2',
-      });
+      expect(getApiUrlOverrides()).toEqual({ CREATOR_FUND_API_URL: 'http://127.0.0.1:50123' });
+      expect(sendSync).toHaveBeenCalledWith('creatorFund.getApiUrlOverrides');
     });
   });
 
-  describe('when the build is a release build', () => {
-    beforeEach(() => {
-      vi.stubEnv('DEV', false);
-    });
+  describe('when main fails to answer', () => {
+    it('should override nothing', () => {
+      sendSync.mockReturnValue(null);
 
-    it('should ignore the environment', () => {
       expect(getApiUrlOverrides()).toEqual({});
     });
   });

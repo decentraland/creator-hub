@@ -1,4 +1,5 @@
 import { ipcRenderer } from 'electron';
+import type { ApiUrlOverrides } from '/shared/types/creator-fund';
 import { Env } from '/shared/types/env';
 
 /**
@@ -20,19 +21,7 @@ export function getEnv(): Env {
   return import.meta.env.DEV ? Env.DEV : Env.PROD;
 }
 
-const API_URL_OVERRIDES = [
-  'CREATOR_FUND_API_URL',
-  'METRICS_API_URL',
-  'WORLDS_CONTENT_SERVER_URL',
-] as const;
-
-/**
- * API base URLs from the environment, overriding the renderer config.
- * @returns the set ones in a dev build; `{}` in a release build.
- */
-export function getApiUrlOverrides(): Partial<Record<(typeof API_URL_OVERRIDES)[number], string>> {
-  if (!import.meta.env.DEV) return {};
-  return Object.fromEntries(
-    API_URL_OVERRIDES.filter(name => process.env[name]).map(name => [name, process.env[name]]),
-  );
+/** The API base URLs main has the renderer config use instead of its own. */
+export function getApiUrlOverrides(): ApiUrlOverrides {
+  return (ipcRenderer.sendSync('creatorFund.getApiUrlOverrides') as ApiUrlOverrides | null) ?? {};
 }
