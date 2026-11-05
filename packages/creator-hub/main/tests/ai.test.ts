@@ -669,6 +669,20 @@ describe('codex buildArgs working dir', () => {
     expect(args.slice(0, 3)).toEqual(['exec', 'resume', 'thread-1']);
   });
 
+  // Regression: `codex exec resume` (0.166) defines no `--sandbox` flag either, so every
+  // follow-up turn failed with `unexpected argument '--sandbox' found`. The sandbox policy
+  // rides on `-c sandbox_mode=…`, which both subcommands accept.
+  it('never passes --sandbox (resume rejects it; the policy rides on -c sandbox_mode)', () => {
+    for (const ctx of [{ ...base }, { ...base, resume: 'thread-1' }]) {
+      const { args } = PROVIDERS.codex.buildArgs(ctx);
+      expect(args).not.toContain('--sandbox');
+      expect(args).not.toContain('-s');
+      const overrides = args.filter((a, i) => args[i - 1] === '-c');
+      expect(overrides).toContain('sandbox_mode="danger-full-access"');
+      expect(overrides).toContain('approval_policy="never"');
+    }
+  });
+
   it('starts a fresh turn with `exec` (no resume subcommand)', () => {
     const { args } = PROVIDERS.codex.buildArgs({ ...base });
     expect(args[0]).toBe('exec');
