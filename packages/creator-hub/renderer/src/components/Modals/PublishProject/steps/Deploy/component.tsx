@@ -42,6 +42,7 @@ import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
 import { parseCoords } from '/@/components/Modals/PublishProject/utils';
 
+import { SettingsLink } from './Deploy.styled';
 import { DeployProgress, type DeployCancel } from './DeployProgress';
 
 import './styles.css';
@@ -65,11 +66,17 @@ export function Deploy(props: Props) {
   const { getDeployment, executeDeployment } = useDeploy();
   const { pushCustom } = useSnackbar();
   const worldScenes = useSelector(managementSelectors.getWorldScenes);
+  const names = useSelector(state => state.ens.data);
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
+  const worldName = project.worldConfiguration?.name;
+  const ownsWorld =
+    !!wallet &&
+    !!worldName &&
+    names[worldName]?.nftOwnerAddress?.toLowerCase() === wallet.toLowerCase();
 
   /** True if the project needs to undeploy existing world scenes before deploying the new one.
    * True when deploying to a single-scene world and there are existing scenes in the world that do not overlap with the project parcels. */
@@ -385,7 +392,9 @@ export function Deploy(props: Props) {
                   <Success
                     info={deployment.info}
                     url={shareUrl}
+                    worldName={deployment.info.isWorld && ownsWorld ? worldName : undefined}
                     onClick={handleJumpIn}
+                    onClose={props.onClose}
                   />
                 )}
               </>
@@ -588,10 +597,13 @@ function Error({
 type SuccessProps = {
   info: Info;
   url: string;
+  worldName?: string;
   onClick: () => void;
+  onClose: () => void;
 };
 
-function Success({ info, url, onClick }: SuccessProps) {
+/** The publish result: the share URL, Jump In and, for a World, a link to its Settings tab. */
+export function Success({ info, url, worldName, onClick, onClose }: SuccessProps) {
   return (
     <div
       className="Success"
@@ -604,6 +616,14 @@ function Success({ info, url, onClick }: SuccessProps) {
           info={info}
           url={url}
         />
+        {worldName && (
+          <SettingsLink
+            to={`/manage/world/${encodeURIComponent(worldName)}/settings`}
+            onClick={onClose}
+          >
+            {t('modal.publish_project.deploy.success.world_settings')}
+          </SettingsLink>
+        )}
         <div className="indexing-note">
           {t('modal.publish_project.deploy.success.indexing_note')}
         </div>
