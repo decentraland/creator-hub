@@ -29,10 +29,9 @@ const initialState: Async<Workspace> = {
       multiInstance: false,
       mcp: false,
       showWarnings: true,
-      optimizedAssets: false,
+      loadRawGltfs: false,
       client: DEFAULT_PREVIEW_CLIENT,
     },
-    optimizedAssetsByPath: {},
     experimental: false,
     renderer: DEFAULT_RENDERER,
     aiAssistant: true,
@@ -190,10 +189,10 @@ export const slice = createSlice({
         state.settings = meta.arg;
       })
       .addCase(thunks.fetchSdkCommandsVersion.fulfilled, (state, action) => {
-        if (!supportsMultiInstance(action.payload)) {
+        if (!supportsMultiInstance(action.payload.version)) {
           state.settings.previewOptions.multiInstance = false;
         }
-        if (!supportsMcp(action.payload)) {
+        if (!supportsMcp(action.payload.version)) {
           state.settings.previewOptions.mcp = false;
         }
       })

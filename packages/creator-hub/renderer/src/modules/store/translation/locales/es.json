@@ -55,8 +55,6 @@
         "code": "Código",
         "optimize": "Optimizar",
         "play": "Jugar",
-        "optimizing": "Optimizando",
-        "cancel_optimizing": "Cancelar la optimización",
         "publish": "Publicar",
         "refresh": "Recargar escena desde disco",
         "preview_options": {
@@ -69,11 +67,10 @@
           "skip_auth_screen": "Omitir la pantalla de autenticación",
           "open_new_instance": "Abrir multiples clientes",
           "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica",
+          "load_raw_gltfs": "Cargar GLTFs sin procesar",
           "landscape_terrain_disabled_by_scene": "El terreno panorámico está oculto por la configuración de esta escena",
           "multi_instance": "Vista previa multi-instancia",
           "mcp": "Habilitar servidor MCP",
-          "optimized_assets": "Comprimir Assets",
-          "optimized_assets_tooltip": "Previsualiza la escena con los assets comprimidos igual que en producción",
           "mobile_preview": "Mostrar código QR para móvil"
         },
         "publish_options": {
@@ -949,6 +946,8 @@
       "delete_scene": "Borrando escena...",
       "delete_scene_failed": "Error al borrar escena",
       "dependencies_updated": "Las dependencias de la escena fueron actualizadas",
+      "multiplayer_sdk_installed": "SDK de Multiplayer Server instalado.",
+      "multiplayer_sdk_uninstalled": "SDK de Multiplayer Server quitado. Última versión del SDK instalada.",
       "updating_sdk_skills": "Instalando las últimas habilidades de IA...",
       "sdk_skills_updated": "Las habilidades de IA están al día",
       "sdk_skills_update_failed": "No se pudieron instalar las habilidades de IA",

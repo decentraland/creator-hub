@@ -16,6 +16,7 @@ import type {
 } from '../../../sdk/components';
 import { SceneCategory } from '../../../sdk/components';
 import { getConfig } from '../../../logic/config';
+import { isAddress } from '../../../logic/ethereum';
 import type { TransitionMode } from '../../../sdk/components/SceneMetadata';
 
 export function isEqual(
@@ -77,7 +78,18 @@ type SceneWithRating = Scene & {
   rating: SceneAgeRating;
   skyboxConfig?: { fixedTime?: number; transitionMode?: TransitionMode };
   landscapeTerrain?: boolean;
+  authoritativeMultiplayer?: boolean;
+  logsPermissions?: string[];
 };
+
+const HEX_PREFIX = /^0x/i;
+
+function toAllowlist(addresses: readonly string[] | undefined): string[] {
+  const normalized = (addresses ?? [])
+    .filter(address => isAddress(address))
+    .map(address => `0x${address.replace(HEX_PREFIX, '')}`);
+  return Array.from(new Set(normalized));
+}
 
 export type SceneJsonSpawnPoint = NonNullable<Scene['spawnPoints']>[number];
 
@@ -144,6 +156,7 @@ export function fromSceneComponent(
     value.layout.parcels.map($ => `${$.x},${$.y}`),
     value.layout.base ? `${value.layout.base.x},${value.layout.base.y}` : undefined,
   );
+  const allowlist = toAllowlist(value.logsPermissions);
   const scene: Partial<SceneWithRating> = {
     display: {
       title: value.name || '',
@@ -172,6 +185,8 @@ export function fromSceneComponent(
       transitionMode: value.skyboxConfig?.transitionMode,
     },
     landscapeTerrain: !value.hideLandscapeTerrain,
+    authoritativeMultiplayer: !!value.multiplayerServer,
+    logsPermissions: allowlist.length ? allowlist : undefined,
   };
 
   if (config.segmentAppId && config.projectId) {
@@ -187,6 +202,7 @@ export function fromSceneComponent(
 
 export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
   const { parcels, base } = getValidParcels(value.scene?.parcels, value.scene?.base);
+  const rawLogsPermissions = (value as SceneWithRating).logsPermissions;
   const categories: SceneCategory[] = [];
   const tags: string[] = [];
 
@@ -215,6 +231,10 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     disablePortableExperiences: value.featureToggles?.portableExperiences === 'disabled',
     disableNearbyVoiceChat: value.featureToggles?.nearbyVoiceChat === 'disabled',
     hideLandscapeTerrain: (value as SceneWithRating).landscapeTerrain === false,
+    multiplayerServer: (value as SceneWithRating).authoritativeMultiplayer === true,
+    logsPermissions: toAllowlist(
+      Array.isArray(rawLogsPermissions) ? rawLogsPermissions : undefined,
+    ),
     ageRating: (value as SceneWithRating).rating,
     skyboxConfig: {
       fixedTime: (value as SceneWithRating).skyboxConfig?.fixedTime,

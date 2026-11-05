@@ -10,6 +10,9 @@ enum Method {
   GET_FEATURE_FLAGS = 'get_feature_flags',
   UPDATE_SDK = 'update_sdk',
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
+  INSTALL_MULTIPLAYER = 'install_multiplayer',
+  UNINSTALL_MULTIPLAYER = 'uninstall_multiplayer',
+  GET_PROFILES = 'get_profiles',
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
   MENTION_ASSET = 'mention_asset',
@@ -19,6 +22,13 @@ enum Method {
   NOTIFY_READY = 'notify_ready',
 }
 
+export type ProfileSummary = {
+  address: string;
+  /** Absolute URL, composed host-side — see the host's `resolveProfiles`. */
+  faceUrl?: string;
+  name?: string;
+};
+
 type Params = {
   [Method.OPEN_FILE]: { path: string };
   [Method.OPEN_DIRECTORY]: { path: string; createIfNotExists?: boolean };
@@ -27,6 +37,9 @@ type Params = {
   [Method.GET_FEATURE_FLAGS]: Record<string, never>;
   [Method.UPDATE_SDK]: Record<string, never>;
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
+  [Method.INSTALL_MULTIPLAYER]: Record<string, never>;
+  [Method.UNINSTALL_MULTIPLAYER]: Record<string, never>;
+  [Method.GET_PROFILES]: { addresses: string[] };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
   [Method.MENTION_ASSET]: AssetMention;
@@ -55,6 +68,9 @@ type Result = {
   [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
   [Method.UPDATE_SDK]: { ok: boolean };
   [Method.SET_UI_DESIGNER_MODE]: void;
+  [Method.INSTALL_MULTIPLAYER]: { ok: boolean };
+  [Method.UNINSTALL_MULTIPLAYER]: { ok: boolean };
+  [Method.GET_PROFILES]: { profiles: ProfileSummary[] };
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
   [Method.MENTION_ASSET]: void;
@@ -98,6 +114,35 @@ export class SceneClient extends RPC<Method, Params, Result> {
 
   updateSdk = () => {
     return this.request('update_sdk', {});
+  };
+
+  /**
+   * Install the authoritative-server SDK into the scene. The host owns the
+   * package list; this takes no parameters so the iframe can never hand npm
+   * an arbitrary spec.
+   */
+  installMultiplayer = () => {
+    return this.request('install_multiplayer', {});
+  };
+
+  /**
+   * Put the scene back on the latest SDK release, replacing the authoritative-server
+   * build. Parameterless for the same reason as `installMultiplayer`.
+   */
+  uninstallMultiplayer = () => {
+    return this.request('uninstall_multiplayer', {});
+  };
+
+  /**
+   * Resolve wallet addresses to Decentraland profiles through the host, which
+   * owns the lookup and its cache. Returns one entry per accepted address in
+   * every failure mode; an unresolved address comes back with no name and no
+   * face. The host ignores anything that is not address-shaped and caps the
+   * batch, so an address it ignored has no entry at all — key the response by
+   * address rather than by position, and read a missing entry as unresolved.
+   */
+  getProfiles = (addresses: string[]) => {
+    return this.request('get_profiles', { addresses });
   };
 
   setUiDesignerMode = (open: boolean) => {
