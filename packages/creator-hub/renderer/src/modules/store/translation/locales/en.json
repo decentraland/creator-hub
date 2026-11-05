@@ -45,9 +45,11 @@
         "back": "Back to scenes",
         "retry": "Retry",
         "outdated_deps": "This scene's dependencies are out of date and don't support the Bevy renderer. Update them to continue.",
-        "update_deps": "Update dependencies"
+        "update_deps": "Update dependencies",
+        "data_layer_crashed": "The scene keeps stopping unexpectedly. Go back and reopen it, or check the logs."
       }
     },
+    "realm_restarted": "The scene stopped unexpectedly and was reloaded. Changes from the last few seconds may not have been saved.",
     "header": {
       "actions": {
         "code": "Code",
@@ -129,6 +131,8 @@
       },
       "retry": "Retry",
       "revert": "Undo AI changes",
+      "revert_blocked": "Couldn't undo: another AI app changed the scene after this, and undoing now would remove its changes too. Use Undo in the editor instead.",
+      "revert_failed": "Couldn't undo the AI changes. Use Undo in the editor instead.",
       "selection": "Selection: {names}",
       "selection_clear": "Clear",
       "asset_mention": "Asset: {name}",
@@ -150,6 +154,9 @@
         "signin_cancel": "Cancel sign-in",
         "signin_starting": "Starting sign-in…",
         "signin_browser": "Finish signing in in your browser, then come back.",
+        "signin_code_hint": "Did the browser not bring you back here? Open the link above, sign in, then paste the code the page shows.",
+        "signin_code_placeholder": "Paste the code",
+        "signin_code_submit": "Submit code",
         "manual_title": "Prefer the terminal? Install and sign in yourself:",
         "recheck": "Recheck",
         "ready": "Ready",
@@ -158,8 +165,9 @@
         "alt_copy": "Copy configuration",
         "alt_copied": "Copied",
         "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts.",
+        "alt_access_off": "To connect one, turn on “Allow other AI apps to edit your scenes” in Settings → AI.",
         "install_guide": "If that doesn't work, follow the {provider} install guide",
-        "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so install Claude Code and sign in once:",
+        "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so sign in to Claude Code once.",
         "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license.",
         "needs_login_status": "Sign-in needed",
         "needs_login_title": "{provider} asked you to sign in",
@@ -167,6 +175,9 @@
         "needs_login_managed_help": "Its saved sign-in may have expired, even if it showed as connected. In Settings → AI, click Sign out, then Sign in, then send your message again.",
         "api_key_alternative": "Or use an API key: set {envVar} and turn on \"{setting}\" in Settings → AI."
       }
+    },
+    "publish": {
+      "save_failed": "Couldn't save your scene before publishing, so publishing was stopped to avoid deploying older content. {reason}"
     }
   },
   "scene_list": {
@@ -514,7 +525,8 @@
           "url": "The URL to jump in your {target} is:",
           "world": "World",
           "land": "Land",
-          "jump_in": "Jump In"
+          "jump_in": "Jump In",
+          "indexing_note": "The scene itself is live now. Its card in the explorer — title, description and thumbnail — is indexed separately and can take a few minutes to catch up."
         }
       }
     },
@@ -593,16 +605,20 @@
         "experimental": {
           "label": "Experimental features"
         },
+        "dev_asset_catalog": {
+          "toggle": "Use development asset CDN",
+          "help": "Load smart items from the development CDN instead of production, so assets uploaded from a pull request can be tested before release. Restart the editor and re-add items after changing this. Development builds only."
+        },
         "ai_assistant": {
           "label": "Enable AI Assistant",
           "help": "Runs your installed Claude, Codex, Cursor, or Gemini CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."
         },
         "mcp_server": {
-          "label": "Expose AI assistant MCP server",
-          "help": "Let an AI agent running outside Creator Hub control the open scene. Paste this into the agent's MCP configuration.",
+          "label": "Allow other AI apps to edit your scenes",
+          "help": "Lets AI apps you use on this computer, like Claude Code or Codex, see and change the scene you have open. Claude Code started in your scene's folder connects on its own. Turning this off disconnects them right away. The AI Assistant above doesn't need this.",
           "copy": "Copy configuration",
           "copied": "Copied!",
-          "note": "Localhost only. The URL and token change each time Creator Hub restarts."
+          "note": "Only apps on this computer can connect. These details change each time Creator Hub restarts or this is turned off."
         },
         "ai_api_key": {
           "label": "Bill this to an API key instead",
@@ -613,6 +629,7 @@
           "connected": "Connected",
           "sign_in": "Sign in",
           "sign_out": "Sign out",
+          "sign_out_shared": "Also signs you out of {agent} everywhere else on this computer (desktop app, editor extension, terminal).",
           "cancel": "Cancel",
           "via_terminal": "Via Terminal",
           "install": "Install",
@@ -958,6 +975,13 @@
         "discard_all": "Discard all"
       }
     },
+    "external_agent_access": {
+      "title": "An AI app on this computer wants to see and change your open scene.",
+      "actions": {
+        "allow": "Allow",
+        "deny": "Don't allow"
+      }
+    },
     "new_dependency_version": {
       "title": "New dependencies version detected",
       "actions": {
@@ -1181,6 +1205,9 @@
     "header": {
       "title": "Analytics"
     },
+    "sign_in": {
+      "title": "Sign in to see your Places analytics"
+    },
     "empty_list": {
       "title": "No Places to analyse yet",
       "description": "Publish a scene to start tracking its performance. Once it's live, you'll find key insights and metrics about your Place here.",
@@ -1229,12 +1256,35 @@
         "description": "Understand the percentage of users who return after their first session.",
         "platforms": {
           "title": "Platforms",
-          "description": "Your 60-day rolling average, compared across mobile and desktop."
+          "description": "Your {days}-day rolling average, compared across mobile and desktop.",
+          "tooltips": {
+            "all": "Day 7 retention of all new users, whatever client they used.",
+            "desktop": "Day 7 retention of new users who first visited from a desktop client.",
+            "mobile": "Day 7 retention of new users who first visited from a mobile client."
+          }
+        },
+        "day_3": {
+          "title": "Day 3 Retention",
+          "description": "Percentage of new users who returned within 3 days of their first visit, compared across mobile and desktop.",
+          "tooltips": {
+            "all": "Day 3 retention of all new users, whatever client they used.",
+            "desktop": "Day 3 retention of new users who first visited from a desktop client.",
+            "mobile": "Day 3 retention of new users who first visited from a mobile client."
+          }
+        },
+        "day_3_cohort": {
+          "title": "Day 3 Retention by Cohort Week",
+          "description": "Percentage of new users who returned at least once over the 3 days after their first visit, grouped by the week they first jumped into your place.",
+          "benchmark": "{value}% Day 3 KR"
         },
         "day_7_cohort": {
           "title": "Day 7 Retention by Cohort Week",
-          "description": "Percentage of users who returned at least once over the 7 days after their first visit, grouped by the week they first jumped into your place.",
-          "benchmark": "{value}% Day 7 KR"
+          "description": "Percentage of new users who returned at least once over the 7 days after their first visit, grouped by the week they first jumped into your place.",
+          "benchmark": "{value}% Day 7 KR",
+          "settling": {
+            "tooltip": "Still settling: this cohort started less than 14 days ago, so its returns are still being counted.",
+            "caption": "Dotted line: cohorts from the last 14 days, whose returns are still being counted."
+          }
         },
         "churn": {
           "title": "Weekly Churn Rate",
@@ -1342,6 +1392,10 @@
         "label": "Unique Visits",
         "tooltip": "Distinct users who visited your place, counted once each."
       },
+      "new_players": {
+        "label": "New Decentraland Players",
+        "tooltip": "Wallets new to Decentraland whose first day was spent mostly in your place."
+      },
       "new_users": {
         "label": "New Users",
         "tooltip": "Users who visited your place for the first time."
@@ -1354,9 +1408,13 @@
         "label": "Revenue",
         "tooltip": "MANA earned in your place."
       },
+      "day_3_retention": {
+        "label": "Day 3 Retention",
+        "tooltip": "The percentage of new users who returned to your place within 3 days of their first visit."
+      },
       "day_7_retention": {
         "label": "Day 7 Retention",
-        "tooltip": "The percentage of new users who returned to your place at least once over the 7 days after their first visit."
+        "tooltip": "The percentage of new users who returned to your place within 7 days of their first visit."
       },
       "median_playtime": {
         "label": "Median Playtime",

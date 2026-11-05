@@ -19,6 +19,21 @@ function joinEnvPaths(...paths: string[]) {
   return paths.filter(Boolean).join(path.delimiter);
 }
 
+/**
+ * The PATH entries this module prepends to the app's own environment. Both hold shims that
+ * only work inside Creator Hub: `node` is a link to the Electron executable, and the npm
+ * scripts next to it resolve `node` from PATH and so land on that same link.
+ *
+ * Anything the Hub launches for the user — an external editor, and every terminal opened
+ * inside it — must drop these, or `node`/`npm` in that terminal re-launch Creator Hub
+ * instead of running (the single-instance lock then just refocuses the open window).
+ */
+let injectedPathEntries: string[] = [];
+
+export function getInjectedPathEntries(): string[] {
+  return injectedPathEntries;
+}
+
 export function setupNodeBinary() {
   // Only run in production mode
   if (import.meta.env.DEV || import.meta.env.TEST) {
@@ -62,11 +77,8 @@ export function setupNodeBinary() {
   }
 
   // Update PATH environment variable
-  process.env.PATH = joinEnvPaths(
-    path.dirname(nodeCmdPath),
-    path.dirname(npmBinPath),
-    process.env.PATH || '',
-  );
+  injectedPathEntries = [path.dirname(nodeCmdPath), path.dirname(npmBinPath)];
+  process.env.PATH = joinEnvPaths(...injectedPathEntries, process.env.PATH || '');
 
   if (platform() !== 'win32') {
     // on unix systems we need to install the path to the local bin folder for the Open in VSCode feature to work

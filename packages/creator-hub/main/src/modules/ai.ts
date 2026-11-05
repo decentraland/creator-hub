@@ -44,6 +44,7 @@ import {
   setSceneMcpProject,
   writeSceneMcpConfigFile,
 } from './scene-mcp';
+import { ensureGitignored, upsertMcpServer } from './project-config-files';
 import { ensureSkillsLinked } from './skills';
 
 // GUI-launched Electron gets a sparse PATH (no shell profile), so the CLIs — and their
@@ -126,7 +127,7 @@ async function runShellProbe(): Promise<void> {
         shell,
         [
           '-ilc',
-          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
+          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@X=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CODEX_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
         ],
         { stdio: ['ignore', 'pipe', 'ignore'], detached: true },
       );
@@ -156,6 +157,7 @@ async function runShellProbe(): Promise<void> {
   // Capture the shell's API keys for API-key billing (in memory only; never logged).
   shellApiKeys.ANTHROPIC_API_KEY = /@@A=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.OPENAI_API_KEY = /@@O=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.CODEX_API_KEY = /@@X=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.CURSOR_API_KEY = /@@C=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.GEMINI_API_KEY = /@@G=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.GOOGLE_API_KEY = /@@GA=(.*?)@@/s.exec(out)?.[1] || undefined;
@@ -254,6 +256,80 @@ export function getCliVersion(bin: string): string | undefined {
   return version;
 }
 
+const signedOutCache = new Map<string, boolean>();
+const STATUS_TIMEOUT_MS = 5000;
+
+/** Whether `provider`'s CLI at `bin` reports itself signed out. Only a clear signed-out answer
+ *  counts, so a probe that times out, or an older CLI without the subcommand, leaves the agent
+ *  usable. Async, unlike the version probe, so a slow credential store can't freeze the main
+ *  process. */
+export async function cliReportsSignedOut(bin: string, provider: AiProvider): Promise<boolean> {
+  const cached = signedOutCache.get(bin);
+  if (cached !== undefined) return cached;
+  const { statusArgs, signedOutPattern } = CLI_SPECS[provider];
+  if (statusArgs === undefined || signedOutPattern === undefined) return false;
+  const signedOut = await new Promise<boolean>(resolve => {
+    let out = '';
+    let child: ChildProcess;
+    try {
+      // Same env as a subscription turn, so the probe reads the credentials the turn will use.
+      child = crossSpawn(bin, statusArgs, { env: childEnv(false) });
+    } catch {
+      resolve(false);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      child.kill();
+      resolve(false);
+    }, STATUS_TIMEOUT_MS);
+    child.stdout?.on('data', chunk => (out += String(chunk)));
+    child.stderr?.on('data', chunk => (out += String(chunk)));
+    child.on('error', () => {
+      clearTimeout(timeout);
+      resolve(false);
+    });
+    child.on('close', code => {
+      clearTimeout(timeout);
+      resolve(code !== 0 && signedOutPattern.test(out));
+    });
+  });
+  signedOutCache.set(bin, signedOut);
+  return signedOut;
+}
+
+// Codex also bills to CODEX_API_KEY, which the turn keeps alongside OPENAI_API_KEY.
+const EXTRA_API_KEY_ENV: Partial<Record<AiProvider, string[]>> = { codex: ['CODEX_API_KEY'] };
+
+/** Whether turns will bill to an API key: the user chose it AND a key is set, as aiSend decides. */
+function billsToApiKey(provider: AiProvider, apiKeyFromEnv: boolean): boolean {
+  if (!apiKeyFromEnv) return false;
+  const names = [AI_CLI_COMMANDS[provider].apiKeyEnv, ...(EXTRA_API_KEY_ENV[provider] ?? [])];
+  const fromShell = shellApiKeys as Record<string, string | undefined>;
+  return names.some(name => (process.env[name] ?? fromShell[name] ?? '') !== '');
+}
+
+function statusChecked(provider: AiProvider, apiKeyFromEnv: boolean): boolean {
+  // A signed-out CLI can still run turns billed to an API key, so don't block on it then.
+  return CLI_SPECS[provider].statusArgs !== undefined && !billsToApiKey(provider, apiKeyFromEnv);
+}
+
+/** Signed in per the CLI's own status command where it has one (probed beforehand by
+ *  probeSignIn); otherwise a PATH install is trusted and an app-managed one needs the marker
+ *  our sign-in flow wrote. */
+function isCliSignedIn(
+  bin: string,
+  provider: AiProvider,
+  managed: boolean,
+  apiKeyFromEnv: boolean,
+): boolean {
+  // Turns billed to an API key need no sign-in, whoever installed the CLI.
+  if (billsToApiKey(provider, apiKeyFromEnv)) return true;
+  if (statusChecked(provider, apiKeyFromEnv)) {
+    return signedOutCache.get(bin) !== true;
+  }
+  return managed ? isManagedSignedIn(provider) : true;
+}
+
 // The CLI relays an API 400 as a raw JSON blob when the installed version is too old for the
 // requested model (a Fable/newer model set as the user's own CLI default — the Creator Hub
 // never selects it, it only omits `--model` and lets the CLI use its default). Swap that blob
@@ -305,6 +381,7 @@ const API_KEY_ENV = new Set([
 const shellApiKeys: {
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
+  CODEX_API_KEY?: string;
   CURSOR_API_KEY?: string;
   GEMINI_API_KEY?: string;
   GOOGLE_API_KEY?: string;
@@ -339,6 +416,8 @@ export function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
     for (const [k, v] of Object.entries(shellApiKeys)) {
       if (v !== undefined && v !== '' && env[k] === undefined) env[k] = v;
     }
+    // `codex exec` reads only CODEX_API_KEY; with OPENAI_API_KEY alone it sends no key at all.
+    if (!env.CODEX_API_KEY && env.OPENAI_API_KEY) env.CODEX_API_KEY = env.OPENAI_API_KEY;
   }
   env.PATH = [...(env.PATH ?? '').split(path.delimiter), ...searchDirs()]
     .filter(Boolean)
@@ -964,13 +1043,22 @@ export function isClaudeDesktopInstalled(appDataDir: string): boolean {
   return fs.existsSync(path.join(appDataDir, 'Claude'));
 }
 
-const scan = (): AiProviderInfo[] =>
+/** Run each found CLI's status command ahead of the scan, which reads the results. */
+async function probeSignIn(apiKeyFromEnv: boolean): Promise<void> {
+  await Promise.all(
+    (Object.keys(PROVIDERS) as AiProvider[]).map(async id => {
+      const bin = usableBin(findExecutable(PROVIDERS[id].binNames), id);
+      if (statusChecked(id, apiKeyFromEnv) && bin !== null) await cliReportsSignedOut(bin, id);
+    }),
+  );
+}
+
+const scan = (apiKeyFromEnv: boolean): AiProviderInfo[] =>
   (Object.keys(PROVIDERS) as AiProvider[]).map(id => {
     const def = PROVIDERS[id];
     const bin = usableBin(findExecutable(def.binNames), id);
     const managed = bin !== null && bin.startsWith(getManagedBinDir());
-    const signedIn = managed ? isManagedSignedIn(id) : true;
-    const available = bin !== null && signedIn;
+    const available = bin !== null && isCliSignedIn(bin, id, managed, apiKeyFromEnv);
     return {
       id: def.id,
       label: def.label,
@@ -994,13 +1082,16 @@ const scan = (): AiProviderInfo[] =>
 
 // Cheap scan first; only pay for the login shell when something is missing — which is
 // also exactly when the user presses Recheck after installing.
-export async function detectProviders(): Promise<AiProviderInfo[]> {
+export async function detectProviders(apiKeyFromEnv = false): Promise<AiProviderInfo[]> {
   cachedDirs = null; // an explicit check re-reads the disk: they may have just installed
   cliVersionCache.clear(); // ...and may have just updated the CLI — re-probe its version
-  const first = scan();
+  signedOutCache.clear(); // ...or signed in or out since the last check
+  await probeSignIn(apiKeyFromEnv);
+  const first = scan(apiKeyFromEnv);
   if (first.every(p => p.available)) return first;
   await loadShellDirs();
-  return scan();
+  await probeSignIn(apiKeyFromEnv); // the shell may have revealed a different binary or a key
+  return scan(apiKeyFromEnv);
 }
 
 let current: { child: ChildProcess; turnId: string; done: boolean } | null = null;
@@ -1164,86 +1255,32 @@ function writeCursorRules(projectDir: string): void {
 // bypasses per-tool confirmations (matches --yolo). Merge into any existing settings so the user's
 // own config/servers are preserved. Best-effort — a write failure just means no scene tools.
 function writeGeminiMcpConfig(projectDir: string, mcp: SceneMcpInfo): void {
-  const dir = path.join(projectDir, '.gemini');
-  const file = path.join(dir, 'settings.json');
-  let config: Record<string, unknown> = {};
-  try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
-      config = parsed as Record<string, unknown>;
-  } catch {
-    /* no file yet, or invalid JSON — start fresh (below) */
-  }
-  const servers =
-    config.mcpServers !== null && typeof config.mcpServers === 'object'
-      ? (config.mcpServers as Record<string, unknown>)
-      : {};
-  config.mcpServers = {
-    ...servers,
-    'creator-hub': {
-      httpUrl: mcp.url,
-      headers: { Authorization: `Bearer $${MCP_TOKEN_ENV}` },
-      trust: true,
-    },
-  };
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+  upsertMcpServer(path.join(projectDir, '.gemini', 'settings.json'), 'creator-hub', {
+    httpUrl: mcp.url,
+    headers: { Authorization: `Bearer $${MCP_TOKEN_ENV}` },
+    trust: true,
+  });
 }
 
 // Cursor reads MCP servers from `<project>/.cursor/mcp.json` (merged with a global one). Unlike
 // claude (--mcp-config <tmp file>), codex (bearer_token_env_var) and gemini ($VAR expansion),
 // cursor's config has NO token indirection and no arbitrary-path flag — the bearer token has to
 // sit literally in that project file. So write it 0600 and add the file to the scene's .gitignore
-// (see ensureCursorMcpGitignored) so a rotating localhost token can't be committed. A `url` server
+// (gitignored first) so a rotating localhost token can't be committed. A `url` server
 // is loaded over HTTP; cursor's own approval prompt is interactive-only, so headless `-p` uses it
 // without prompting. Merge to preserve the user's own servers. Best-effort.
 function writeCursorMcpConfig(projectDir: string, mcp: SceneMcpInfo): void {
-  const dir = path.join(projectDir, '.cursor');
-  const file = path.join(dir, 'mcp.json');
-  let config: Record<string, unknown> = {};
-  try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
-      config = parsed as Record<string, unknown>;
-  } catch {
-    /* no file yet, or invalid JSON — start fresh (below) */
-  }
-  const servers =
-    config.mcpServers !== null && typeof config.mcpServers === 'object'
-      ? (config.mcpServers as Record<string, unknown>)
-      : {};
-  config.mcpServers = {
-    ...servers,
-    'creator-hub': { url: mcp.url, headers: { Authorization: `Bearer ${mcp.token}` } },
-  };
-  fs.mkdirSync(dir, { recursive: true });
   // Put the ignore rule in place BEFORE the token file exists, so there's no window where a
   // secret-bearing file is tracked.
-  ensureCursorMcpGitignored(projectDir);
-  // mode:0600 applies only when creating the file; an existing user file keeps its own perms.
-  fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
-}
-
-// Keep the token-bearing `.cursor/mcp.json` out of version control. Idempotent: appends the entry
-// only when nothing already ignores it. Best-effort — the token file is still 0600 regardless.
-function ensureCursorMcpGitignored(projectDir: string): void {
-  const gitignore = path.join(projectDir, '.gitignore');
-  const entry = '.cursor/mcp.json';
-  let content = '';
-  try {
-    content = fs.readFileSync(gitignore, 'utf8');
-  } catch {
-    /* no .gitignore yet — created below */
-  }
-  const ignores = content
-    .split(/\r?\n/)
-    .map(l => l.trim())
-    .some(l => l === entry || l === '.cursor' || l === '.cursor/' || l === '/.cursor/mcp.json');
-  if (ignores) return;
-  const prefix = content === '' || content.endsWith('\n') ? content : `${content}\n`;
-  fs.writeFileSync(
-    gitignore,
-    `${prefix}\n# Creator Hub AI assistant — holds a local MCP token, do not commit\n${entry}\n`,
+  ensureGitignored(projectDir, '.cursor/mcp.json', {
+    coveredBy: ['.cursor', '.cursor/'],
+    comment: 'Creator Hub AI assistant — holds a local MCP token, do not commit',
+  });
+  upsertMcpServer(
+    path.join(projectDir, '.cursor', 'mcp.json'),
+    'creator-hub',
+    { url: mcp.url, headers: { Authorization: `Bearer ${mcp.token}` } },
+    { mode: 0o600 },
   );
 }
 

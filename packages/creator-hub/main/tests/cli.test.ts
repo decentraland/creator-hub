@@ -46,7 +46,9 @@ import {
   cancelPreview,
   getMobilePreview,
   getPreview,
+  killAllPreviews,
   start,
+  stopPreview,
   supportsAssetBundles,
   getDeployCommandSupport,
   type DeployCommandSupport,
@@ -764,6 +766,137 @@ describe('cli preview cancel', () => {
   describe('when there is nothing running for the path', () => {
     it('should be a no-op', async () => {
       await expect(cancelPreview(path)).resolves.toBeUndefined();
+    });
+  });
+});
+
+describe('cli preview stop', () => {
+  let path: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    path = `/scenes/scene-${++sceneCount}`;
+    setSceneSupportsAssetBundles(false);
+    mocks.install.mockResolvedValue(undefined);
+  });
+
+  describe('when the user leaves the scene while its preview is still starting', () => {
+    it('should kill the spawn and settle without reinstalling or spawning again', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, BASE_OPTS);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+
+      await stopPreview(path);
+      await expect(promise).resolves.toBe(path);
+
+      expect(fake.child.kill).toHaveBeenCalled();
+      expect(mocks.install).not.toHaveBeenCalled();
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+      expect(getPreview(path)).toBeUndefined();
+    });
+  });
+
+  describe('when the user leaves the scene before the spawn happens', () => {
+    it('should never spawn', async () => {
+      const promise = start(path, BASE_OPTS);
+      await stopPreview(path);
+
+      await expect(promise).resolves.toBe(path);
+      expect(mocks.run).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the user leaves the scene during the reinstall-retry', () => {
+    let resolveInstall: () => void;
+
+    beforeEach(() => {
+      mocks.run.mockImplementation(() => createFakeChild().child);
+      mocks.install.mockImplementation(
+        () =>
+          new Promise<void>(resolve => {
+            resolveInstall = resolve;
+          }),
+      );
+    });
+
+    it('should not respawn once the reinstall finishes', async () => {
+      const promise = start(path, BASE_OPTS);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+      await getPreview(path)!.child.kill();
+      await vi.waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1));
+
+      await stopPreview(path);
+      resolveInstall();
+
+      await expect(promise).resolves.toBe(path);
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+    });
+
+    it('should spawn a fresh preview for a start issued after the stop', async () => {
+      const first = start(path, BASE_OPTS);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+      await getPreview(path)!.child.kill();
+      await vi.waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1));
+
+      await stopPreview(path);
+      // the user came back to the scene and pressed Preview before the stopped start settled
+      const fresh = createFakeChild();
+      mocks.run.mockImplementation(() => fresh.child);
+      const second = start(path, BASE_OPTS);
+      resolveInstall();
+
+      await expect(first).resolves.toBe(path);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(2));
+      fresh.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await second;
+
+      expect(getPreview(path)?.child).toBe(fresh.child);
+    });
+  });
+
+  describe('when the user leaves the scene while a Bevy web preview is starting', () => {
+    it('should settle instead of waiting for a URL that never comes', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...BASE_OPTS, client: PREVIEW_CLIENT.BEVY_WEB });
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+      await stopPreview(path);
+
+      await expect(promise).resolves.toBe(path);
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the preview is stopped twice (Back, then the editor unmounting)', () => {
+    it('should resolve both stops', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+      const promise = start(path, BASE_OPTS);
+      fake.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await promise;
+
+      await expect(Promise.all([stopPreview(path), stopPreview(path)])).resolves.toBeDefined();
+      expect(getPreview(path)).toBeUndefined();
+    });
+  });
+
+  describe('when the app quits while a preview is still starting', () => {
+    it('should kill it without reinstalling or spawning again', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, BASE_OPTS);
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+
+      await killAllPreviews();
+      await expect(promise).resolves.toBe(path);
+
+      expect(fake.child.kill).toHaveBeenCalled();
+      expect(mocks.install).not.toHaveBeenCalled();
+      expect(mocks.run).toHaveBeenCalledTimes(1);
     });
   });
 });

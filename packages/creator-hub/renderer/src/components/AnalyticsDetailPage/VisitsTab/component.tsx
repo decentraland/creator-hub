@@ -1,4 +1,4 @@
-import { Box, Typography } from 'decentraland-ui2';
+import { Box } from 'decentraland-ui2';
 
 import type { PlaceVisitsMetrics } from '/shared/types/place-analytics';
 
@@ -7,6 +7,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { formatCount } from '../../AnalyticsPage/utils';
 import { ChartCard } from '../ChartCard';
 import { StatsRow } from '../StatsRow';
+import { TabHeading } from '../TabHeading';
 import { TimeSeriesChart } from '../charts';
 
 import './styles.css';
@@ -18,27 +19,27 @@ type Props = {
 export function VisitsTab({ visits }: Props) {
   return (
     <Box className="VisitsTab">
-      <Typography variant="h5">{t('analytics.detail.visits.title')}</Typography>
-      <Typography
-        variant="body1"
-        className="Description"
-      >
-        {t('analytics.detail.visits.description')}
-      </Typography>
+      <TabHeading
+        title={t('analytics.detail.visits.title')}
+        description={t('analytics.detail.visits.description')}
+      />
       <Box className="Cards">
         <ChartCard title={t('analytics.detail.visits.unique.title')}>
           <StatsRow
             stats={[
               {
                 label: t('analytics.detail.platforms.all'),
+                tooltip: t('analytics.metrics.unique_visits.tooltip'),
                 value: formatCount(visits.uniqueVisits.all),
               },
               {
                 label: t('analytics.detail.platforms.desktop'),
+                tooltip: t('analytics.metrics.desktop.tooltip'),
                 value: formatCount(visits.uniqueVisits.desktop),
               },
               {
                 label: t('analytics.detail.platforms.mobile'),
+                tooltip: t('analytics.metrics.mobile.tooltip'),
                 value: formatCount(visits.uniqueVisits.mobile),
               },
             ]}

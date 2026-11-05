@@ -30,6 +30,7 @@ import { Container } from '../Container';
 import { Loader } from '../Loader';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Select } from '../Select';
+import { SignInCard } from '../SignInCard';
 import { Title } from '../Title';
 import { formatExportDate } from '../AnalyticsPage/utils';
 
@@ -46,6 +47,8 @@ const WINDOW_OPTIONS: Array<{ label: string; value: MetricsWindow }> = [
   { label: t('analytics.detail.window.last_60_days'), value: MetricsWindow.LAST_60_DAYS },
 ];
 
+const WINDOW_LABEL_ID = 'analytics-window-label';
+
 const TABS = [
   { value: 'overview', label: t('analytics.detail.tabs.overview') },
   { value: 'retention', label: t('analytics.detail.tabs.retention') },
@@ -57,7 +60,7 @@ type TabValue = 'overview' | 'retention' | 'visits' | 'engagement';
 
 export function AnalyticsDetailPage() {
   const { placeId = '' } = useParams<{ placeId: string }>();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isSigningIn, signIn } = useAuth();
   const {
     window: metricsWindow,
     exportedAt,
@@ -76,30 +79,36 @@ export function AnalyticsDetailPage() {
   // the snapshot is loaded.
   useEffect(() => {
     if (isSignedIn && status === 'idle') dispatch(placeAnalyticsActions.fetchAnalytics());
-  }, [isSignedIn, status]);
+  }, [isSignedIn, status, dispatch]);
 
   const handleBack = useCallback(() => navigate('/analytics'), [navigate]);
 
-  const handleTabChange = useCallback((_e: SyntheticEvent, value: TabValue) => {
-    setTab(value);
-  }, []);
+  const handleTabChange = useCallback(
+    (_e: SyntheticEvent, value: TabValue) => {
+      setTab(value);
+    },
+    [setTab],
+  );
 
-  const handleWindowChange = useCallback((e: SelectChangeEvent<MetricsWindow>) => {
-    dispatch(placeAnalyticsActions.setWindow(e.target.value as MetricsWindow));
-  }, []);
+  const handleWindowChange = useCallback(
+    (e: SelectChangeEvent<MetricsWindow>) => {
+      dispatch(placeAnalyticsActions.setWindow(e.target.value as MetricsWindow));
+    },
+    [dispatch],
+  );
 
   const projections = useMemo(
     () =>
       metrics
         ? {
             overview: toOverview(metrics, metricsWindow),
-            retention: toRetention(metrics, metricsWindow),
+            retention: toRetention(metrics, metricsWindow, exportedAt),
             visits: toVisits(metrics, metricsWindow),
             engagement: toEngagement(metrics, metricsWindow),
             isEmpty: hasNoData(metrics),
           }
         : null,
-    [metrics, metricsWindow],
+    [metrics, metricsWindow, exportedAt],
   );
 
   const title = place
@@ -111,13 +120,23 @@ export function AnalyticsDetailPage() {
       <Navbar active={NavbarItem.ANALYTICS} />
       <Container>
         <Box className="DetailHeader">
-          <Title
-            value={title}
-            onBack={handleBack}
-          />
+          <Box className="HeaderTitle">
+            <Title
+              value={title}
+              onBack={handleBack}
+            />
+            {exportedAt && (
+              <Typography
+                variant="body2"
+                className="ExportedAt"
+              >
+                {t('analytics.exported_at', { date: formatExportDate(exportedAt) })}
+              </Typography>
+            )}
+          </Box>
           {/* Enabled once there is an analytics API to export from. */}
           <Tooltip title={t('analytics.actions.export_unavailable')}>
-            <span>
+            <span className="ExportAction">
               <Button
                 variant="outlined"
                 color="secondary"
@@ -129,7 +148,13 @@ export function AnalyticsDetailPage() {
             </span>
           </Tooltip>
         </Box>
-        {isLoading ? (
+        {/* Before the loading branch: with nothing in flight, `idle` is not a wait. */}
+        {!isSignedIn && !isSigningIn ? (
+          <SignInCard
+            onClickSignIn={signIn}
+            title={t('analytics.sign_in.title')}
+          />
+        ) : isLoading ? (
           <Loader size={70} />
         ) : status === 'failed' ? (
           <Box className="ErrorContainer">
@@ -164,6 +189,7 @@ export function AnalyticsDetailPage() {
                 >
                   {TABS.map(option => (
                     <Tab
+                      disableFocusRipple
                       key={option.value}
                       value={option.value}
                       label={option.label}
@@ -171,8 +197,14 @@ export function AnalyticsDetailPage() {
                   ))}
                 </Tabs>
                 <Box className="DateRange">
-                  <Typography variant="body1">{t('analytics.detail.window.title')}</Typography>
+                  <Typography
+                    variant="body1"
+                    id={WINDOW_LABEL_ID}
+                  >
+                    {t('analytics.detail.window.title')}
+                  </Typography>
                   <Select
+                    labelId={WINDOW_LABEL_ID}
                     value={metricsWindow}
                     onChange={handleWindowChange}
                   >
@@ -200,18 +232,15 @@ export function AnalyticsDetailPage() {
               ) : (
                 <>
                   {tab === 'overview' && <OverviewTab overview={projections.overview} />}
-                  {tab === 'retention' && <RetentionTab retention={projections.retention} />}
+                  {tab === 'retention' && (
+                    <RetentionTab
+                      retention={projections.retention}
+                      window={metricsWindow}
+                    />
+                  )}
                   {tab === 'visits' && <VisitsTab visits={projections.visits} />}
                   {tab === 'engagement' && <EngagementTab engagement={projections.engagement} />}
                 </>
-              )}
-              {exportedAt && (
-                <Typography
-                  variant="body2"
-                  className="ExportedAt"
-                >
-                  {t('analytics.exported_at', { date: formatExportDate(exportedAt) })}
-                </Typography>
               )}
             </Box>
           </Box>
