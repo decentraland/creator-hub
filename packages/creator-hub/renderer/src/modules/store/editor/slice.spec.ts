@@ -5,8 +5,12 @@ import type { PreviewOptions } from '/shared/types/settings';
 
 import { editor, scene } from '#preload';
 
-import { notifyActiveSceneReady, setActiveSceneClient } from '/@/modules/rpc/active-scene';
-import type { SceneRpcClient } from '/@/modules/rpc/scene/client';
+import {
+  notifyActiveSceneReady,
+  pendingReadyWaiters,
+  setActiveSceneClient,
+} from '/@/modules/rpc/active-scene';
+import { type SceneRpcClient, SceneRpcUnsupportedError } from '/@/modules/rpc/scene/client';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
 import type * as DeployApi from '../deployment/deploy-api';
@@ -432,7 +436,7 @@ describe('editor slice publish flush', () => {
 
   describe('when the open inspector predates the save_scene RPC', () => {
     beforeEach(() => {
-      saveScene.mockRejectedValue(new Error('Method "save_scene" not implemented'));
+      saveScene.mockRejectedValue(new SceneRpcUnsupportedError('save_scene'));
     });
 
     it('should publish as it did before the flush existed', async () => {
@@ -638,6 +642,151 @@ describe('editor slice publish with a placement picked in the publish dialog', (
     });
   });
 
+  describe('when the editor lists the picked parcels in another order', () => {
+    beforeEach(() => {
+      getSceneSettings.mockImplementation(async () => ({
+        settings: {
+          layout: {
+            base: { x: 50, y: 60 },
+            parcels: [
+              { x: 51, y: 60 },
+              { x: 50, y: 60 },
+            ],
+          },
+        },
+      }));
+    });
+
+    it('should accept it as kept rather than hand it over again', async () => {
+      await publishTo({ scene: PICKED, worldConfiguration: undefined });
+
+      expect(order).toEqual(['push', 'save', 'write', 'publish']);
+    });
+  });
+
+  describe('when the publish is done', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should leave no wait for the editor and no timer behind', async () => {
+      const publishing = publishTo({ scene: PICKED, worldConfiguration: undefined });
+      await vi.runAllTimersAsync();
+      await publishing;
+
+      expect(order.at(-1)).toBe('publish');
+      expect(pendingReadyWaiters()).toBe(0);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
+
+  describe('with an editor that answers slowly or not at all', () => {
+    let client: SceneRpcClient;
+    const unanswered = () => new Promise<never>(() => undefined);
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      client = { saveScene, setSceneSettings, getSceneSettings } as unknown as SceneRpcClient;
+      setActiveSceneClient(client);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    describe('and the iframe takes longer than the placement budget to come back mid-flush', () => {
+      beforeEach(() => {
+        saveScene.mockImplementationOnce(() => {
+          order.push('lost');
+          return unanswered();
+        });
+      });
+
+      it('should flush the recovered editor and deploy, without a save error', async () => {
+        const publishing = publishTo({ scene: PICKED, worldConfiguration: undefined });
+        await vi.advanceTimersByTimeAsync(20_000);
+        notifyActiveSceneReady(client);
+        await vi.runAllTimersAsync();
+        await publishing;
+
+        expect(order).toEqual(['push', 'lost', 'save', 'write', 'publish']);
+        expect(store.getState().editor.publishError).toBeNull();
+      });
+    });
+
+    // #1512: the editor's pending edits may not be on disk, so this must not deploy.
+    describe('and the editor never answers the flush nor reloads', () => {
+      beforeEach(() => {
+        saveScene.mockImplementation(unanswered);
+      });
+
+      it('should stop the publish with the save error once the flush budget runs out', async () => {
+        const publishing = publishTo({ scene: PICKED, worldConfiguration: undefined });
+        await vi.advanceTimersByTimeAsync(60_000);
+        await publishing;
+
+        expect(editor.publishScene).not.toHaveBeenCalled();
+        expect(store.getState().editor.publishError).toContain('save_scene');
+      });
+    });
+
+    describe('and the editor answers the flush of the reloaded iframe with an error', () => {
+      beforeEach(() => {
+        saveScene
+          .mockImplementationOnce(() => {
+            setTimeout(() => notifyActiveSceneReady(client), 10);
+            return unanswered();
+          })
+          .mockRejectedValueOnce(new Error('EBUSY: resource busy or locked'));
+      });
+
+      it('should stop the publish', async () => {
+        const publishing = publishTo({ scene: PICKED, worldConfiguration: undefined });
+        await vi.runAllTimersAsync();
+        await publishing;
+
+        expect(editor.publishScene).not.toHaveBeenCalled();
+        expect(store.getState().editor.publishError).toContain('EBUSY');
+      });
+    });
+
+    // Handing the placement over is best effort: the last disk write carries the pick.
+    describe('and the editor never answers the placement', () => {
+      beforeEach(() => {
+        setSceneSettings.mockImplementation(unanswered);
+      });
+
+      it('should give up on it within the placement budget and still deploy the pick', async () => {
+        const publishing = publishTo({ scene: PICKED, worldConfiguration: undefined });
+        await vi.advanceTimersByTimeAsync(15_000);
+        await publishing;
+
+        expect(order).toEqual(['save', 'write', 'publish']);
+        expect(sceneJson.scene).toEqual(PICKED);
+      });
+    });
+
+    describe('and the editor never answers the read-back', () => {
+      beforeEach(() => {
+        getSceneSettings.mockImplementation(unanswered);
+      });
+
+      it('should still deploy the pick once the placement budget runs out', async () => {
+        const publishing = publishTo({ scene: PICKED, worldConfiguration: undefined });
+        await vi.advanceTimersByTimeAsync(15_000);
+        await vi.runAllTimersAsync();
+        await publishing;
+
+        expect(order.at(-1)).toBe('publish');
+        expect(sceneJson.scene).toEqual(PICKED);
+      });
+    });
+  });
+
   describe('when the editor rejects the placement', () => {
     beforeEach(() => {
       setSceneSettings.mockRejectedValue(new Error('layout.base must be integer { x, y } coords'));
@@ -655,7 +804,7 @@ describe('editor slice publish with a placement picked in the publish dialog', (
 
   describe('when the open editor predates set_scene_settings', () => {
     beforeEach(() => {
-      setSceneSettings.mockRejectedValue(new Error('Method "set_scene_settings" not implemented'));
+      setSceneSettings.mockRejectedValue(new SceneRpcUnsupportedError('set_scene_settings'));
     });
 
     it('should still flush, write the pick and deploy', async () => {

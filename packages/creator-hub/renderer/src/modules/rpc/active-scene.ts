@@ -31,21 +31,29 @@ const readyWaiters = new Set<() => void>();
  */
 export function notifyActiveSceneReady(client: SceneRpcClient): void {
   if (activeSceneClient !== client) return;
-  for (const resolve of readyWaiters) resolve();
+  const waiters = [...readyWaiters];
   readyWaiters.clear();
+  for (const resolve of waiters) resolve();
 }
 
-/** Resolves true on the next ready signal, false if none arrives within `timeoutMs`. */
-export function waitForActiveSceneReady(timeoutMs: number): Promise<boolean> {
-  return new Promise(resolve => {
-    const onReady = () => {
-      clearTimeout(timer);
-      resolve(true);
-    };
-    const timer = setTimeout(() => {
-      readyWaiters.delete(onReady);
-      resolve(false);
-    }, timeoutMs);
-    readyWaiters.add(onReady);
+export type ReadyWait = {
+  /** Resolves on the next ready signal; never settles if cancelled first. */
+  ready: Promise<void>;
+  /** Stops waiting, so a later ready signal finds nothing of this caller's. */
+  cancel: () => void;
+};
+
+/** Waits for the next ready signal of the open editor, until cancelled. */
+export function waitForActiveSceneReady(): ReadyWait {
+  let onReady: () => void = () => undefined;
+  const ready = new Promise<void>(resolve => {
+    onReady = resolve;
   });
+  readyWaiters.add(onReady);
+  return { ready, cancel: () => readyWaiters.delete(onReady) };
+}
+
+/** How many callers are waiting for the editor to come up; for tests. */
+export function pendingReadyWaiters(): number {
+  return readyWaiters.size;
 }

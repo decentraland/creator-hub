@@ -12,7 +12,11 @@ import { isWorkspaceError } from '/shared/types/workspace';
 import { editor } from '#preload';
 
 import { getActiveSceneClient, waitForActiveSceneReady } from '/@/modules/rpc/active-scene';
-import type { SceneRpcClient } from '/@/modules/rpc/scene/client';
+import {
+  type SceneRpcClient,
+  SceneRpcTimeoutError,
+  SceneRpcUnsupportedError,
+} from '/@/modules/rpc/scene/client';
 import { t } from '/@/modules/store/translation/utils';
 
 import { actions as deploymentActions } from '../deployment';
@@ -29,41 +33,55 @@ export const runScene = createAsyncThunk(
     await editor.runScene({ path, opts, mobile });
   },
 );
-function isSceneRpcUnsupported(error: unknown, method: string): boolean {
-  return error instanceof Error && error.message.includes(`"${method}" not implemented`);
-}
+// Handing the placement over and reading it back are best effort: the final scene.json
+// write before the deploy already guarantees the deployed placement, so neither may hold
+// the publish up for long.
+const PLACEMENT_BUDGET_MS = 15_000;
+// The flush is not best effort (#1512), but a hung editor must not stall the publish for
+// longer than a large scene's save legitimately takes (the client's save_scene timeout).
+const FLUSH_BUDGET_MS = 60_000;
 
-const EDITOR_RELOAD_TIMEOUT_MS = 15_000;
-
-const isSceneRpcTimeout = (error: unknown) =>
-  error instanceof Error && error.message.includes('timed out (no renderer response)');
+const never = new Promise<never>(() => undefined);
 
 /**
- * Sends a request the open editor must answer, resending it once if the editor reloads
- * first. Under Bevy an edit can reload the inspector iframe in place, and a request sent
- * while it reloads reaches no server: it would only time out, losing a publish's flush or
- * placement. Both requests this carries are idempotent, so a resend is safe.
+ * Sends a request the open editor must answer within `budgetMs`, resending it once to the
+ * reloaded editor if the inspector iframe reloads first. Under Bevy an edit can reload the
+ * iframe in place; a request sent to the page on its way out is never answered, so after a
+ * reload the old request is abandoned rather than waited on. Both requests this carries
+ * are idempotent, so a resend is safe.
+ *
+ * Settles with the editor's answer, rejects with the editor's own error when it answered
+ * with one, and with `SceneRpcTimeoutError` when neither an answer nor a reload came.
  */
 async function sendSurvivingReload<T>(
   scene: SceneRpcClient,
+  method: string,
   send: (scene: SceneRpcClient) => Promise<T>,
+  budgetMs: number,
 ): Promise<T> {
-  const reloaded = waitForActiveSceneReady(EDITOR_RELOAD_TIMEOUT_MS);
-  const sent = send(scene);
-  sent.catch(() => undefined);
-  let outcome: { value: T } | { reloaded: boolean };
+  const reload = waitForActiveSceneReady();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new SceneRpcTimeoutError(method)), budgetMs);
+  });
   try {
-    outcome = await Promise.race([
-      sent.then(value => ({ value })),
-      reloaded.then(didReload => ({ reloaded: didReload })),
+    // An unanswered first request may have reached a page that is reloading: keep waiting
+    // for the reload until the deadline instead of giving up on the client's own timeout.
+    const answer = send(scene).catch((error: unknown) => {
+      if (error instanceof SceneRpcTimeoutError) return never;
+      throw error;
+    });
+    const outcome = await Promise.race([
+      answer.then(value => ({ value })),
+      reload.ready.then(() => null),
+      deadline,
     ]);
-  } catch (error) {
-    if (!isSceneRpcTimeout(error) || !(await reloaded)) throw error;
-    outcome = { reloaded: true };
+    if (outcome) return outcome.value;
+    return await Promise.race([send(getActiveSceneClient() ?? scene), deadline]);
+  } finally {
+    reload.cancel();
+    clearTimeout(timer);
   }
-  if ('value' in outcome) return outcome.value;
-  if (!outcome.reloaded) return sent;
-  return send(getActiveSceneClient() ?? scene);
 }
 
 const toCoords = (parcel: string) => {
@@ -89,35 +107,59 @@ async function pushLayoutToEditor(layout: EditorLayout): Promise<boolean> {
   const scene = getActiveSceneClient();
   if (!scene) return false;
   try {
-    await sendSurvivingReload(scene, editor => editor.setSceneSettings({ layout }));
+    await sendSurvivingReload(
+      scene,
+      'set_scene_settings',
+      editor => editor.setSceneSettings({ layout }),
+      PLACEMENT_BUDGET_MS,
+    );
     return true;
   } catch (error) {
     // An editor that cannot take the layout keeps its own; publishing still deploys the
     // pick, because the updates are written to disk again after the flush.
-    if (!isSceneRpcUnsupported(error, 'set_scene_settings')) {
+    if (!(error instanceof SceneRpcUnsupportedError)) {
       console.error('Could not hand the publish placement to the editor:', error);
     }
     return false;
   }
 }
 
+const parcelId = ({ x, y }: { x: number; y: number }) => `${x},${y}`;
+
+/** Same base and same set of parcels; the editor may list the parcels in another order. */
+function sameLayout(held: unknown, wanted: EditorLayout): boolean {
+  const layout = held as Partial<EditorLayout> | undefined;
+  if (!layout?.base || !Array.isArray(layout.parcels)) return false;
+  if (parcelId(layout.base) !== parcelId(wanted.base)) return false;
+  const heldParcels = new Set(layout.parcels.map(parcelId));
+  return (
+    heldParcels.size === wanted.parcels.length &&
+    wanted.parcels.every(p => heldParcels.has(parcelId(p)))
+  );
+}
+
 /**
  * Whether the editor on screen now holds `layout`. A reloaded editor reports no settings
- * until its data layer has streamed the scene in, so an empty answer is polled for a while.
+ * until its data layer has streamed the scene in, so an empty answer is polled, within
+ * the placement budget.
  */
 async function editorHoldsLayout(layout: EditorLayout): Promise<boolean> {
-  const deadline = Date.now() + EDITOR_RELOAD_TIMEOUT_MS;
+  const deadline = Date.now() + PLACEMENT_BUDGET_MS;
   for (;;) {
+    const remaining = deadline - Date.now();
     const scene = getActiveSceneClient();
     if (!scene) return true;
+    if (remaining <= 0) return false;
     try {
-      const { settings } = await sendSurvivingReload(scene, editor => editor.getSceneSettings());
-      if (settings.layout || Date.now() > deadline) {
-        return JSON.stringify(settings.layout) === JSON.stringify(layout);
-      }
+      const { settings } = await sendSurvivingReload(
+        scene,
+        'get_scene_settings',
+        editor => editor.getSceneSettings(),
+        remaining,
+      );
+      if (settings.layout) return sameLayout(settings.layout, layout);
     } catch (error) {
-      if (isSceneRpcUnsupported(error, 'get_scene_settings')) return true;
-      if (Date.now() > deadline) return false;
+      if (error instanceof SceneRpcUnsupportedError) return true;
     }
     await new Promise(resolve => setTimeout(resolve, 250));
   }
@@ -157,13 +199,16 @@ async function flushEditorToDisk() {
   const scene = getActiveSceneClient();
   if (!scene) return;
 
+  // Stops the publish when the editor answers that the save failed, or when it neither
+  // answers nor reloads within the budget: either way its pending edits may not be on disk.
+  // A reload is not a failure: the reloaded editor is flushed instead.
   try {
-    await sendSurvivingReload(scene, editor => editor.saveScene());
+    await sendSurvivingReload(scene, 'save_scene', editor => editor.saveScene(), FLUSH_BUDGET_MS);
   } catch (error) {
     // An inspector that predates save_scene (a dev build served on VITE_INSPECTOR_PORT, say)
     // cannot flush on request. Publishing then behaves exactly as it did before this RPC
     // existed, rather than being blocked by an editor that never could have answered.
-    if (isSceneRpcUnsupported(error, 'save_scene')) return;
+    if (error instanceof SceneRpcUnsupportedError) return;
     throw new Error(
       t('editor.publish.save_failed', {
         reason: error instanceof Error ? error.message : String(error),
