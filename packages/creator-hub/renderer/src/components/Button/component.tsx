@@ -58,7 +58,10 @@ export const ButtonGroup = forwardRef<ButtonGroupHandle, GroupProps>(function Bu
 
   return (
     <>
-      <DclButtonGroup variant="contained">
+      <DclButtonGroup
+        variant="contained"
+        data-testid="button-group"
+      >
         {withTooltip(tooltip, props.disabled, <Button {...props} />)}
         {withTooltip(
           extraTooltip,
@@ -68,6 +71,7 @@ export const ButtonGroup = forwardRef<ButtonGroupHandle, GroupProps>(function Bu
             color={props.color}
             size="small"
             disabled={props.disabled}
+            data-testid="button-group-extra-button"
             onClick={handleToggle}
           >
             <ChevronDownIcon />
@@ -79,6 +83,7 @@ export const ButtonGroup = forwardRef<ButtonGroupHandle, GroupProps>(function Bu
             onClose={handleClose}
             anchorEl={anchorEl}
             placement="bottom-end"
+            data-testid="button-group-popper"
             modifiers={
               popperOffset
                 ? [{ name: 'offset', options: { offset: [0, popperOffset] } }]

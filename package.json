@@ -8,6 +8,7 @@
   "devDependencies": {
     "@dcl/ecs": "7.29.0",
     "@dcl/ts-proto": "1.154.0",
+    "@playwright/test": "1.62.0",
     "@testing-library/react": "14.0.0",
     "@typescript-eslint/eslint-plugin": "7.15.0",
     "@typescript-eslint/parser": "^7.15.0",
@@ -15,7 +16,7 @@
     "eslint-plugin-import": "2.31.0",
     "happy-dom": "14.12.3",
     "nano-staged": "0.8.0",
-    "playwright": "1.60.0",
+    "playwright": "1.62.0",
     "prettier": "3.5.3",
     "simple-git-hooks": "2.11.1",
     "syncpack": "13.0.4",
@@ -32,7 +33,7 @@
   "scripts": {
     "format": "npx prettier --check \"**/*.{js,ts,tsx,json}\" --log-level=error --ignore-path .gitignore --ignore-path .prettierignore",
     "format:fix": "npx prettier --write \"**/*.{js,ts,tsx,json}\" --log-level=error --ignore-path .gitignore --ignore-path .prettierignore",
-    "lint": "eslint . --ext js,cjs,ts --ignore-path .gitignore",
+    "lint": "eslint . --ext js,cjs,ts,tsx --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
     "syncpack:fix": "syncpack fix-mismatches --config .syncpackrc.json --source \"packages/*/package.json\" --source \"package.json\"",
     "syncpack:format": "syncpack format --config .syncpackrc.json --source \"packages/*/package.json\" --source \"package.json\"",

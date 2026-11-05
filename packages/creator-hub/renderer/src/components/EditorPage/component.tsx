@@ -6,7 +6,6 @@ import CodeIcon from '@mui/icons-material/Code';
 import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import CloseIcon from '@mui/icons-material/Close';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 import { IconButton } from '@mui/material';
 
@@ -30,6 +29,8 @@ import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { useBevyBuildForwarding } from '/@/hooks/useBevyBuildForwarding';
 import { useBevyRealmRestart } from '/@/hooks/useBevyRealmRestart';
 import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
+import { useSceneMcpDiscovery } from '/@/hooks/useSceneMcpDiscovery';
+import { useSceneOpBridge } from '/@/hooks/useSceneOpBridge';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
@@ -43,7 +44,6 @@ import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { useAiSession } from '/@/hooks/useAiSession';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
-import { actions as editorActions } from '/@/modules/store/editor';
 import { actions as optimizerActions } from '/@/modules/store/optimizer';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
@@ -103,42 +103,6 @@ function isOutdatedDepsError(message: string): boolean {
   return rejectsOption && namesBevyFlag;
 }
 
-// Routes an AI scene-mutation op (from main) to the inspector SceneRpc client. One entry
-// per SceneRpc mutation method; add a line here + the matching client method + MCP tool as
-// Phase 2 grows (set_component, remove_entity, place_smart_item, …).
-type SceneClient = ReturnType<typeof initRpc>['scene'];
-const SCENE_OP_HANDLERS: Record<
-  string,
-  (scene: SceneClient, params: Record<string, unknown>) => Promise<unknown>
-> = {
-  create_entity: (scene, p) =>
-    scene.createEntity(p.name as string | undefined, p.parent as number | undefined),
-  remove_entity: (scene, p) => scene.removeEntity(p.entity as number),
-  set_parent: (scene, p) => scene.setParent(p.entity as number, p.parent as number),
-  set_component: (scene, p) =>
-    scene.setComponent(
-      p.entity as number,
-      p.component as string,
-      p.value as Record<string, unknown>,
-    ),
-  remove_component: (scene, p) => scene.removeComponent(p.entity as number, p.component as string),
-  attach_script: (scene, p) =>
-    scene.attachScript(p.entity as number, p.path as string, p.priority as number | undefined),
-  search_catalog: (scene, p) =>
-    scene.searchCatalog(p.query as string | undefined, p.limit as number | undefined),
-  place_smart_item: (scene, p) =>
-    scene.placeSmartItem(
-      p.assetId as string,
-      p.name as string | undefined,
-      p.position as { x: number; y: number; z: number } | undefined,
-    ),
-  undo: scene => scene.undo(),
-  get_scene_metrics: scene => scene.getSceneMetrics(),
-  get_selection: scene => scene.getSelection(),
-  get_scene_settings: scene => scene.getSceneSettings(),
-  set_scene_settings: (scene, p) => scene.setSceneSettings(p),
-};
-
 export function EditorPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -152,8 +116,6 @@ export function EditorPage() {
     openCode,
     updateScene,
     loadingPreview,
-    previewCancelled,
-    previewProgress,
     loadingPublish,
     isInstallingProject,
     killPreview,
@@ -163,6 +125,7 @@ export function EditorPage() {
     supportsMultiInstance,
     supportsMcp,
     supportsUiDesigner,
+    supportsAuthServer,
     isPreviewRunning,
     startBevyRealm,
     killBevyRealm,
@@ -204,7 +167,6 @@ export function EditorPage() {
   // A prompt seeded from the inspector (Trigger Area "describe a reaction"). Open the inline
   // panel on it; ChatView copies the text into the composer and clears the draft.
   const aiDraftPrompt = useSelector(state => state.ai.draftPrompt);
-  const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
   const [aiPanelWidth, setAiPanelWidth] = useState(readAiPanelWidth);
@@ -276,6 +238,7 @@ export function EditorPage() {
     },
   });
   useProjectAssetWatch(iframeRef, project?.path);
+  useSceneMcpDiscovery(project?.path);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -357,7 +320,7 @@ export function EditorPage() {
     }
   }, [featureFlags]);
 
-  // Answer the AI assistant's `editor_screenshot` tool: main asks the renderer to capture
+  // Answer the `editor_screenshot` tool (in-app assistant or an outside agent): main asks the renderer to capture
   // the viewport (only the renderer can reach the inspector iframe). Babylon renders its own
   // canvas via the scene RPC. That path returns null under Bevy (its wgpu canvas can't be
   // read via toDataURL, and the engine's /screenshot command may be unavailable), so fall
@@ -365,7 +328,6 @@ export function EditorPage() {
   // viewport is inside its (cross-origin) iframe, offset by the iframe's position in this
   // window, and capturePage that rect in main — then downscale to the requested size (#1526).
   useEffect(() => {
-    if (!aiChatEnabled) return;
     const { cleanup } = ai.onScreenshotRequest(async req => {
       const rpc = iframeRef.current;
       let dataUrl: string | null = null;
@@ -381,27 +343,9 @@ export function EditorPage() {
       ai.screenshotResult(req.id, dataUrl);
     });
     return cleanup;
-  }, [aiChatEnabled]);
+  }, []);
 
-  // Answer the AI assistant's scene-mutation ops (Phase 2): main asks the renderer to run
-  // an inspector SceneRpc mutation on the live engine, and we reply with the result. Only
-  // the renderer holds the iframe RPC handle. Ops are serialized on the main side.
-  useEffect(() => {
-    if (!aiChatEnabled) return;
-    const { cleanup } = ai.onSceneOpRequest(async req => {
-      const rpc = iframeRef.current;
-      const handler = SCENE_OP_HANDLERS[req.op];
-      if (!rpc) return ai.sceneOpResult(req.id, false, 'No scene is open.');
-      if (!handler) return ai.sceneOpResult(req.id, false, `Unknown scene op "${req.op}".`);
-      try {
-        const value = await handler(rpc.scene, req.params);
-        ai.sceneOpResult(req.id, true, value);
-      } catch (e) {
-        ai.sceneOpResult(req.id, false, e instanceof Error ? e.message : String(e));
-      }
-    });
-    return cleanup;
-  }, [aiChatEnabled]);
+  useSceneOpBridge(iframeRef);
 
   // While the AI panel is open, keep the assistant aware of the editor selection: poll the
   // inspector for the selected entities and mirror them into the ai store (shown as a composer
@@ -449,9 +393,6 @@ export function EditorPage() {
       }
     };
   }, [error]);
-
-  // converting for an optimized preview: the button shows progress + an inline cancel (✕)
-  const isOptimizing = loadingPreview && !!previewProgress;
 
   // Start (or tear down) the Bevy realm as the renderer setting / project changes.
   // The iframe render is gated on the realm being ready when Bevy is selected, so
@@ -620,42 +561,12 @@ export function EditorPage() {
     [modalState],
   );
 
-  // Restore the per-project Optimize Assets preference when a project opens. Selecting the
-  // toggle is inert — conversion only happens when Preview is pressed. Runs once per project
-  // path so it never fights a live user toggle.
-  useEffect(() => {
-    if (!project) return;
-    if (hydratedOptimizedAssetsPathRef.current === project.path) return;
-    hydratedOptimizedAssetsPathRef.current = project.path;
-    const persisted = settings.optimizedAssetsByPath?.[project.path] ?? false;
-    if (persisted !== settings.previewOptions.optimizedAssets) {
-      updateAppSettings({
-        ...settings,
-        previewOptions: { ...settings.previewOptions, optimizedAssets: persisted },
-      });
-    }
-  }, [project?.path, settings, updateAppSettings]);
-
   const handleChangePreviewOptions = useCallback(
     (options: PreviewOptionsProps['options']) => {
-      // Persist the choice per project so it comes back on next time this scene is opened
-      // (restored by the effect above). Kept separate from the global previewOptions so
-      // the preference never carries across projects. Selecting Optimize Assets is inert:
-      // the conversion runs when Preview is pressed, with feedback on the Preview button.
-      const optimizedAssetsByPath = project
-        ? { ...settings.optimizedAssetsByPath, [project.path]: options.optimizedAssets }
-        : settings.optimizedAssetsByPath;
-      updateAppSettings({ ...settings, previewOptions: options, optimizedAssetsByPath });
+      updateAppSettings({ ...settings, previewOptions: options });
     },
-    [project, settings, updateAppSettings],
+    [settings, updateAppSettings],
   );
-
-  const handleCancelOptimizing = useCallback(() => {
-    if (project) {
-      // kill the converting spawn; the pending runScene settles without opening the client
-      void dispatch(editorActions.cancelPreview(project.path));
-    }
-  }, [project, dispatch]);
 
   const handleShowMobileQR = useCallback(async () => {
     if (!project) return;
@@ -737,6 +648,7 @@ export function EditorPage() {
     inspectorPort,
     useBevy,
     supportsUiDesigner,
+    supportsAuthServer,
     bevyRealm,
     project,
     userId,
@@ -832,7 +744,10 @@ export function EditorPage() {
   const previewIcon = loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />;
 
   return (
-    <main className="Editor">
+    <main
+      className="Editor"
+      data-testid="editor-page"
+    >
       {!isReady ? (
         renderLoading()
       ) : (
@@ -841,6 +756,7 @@ export function EditorPage() {
             <>
               <div
                 className="back"
+                data-testid="editor-page-back-button"
                 onClick={handleBack}
               >
                 <ArrowBackIosIcon />
@@ -888,24 +804,16 @@ export function EditorPage() {
                   <CodeIcon />
                 </Button>
               </Tooltip>
-              <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
+              <div className="preview-control">
                 <ButtonGroup
                   ref={previewButtonGroupRef}
                   color="secondary"
                   extraTooltip={t('editor.header.actions.preview_options.title')}
                   popperOffset={10}
-                  // Not natively disabled while optimizing (that would kill the inline ✕ too):
-                  // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
-                  // aria-disabled flags the CSS-inert state to assistive tech, which the visual
-                  // greying and pointer-events:none don't convey on their own.
-                  aria-disabled={isOptimizing || undefined}
                   disabled={
-                    (loadingPreview && !isOptimizing) ||
-                    isInstallingProject ||
-                    isDetectingCustomCode ||
-                    isOffline
+                    loadingPreview || isInstallingProject || isDetectingCustomCode || isOffline
                   }
-                  onClick={isOptimizing ? undefined : handleOpenPreview}
+                  onClick={handleOpenPreview}
                   startIcon={previewIcon}
                   extra={
                     <PreviewOptions
@@ -918,33 +826,7 @@ export function EditorPage() {
                     />
                   }
                 >
-                  {isOptimizing ? (
-                    <span className="optimizing-label">
-                      {t('editor.header.actions.optimizing')}
-                      {previewProgress?.total
-                        ? ` ${Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%`
-                        : ''}
-                      <Tooltip title={t('editor.header.actions.cancel_optimizing')}>
-                        {/* a real button so the only live control in the CSS-inert group
-                            stays reachable by keyboard and assistive tech */}
-                        <IconButton
-                          className="cancel-optimizing"
-                          size="small"
-                          aria-label={t('editor.header.actions.cancel_optimizing')}
-                          // a cancel is already in flight (main is killing the spawn)
-                          disabled={previewCancelled}
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleCancelOptimizing();
-                          }}
-                        >
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </span>
-                  ) : (
-                    t('editor.header.actions.play')
-                  )}
+                  {t('editor.header.actions.play')}
                 </ButtonGroup>
               </div>
               {publishOptions.length > 0 ? (
@@ -954,6 +836,7 @@ export function EditorPage() {
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
+                  data-testid="editor-page-publish-button"
                   onClick={() => {
                     if (deployment?.status === 'pending') {
                       openModal('publish', 'deploy');
@@ -972,6 +855,7 @@ export function EditorPage() {
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
+                  data-testid="editor-page-publish-button"
                   onClick={handlePublishScene}
                   startIcon={isDeploying ? <Loader size={20} /> : <PublicIcon />}
                 >
@@ -985,6 +869,7 @@ export function EditorPage() {
             <iframe
               key={iframeReloadKey}
               className="inspector"
+              data-testid="editor-page-iframe"
               src={iframeUrl}
               onLoad={handleIframeRef}
               // Grant cross-origin isolation to the inspector iframe so the Bevy

@@ -63,7 +63,7 @@ const GATEWAY_PREVIEW_OPTIONS: PreviewOptions = {
   multiInstance: false,
   mcp: true,
   showWarnings: true,
-  optimizedAssets: false,
+  loadRawGltfs: false,
   client: PREVIEW_CLIENT.DESKTOP,
 };
 
