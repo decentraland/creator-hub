@@ -2,12 +2,14 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import welcomeImage from '/assets/images/earn/welcome.webp';
 
+import { misc } from '#preload';
+
 import type { WalletReason } from '/shared/types/creator-fund';
 
 import { useDispatch } from '#store';
 import { actions } from '/@/modules/store/creatorFund';
 import type { TranslationPath } from '/@/modules/store/translation/types';
-import { t } from '/@/modules/store/translation/utils';
+import { getCurrentLocale, t } from '/@/modules/store/translation/utils';
 
 import { ContactInfoForm, type ContactInfoFormProps, type ContactValues } from './ContactInfoForm';
 import {
@@ -23,15 +25,25 @@ import {
   WelcomePaper,
   WelcomeRoot,
 } from './EarnModal.styled';
-import { CheckingBody, ReasonLine, ResultBody, WelcomeImage } from './JoinFlow.styled';
-import { Spinner } from './Spinner';
+import {
+  CheckingBody,
+  CtaPair,
+  ReasonLine,
+  ResultBody,
+  SupportEmail,
+  WelcomeImage,
+} from './JoinFlow.styled';
+import { CheckingSpinner } from './Spinner';
 import { TermsModal } from './TermsModal';
 import { CloseIcon } from './icons';
 
-export type JoinOutcome = 'cancelled' | 'failed' | 'joined' | 'conflict';
+export type JoinOutcome = 'cancelled' | 'joined' | 'conflict';
+
+const SUPPORT_EMAIL = 'creatorfund@decentraland.org';
 
 type Step =
   | { name: 'checking' }
+  | { name: 'check_failed' }
   | { name: 'ineligible'; reasons: string[] }
   | { name: 'terms' }
   | { name: 'contact'; termsVersion: number }
@@ -111,6 +123,7 @@ export function IneligibleModal({ reasons, onClose }: { reasons: string[]; onClo
         describedBy={reasonId}
         onDismiss={onClose}
       >
+        <Close onClick={onClose} />
         <ResultBody>
           <ModalTitle id={titleId}>{t('earn.not_eligible.title')}</ModalTitle>
           <ModalText id={reasonId}>
@@ -133,6 +146,64 @@ export function IneligibleModal({ reasons, onClose }: { reasons: string[]; onClo
   );
 }
 
+function CheckFailedModal({ onRetry, onClose }: { onRetry: () => void; onClose: () => void }) {
+  const titleId = useId();
+  const bodyId = useId();
+  return (
+    <StatusModal open>
+      <StatusShell
+        role="alertdialog"
+        labelledBy={titleId}
+        describedBy={bodyId}
+        onDismiss={onClose}
+      >
+        <Close onClick={onClose} />
+        <ResultBody>
+          <ModalTitle id={titleId}>{t('earn.check_failed.title')}</ModalTitle>
+          <ModalText id={bodyId}>
+            {getCurrentLocale().formatMessage(
+              { id: 'earn.check_failed.body' },
+              {
+                email: (
+                  <SupportEmail
+                    key="email"
+                    href={`mailto:${SUPPORT_EMAIL}`}
+                    onClick={event => {
+                      event.preventDefault();
+                      void misc.openExternal(`mailto:${SUPPORT_EMAIL}`);
+                    }}
+                  >
+                    {SUPPORT_EMAIL}
+                  </SupportEmail>
+                ),
+              },
+            )}
+          </ModalText>
+          <CtaPair>
+            <ModalCta
+              variant="contained"
+              color="secondary"
+              size="large"
+              onClick={onClose}
+            >
+              {t('earn.close')}
+            </ModalCta>
+            <ModalCta
+              variant="contained"
+              color="primary"
+              size="large"
+              autoFocus
+              onClick={onRetry}
+            >
+              {t('earn.errors.retry')}
+            </ModalCta>
+          </CtaPair>
+        </ResultBody>
+      </StatusShell>
+    </StatusModal>
+  );
+}
+
 /**
  * The join flow: eligibility check, terms, contact info, welcome.
  * @param props.onExit - called once, with how the flow ended.
@@ -141,6 +212,7 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
   const dispatch = useDispatch();
   const titleId = useId();
   const [step, setStep] = useState<Step>({ name: 'checking' });
+  const [checkAttempt, setCheckAttempt] = useState(0);
   const [submission, setSubmission] = useState<Submission>({});
   const [draft, setDraft] = useState<ContactValues>();
   const onExitRef = useRef(onExit);
@@ -168,10 +240,15 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
         ),
       )
       .catch(error => {
-        if (error?.name !== 'AbortError') exit('failed');
+        if (error?.name !== 'AbortError') setStep({ name: 'check_failed' });
       });
     return () => check.abort();
-  }, [dispatch, exit]);
+  }, [dispatch, checkAttempt]);
+
+  const retryCheck = useCallback(() => {
+    setStep({ name: 'checking' });
+    setCheckAttempt(value => value + 1);
+  }, []);
 
   const cancel = useCallback(() => {
     checkRef.current?.abort();
@@ -230,10 +307,7 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
           >
             <Close onClick={cancel} />
             <CheckingBody>
-              <Spinner
-                size={80}
-                label={t('earn.checking.progress_label')}
-              />
+              <CheckingSpinner label={t('earn.checking.progress_label')} />
               <ModalTitle id={titleId}>{t('earn.checking.title')}</ModalTitle>
               <ModalText>
                 {t('earn.checking.body_1')}
@@ -243,6 +317,13 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
             </CheckingBody>
           </StatusShell>
         </StatusModal>
+      );
+    case 'check_failed':
+      return (
+        <CheckFailedModal
+          onRetry={retryCheck}
+          onClose={cancel}
+        />
       );
     case 'ineligible':
       return (
