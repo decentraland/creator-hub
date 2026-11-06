@@ -1,4 +1,5 @@
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
+import cx from 'classnames';
 
 import type { ScriptParamArray, ScriptParamUnion } from '../types';
 import { Container } from '../../../Container';
@@ -28,6 +29,9 @@ const asArray = (prev: unknown): unknown[] => (Array.isArray(prev) ? prev : []);
 export function ArrayField({ name, param, getError, onUpdate }: Props) {
   const { value, item } = param;
   const rows = asArray(value);
+  // A single-field row sits beside its trash button; a nested object or list is a tall group,
+  // so its button stays at the top.
+  const isLeaf = item.type !== 'object' && item.type !== 'array';
 
   return (
     <Container
@@ -39,7 +43,7 @@ export function ArrayField({ name, param, getError, onUpdate }: Props) {
     >
       {rows.map((element, index) => (
         <div
-          className="ArrayFieldRow"
+          className={cx('ArrayFieldRow', { leaf: isLeaf })}
           key={index}
         >
           <ScriptParamField

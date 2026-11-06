@@ -1,17 +1,23 @@
+import type { Entity } from '@dcl/ecs';
 import type { ActionRef } from '@dcl/asset-packs';
 
 import { TextField, CheckboxField, RangeField } from '../../../ui';
 import { Dropdown } from '../../../ui/Dropdown';
-import EntityField from '../../../ui/EntityField/EntityField';
+import { WalletField } from '../../../ui/WalletField';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
 import ActionField from './ActionField';
 import { ObjectField } from './ObjectField';
 import { ArrayField } from './ArrayField';
+import { EntityParamField } from './EntityParamField';
+import { ActionNameField } from './ActionNameField';
 import { labelWithTooltip } from './labels';
 
 import type { Props } from './types';
 
-export function ScriptParamField({ name, param, getError, onUpdate }: Props) {
+const asEntity = (value: unknown) =>
+  typeof value === 'number' && value > 0 ? (value as Entity) : undefined;
+
+export function ScriptParamField({ name, param, siblings, getError, onUpdate }: Props) {
   switch (param.type) {
     case 'number':
       return (
@@ -58,10 +64,11 @@ export function ScriptParamField({ name, param, getError, onUpdate }: Props) {
 
     case 'entity':
       return (
-        <EntityField
+        <EntityParamField
           label={labelWithTooltip(name, param.tooltip)}
           value={param.value}
-          onChange={e => onUpdate(Number(e.target.value))}
+          components={param.components}
+          onChange={onUpdate}
         />
       );
 
@@ -96,6 +103,28 @@ export function ScriptParamField({ name, param, getError, onUpdate }: Props) {
 
     case 'string':
     default:
+      if (param.type === 'string' && param.actionsOf) {
+        return (
+          <ActionNameField
+            label={labelWithTooltip(name, param.tooltip)}
+            value={param.value}
+            entity={asEntity(siblings?.[param.actionsOf])}
+            onChange={onUpdate}
+          />
+        );
+      }
+      if (param.type === 'string' && param.format === 'wallet') {
+        return (
+          <WalletField
+            // WalletField keeps its own text, so remount it when the stored address changes
+            // (a commit, or a row above it removed).
+            key={param.value}
+            label={labelWithTooltip(name, param.tooltip)}
+            value={param.value}
+            onChange={e => onUpdate(e.target.value)}
+          />
+        );
+      }
       return (
         <TextField
           label={labelWithTooltip(name, param.tooltip)}
