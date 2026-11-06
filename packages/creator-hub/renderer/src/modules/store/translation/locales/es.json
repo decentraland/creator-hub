@@ -1601,8 +1601,10 @@
     "title": "Algo salió mal",
     "description": "Esta pantalla tuvo un error inesperado. Tus escenas y archivos están a salvo. Intenta de nuevo o vuelve al Inicio.",
     "modal_description": "Esta ventana tuvo un error inesperado. Tu escena y tus archivos están a salvo. Intenta de nuevo o ciérrala y empieza otra vez.",
+    "app_description": "Creator Hub tuvo un error inesperado. Tus escenas y archivos están a salvo. Intenta de nuevo o recarga la ventana.",
     "try_again": "Intentar de nuevo",
     "go_home": "Ir al Inicio",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "reload": "Recargar"
   }
 }

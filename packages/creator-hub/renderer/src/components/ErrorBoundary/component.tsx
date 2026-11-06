@@ -39,8 +39,15 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error(`[ErrorBoundary:${this.props.name}]`, error);
   }
 
-  componentDidUpdate(prevProps: Props) {
-    if (this.state.hasError && haveKeysChanged(prevProps.resetKeys, this.props.resetKeys)) {
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    // Only an error that was already showing may be cleared. When a navigation lands on a
+    // page that throws, the catch happens in the same update as the key change; resetting
+    // then would render the page a second time and report the crash twice.
+    if (
+      prevState.hasError &&
+      this.state.hasError &&
+      haveKeysChanged(prevProps.resetKeys, this.props.resetKeys)
+    ) {
       this.reset();
     }
   }

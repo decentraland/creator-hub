@@ -12,7 +12,7 @@ import { RouteErrorBoundary } from '.';
 
 vi.mock('@sentry/electron/renderer', () => ({ captureException: vi.fn() }));
 
-const crash = { enabled: true };
+const crash = { enabled: true, home: false };
 
 function Crashing() {
   if (crash.enabled) {
@@ -21,12 +21,20 @@ function Crashing() {
   return <p>Recovered page</p>;
 }
 
+function Home() {
+  if (crash.home) {
+    throw new Error('home failed');
+  }
+  return <p>Home page</p>;
+}
+
 function renderApp(initialPath = '/broken') {
   render(
     <MemoryRouter initialEntries={[initialPath]}>
       <ThemeProvider theme={dark}>
         <nav>
           <Link to="/home">Outside link</Link>
+          <Link to="/broken">Broken link</Link>
         </nav>
         <RouteErrorBoundary>
           <Routes>
@@ -36,7 +44,7 @@ function renderApp(initialPath = '/broken') {
             />
             <Route
               path="/home"
-              element={<p>Home page</p>}
+              element={<Home />}
             />
           </Routes>
         </RouteErrorBoundary>
@@ -52,6 +60,8 @@ describe('RouteErrorBoundary', () => {
 
   beforeEach(() => {
     crash.enabled = true;
+    crash.home = false;
+    vi.mocked(captureException).mockClear();
     // React logs every caught render error; keep the run's output readable.
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -100,6 +110,10 @@ describe('RouteErrorBoundary', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
       });
 
+      it('should render the page again and report the new crash', () => {
+        expect(captureException).toHaveBeenCalledTimes(2);
+      });
+
       it('should show the fallback again', () => {
         expect(screen.getByTestId('route-error-fallback')).toBeTruthy();
       });
@@ -123,6 +137,40 @@ describe('RouteErrorBoundary', () => {
 
       it('should clear the error for the new route', () => {
         expect(screen.getByText('Home page')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('when the user navigates into a page that throws', () => {
+    beforeEach(() => {
+      renderApp('/home');
+      fireEvent.click(screen.getByRole('link', { name: 'Broken link' }));
+    });
+
+    it('should show the fallback', () => {
+      expect(screen.getByTestId('route-error-fallback')).toBeTruthy();
+    });
+
+    it('should report the crash exactly once', () => {
+      expect(captureException).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the Home page itself throws', () => {
+    beforeEach(() => {
+      crash.home = true;
+      renderApp('/home');
+    });
+
+    describe('and the user clicks Go to Home once the cause is gone', () => {
+      beforeEach(() => {
+        crash.home = false;
+        fireEvent.click(screen.getByRole('button', { name: 'Go to Home' }));
+      });
+
+      it('should leave the fallback and render the Home route', () => {
+        expect(screen.getByText('Home page')).toBeTruthy();
+        expect(screen.queryByTestId('route-error-fallback')).toBeNull();
       });
     });
   });
