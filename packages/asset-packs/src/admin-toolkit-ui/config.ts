@@ -2,7 +2,9 @@ import type { DeepReadonlyObject, Entity, IEngine } from '@dcl/ecs';
 import type { AdminTools } from '../definitions';
 import { getComponents } from '../definitions';
 
-type AdminConfig = DeepReadonlyObject<AdminTools>;
+// `rewardsControl` is left out: nothing reads it, and the scripted Admin Tools no longer passes it.
+type AdminConfigInput = Omit<AdminTools, 'rewardsControl'>;
+type AdminConfig = DeepReadonlyObject<AdminConfigInput>;
 
 // The Admin Toolkit UI reads its configuration through this single funnel, which supports two
 // sources:
@@ -17,7 +19,7 @@ type AdminConfig = DeepReadonlyObject<AdminTools>;
 let injectedConfig: AdminConfig | undefined;
 let injectedEntity: Entity | undefined;
 
-export function setAdminConfig(config: AdminTools, entity: Entity) {
+export function setAdminConfig(config: AdminConfigInput, entity: Entity) {
   injectedConfig = config;
   injectedEntity = entity;
 }
