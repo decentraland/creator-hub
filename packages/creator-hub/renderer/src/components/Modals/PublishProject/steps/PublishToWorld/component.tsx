@@ -76,7 +76,8 @@ export function PublishToWorld(props: Props) {
   const dispatch = useDispatch();
   const names = useSelector(state => state.ens.data);
   const [name, setName] = useState<string>('');
-  const [isMultiSceneEnabled, setIsMultiSceneEnabled] = useState<boolean>(false);
+  /** The owner's or a world-wide collaborator's own pick on the switch; null keeps the default. */
+  const [multiSceneChoice, setMultiSceneChoice] = useState<boolean | null>(null);
   const worldSettings = useSelector(managementSelectors.getWorldSettings);
   const worldPermissions = useSelector(state =>
     managementSelectors.getParcelsStateForAddress(state, wallet || ''),
@@ -116,6 +117,14 @@ export function PublishToWorld(props: Props) {
     return isOwner || hasWorldWidePermission(worldPermissions);
   }, [isOwner, worldPermissions]);
 
+  // Derived, not synced by an effect: re-picking the world already in the store changes neither
+  // the permissions nor the scene count, so an effect keyed on them never re-ran and the reset
+  // to single scene stuck (a restricted collaborator, whose switch is locked, saw the
+  // "lose its Places listing" warning instead of the parcel picker).
+  // A restricted collaborator always has to choose a location.
+  const isMultiSceneEnabled =
+    !hasWorldWidePermissions || (multiSceneChoice ?? worldSettings.scenes.length > 1);
+
   const handleBack = useCallback(() => {
     if (step === Step.CONFIRM_OVERWRITE) {
       setStep(confirmOrigin);
@@ -143,7 +152,7 @@ export function PublishToWorld(props: Props) {
 
   const handleChangeName = useCallback(
     (worldName: string) => {
-      setIsMultiSceneEnabled(false);
+      setMultiSceneChoice(null);
       setName(worldName);
       loadWorld(worldName);
     },
@@ -157,6 +166,14 @@ export function PublishToWorld(props: Props) {
     (worldSettings.status === 'failed' ||
       worldSettings.scenesStatus === 'failed' ||
       (!isOwner && worldPermissions?.status === 'failed'));
+
+  // Single vs multi scene is decided from the scenes and the permissions, so the next step
+  // waits for both instead of deciding (and warning) on what is still loading.
+  const worldLoading =
+    !!name &&
+    (worldSettings.status === 'loading' ||
+      worldSettings.scenesStatus === 'loading' ||
+      (!isOwner && worldPermissions?.status === 'loading'));
 
   // Every choice made across the steps (world name, then location), so the publish can
   // put all of them in the scene.json it deploys rather than only the last step's.
@@ -215,12 +232,6 @@ export function PublishToWorld(props: Props) {
     }
   }, []);
 
-  // Update the multi scene enabled state when the world scenes or permissions change
-  useEffect(() => {
-    // Always enable multi scene if the user is a restricted collaborator as they will have to choose a location.
-    setIsMultiSceneEnabled(!hasWorldWidePermissions || worldSettings.scenes.length > 1);
-  }, [hasWorldWidePermissions, worldSettings.scenes.length]);
-
   return (
     <PublishModal
       title={t('modal.publish_project.worlds.select_world.title')}
@@ -265,9 +276,10 @@ export function PublishToWorld(props: Props) {
               project={project}
               worldSettings={worldSettings}
               isMultiSceneEnabled={isMultiSceneEnabled}
-              onChangeMultiScene={setIsMultiSceneEnabled}
+              onChangeMultiScene={setMultiSceneChoice}
               hasWorldWidePermissions={hasWorldWidePermissions}
               worldLoadFailed={worldLoadFailed}
+              worldLoading={worldLoading}
               onChangeName={handleChangeName}
               onSelectLocation={handleSelectLocation}
               onShowConfirmation={updates => handleShowConfirmation(updates, Step.SELECTION)}
@@ -305,6 +317,7 @@ function SelectWorld({
   worldSettings,
   hasWorldWidePermissions,
   worldLoadFailed,
+  worldLoading,
   isMultiSceneEnabled,
   onChangeMultiScene,
   onChangeName,
@@ -317,6 +330,7 @@ function SelectWorld({
   worldSettings: WorldSettingsState;
   hasWorldWidePermissions: boolean;
   worldLoadFailed: boolean;
+  worldLoading: boolean;
   isMultiSceneEnabled: boolean;
   onChangeMultiScene: (isMultiSceneEnabled: boolean) => void;
   onChangeName: (name: string) => void;
@@ -562,7 +576,7 @@ function SelectWorld({
           data-testid="publish-modal-publish-to-world-select-world-action"
           onClick={handleNext}
           size="large"
-          disabled={!projectIsReady || !name || worldLoadFailed}
+          disabled={!projectIsReady || !name || worldLoadFailed || worldLoading}
           endIcon={<ArrowForwardIcon />}
         >
           {isMultiSceneEnabled && worldSettings.scenes.length > 0

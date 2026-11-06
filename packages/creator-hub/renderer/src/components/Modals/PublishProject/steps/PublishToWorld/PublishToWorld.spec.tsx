@@ -67,12 +67,7 @@ function goOnline() {
   api.fetchParcelsPermission.mockResolvedValue({ parcels: [], total: 0 });
 }
 
-async function renderStep(wallet = OWNER) {
-  vi.mocked(useAuth).mockReturnValue({ wallet } as unknown as ReturnType<typeof useAuth>);
-  vi.mocked(useEditor).mockReturnValue({
-    project,
-    publishScene: vi.fn(),
-  } as unknown as ReturnType<typeof useEditor>);
+function createStoreWithNames() {
   const store = createTestStore();
   store.dispatch({ type: 'ens/fetchENSList/pending', meta: { requestId: 'r' } });
   store.dispatch({
@@ -80,19 +75,43 @@ async function renderStep(wallet = OWNER) {
     payload: [{ subdomain: 'plaza.dcl.eth', nftOwnerAddress: OWNER, provider: 'dcl' }],
     meta: { requestId: 'r' },
   });
+  return store;
+}
+
+async function renderStep(
+  wallet = OWNER,
+  { store = createStoreWithNames(), stepProject = project } = {},
+) {
+  vi.mocked(useAuth).mockReturnValue({ wallet } as unknown as ReturnType<typeof useAuth>);
+  vi.mocked(useEditor).mockReturnValue({
+    project: stepProject,
+    publishScene: vi.fn(),
+  } as unknown as ReturnType<typeof useEditor>);
   render(
     <Provider store={store as never}>
       <MemoryRouter>
         <ThemeProvider theme={dark}>
           <PublishToWorld
             open
-            project={project}
+            project={stepProject}
             onClose={vi.fn()}
             onStep={vi.fn()}
           />
         </ThemeProvider>
       </MemoryRouter>
     </Provider>,
+  );
+  await act(async () => {});
+  return store;
+}
+
+async function pickWorld(worldName: string) {
+  const [, worldSelect] = screen.getAllByRole('combobox');
+  fireEvent.mouseDown(worldSelect);
+  fireEvent.click(
+    await screen.findByTestId(
+      `publish-modal-publish-to-world-select-world-select-item-${worldName}`,
+    ),
   );
   await act(async () => {});
 }
@@ -186,6 +205,19 @@ describe('PublishToWorld', () => {
     });
   });
 
+  describe("when the world's scenes are still loading", () => {
+    beforeEach(async () => {
+      api.fetchWorldScenes.mockReturnValue(new Promise(() => {}));
+      await renderStep();
+    });
+
+    it('should not offer the next step until single or multi scene is known', () => {
+      expect(
+        screen.getByTestId('publish-modal-publish-to-world-select-world-action'),
+      ).toHaveProperty('disabled', true);
+    });
+  });
+
   describe('when everything loads', () => {
     beforeEach(async () => {
       await renderStep();
@@ -193,6 +225,40 @@ describe('PublishToWorld', () => {
 
     it('should not show the load error', () => {
       expect(screen.queryByText(LOAD_ERROR)).toBeNull();
+    });
+  });
+
+  describe('when a parcel-restricted collaborator picks the multi-scene world it already loaded', () => {
+    const unpublishedProject = { ...project, worldConfiguration: undefined } as unknown as Project;
+    const scene = (base: string) => ({
+      entityId: `entity-${base}`,
+      parcels: [base],
+      entity: { content: [], metadata: { scene: { base, parcels: [base] } } },
+    });
+    const nextAction = () =>
+      screen.getByTestId('publish-modal-publish-to-world-select-world-action');
+
+    let store: ReturnType<typeof createTestStore>;
+
+    beforeEach(async () => {
+      api.fetchWorldScenes.mockResolvedValue({ scenes: [scene('0,0'), scene('5,5')], total: 2 });
+      api.fetchParcelsPermission.mockResolvedValue({ parcels: ['5,5'], total: 1 });
+      store = await renderStep(COLLABORATOR, { stepProject: unpublishedProject });
+      await pickWorld('plaza.dcl.eth');
+      await waitFor(() => expect(nextAction().textContent).toBe('Select Location'));
+    });
+
+    describe('and comes back to this step from a failed deployment to pick it again', () => {
+      beforeEach(async () => {
+        cleanup();
+        await renderStep(COLLABORATOR, { store, stepProject: unpublishedProject });
+        await pickWorld('plaza.dcl.eth');
+      });
+
+      it('should keep multi-scene on and lead to the parcel picker', async () => {
+        await waitFor(() => expect(nextAction()).toHaveProperty('disabled', false));
+        expect(nextAction().textContent).toBe('Select Location');
+      });
     });
   });
 });
