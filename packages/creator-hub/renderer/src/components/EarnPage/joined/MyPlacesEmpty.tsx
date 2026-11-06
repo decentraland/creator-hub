@@ -1,8 +1,10 @@
 import { useEffect, useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import type { Events } from '/shared/types/analytics';
 import type { Project } from '/shared/types/projects';
 
+import { analytics } from '#preload';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { addBase64ImagePrefix } from '/@/modules/image';
 import { t } from '/@/modules/store/translation/utils';
@@ -30,6 +32,9 @@ import { ListState } from './parts';
 import { findPublishedPaths } from './publishedScenes';
 
 const SHOWN_SCENES = 3;
+
+const trackEmptyStateAction = (action: Events['Creator Fund Empty State Action']['action']) =>
+  void analytics.track('Creator Fund Empty State Action', { action });
 
 const newestEditsFirst = (projects: Project[]) =>
   [...projects].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, SHOWN_SCENES);
@@ -105,7 +110,10 @@ function UnpublishedScenes({ projects }: { projects: Project[] }) {
           <UnpublishedSceneCard
             key={project.path}
             project={project}
-            onOpen={runProject}
+            onOpen={scene => {
+              trackEmptyStateAction('open_scene');
+              runProject(scene);
+            }}
           />
         ))}
       </Cards>
@@ -124,14 +132,20 @@ function NoScenes() {
         <ModalCta
           variant="contained"
           color="secondary"
-          onClick={() => navigate('/templates')}
+          onClick={() => {
+            trackEmptyStateAction('start_from_template');
+            navigate('/templates');
+          }}
         >
           {t('earn.joined.my_places.start_from_template')}
         </ModalCta>
         <ModalCta
           variant="contained"
           color="primary"
-          onClick={() => createProject({})}
+          onClick={() => {
+            trackEmptyStateAction('create_scene');
+            createProject({});
+          }}
         >
           {t('earn.joined.my_places.create_scene')}
         </ModalCta>

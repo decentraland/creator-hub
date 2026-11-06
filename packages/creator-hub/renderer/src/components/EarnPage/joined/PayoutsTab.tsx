@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Snackbar } from 'decentraland-ui2';
 
+import { analytics } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { actions } from '/@/modules/store/creatorFund';
 import type { TranslationPath } from '/@/modules/store/translation/types';
@@ -116,7 +117,10 @@ export function PayoutsTab() {
           <ContactCard
             enrollment={enrollment.data}
             titleRef={contactTitleRef}
-            onVerify={() => setModal('verify_email')}
+            onVerify={() => {
+              void analytics.track('Creator Fund Email Verification Started', undefined);
+              setModal('verify_email');
+            }}
           />
         </CardsRow>
         {list}

@@ -12,6 +12,7 @@ import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
 import { actions } from '/@/modules/store/creatorFund';
 
+import { tracked, trackedAnyOf } from '../../../tests/utils/analytics';
 import { createTestStore } from '../../../tests/utils/testStore';
 import { EarnPage } from '.';
 
@@ -520,6 +521,90 @@ describe('EarnPage', () => {
         'Something went wrong. Please try again.',
       );
       expect(view.getByRole('heading', { name: 'Program Terms updated' })).toBeTruthy();
+    });
+  });
+
+  describe('analytics', () => {
+    it('should report JOIN when signed in, once', async () => {
+      auth.isSignedIn = true;
+      page();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Join Creators Fund' }));
+
+      expect(tracked('Creator Fund Join Clicked')).toEqual([{ signed_in: true }]);
+    });
+
+    it('should report the sign-in CTA as a signed-out join, and not again when the join starts after sign in', async () => {
+      const { rerenderPage } = page();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Sign in to join Creators Fund' }));
+      auth.isSigningIn = false;
+      auth.isSignedIn = true;
+      rerenderPage();
+      await screen.findByRole('progressbar', { name: 'Checking eligibility' });
+
+      expect(tracked('Creator Fund Join Clicked')).toEqual([{ signed_in: false }]);
+    });
+
+    describe.each([
+      ['signed_out', false, 'Sign in to join Creators Fund'],
+      ['not_joined', true, 'Join Creators Fund'],
+    ] as const)('when the page opens %s', (state, signedIn, cta) => {
+      it('should report the visit once', async () => {
+        auth.isSignedIn = signedIn;
+        const { rerenderPage } = page();
+        await screen.findByRole('button', { name: cta });
+
+        rerenderPage();
+
+        expect(tracked('Creator Fund Viewed')).toEqual([{ state }]);
+      });
+    });
+
+    it.each([
+      ['joined', 'active'],
+      ['suspended', 'suspended'],
+    ] as const)('should report a %s visit once', async (state, status) => {
+      auth.isSignedIn = true;
+      vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2, status)));
+      const { rerenderPage } = page();
+      await waitFor(() => expect(tracked('Creator Fund Viewed')).toEqual([{ state }]));
+
+      rerenderPage();
+
+      expect(tracked('Creator Fund Viewed')).toEqual([{ state }]);
+      expect(trackedAnyOf(['Jane', 'Doe', 'jane.doe@example.com'])).toBe(false);
+    });
+
+    it('should report no visit while the status fails to load', async () => {
+      auth.isSignedIn = true;
+      vi.mocked(api.getEnrollment).mockResolvedValue({ ok: false, status: 500, error: 'boom' });
+      page();
+
+      await screen.findByRole('alert');
+
+      expect(tracked('Creator Fund Viewed')).toEqual([]);
+    });
+
+    it("should report the landing's READ TERMS", () => {
+      page();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Read Terms' }));
+
+      expect(tracked('Creator Fund Read Terms')).toEqual([{ source: 'landing' }]);
+    });
+
+    it("should report the suspended snackbar's READ TERMS and CONTACT SUPPORT", async () => {
+      auth.isSignedIn = true;
+      vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2, 'suspended')));
+      const view = within(page().container);
+      const snackbar = await view.findByRole('status');
+
+      fireEvent.click(within(snackbar).getByText('Read Terms'));
+      fireEvent.click(within(snackbar).getByText('Contact Support'));
+
+      expect(tracked('Creator Fund Read Terms')).toEqual([{ source: 'snackbar' }]);
+      expect(tracked('Creator Fund Contact Support')).toEqual([{ source: 'snackbar' }]);
     });
   });
 });
