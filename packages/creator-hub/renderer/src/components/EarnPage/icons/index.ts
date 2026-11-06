@@ -1,6 +1,8 @@
+export { AlertIcon } from './AlertIcon';
 export { AutomaticEnrolmentIcon } from './AutomaticEnrolmentIcon';
 export { BuildIcon } from './BuildIcon';
 export { CalendarIcon } from './CalendarIcon';
+export { CheckboxTickIcon } from './CheckboxTickIcon';
 export { CloseIcon } from './CloseIcon';
 export { DiscordIcon } from './DiscordIcon';
 export { InfoIcon } from './InfoIcon';
@@ -10,3 +12,4 @@ export { PlayerActivityIcon } from './PlayerActivityIcon';
 export { SupportIcon } from './SupportIcon';
 export { TermsIcon } from './TermsIcon';
 export { WalletIcon } from './WalletIcon';
+export { WarningIcon } from './WarningIcon';

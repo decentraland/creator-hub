@@ -1591,7 +1591,7 @@
       "features": {
         "enrolment": {
           "title": "Inscripción automática",
-          "body": "Todas las escenas elegibles que tienes u operas se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
+          "body": "Todas las escenas elegibles que tienes se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
         },
         "cycles": {
           "title": "Recompensas cada 15 días",
@@ -1603,7 +1603,7 @@
         },
         "payout": {
           "title": "Cobra directamente en USDC",
-          "body": "Los pagos se envían a la billetera que elijas dentro de los 30 días posteriores al cierre de cada ciclo."
+          "body": "Los pagos se envían a la billetera que elijas dentro de los 14 días posteriores al cierre de cada ciclo."
         }
       },
       "join": "Unirse al Creators Fund",
@@ -1634,6 +1634,10 @@
       "body_1": "Estamos verificando tu cuenta con el Creator Fund.",
       "body_2": "Esto puede tardar unos segundos.",
       "progress_label": "Verificando elegibilidad"
+    },
+    "check_failed": {
+      "title": "Algo salió mal al verificar tu cuenta",
+      "body": "Si el problema persiste, contacta a nuestro equipo de soporte en {email}"
     },
     "not_eligible": {
       "title": "Todavía no puedes unirte",
@@ -1704,7 +1708,7 @@
     },
     "errors": {
       "generic": "Algo salió mal. Vuelve a intentarlo.",
-      "load_status": "No se pudo cargar el Creator Fund.",
+      "load_status": "Algo salió mal al cargar el Creator Fund.",
       "retry": "Reintentar"
     }
   },
