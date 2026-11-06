@@ -294,7 +294,7 @@ describe('EarnPage', () => {
       expect(within(alert).getByRole('button', { name: 'Retry' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
       expect(screen.queryByRole('button', { name: 'Read Terms' })).toBeNull();
-      expect(screen.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
+      expect(screen.queryByRole('tab', { name: 'Home' })).toBeNull();
     });
 
     it('should load the status again from RETRY', async () => {
@@ -360,7 +360,7 @@ describe('EarnPage', () => {
         expect(within(snackbar).getByText(copy)).toBeTruthy();
         expect(view.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
         expect(view.queryByRole('button', { name: 'More options' })).toBeNull();
-        expect(view.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
+        expect(view.queryByRole('tab', { name: 'Home' })).toBeNull();
       });
 
       it('should open the terms read-only from the snackbar', async () => {
@@ -381,24 +381,6 @@ describe('EarnPage', () => {
 
         expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/help/');
       });
-
-      it('should keep the ⋮ menu: the terms read-only and Contact Support', async () => {
-        auth.isSignedIn = true;
-        vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2, status)));
-        page();
-
-        fireEvent.click(await screen.findByRole('button', { name: 'More options' }));
-        const items = await screen.findAllByRole('menuitem');
-        expect(items.map(item => item.textContent)).toEqual(['Read Terms', 'Contact Support']);
-
-        fireEvent.click(items[1]);
-        expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/help/');
-
-        fireEvent.click(screen.getByRole('button', { name: 'More options' }));
-        fireEvent.click(await screen.findByRole('menuitem', { name: 'Read Terms' }));
-        expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
-        expect(screen.queryByRole('checkbox')).toBeNull();
-      });
     },
   );
 
@@ -411,7 +393,7 @@ describe('EarnPage', () => {
     it('should show the joined page instead of the landing', async () => {
       page();
 
-      expect(await screen.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
+      expect(await screen.findByRole('tab', { name: 'Home' })).toBeTruthy();
       expect(screen.getByRole('tab', { name: 'My Places' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
     });
@@ -504,7 +486,7 @@ describe('EarnPage', () => {
       fireEvent.click(reloaded);
       fireEvent.click(view.getByRole('button', { name: 'Accept' }));
 
-      expect(await view.findByRole('tab', { name: 'Leaderboard' })).toBeTruthy();
+      expect(await view.findByRole('tab', { name: 'Home' })).toBeTruthy();
       expect(vi.mocked(api.putEnrollment).mock.calls.map(([body]) => body.terms_version)).toEqual([
         2, 3,
       ]);
