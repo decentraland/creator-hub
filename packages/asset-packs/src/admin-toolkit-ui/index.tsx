@@ -186,6 +186,7 @@ export async function initializeAdminData(
       state.adminToolkitUiEntity,
       playersHelper,
       fetchSceneAdmins,
+      sdkHelpers?.messageBus,
     );
 
     adminDataInitialized = true;

@@ -11,10 +11,10 @@
  *      removing it from SyncComponents. This prevents attacker CRDT writes
  *      from propagating through the normal sync transport.
  *
- *   2. Admin commands flow via the TEXT comms channel (MessageBus), which is a
- *      separate transport from the binary CRDT channel. All participants
- *      receive admin commands through this channel and validate the sender's
- *      wallet address against the scene admin list before applying.
+ *   2. Admin commands flow via the MessageBus injected through sdkHelpers, which
+ *      is a separate channel from CRDT sync. All participants receive admin
+ *      commands through it and validate the sender's wallet address against
+ *      the scene admin list before applying.
  *
  *   3. On load, each client seeds authoritative state from
  *      VideoScreen.defaultURL (deploy-time value, not writable via CRDT).
@@ -24,18 +24,15 @@
  *   4. Late joiners request state from existing participants via a
  *      request/response handshake over the MessageBus.
  *
- * Sending uses communicationsController.send() directly rather than the
- * MessageBus class's emit(), because the class's internal flush queue drops
- * subsequent messages. Receiving uses MessageBus.on(), which registers on the
- * global onCommsMessage observable and works reliably.
+ * The bus is injected, never imported: importing the SDK MessageBus here would
+ * bundle it into every editor scene and mark them all as needing a multiplayer
+ * server. Without a bus, commands only apply locally.
  */
 
 import type { Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
-import { MessageBus } from '@dcl/sdk/message-bus';
-import { send as commsSend } from '~system/CommunicationsController';
 import { getExplorerComponents } from '../components';
 import { getComponents } from '../definitions';
-import type { IPlayersHelper } from '../types';
+import type { IPlayersHelper, MessageBusSDK } from '../types';
 import { isPreview } from './fetch-utils';
 import type { SceneAdmin } from './ModerationControl';
 import { getVideoPlayers } from './VideoControl/utils';
@@ -94,6 +91,7 @@ export function initAdminMessageBus(
   adminToolkitUiEntity: Entity,
   playersHelper?: IPlayersHelper,
   onRefetchAdmins?: () => void,
+  messageBus?: MessageBusSDK,
 ): AdminMessageBusInstance {
   let sceneAdmins = admins;
 
@@ -115,16 +113,14 @@ export function initAdminMessageBus(
 
   // ── Messaging layer ────────────────────────────────────────────────────────
   //
-  // Local delivery: handlers are called synchronously on emit.
-  // Remote delivery: communicationsController.send() (bypasses MessageBus flush queue).
-  // Remote reception: MessageBus.on() (listens on the global onCommsMessage observable).
+  // MessageBus.emit already echoes to local listeners with sender 'self', so
+  // handlers are only called directly when there is no bus.
 
   const handlers = new Map<string, MessageHandler>();
-  const receiver = new MessageBus();
 
   function onMessage(type: string, handler: MessageHandler) {
     handlers.set(type, handler);
-    receiver.on(type, handler);
+    messageBus?.on(type, handler);
   }
 
   function onAdminMessage(type: string, handler: MessageHandler) {
@@ -135,11 +131,8 @@ export function initAdminMessageBus(
   }
 
   function emitMessage(type: string, payload: Record<string, unknown>) {
-    const handler = handlers.get(type);
-    if (handler) handler(payload, 'self');
-
-    const raw = JSON.stringify({ message: type, payload });
-    commsSend({ message: raw }).catch(() => {});
+    if (messageBus) messageBus.emit(type, payload);
+    else handlers.get(type)?.(payload, 'self');
   }
 
   // ── 1. Disable CRDT sync for VideoPlayer on admin-controlled entities ──────

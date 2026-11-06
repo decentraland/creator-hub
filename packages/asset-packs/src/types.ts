@@ -133,6 +133,14 @@ export type Component = {
 export type ISDKHelpers = {
   // SyncEntity helper to create network entities at runtime.
   syncEntity?: SyncEntitySDK;
+  // Injected, not imported: bundling the SDK MessageBus marks a scene as needing
+  // a multiplayer server, so only scenes with the Admin Toolkit should get it.
+  messageBus?: MessageBusSDK;
+};
+
+export type MessageBusSDK = {
+  on(message: string, callback: (payload: unknown, sender: string) => void): unknown;
+  emit(message: string, payload: Record<string, unknown>): void;
 };
 
 export type SyncEntitySDK = (
