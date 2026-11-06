@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { MenuItem } from 'decentraland-ui2';
 
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 import { useSelector } from '#store';
 import { CONTACT_SUPPORT_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
@@ -51,6 +51,7 @@ export function EarnMenu() {
         <MenuItem
           onClick={() => {
             setAnchor(null);
+            void analytics.track('Creator Fund Read Terms', { source: 'menu' });
             setReadingTerms(true);
           }}
         >
@@ -60,6 +61,7 @@ export function EarnMenu() {
         <MenuItem
           onClick={() => {
             setAnchor(null);
+            void analytics.track('Creator Fund Contact Support', { source: 'menu' });
             void misc.openExternal(CONTACT_SUPPORT_URL);
           }}
         >
