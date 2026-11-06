@@ -36,7 +36,7 @@ Quit Creator Hub first if it's running (`Cmd+Q` on macOS; on Windows, close the 
 Then:
 
 1. Sign in the usual way, from the avatar menu.
-2. Open **EARN** (after MANAGE). The EARN feature flag is on for QA. If the tab is missing, your account isn't covered by the flag: report it with the wallet address you signed in with. The DevTools flag override doesn't work in this downloaded build; it only works when running from source (section 6).
+2. Open **EARN** (after MANAGE). The EARN feature flag is on for QA. If the tab is missing, your account isn't covered by the flag: report it with the wallet address you signed in with. The **Payouts** tab has its own flag, `creatorhub-creator-fund-payout`, also on for QA; without it the joined page shows only its first tab and **My Places**. The DevTools flag override doesn't work in this downloaded build; it only works when running from source (section 6).
 3. Check the fixtures are on: **Read Terms** shows "Example Creator Fund Program Terms (Beta)". The app's log also has a line `[CreatorFund] Fixtures on http://127.0.0.1:<port>` (`~/Library/Logs/creator-hub/main.log` on macOS, `%APPDATA%\creator-hub\logs\main.log` on Windows).
 
 ## 3. Fixture switches
@@ -89,7 +89,7 @@ Check each step against **Expected**. Note anything different with a screenshot.
 | --- | --- |
 | Sign in, open EARN | Red dot on the EARN tab (it means "not joined") |
 | Click **Join Creators Fund** | "Checking eligibility", then **"You can't join yet"** with "Your account isn't eligible for the Creator Fund." |
-| Click **Got it** | The modal closes; you're back on the landing |
+| Click **Got it** (or the **X**) | The modal closes; you're back on the landing |
 
 Repeat with `internal` and `suspended` for their own sentences.
 
@@ -111,10 +111,11 @@ Repeat with `internal` and `suspended` for their own sentences.
 
 | Do | Expected |
 | --- | --- |
-| **My Places**, Current cycle | 14 place cards: **In program** ×10, **Not eligible** ×3, **Replaced** ×1 |
+| **My Places**, Current cycle | "Performance of your places in the program" and "Last updated {time}". 14 place cards, the **In program** ones first (×10), then **Replaced** ×1 and **Not eligible** ×3 |
 | Hover each **Not eligible** chip | A tooltip with the reason: one fails the Content Policy, one is excluded, one says "Only the owner earns from this place. You're a collaborator." |
 | Hover the **Replaced** chip | "This place was republished as a new one. Its earlier numbers are kept." |
 | Watch the metric cards load | A grey placeholder while loading, then values (New Players Attributable, D3 Retention, Total Playtime in minutes). A few cards show **-**: the mock leaves some metrics out on purpose |
+| Hover the **ⓘ** after D3 Retention, then Tab to the one after Total Playtime | Each opens a tooltip: "The percentage of new users who returned to your place within 3 days of their first visit." / "Average time each player spent in your place over the last 30 days." New Players Attributable has no ⓘ |
 | Find **Cactus Karaoke** | A World of three scenes: its location reads `example-cactus-karaoke.dcl.eth - 2,1`. The other Worlds show just their name |
 | Open the **Cycle** select | "Current cycle", then the closed cycles newest first ("Oct 16 - Oct 31, 2026" first). No upcoming cycle |
 | Pick a closed cycle | "No places in this cycle." (you hadn't joined then) |
@@ -136,11 +137,12 @@ With `MOCK_ENROLLMENT=active` (joined on Oct 20, 2026), **Oct 16 - Oct 31, 2026*
 | Pick an older cycle | Its own top 20, labelled with that cycle |
 | Click **Jump In** on a Genesis City row | Opens the explorer at that place's coordinates |
 | The **News** panel | Six items, newest first ("Cycle Nov 1 – Nov 15 is live" on top) |
-| Relaunch with `MOCK_ENROLLMENT=active MOCK_NO_CLOSED_CYCLE=1` | **Get ready!** with its four steps instead of the table |
+| Relaunch with `MOCK_ENROLLMENT=active MOCK_NO_CLOSED_CYCLE=1` | The first tab reads **Home**, with **Get ready!** and its four steps instead of the table; the first cycle is running, so it reads "Your first reward cycle started November 1st." and "Cycle #1 Began November 1st." |
+| Relaunch with `MOCK_ENROLLMENT=active MOCK_NO_RUNNING=1` | **Home** and **Get ready!**, now "Your first reward cycle starts November 16th." and "Cycle #1 Begins November 16th." |
 
 ### 4.6 Payouts
 
-Start with no switches and join (4.3), or use `MOCK_ENROLLMENT=active`.
+Start with no switches and join (4.3), or use `MOCK_ENROLLMENT=active`. The tab needs `creatorhub-creator-fund-payout` on for your account (section 2); if it's missing, report it with your wallet address.
 
 | Do | Expected |
 | --- | --- |
@@ -159,7 +161,7 @@ Start with no switches and join (4.3), or use `MOCK_ENROLLMENT=active`.
 | Relaunch with `MOCK_ENROLLMENT=active MOCK_CODE_TTL_S=20`, open **Verify email**, wait 25 s, enter `000000` | "This code has expired. Resend a new one." |
 | Six wrong codes in a row | The sixth answers "Something went wrong. Please try again." (locked; even `000000` is refused until a resend) |
 | Relaunch with `MOCK_ENROLLMENT=active MOCK_NO_PAYOUTS=1` | "Your rewards journey starts here!" and "Your first payout is coming after the Nov 1 - Nov 15, 2026 cycle ends." |
-| Relaunch with `MOCK_ENROLLMENT=suspended`, open EARN | The suspended landing, with the ⋮ menu; no Payouts tab |
+| Relaunch with `MOCK_ENROLLMENT=suspended`, open EARN | The landing with a red snackbar "Your Creator Fund participation is suspended." holding **Read Terms** and **Contact Support**; no ⋮ menu and no tabs |
 
 ### 4.7 Updated terms (re-accept)
 
