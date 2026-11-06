@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import type { LeaderboardCycle, LeaderboardEntry } from '/shared/types/creator-fund';
 
+import { analytics } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { actions, selectors } from '/@/modules/store/creatorFund';
 import { formatCycleLabel } from '/@/modules/store/creatorFund/utils';
@@ -93,6 +94,12 @@ function LeaderboardRow({
         <JumpInButton
           place={entry.place}
           scenesInWorld={scenesInWorld}
+          onJumpIn={() =>
+            void analytics.track('Creator Fund Jump In', {
+              rank: entry.rank,
+              place_id: entry.place.id,
+            })
+          }
         />
       </span>
     </Row>
@@ -141,6 +148,15 @@ export function LeaderboardTab() {
   const sceneCounts = useWorldSceneCounts(board.data?.entries.map(entry => entry.place) ?? []);
   const [chosen, setChosen] = useState<LeaderboardCycle | null>(null);
   const selected: LeaderboardCycle | null = chosen ?? latestClosed?.id ?? null;
+  const [boardLoaded, setBoardLoaded] = useState(() => board.status === 'succeeded');
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (cycles.status === 'idle') void dispatch(actions.fetchCycles());
@@ -149,9 +165,17 @@ export function LeaderboardTab() {
   }, []);
 
   const loadBoard = useCallback(() => {
-    if (selected !== null) void dispatch(actions.fetchLeaderboard(selected));
+    if (selected === null) return;
+    void dispatch(actions.fetchLeaderboard(selected)).then(
+      () => mounted.current && setBoardLoaded(true),
+    );
   }, [dispatch, selected]);
   useEffect(loadBoard, [loadBoard]);
+
+  const retryBoard = () => {
+    setBoardLoaded(false);
+    loadBoard();
+  };
 
   const options = useMemo(
     () => [
@@ -176,14 +200,18 @@ export function LeaderboardTab() {
     return cycles.status === 'succeeded' ? <GetReady /> : <ListState kind="loading" />;
   }
 
-  const shown = board.data && board.data.cycle_id === selected ? board.data : null;
+  const boardFailed = boardLoaded && board.status === 'failed';
+  const shown =
+    boardLoaded && !boardFailed && board.data && board.data.cycle_id === selected
+      ? board.data
+      : null;
   let state: React.ReactNode = null;
-  if (board.status === 'failed') {
+  if (boardFailed) {
     state = (
       <ListState
         kind="error"
         message={t('earn.joined.leaderboard.error')}
-        onRetry={loadBoard}
+        onRetry={retryBoard}
       />
     );
   } else if (!shown) {
@@ -196,7 +224,7 @@ export function LeaderboardTab() {
       />
     );
   }
-  const rows = board.status !== 'failed' && shown ? shown.entries : [];
+  const rows = shown?.entries ?? [];
   const newsItems = news.status === 'succeeded' ? (news.data?.news.slice(0, NEWS_SHOWN) ?? []) : [];
 
   return (
@@ -222,7 +250,14 @@ export function LeaderboardTab() {
               <CycleSelect
                 value={String(selected)}
                 options={options}
-                onChange={value => setChosen(value === 'all' ? 'all' : Number(value))}
+                onChange={value => {
+                  const cycleId = value === 'all' ? 'all' : Number(value);
+                  void analytics.track('Creator Fund Cycle Changed', {
+                    tab: 'leaderboard',
+                    cycle_id: cycleId,
+                  });
+                  setChosen(cycleId);
+                }}
               />
             </FilterBar>
           </Toolbar>
