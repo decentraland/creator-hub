@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 
 import heroImage from '/assets/images/earn/hero.webp';
 import moneyMouth from '/assets/images/earn/money-mouth.webp';
@@ -175,7 +175,10 @@ export function LandingCtas({
           variant="contained"
           color="secondary"
           disableRipple
-          onClick={() => setReadingTerms(true)}
+          onClick={() => {
+            void analytics.track('Creator Fund Read Terms', { source: 'landing' });
+            setReadingTerms(true);
+          }}
         >
           {t('earn.landing.read_terms')}
         </HeroCta>
@@ -203,11 +206,19 @@ export function LandingStatus() {
       >
         <SnackbarAction
           emphasis="muted"
-          onClick={() => setReadingTerms(true)}
+          onClick={() => {
+            void analytics.track('Creator Fund Read Terms', { source: 'snackbar' });
+            setReadingTerms(true);
+          }}
         >
           {t('earn.joined.read_terms')}
         </SnackbarAction>
-        <SnackbarAction onClick={() => void misc.openExternal(CONTACT_SUPPORT_URL)}>
+        <SnackbarAction
+          onClick={() => {
+            void analytics.track('Creator Fund Contact Support', { source: 'snackbar' });
+            void misc.openExternal(CONTACT_SUPPORT_URL);
+          }}
+        >
           {t('earn.joined.contact_support')}
         </SnackbarAction>
       </StatusSnackbar>
