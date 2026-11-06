@@ -1,5 +1,5 @@
 import { Provider } from 'react-redux';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
@@ -84,6 +84,34 @@ describe('TermsModal', () => {
       expect(region.getAttribute('tabindex')).toBe('0');
       expect(screen.getByRole('heading', { name: '1. About the Program' })).toBeTruthy();
       expect(screen.getByText('Second paragraph.')).toBeTruthy();
+    });
+  });
+
+  describe.each(['read', 'accept'] as const)('when the %s terms render', variant => {
+    it('should scroll them in a focusable region inset inside the box frame', async () => {
+      renderModal(
+        variant === 'read' ? (
+          <TermsModal
+            variant="read"
+            onClose={vi.fn()}
+          />
+        ) : (
+          <TermsModal
+            variant="accept"
+            onAccept={vi.fn()}
+            onClose={vi.fn()}
+          />
+        ),
+      );
+
+      const region = await screen.findByRole('region', { name: 'Program Terms' });
+      const frame = region.parentElement!;
+      expect(frame.getAttribute('data-variant')).toBe(variant);
+      expect(frame.getAttribute('role')).toBeNull();
+      expect(frame.hasAttribute('tabindex')).toBe(false);
+      expect(region.hasAttribute('data-variant')).toBe(false);
+      expect(region.getAttribute('tabindex')).toBe('0');
+      expect(within(region).getByText('Second paragraph.')).toBeTruthy();
     });
   });
 
