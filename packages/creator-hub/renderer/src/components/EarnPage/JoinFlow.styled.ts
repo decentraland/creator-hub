@@ -1,6 +1,7 @@
 import { styled } from 'decentraland-ui2';
 
-import { StatusBody } from './EarnModal.styled';
+import { Actions, StatusBody } from './EarnModal.styled';
+import { focusRing } from './tokens';
 
 const CheckingBody = styled(StatusBody)({
   gap: 20,
@@ -9,6 +10,17 @@ const CheckingBody = styled(StatusBody)({
 const ResultBody = styled(StatusBody)({
   gap: 50,
   '& .MuiButton-root': { width: '100%' },
+});
+
+const CtaPair = styled(Actions)({
+  gap: 30,
+});
+
+const SupportEmail = styled('a')({
+  fontWeight: 600,
+  color: 'var(--primary)',
+  textDecoration: 'none',
+  ...focusRing,
 });
 
 const ReasonLine = styled('span')({
@@ -25,4 +37,4 @@ const WelcomeImage = styled('img')({
   pointerEvents: 'none',
 });
 
-export { CheckingBody, ReasonLine, ResultBody, WelcomeImage };
+export { CheckingBody, CtaPair, ReasonLine, ResultBody, SupportEmail, WelcomeImage };
