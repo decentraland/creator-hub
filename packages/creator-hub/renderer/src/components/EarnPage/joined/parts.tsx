@@ -9,7 +9,14 @@ import type { TranslationPath } from '/@/modules/store/translation/types';
 import { t } from '/@/modules/store/translation/utils';
 
 import { ModalCta, VisuallyHidden } from '../EarnModal.styled';
-import { ArrowDownIcon, CheckmarkIcon, InProgramIcon, JumpInIcon, NotEligibleIcon } from '../icons';
+import {
+  ArrowDownIcon,
+  CheckmarkIcon,
+  InProgramIcon,
+  JumpInIcon,
+  MetricInfoIcon,
+  NotEligibleIcon,
+} from '../icons';
 import { StatusLine } from '../Landing.styled';
 import { Spinner } from '../Spinner';
 import { fontFace } from '../tokens';
@@ -23,6 +30,7 @@ import {
   FilterLabel,
   JumpIn,
   Metric,
+  MetricInfoButton,
   MetricLabel,
   MetricLabelText,
   MetricSkeleton,
@@ -150,14 +158,40 @@ function MetricReadingValue({ reading }: { reading: MetricReading }) {
   );
 }
 
-/** One metric of a place: a skeleton named "Loading" while it loads, "-" named "No data" when absent. */
+export type MetricExplanation = { name: string; tooltip: string };
+
+function MetricInfo({ name, tooltip }: MetricExplanation) {
+  return (
+    <Tooltip
+      title={tooltip}
+      placement="top"
+      arrow
+      describeChild
+      slotProps={TOOLTIP_SLOTS}
+    >
+      <MetricInfoButton
+        type="button"
+        aria-label={name}
+      >
+        <MetricInfoIcon />
+      </MetricInfoButton>
+    </Tooltip>
+  );
+}
+
+/**
+ * One metric of a place: a skeleton named "Loading" while it loads, "-" named "No data" when absent.
+ * @param props.info - an ⓘ button after the label: its accessible name and its tooltip.
+ */
 export function MetricStat({
   icon,
   label,
+  info,
   reading,
 }: {
   icon: React.ReactNode;
   label: string;
+  info?: MetricExplanation;
   reading: MetricReading;
 }) {
   return (
@@ -165,6 +199,7 @@ export function MetricStat({
       <MetricLabel>
         {icon}
         <MetricLabelText title={label}>{label}</MetricLabelText>
+        {info && <MetricInfo {...info} />}
       </MetricLabel>
       <MetricReadingValue reading={reading} />
     </Metric>

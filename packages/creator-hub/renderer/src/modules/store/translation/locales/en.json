@@ -1732,8 +1732,8 @@
         "title": "News"
       },
       "my_places": {
-        "sentence": "Performance of your Places participating in the program",
-        "last_update": "Last update {time}",
+        "sentence": "Performance of your places in the program",
+        "last_update": "Last updated {time}",
         "status": {
           "in_program": "In program",
           "not_eligible": "Not eligible",
@@ -1750,7 +1750,10 @@
         "metrics": {
           "new_players": "New Players Attributable",
           "d3_retention": "D3 Retention",
+          "d3_retention_info_label": "About D3 Retention",
           "playtime": "Total Playtime",
+          "playtime_info": "Average time each player spent in your place over the last 30 days.",
+          "playtime_info_label": "About Total Playtime",
           "minutes": "{value} min",
           "no_data": "No data"
         },
