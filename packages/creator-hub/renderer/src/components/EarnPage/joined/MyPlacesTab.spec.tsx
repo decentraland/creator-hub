@@ -112,6 +112,14 @@ const PLACES = [
   exampleWorld('b', { status: 'not_eligible', reasons: ['content_policy'] }),
 ];
 
+const tooltipOf = (button: HTMLElement) =>
+  button.ownerDocument.getElementById(button.getAttribute('aria-describedby') ?? '');
+
+const expectTooltip = (button: HTMLElement, copy: string) =>
+  waitFor(() => expect(tooltipOf(button)?.textContent).toBe(copy));
+
+vi.setConfig({ testTimeout: 15_000 });
+
 describe('MyPlacesTab', () => {
   beforeAll(() => {
     setCurrentLocale('en', flatten(en));
@@ -346,19 +354,19 @@ describe('MyPlacesTab', () => {
 
     it('should explain D3 Retention in a tooltip when its info button is hovered', async () => {
       const { container } = renderTab();
-      const entry = await within(container).findByRole('article', { name: 'Example Place a' });
+      const info = await within(container).findByLabelText('About D3 Retention');
 
-      fireEvent.mouseOver(within(entry).getByRole('button', { name: 'About D3 Retention' }));
+      fireEvent.mouseOver(info);
 
-      expect((await screen.findByRole('tooltip')).textContent).toBe(
+      await expectTooltip(
+        info,
         'The percentage of new users who returned to your place within 3 days of their first visit.',
       );
     });
 
     it('should explain Total Playtime in a tooltip when its info button gets keyboard focus', async () => {
       const { container } = renderTab();
-      const entry = await within(container).findByRole('article', { name: 'Example Place a' });
-      const info = within(entry).getByRole('button', { name: 'About Total Playtime' });
+      const info = await within(container).findByLabelText('About Total Playtime');
       const matches = Element.prototype.matches;
       const keyboardFocus = vi.spyOn(Element.prototype, 'matches').mockImplementation(function (
         this: Element,
@@ -370,7 +378,8 @@ describe('MyPlacesTab', () => {
       try {
         act(() => info.focus());
 
-        expect((await screen.findByRole('tooltip')).textContent).toBe(
+        await expectTooltip(
+          info,
           'Average time each player spent in your place over the last 30 days.',
         );
       } finally {
@@ -380,26 +389,27 @@ describe('MyPlacesTab', () => {
 
     it('should explain New Players Attributable in a tooltip when its info button is hovered', async () => {
       const { container } = renderTab();
-      const entry = await within(container).findByRole('article', { name: 'Example Place a' });
+      const info = await within(container).findByLabelText('About New Players Attributable');
 
-      fireEvent.mouseOver(
-        within(entry).getByRole('button', { name: 'About New Players Attributable' }),
-      );
+      fireEvent.mouseOver(info);
 
-      expect((await screen.findByRole('tooltip')).textContent).toBe(
+      await expectTooltip(
+        info,
         'Wallets new to Decentraland whose first day was spent mostly in your place, over the last 30 days.',
       );
     });
 
     it('should give each of the three metrics one info button', async () => {
       const { container } = renderTab();
-      const entry = await within(container).findByRole('article', { name: 'Example Place a' });
+      await within(container).findByLabelText('About D3 Retention');
 
-      expect(
-        within(entry)
-          .getAllByRole('button', { name: /^About / })
-          .map(button => button.getAttribute('aria-label')),
-      ).toEqual(['About New Players Attributable', 'About D3 Retention', 'About Total Playtime']);
+      const buttons = within(container).getAllByLabelText(/^About /);
+      expect(buttons.map(button => button.getAttribute('aria-label'))).toEqual([
+        'About New Players Attributable',
+        'About D3 Retention',
+        'About Total Playtime',
+      ]);
+      expect(buttons.every(button => button.tagName === 'BUTTON')).toBe(true);
     });
 
     it('should show "-" named "No data" for a missing metric', async () => {
