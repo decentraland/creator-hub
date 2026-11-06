@@ -106,9 +106,8 @@ const TooltipLine = styled('span')({
 });
 
 const Metric = styled('div')({
-  width: 220,
-  minWidth: 202,
-  flexShrink: 1,
+  flex: '0 1 220px',
+  minWidth: 'auto',
   display: 'flex',
   flexDirection: 'column',
   gap: 6,
@@ -121,7 +120,7 @@ const MetricLabel = styled('dt')({
   alignItems: 'center',
   gap: 6,
   height: 28,
-  minWidth: 0,
+  minWidth: 'max-content',
   color: 'var(--dcl-silver)',
   whiteSpace: 'nowrap',
   '& svg': { flexShrink: 0 },
