@@ -136,6 +136,18 @@ Under happy-dom the whole subtree reports "There are no accessible roles", and
 - jest-dom isn't installed. Assert accessible names and descriptions through
   `getByRole(role, { name })` and `{ description }`.
 
+### Assert "never rendered" with a MutationObserver, not a final query
+
+`queryBy… === null` only proves an element is gone now. To prove a flash never
+happened (cards that appear and then give way to an error block), record DOM
+mutations for the whole test and check every node in each record's
+`removedNodes` as well as its `addedNodes`. Observer callbacks run after React
+has already committed the next render, so querying an added container then no
+longer finds a child that was already removed; a checker that only looks at
+additions passes falsely. Drain `observer.takeRecords()` before reading the
+result. `watchFor` in `components/EarnPage/joined/PayoutsTab.spec.tsx` is the
+helper.
+
 ### Mocking `@dcl/sdk/ecs` with the real `@dcl/ecs`
 
 `vi.importActual('@dcl/ecs')` hands back the bare generated component
