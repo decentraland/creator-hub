@@ -142,4 +142,59 @@ export type Events = {
     tool_count: number;
     mutations: number;
   };
+  'Creator Fund Join Clicked': {
+    signed_in: boolean;
+  };
+  'Creator Fund Eligibility Checked': {
+    result: 'eligible' | 'ineligible' | 'error';
+    reasons?: string[];
+  };
+  'Creator Fund Terms Accepted': {
+    terms_version: number;
+    flow: 'join' | 'reaccept';
+  };
+  'Creator Fund Terms Declined': {
+    terms_version: number | null;
+    flow: 'join' | 'reaccept';
+    via: 'not_now' | 'close' | 'escape';
+  };
+  'Creator Fund Contact Submitted': {
+    ok: boolean;
+    status?: number;
+  };
+  'Creator Fund Joined': {
+    terms_version: number;
+  };
+  'Creator Fund Contact Support': {
+    source: 'check_failed' | 'snackbar' | 'menu';
+  };
+  'Creator Fund Viewed': {
+    state: 'signed_out' | 'not_joined' | 'joined' | 'suspended';
+  };
+  'Creator Fund Read Terms': {
+    source: 'landing' | 'snackbar' | 'menu';
+  };
+  'Creator Fund Tab Viewed': {
+    tab: 'home' | 'leaderboard' | 'my_places' | 'payouts';
+  };
+  'Creator Fund Cycle Changed': {
+    tab: 'leaderboard' | 'my_places';
+    cycle_id: number | 'all';
+  };
+  'Creator Fund Jump In': {
+    rank: number;
+    place_id: string;
+  };
+  'Creator Fund Empty State Action': {
+    action: 'create_scene' | 'start_from_template' | 'open_scene';
+  };
+  'Creator Fund Email Verification Started': undefined;
+  'Creator Fund Email Code Submitted': {
+    result: 'verified' | 'incorrect' | 'expired' | 'locked';
+  };
+  'Creator Fund Payout Wallet Saved': {
+    action: 'add' | 'edit';
+    ok: boolean;
+  };
+  'Creator Fund Transaction Viewed': undefined;
 };

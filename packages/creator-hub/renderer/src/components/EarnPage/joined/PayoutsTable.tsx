@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 
 import type { Payout } from '/shared/types/creator-fund';
 
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 import { useSelector } from '#store';
 import { formatCycleLabel } from '/@/modules/store/creatorFund/utils';
 import { t } from '/@/modules/store/translation/utils';
@@ -55,7 +55,10 @@ function TransactionLink({ hash }: { hash: string | null }) {
         <TransactionButton
           type="button"
           aria-label={t('earn.joined.payouts.table.view_transaction')}
-          onClick={() => void misc.openExternal(`${ETHERSCAN_TX}${hash}`)}
+          onClick={() => {
+            void analytics.track('Creator Fund Transaction Viewed', undefined);
+            void misc.openExternal(`${ETHERSCAN_TX}${hash}`);
+          }}
         >
           <TransactionIcon />
         </TransactionButton>
