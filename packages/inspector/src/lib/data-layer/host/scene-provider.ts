@@ -5,7 +5,7 @@ import type { Scene } from '@dcl/schemas';
 import type { FileSystemInterface } from '../types';
 import type { EditorComponentsTypes } from '../../sdk/components';
 import { EditorComponentNames } from '../../sdk/components';
-import { fromSceneComponent, getValidParcels } from './utils/component';
+import { fromSceneComponent, getValidParcels, toSceneComponent } from './utils/component';
 import {
   type StateProvider,
   type Operation,
@@ -19,11 +19,44 @@ type SceneWithDefaults = Scene & {
   };
 };
 
+type SceneFields = Record<string, unknown>;
+
+const SCENE_READ_ATTEMPTS = 3;
+const SCENE_READ_RETRY_MS = 50;
+
+const isPlainObject = (value: unknown): value is SceneFields =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
+
+const sameValue = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Three-way merge of the Scene component's fields onto scene.json as it is on disk now.
+ * A field the editor did not change since it last loaded or wrote it (`ours` equals `base`)
+ * keeps whatever is on disk, so a value written from outside while the editor was open —
+ * the parcels picked in the publish dialog, say — is not reverted by the next save.
+ */
+function mergeEditorChanges(onDisk: Scene, base: SceneFields, ours: SceneFields): Scene {
+  const next: SceneFields = { ...onDisk };
+  for (const [key, value] of Object.entries(ours)) {
+    if (sameValue(value, base[key])) continue;
+    const current = next[key];
+    next[key] =
+      isPlainObject(current) && isPlainObject(value)
+        ? merge.withOptions({ mergeArrays: false }, current, value)
+        : value;
+  }
+  return next as Scene;
+}
+
 export class SceneProvider implements StateProvider {
   readonly name = 'scene';
   private scene: SceneWithDefaults;
   private readonly fs: FileSystemInterface;
   private pendingSceneUpdates = new Map<string, Partial<Scene>>();
+  /** The Scene component's fields as the editor last loaded or wrote them. */
+  private synced: Partial<Scene>;
+  /** The Scene component's fields as the engine holds them now. */
+  private latest: Partial<Scene>;
   /**
    * Serializes writes. Never rejects: a failed write is recorded on `saveError` and leaves
    * `dirty` set, so a rejection can never end up unobserved — an unobserved one is a failed
@@ -37,6 +70,10 @@ export class SceneProvider implements StateProvider {
   constructor(fs: FileSystemInterface, initialScene: SceneWithDefaults) {
     this.fs = fs;
     this.scene = initialScene;
+    // Same round trip the composite provider uses to seed the Scene component from
+    // scene.json, so an untouched component compares equal to it.
+    this.synced = fromSceneComponent(toSceneComponent(initialScene));
+    this.latest = this.synced;
   }
 
   static async create(fs: FileSystemInterface): Promise<SceneProvider> {
@@ -54,6 +91,37 @@ export class SceneProvider implements StateProvider {
     }
 
     return SceneProvider.augmentDefaults(scene);
+  }
+
+  /**
+   * scene.json as it is on disk now, or null when there is none. A file that exists but
+   * does not parse (caught mid-write by another writer, say) is read again a few times;
+   * if it still does not parse this throws, because writing over it from the copy loaded
+   * at open would revert whatever that other writer put there.
+   */
+  private async readSceneOnDisk(): Promise<Scene | null> {
+    for (let attempt = 1; ; attempt++) {
+      if (!(await this.fs.existFile('scene.json'))) return null;
+      try {
+        const scene = JSON.parse(new TextDecoder().decode(await this.fs.readFile('scene.json')));
+        if (isPlainObject(scene)) return scene as Scene;
+        throw new Error('scene.json does not hold a JSON object');
+      } catch (error) {
+        if (attempt >= SCENE_READ_ATTEMPTS) {
+          throw new Error(
+            `Could not read scene.json before saving it: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        await new Promise(resolve => setTimeout(resolve, SCENE_READ_RETRY_MS));
+      }
+    }
+  }
+
+  private applyEngineScene(partialScene: Partial<Scene>) {
+    const merged = merge.withOptions({ mergeArrays: false }, this.scene, partialScene) as Scene;
+    this.scene = SceneProvider.augmentDefaults(merged);
+    this.latest = partialScene;
+    this.dirty = true;
   }
 
   private static augmentDefaults(scene: Scene): SceneWithDefaults {
@@ -101,10 +169,7 @@ export class SceneProvider implements StateProvider {
     if (!pendingUpdate) return;
 
     try {
-      const merged = merge.withOptions({ mergeArrays: false }, this.scene, pendingUpdate) as Scene;
-
-      this.scene = SceneProvider.augmentDefaults(merged);
-      this.dirty = true;
+      this.applyEngineScene(pendingUpdate);
       this.pendingSceneUpdates.delete(transaction.id);
     } catch (error) {
       console.error('Failed to complete scene transaction:', error);
@@ -130,13 +195,25 @@ export class SceneProvider implements StateProvider {
   private async writeScene(): Promise<void> {
     if (!this.dirty) return;
 
-    const snapshot = this.scene;
+    const snapshot = this.latest;
     try {
-      const buffer = Buffer.from(JSON.stringify(snapshot, null, 2), 'utf-8');
-      await this.fs.writeFile('scene.json', buffer);
+      // Re-read on purpose: scene.json is not the editor's alone. The host writes keys the
+      // Scene component does not carry (worldConfiguration) and can rewrite ones it does
+      // (the publish dialog's parcels), so writing the copy captured at load reverts them.
+      // No await between the read and the write but the write itself, to keep the window
+      // for another writer to slip in between them as short as it can be.
+      const onDisk = (await this.readSceneOnDisk()) ?? this.scene;
+      const next = SceneProvider.augmentDefaults(
+        mergeEditorChanges(onDisk, this.synced as SceneFields, snapshot as SceneFields),
+      );
+      await this.fs.writeFile('scene.json', Buffer.from(JSON.stringify(next, null, 2), 'utf-8'));
+      this.synced = snapshot;
       // An edit that landed while the write was in flight is not on disk yet, so it keeps
       // the provider dirty and the next flush writes it.
-      if (this.scene === snapshot) this.dirty = false;
+      if (this.latest === snapshot) {
+        this.scene = next;
+        this.dirty = false;
+      }
       this.saveError = null;
     } catch (error) {
       this.saveError = error instanceof Error ? error : new Error(String(error));
@@ -152,11 +229,7 @@ export class SceneProvider implements StateProvider {
       const sceneValue = SceneComponent.getOrNull(engine.RootEntity);
       if (!sceneValue) return;
 
-      const partialScene = fromSceneComponent(sceneValue);
-      const merged = merge.withOptions({ mergeArrays: false }, this.scene, partialScene) as Scene;
-
-      this.scene = SceneProvider.augmentDefaults(merged);
-      this.dirty = true;
+      this.applyEngineScene(fromSceneComponent(sceneValue));
     } catch (error) {
       console.error('Failed to sync scene from engine:', error);
       return;
@@ -186,6 +259,8 @@ export class SceneProvider implements StateProvider {
   async forceReload(): Promise<void> {
     await this.saveQueue;
     this.scene = await SceneProvider.loadScene(this.fs);
+    this.synced = fromSceneComponent(toSceneComponent(this.scene));
+    this.latest = this.synced;
     this.pendingSceneUpdates.clear();
     this.dirty = false;
     this.saveError = null;
