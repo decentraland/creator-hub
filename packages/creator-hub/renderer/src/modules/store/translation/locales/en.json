@@ -1688,8 +1688,48 @@
       "lets_go": "Let's go"
     },
     "joined": {
+      "sections": "Creator Fund sections",
+      "tabs": {
+        "my_places": "My Places",
+        "leaderboard": "Leaderboard",
+        "home": "Home"
+      },
+      "title_prefix": "Earn",
+      "title": "Creator Fund",
+      "beta": "Beta",
+      "joined_on": "Joined on {date}",
+      "more_options": "More options",
       "read_terms": "Read Terms",
-      "contact_support": "Contact Support"
+      "contact_support": "Contact Support",
+      "leaderboard": {
+        "error": "Couldn't load the leaderboard."
+      },
+      "get_ready": {
+        "title": "Get ready!",
+        "body": "Your first reward cycle is coming up. Here are a few things you can do to get started.",
+        "body_upcoming": "Your first reward cycle starts {date}.",
+        "body_started": "Your first reward cycle started {date}.",
+        "build": {
+          "title": "Build your scenes",
+          "body": "Create engaging experiences that bring players to Decentraland. Explore the <docs>Creator Docs</docs> and <refs>References</refs> for inspiration."
+        },
+        "name": {
+          "title": "Get a NAME and publish your scenes",
+          "body": "Make your Worlds accessible and get your experiences ready for players.",
+          "link": "Get a NAME"
+        },
+        "cycle": {
+          "title": "Get ready for the first cycle",
+          "body": "Your first reward cycle begins!",
+          "body_upcoming": "Cycle #1 Begins {date}.",
+          "body_started": "Cycle #1 Began {date}."
+        },
+        "community": {
+          "title": "Join the community",
+          "body": "Connect with other creators, share your work, and get feedback.",
+          "link": "Join Discord"
+        }
+      }
     },
     "errors": {
       "generic": "Something went wrong. Please try again.",
