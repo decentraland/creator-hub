@@ -10,6 +10,7 @@ import * as api from '/@/lib/creatorFundApi';
 import { actions } from '/@/modules/store/creatorFund';
 import { misc } from '#preload';
 
+import { tracked } from '../../../tests/utils/analytics';
 import { createTestStore } from '../../../tests/utils/testStore';
 import { TermsModal } from './TermsModal';
 
@@ -396,6 +397,76 @@ describe('TermsModal', () => {
           'Something went wrong. Please try again.',
         ),
       );
+    });
+  });
+
+  describe('analytics', () => {
+    const accepting = (variant: 'accept' | 'reaccept') => (
+      <TermsModal
+        variant={variant}
+        onAccept={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    it.each([
+      ['accept', 'join'],
+      ['reaccept', 'reaccept'],
+    ] as const)('should report %s terms accepted on their version', async (variant, flow) => {
+      renderModal(accepting(variant));
+      await screen.findByRole('region', { name: 'Program Terms' });
+      scrollRegionTo(800);
+      fireEvent.click(screen.getByRole('checkbox'));
+
+      fireEvent.click(
+        screen.getByRole('button', { name: variant === 'accept' ? 'Accept & Join' : 'Accept' }),
+      );
+
+      expect(tracked('Creator Fund Terms Accepted')).toEqual([{ terms_version: 1, flow }]);
+      expect(tracked('Creator Fund Terms Declined')).toEqual([]);
+    });
+
+    it.each([
+      ['accept', 'join'],
+      ['reaccept', 'reaccept'],
+    ] as const)('should report %s terms declined from NOT NOW', async (variant, flow) => {
+      renderModal(accepting(variant));
+      await screen.findByRole('region', { name: 'Program Terms' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+      expect(tracked('Creator Fund Terms Declined')).toEqual([
+        { terms_version: 1, flow, via: 'not_now' },
+      ]);
+    });
+
+    it('should report terms declined from the close button and from Escape', async () => {
+      renderModal(accepting('accept'));
+      const region = await screen.findByRole('region', { name: 'Program Terms' });
+
+      fireEvent.click(screen.getByLabelText('Close'));
+      fireEvent.keyDown(region, { key: 'Escape' });
+
+      expect(tracked('Creator Fund Terms Declined')).toEqual([
+        { terms_version: 1, flow: 'join', via: 'close' },
+        { terms_version: 1, flow: 'join', via: 'escape' },
+      ]);
+    });
+
+    it('should report nothing when read-only terms close', async () => {
+      renderModal(
+        <TermsModal
+          variant="read"
+          onClose={vi.fn()}
+        />,
+      );
+      const region = await screen.findByRole('region', { name: 'Program Terms' });
+
+      screen.getAllByRole('button', { name: 'Close' }).forEach(button => fireEvent.click(button));
+      fireEvent.keyDown(region, { key: 'Escape' });
+
+      expect(tracked('Creator Fund Terms Declined')).toEqual([]);
+      expect(tracked('Creator Fund Terms Accepted')).toEqual([]);
     });
   });
 });
