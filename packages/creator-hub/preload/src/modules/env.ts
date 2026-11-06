@@ -1,4 +1,5 @@
 import { ipcRenderer } from 'electron';
+import type { ApiUrlOverrides } from '/shared/types/creator-fund';
 import { Env } from '/shared/types/env';
 
 /**
@@ -18,4 +19,9 @@ export function getEnv(): Env {
   }
 
   return import.meta.env.DEV ? Env.DEV : Env.PROD;
+}
+
+/** The API base URLs main has the renderer config use instead of its own. */
+export function getApiUrlOverrides(): ApiUrlOverrides {
+  return (ipcRenderer.sendSync('creatorFund.getApiUrlOverrides') as ApiUrlOverrides | null) ?? {};
 }

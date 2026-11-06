@@ -16,6 +16,7 @@ import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as oxc from './oxc';
 import * as metrics from './metrics';
+import * as creatorFundFixtures from './creator-fund-fixtures';
 import * as ai from './ai';
 import * as aiCli from './ai-cli';
 import * as aiWindow from './ai-window';
@@ -40,6 +41,7 @@ interface InitIpcOptions {
 export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   // electron
   handleSync('electron.getEnvOverride', () => electron.getEnvOverride());
+  handleSync('creatorFund.getApiUrlOverrides', () => creatorFundFixtures.getApiUrlOverrides());
   handle('electron.getAppVersion', () => electron.getAppVersion());
   handle('electron.getUserDataPath', () => electron.getUserDataPath());
   handle('electron.getWorkspaceConfigPath', (_event, path) =>

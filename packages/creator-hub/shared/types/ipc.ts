@@ -11,6 +11,7 @@ import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
+import type { ApiUrlOverrides } from './creator-fund';
 import type { SkillsUpdateStatus } from './skills';
 import type {
   AiMirrorState,
@@ -174,6 +175,7 @@ export interface MobileDebugBroadcastResult {
 
 export interface Ipc {
   'electron.getEnvOverride': () => Env | null;
+  'creatorFund.getApiUrlOverrides': () => ApiUrlOverrides;
   'electron.getUserDataPath': () => string;
   'electron.getAppVersion': () => Promise<string>;
   'updater.getDownloadedVersion': () => string | null;

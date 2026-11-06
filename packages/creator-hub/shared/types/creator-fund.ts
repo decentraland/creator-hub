@@ -143,3 +143,8 @@ export type EmailVerification = {
 
 /** `PUT /v3/creator-fund/enrollment/email-verification` body; answers with the enrollment. */
 export type EmailVerificationRequest = { code: string };
+
+/** Renderer config values main replaces: with the Creator Fund fixtures, or from a dev environment. */
+export type ApiUrlOverrides = Partial<
+  Record<'CREATOR_FUND_API_URL' | 'METRICS_API_URL' | 'WORLDS_CONTENT_SERVER_URL', string>
+>;

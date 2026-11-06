@@ -21,7 +21,7 @@ const signPayloadMock = vi.fn((_identity: unknown, entityId: string) => [
 ]);
 
 vi.mock('#preload', () => ({
-  env: { getEnv: () => 'dev' },
+  env: { getEnv: () => 'dev', getApiUrlOverrides: () => ({}) },
   landUnpublish: {
     prepare: (parcel: string) => prepareMock(parcel),
     deploy: (request: unknown) => deployMock(request),
