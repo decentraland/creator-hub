@@ -21,10 +21,19 @@ describe('Creator Fund fixtures', () => {
   });
 
   describe('when CREATOR_FUND_FIXTURES is not set', () => {
+    it('should serve the fixtures and point the API URLs at them', async () => {
+      const origin = await startCreatorFundFixtures({});
+
+      expect(origin).toMatch(/^http:\/\/127\.0\.0\.1:[1-9]\d*$/);
+      expect(getApiUrlOverrides({})).toMatchObject({ CREATOR_FUND_API_URL: origin });
+    });
+  });
+
+  describe('when CREATOR_FUND_FIXTURES=0', () => {
     it('should start no server and leave the API URLs alone', async () => {
       vi.stubEnv('DEV', false);
 
-      expect(await startCreatorFundFixtures({})).toBeNull();
+      expect(await startCreatorFundFixtures({ CREATOR_FUND_FIXTURES: '0' })).toBeNull();
       expect(getApiUrlOverrides({})).toEqual({});
     });
   });

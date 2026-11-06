@@ -2,7 +2,7 @@
 
 This guide runs Creator Hub's **EARN** section against fixture data built into this PR's build, so you can walk every Creator Fund flow with no backend, no special wallet and no real places. Plan for about 10 minutes of setup and 40 minutes for the full walk.
 
-The fixtures are a small server inside the app. When the app starts with `CREATOR_FUND_FIXTURES=1`, it starts that server on a free local port and sends every Creator Fund call, the My Places metric cards and the World scene counts to it. Requests still take the app's real path (signed in the app window, sent by the app's main process), so what you see is what the app does against the real service. The fixtures read which account is asking from your sign-in but never check the signature, so any account works. Started without the variable, the build behaves like any other Creator Hub.
+The fixtures are a small server inside the app. When the app starts, it starts that server on a free local port and sends every Creator Fund call, the My Places metric cards and the World scene counts to it. Requests still take the app's real path (signed in the app window, sent by the app's main process), so what you see is what the app does against the real service. The fixtures read which account is asking from your sign-in but never check the signature, so any account works. To run this build against the real service instead, launch it with `CREATOR_FUND_FIXTURES=0`.
 
 ## What you need
 
@@ -27,38 +27,11 @@ The PR's **build comment** (posted by github-actions) links one download per pla
 
 1. Download **win-x64** and run the installer. It puts a **Decentraland Creator Hub** shortcut on the Desktop.
 
-## 2. Launch with the fixtures
+## 2. Launch
 
-Quit Creator Hub first if it's running (`Cmd+Q` on macOS; on Windows, close the window). Creator Hub runs one copy at a time: launching it again while it's open only brings the open one forward, without the fixtures.
+Open the app normally: double-click it, or use the Dock or the Start menu. The fixtures run on every start.
 
-**macOS** (Terminal):
-
-```bash
-open -n --env CREATOR_FUND_FIXTURES=1 "/Applications/Decentraland Creator Hub.app"
-```
-
-Pass each variable with its own `--env`. If a variable ever doesn't reach the app, quit it and run the binary inside the bundle instead; Terminal stays attached until you quit:
-
-```bash
-CREATOR_FUND_FIXTURES=1 "/Applications/Decentraland Creator Hub.app/Contents/MacOS/Decentraland Creator Hub"
-```
-
-**Windows** (PowerShell):
-
-```powershell
-$app = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Decentraland Creator Hub.lnk").TargetPath
-$env:CREATOR_FUND_FIXTURES = '1'
-& $app
-```
-
-**Windows** (cmd):
-
-```bat
-set CREATOR_FUND_FIXTURES=1
-start "" "%LOCALAPPDATA%\Programs\creator-hub\Decentraland Creator Hub.exe"
-```
-
-If that path doesn't exist, right-click the Desktop shortcut, choose **Properties**, and use the path in **Target**. On Windows the variables stay set in that window until you close it.
+Quit Creator Hub first if it's running (`Cmd+Q` on macOS; on Windows, close the window). Creator Hub runs one copy at a time: launching it again while it's open only brings the open one forward, with its earlier switches.
 
 Then:
 
@@ -68,11 +41,11 @@ Then:
 
 ## 3. Fixture switches
 
-Each switch is another environment variable, set the same way as `CREATOR_FUND_FIXTURES=1`, and they combine:
+Each switch is an environment variable, so launch the app with it set. Pass each variable with its own `--env`. If a variable doesn't reach the app on macOS, quit it and run the binary inside the bundle (`MOCK_ENROLLMENT=active "/Applications/Decentraland Creator Hub.app/Contents/MacOS/Decentraland Creator Hub"`); Terminal stays attached until you quit. Switches combine:
 
-- macOS: `open -n --env CREATOR_FUND_FIXTURES=1 --env MOCK_ENROLLMENT=active "/Applications/Decentraland Creator Hub.app"`
-- PowerShell: `$env:MOCK_ENROLLMENT = 'active'` before `& $app`; `Remove-Item Env:MOCK_ENROLLMENT` to drop it.
-- cmd: `set MOCK_ENROLLMENT=active` before `start`; `set MOCK_ENROLLMENT=` to drop it.
+- macOS: `open -n --env MOCK_ENROLLMENT=active "/Applications/Decentraland Creator Hub.app"`
+- PowerShell: `$app = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\Decentraland Creator Hub.lnk").TargetPath`, then `$env:MOCK_ENROLLMENT = 'active'` and `& $app`; `Remove-Item Env:MOCK_ENROLLMENT` to drop it.
+- cmd: `set MOCK_ENROLLMENT=active`, then `start "" "%LOCALAPPDATA%\Programs\creator-hub\Decentraland Creator Hub.exe"` (if that path doesn't exist, use the path in the Desktop shortcut's **Properties** > **Target**); `set MOCK_ENROLLMENT=` to drop it. On Windows the variables stay set in that window until you close it.
 
 The fixtures keep their state in memory, per account, so quitting the app forgets every join. To change switches, quit and launch again; add `MOCK_ENROLLMENT=active` to land on the joined page directly.
 
@@ -202,7 +175,7 @@ Relaunch with `MOCK_TERMS_VERSION=2` and join (4.3). Joining publishes version 2
 ## 5. Reset and clean up
 
 - **Start over:** quit the app (`Cmd+Q`, or close the window on Windows). The fixtures stop with it and forget every account. Launch again.
-- **Back to normal:** launch Creator Hub the usual way (Dock, Start menu, shortcut). Without `CREATOR_FUND_FIXTURES=1` no fixture server starts. Reinstall the regular Creator Hub when you're done with this build.
+- **Back to normal:** this build always uses the fixtures, so reinstall the regular Creator Hub when you're done with it.
 
 ## 6. From source
 
@@ -212,7 +185,7 @@ For developers, with a checkout of this branch and `make init` done:
 cd packages/creator-hub && npm run start:earn-mock
 ```
 
-That is `npm run start` with `CREATOR_FUND_FIXTURES=1`; put switches in front (`MOCK_ENROLLMENT=active npm run start:earn-mock`). `npm run mock:creator-fund` runs the same fixtures as a standalone server on `http://localhost:8788` (`PORT` changes it), and `npm run test:scripts` runs their tests.
+That is `npm run start` with the fixtures on; put switches in front (`MOCK_ENROLLMENT=active npm run start:earn-mock`). `npm run mock:creator-fund` runs the same fixtures as a standalone server on `http://localhost:8788` (`PORT` changes it), and `npm run test:scripts` runs their tests.
 
 To check against a real local creators-data instead (its own `docs/creator-fund-qa.md` loads fixtures and starts it on port 8787), run `CREATOR_FUND_API_URL=http://localhost:8787 npm run start`. Only builds from source read that variable. creators-data does not serve the Leaderboard, Payouts, payout wallet or email verification routes yet, so those tabs show their error state there.
 
