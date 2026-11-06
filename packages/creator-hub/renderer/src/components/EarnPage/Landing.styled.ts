@@ -31,7 +31,7 @@ const HeroImage = styled('img')({
   pointerEvents: 'none',
   maskImage: 'linear-gradient(to top, transparent 0, black var(--hero-fade))',
   WebkitMaskImage: 'linear-gradient(to top, transparent 0, black var(--hero-fade))',
-  '@media (max-width: 1211.16px), (max-height: 382.31px)': { display: 'none' },
+  '@media (max-width: 1429.46px), (max-height: 597.5px)': { display: 'none' },
 });
 
 const Information = styled('div')({

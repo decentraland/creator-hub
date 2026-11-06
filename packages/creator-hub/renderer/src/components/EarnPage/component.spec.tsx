@@ -1,14 +1,18 @@
+import { StrictMode } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
+import { misc } from '#preload';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
+import { actions } from '/@/modules/store/creatorFund';
 
+import { tracked, trackedAnyOf } from '../../../tests/utils/analytics';
 import { createTestStore } from '../../../tests/utils/testStore';
 import { EarnPage } from '.';
 
@@ -92,7 +96,7 @@ function page(entry: Entry = '/earn') {
     </Provider>
   );
   const view = render(tree());
-  return { ...view, rerenderPage: () => view.rerender(tree()) };
+  return { ...view, store, rerenderPage: () => view.rerender(tree()) };
 }
 
 /*
@@ -100,6 +104,16 @@ function page(entry: Entry = '/earn') {
  * on a loaded CI runner; vitest's default 5 s cut cases off there while they were passing.
  */
 vi.setConfig({ testTimeout: 15_000 });
+
+const HERO_HIDE_RULE =
+  /@media \(max-width: ?1429\.46px\), ?\(max-height: ?597\.5px\)\{\.([\w-]+)\{display:none;?\}\}/;
+
+function hidesHeroBelowHalfItsFigmaSize(container: HTMLElement) {
+  const art = container.querySelector('img[width="1425"]');
+  const css = [...document.querySelectorAll('style')].map(style => style.textContent).join('\n');
+  const hiddenClass = css.match(HERO_HIDE_RULE)?.[1];
+  return !!art && !!hiddenClass && art.classList.contains(hiddenClass);
+}
 
 async function acceptUpdatedTerms(view: ReturnType<typeof within>) {
   const checkbox = await view.findByLabelText(ACCEPT_LABEL);
@@ -146,6 +160,125 @@ describe('EarnPage', () => {
     });
   });
 
+  describe('when signed out', () => {
+    it('should not add a second main landmark', () => {
+      page();
+      expect(screen.queryByRole('main')).toBeNull();
+    });
+
+    it('should pitch money and ask to sign in to join', () => {
+      page();
+
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(
+        'Decentraland Creator Fund',
+      );
+      expect(screen.getByText(/Earn money\.$/)).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Sign in to join Creators Fund' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Read Terms' })).toBeTruthy();
+      expect(api.getEnrollment).not.toHaveBeenCalled();
+    });
+
+    it('should sign in, then start the join once signed in back on the page', async () => {
+      const { rerenderPage } = page();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Sign in to join Creators Fund' }));
+      expect(auth.signIn).toHaveBeenCalled();
+
+      auth.isSigningIn = false;
+      auth.isSignedIn = true;
+      rerenderPage();
+
+      expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
+      expect(api.getEligibility).toHaveBeenCalledTimes(1);
+    });
+
+    it('should hide the hero art below half its Figma size', () => {
+      expect(hidesHeroBelowHalfItsFigmaSize(page().container)).toBe(true);
+    });
+
+    it('should open the read-only terms', async () => {
+      page();
+      fireEvent.click(screen.getByRole('button', { name: 'Read Terms' }));
+      expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
+      expect(screen.queryByRole('checkbox')).toBeNull();
+    });
+  });
+
+  describe('when back from sign in and the status requests settle out of order', () => {
+    it('should start the join once the latest status arrives', async () => {
+      auth.isSignedIn = true;
+      let answerLatest: (value: unknown) => void = () => {};
+      vi.mocked(api.getEnrollment)
+        .mockResolvedValueOnce({
+          ok: false as const,
+          status: 404,
+          error: 'Not Found',
+          body: { error: 'Not Found', message: 'not enrolled' },
+        })
+        .mockReturnValueOnce(new Promise(resolve => (answerLatest = resolve)) as any);
+
+      render(
+        <StrictMode>
+          <Provider store={createTestStore()}>
+            <ThemeProvider theme={dark}>
+              <MemoryRouter
+                initialEntries={[{ pathname: '/earn', state: { joinAfterSignIn: true } }]}
+              >
+                <Routes>
+                  <Route
+                    path="/earn"
+                    element={<EarnPage />}
+                  />
+                </Routes>
+              </MemoryRouter>
+            </ThemeProvider>
+          </Provider>
+        </StrictMode>,
+      );
+      await act(async () => {});
+      await act(async () =>
+        answerLatest({
+          ok: false as const,
+          status: 404,
+          error: 'Not Found',
+          body: { error: 'Not Found', message: 'not enrolled' },
+        }),
+      );
+
+      expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
+    });
+
+    it('should not start the join when a later status request finds an active enrollment', async () => {
+      auth.isSignedIn = true;
+      let answerLatest: (value: unknown) => void = () => {};
+      vi.mocked(api.getEnrollment)
+        .mockResolvedValueOnce({
+          ok: false as const,
+          status: 404,
+          error: 'Not Found',
+          body: { error: 'Not Found', message: 'not enrolled' },
+        })
+        .mockReturnValueOnce(new Promise(resolve => (answerLatest = resolve)) as any);
+      const { container, store } = page({ pathname: '/earn', state: { joinAfterSignIn: true } });
+      const view = within(container);
+
+      void store.dispatch(actions.fetchEnrollment());
+      await act(async () => {});
+      await act(async () => answerLatest(ok(enrollment(2))));
+
+      expect(view.queryByRole('progressbar', { name: 'Checking eligibility' })).toBeNull();
+      expect(api.getEligibility).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when back from a sign in that did not complete', () => {
+    it('should not start the join', async () => {
+      page({ pathname: '/earn', state: { joinAfterSignIn: true } });
+      await screen.findByRole('button', { name: 'Sign in to join Creators Fund' });
+      expect(api.getEligibility).not.toHaveBeenCalled();
+    });
+  });
+
   describe('when signed in and the status fails to load', () => {
     beforeEach(() => {
       auth.isSignedIn = true;
@@ -153,9 +286,13 @@ describe('EarnPage', () => {
     });
 
     it('should say so in place of the CTAs and offer a retry', async () => {
-      page();
+      const view = within(page().container);
 
-      expect(await screen.findByText("Couldn't load the Creator Fund.")).toBeTruthy();
+      const alert = await view.findByRole('alert');
+      expect(
+        within(alert).getByText('Something went wrong while loading the Creator Fund.'),
+      ).toBeTruthy();
+      expect(within(alert).getByRole('button', { name: 'Retry' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
       expect(screen.queryByRole('button', { name: 'Read Terms' })).toBeNull();
       expect(screen.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
@@ -168,7 +305,7 @@ describe('EarnPage', () => {
 
       expect(await screen.findByRole('button', { name: 'Join Creators Fund' })).toBeTruthy();
       expect(api.getEnrollment).toHaveBeenCalledTimes(2);
-      expect(screen.queryByText("Couldn't load the Creator Fund.")).toBeNull();
+      expect(screen.queryByText('Something went wrong while loading the Creator Fund.')).toBeNull();
     });
   });
 
@@ -184,6 +321,13 @@ describe('EarnPage', () => {
 
       expect(screen.getByText(/Earn USDC\.$/)).toBeTruthy();
       expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
+    });
+
+    it('should hide the hero art below half its Figma size', async () => {
+      const { container } = page();
+      await screen.findByRole('button', { name: 'Join Creators Fund' });
+
+      expect(hidesHeroBelowHalfItsFigmaSize(container)).toBe(true);
     });
 
     it('should explain a failed check in a modal and go back to the landing from CLOSE', async () => {
@@ -205,14 +349,38 @@ describe('EarnPage', () => {
   describe.each([['suspended', 'Your Creator Fund participation is suspended.']] as const)(
     'when the enrollment is %s',
     (status, copy) => {
-      it('should say so in place of the CTAs', async () => {
+      beforeEach(() => {
         auth.isSignedIn = true;
         vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2, status)));
-        page();
+      });
 
-        expect((await screen.findByRole('status')).textContent).toBe(copy);
-        expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
-        expect(screen.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
+      it('should say so in a snackbar in place of the CTAs, with no ⋮ menu', async () => {
+        const view = within(page().container);
+
+        const snackbar = await view.findByRole('status');
+        expect(within(snackbar).getByText(copy)).toBeTruthy();
+        expect(view.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
+        expect(view.queryByRole('button', { name: 'More options' })).toBeNull();
+        expect(view.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
+      });
+
+      it('should open the terms read-only from the snackbar', async () => {
+        const view = within(page().container);
+
+        const snackbar = await view.findByRole('status');
+        fireEvent.click(within(snackbar).getByText('Read Terms'));
+
+        expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
+        expect(screen.queryByRole('checkbox')).toBeNull();
+      });
+
+      it('should open support in the browser from the snackbar', async () => {
+        const view = within(page().container);
+
+        const snackbar = await view.findByRole('status');
+        fireEvent.click(within(snackbar).getByText('Contact Support'));
+
+        expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/help/');
       });
     },
   );
@@ -341,6 +509,90 @@ describe('EarnPage', () => {
         'Something went wrong. Please try again.',
       );
       expect(view.getByRole('heading', { name: 'Program Terms updated' })).toBeTruthy();
+    });
+  });
+
+  describe('analytics', () => {
+    it('should report JOIN when signed in, once', async () => {
+      auth.isSignedIn = true;
+      page();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Join Creators Fund' }));
+
+      expect(tracked('Creator Fund Join Clicked')).toEqual([{ signed_in: true }]);
+    });
+
+    it('should report the sign-in CTA as a signed-out join, and not again when the join starts after sign in', async () => {
+      const { rerenderPage } = page();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Sign in to join Creators Fund' }));
+      auth.isSigningIn = false;
+      auth.isSignedIn = true;
+      rerenderPage();
+      await screen.findByRole('progressbar', { name: 'Checking eligibility' });
+
+      expect(tracked('Creator Fund Join Clicked')).toEqual([{ signed_in: false }]);
+    });
+
+    describe.each([
+      ['signed_out', false, 'Sign in to join Creators Fund'],
+      ['not_joined', true, 'Join Creators Fund'],
+    ] as const)('when the page opens %s', (state, signedIn, cta) => {
+      it('should report the visit once', async () => {
+        auth.isSignedIn = signedIn;
+        const { rerenderPage } = page();
+        await screen.findByRole('button', { name: cta });
+
+        rerenderPage();
+
+        expect(tracked('Creator Fund Viewed')).toEqual([{ state }]);
+      });
+    });
+
+    it.each([
+      ['joined', 'active'],
+      ['suspended', 'suspended'],
+    ] as const)('should report a %s visit once', async (state, status) => {
+      auth.isSignedIn = true;
+      vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2, status)));
+      const { rerenderPage } = page();
+      await waitFor(() => expect(tracked('Creator Fund Viewed')).toEqual([{ state }]));
+
+      rerenderPage();
+
+      expect(tracked('Creator Fund Viewed')).toEqual([{ state }]);
+      expect(trackedAnyOf(['Jane', 'Doe', 'jane.doe@example.com'])).toBe(false);
+    });
+
+    it('should report no visit while the status fails to load', async () => {
+      auth.isSignedIn = true;
+      vi.mocked(api.getEnrollment).mockResolvedValue({ ok: false, status: 500, error: 'boom' });
+      page();
+
+      await screen.findByRole('alert');
+
+      expect(tracked('Creator Fund Viewed')).toEqual([]);
+    });
+
+    it("should report the landing's READ TERMS", () => {
+      page();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Read Terms' }));
+
+      expect(tracked('Creator Fund Read Terms')).toEqual([{ source: 'landing' }]);
+    });
+
+    it("should report the suspended snackbar's READ TERMS and CONTACT SUPPORT", async () => {
+      auth.isSignedIn = true;
+      vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2, 'suspended')));
+      const view = within(page().container);
+      const snackbar = await view.findByRole('status');
+
+      fireEvent.click(within(snackbar).getByText('Read Terms'));
+      fireEvent.click(within(snackbar).getByText('Contact Support'));
+
+      expect(tracked('Creator Fund Read Terms')).toEqual([{ source: 'snackbar' }]);
+      expect(tracked('Creator Fund Contact Support')).toEqual([{ source: 'snackbar' }]);
     });
   });
 });

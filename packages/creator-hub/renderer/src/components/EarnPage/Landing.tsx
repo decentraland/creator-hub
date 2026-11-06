@@ -1,15 +1,24 @@
 import { useState } from 'react';
 
+import { analytics, misc } from '#preload';
+
 import heroImage from '/assets/images/earn/hero.webp';
 import moneyMouth from '/assets/images/earn/money-mouth.webp';
 
 import type { TranslationPath } from '/@/modules/store/translation/types';
 import { getCurrentLocale, t } from '/@/modules/store/translation/utils';
+import { CONTACT_SUPPORT_URL } from '/@/modules/utils';
 
 import type { CommonProps } from '../Icons/types';
 
-import { ErrorLine } from './EarnModal.styled';
-import { AutomaticEnrolmentIcon, CalendarIcon, PlayerActivityIcon, WalletIcon } from './icons';
+import {
+  AlertIcon,
+  AutomaticEnrolmentIcon,
+  CalendarIcon,
+  PlayerActivityIcon,
+  WalletIcon,
+  WarningIcon,
+} from './icons';
 import {
   CtaArea,
   CtaEmoji,
@@ -25,12 +34,12 @@ import {
   Highlight,
   Information,
   Intro,
-  StatusLine,
   Tagline,
   Title,
   TitleBlock,
   TitleDot,
 } from './Landing.styled';
+import { SnackbarAction, StatusSnackbar } from './StatusSnackbar';
 import { TermsModal } from './TermsModal';
 
 const FEATURES: {
@@ -65,10 +74,11 @@ const FEATURES: {
   },
 ];
 
-export type LandingAudience = 'signed_in';
+export type LandingAudience = 'signed_in' | 'signed_out';
 
 const COPY: Record<LandingAudience, { tagline: TranslationPath; cta: TranslationPath }> = {
   signed_in: { tagline: 'earn.landing.tagline_signed_in', cta: 'earn.landing.join' },
+  signed_out: { tagline: 'earn.landing.tagline_signed_out', cta: 'earn.landing.sign_in_to_join' },
 };
 
 /**
@@ -139,16 +149,13 @@ export function Landing({
 export function LandingCtas({
   audience,
   onJoin,
-  error,
 }: {
   audience: LandingAudience;
   onJoin: () => void;
-  error?: string;
 }) {
   const [readingTerms, setReadingTerms] = useState(false);
   return (
     <>
-      {error && <ErrorLine role="alert">{error}</ErrorLine>}
       <CtaRow>
         <HeroCta
           variant="contained"
@@ -168,7 +175,10 @@ export function LandingCtas({
           variant="contained"
           color="secondary"
           disableRipple
-          onClick={() => setReadingTerms(true)}
+          onClick={() => {
+            void analytics.track('Creator Fund Read Terms', { source: 'landing' });
+            setReadingTerms(true);
+          }}
         >
           {t('earn.landing.read_terms')}
         </HeroCta>
@@ -185,24 +195,58 @@ export function LandingCtas({
 
 /** Replaces the landing CTAs for a suspended enrollment, which can't rejoin here. */
 export function LandingStatus() {
-  return <StatusLine role="status">{t('earn.landing.status.suspended')}</StatusLine>;
+  const [readingTerms, setReadingTerms] = useState(false);
+  return (
+    <>
+      <StatusSnackbar
+        tone="danger"
+        role="status"
+        icon={<WarningIcon />}
+        message={t('earn.landing.status.suspended')}
+      >
+        <SnackbarAction
+          emphasis="muted"
+          onClick={() => {
+            void analytics.track('Creator Fund Read Terms', { source: 'snackbar' });
+            setReadingTerms(true);
+          }}
+        >
+          {t('earn.joined.read_terms')}
+        </SnackbarAction>
+        <SnackbarAction
+          onClick={() => {
+            void analytics.track('Creator Fund Contact Support', { source: 'snackbar' });
+            void misc.openExternal(CONTACT_SUPPORT_URL);
+          }}
+        >
+          {t('earn.joined.contact_support')}
+        </SnackbarAction>
+      </StatusSnackbar>
+      {readingTerms && (
+        <TermsModal
+          variant="read"
+          onClose={() => setReadingTerms(false)}
+        />
+      )}
+    </>
+  );
 }
 
 /** Replaces the landing CTAs while the program status can't be loaded. */
 export function LandingLoadError({ onRetry }: { onRetry: () => void }) {
   return (
-    <>
-      <StatusLine role="alert">{t('earn.errors.load_status')}</StatusLine>
-      <CtaRow>
-        <HeroCta
-          variant="contained"
-          color="secondary"
-          disableRipple
-          onClick={onRetry}
-        >
-          {t('earn.errors.retry')}
-        </HeroCta>
-      </CtaRow>
-    </>
+    <StatusSnackbar
+      tone="neutral"
+      role="alert"
+      icon={<AlertIcon />}
+      message={t('earn.errors.load_status')}
+    >
+      <SnackbarAction
+        emphasis="primary"
+        onClick={onRetry}
+      >
+        {t('earn.errors.retry')}
+      </SnackbarAction>
+    </StatusSnackbar>
   );
 }
