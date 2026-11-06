@@ -385,7 +385,8 @@
             "publish": "Publicar",
             "reset": "Reiniciar",
             "cancel": "Cancelar",
-            "confirm": "Confirmar"
+            "confirm": "Confirmar",
+            "retry": "Reintentar"
           },
           "ens_providers": {
             "dcl": "NOMBRE",
@@ -408,7 +409,8 @@
             "description": "Publicar tu escena aquí eliminará todas las escenas presentes en las parcelas seleccionadas.",
             "scenes_count": "Tu selección de parcelas ya contiene <b>{count} {count, plural, one {escena} other {escenas}}</b>:",
             "scene_title_placeholder": "Escena {index}"
-          }
+          },
+          "load_error": "No pudimos cargar los datos de este mundo. Revisa tu conexión e inténtalo de nuevo."
         },
         "empty_names": {
           "title": "No tienes ningún mundo disponible",

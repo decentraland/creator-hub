@@ -385,7 +385,8 @@
             "publish": "發布",
             "reset": "重置",
             "cancel": "取消",
-            "confirm": "確認"
+            "confirm": "確認",
+            "retry": "重试"
           },
           "ens_providers": {
             "dcl": "姓名",
@@ -408,7 +409,8 @@
             "description": "在此处发布您的场景将删除所选地块中存在的所有场景。",
             "scenes_count": "您选择的地块已包含 <b>{count} {count, plural, one {场景} other {场景}}</b>：",
             "scene_title_placeholder": "场景 {index}"
-          }
+          },
+          "load_error": "无法加载此世界的信息。请检查您的网络连接后重试。"
         },
         "empty_names": {
           "title": "您沒有任何可用的世界",
