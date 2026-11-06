@@ -54,6 +54,7 @@ export type WorldSettingsState = {
   worldName: string;
   settings: WorldSettings;
   scenes: WorldScene[];
+  scenesStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 };
@@ -315,14 +316,13 @@ export const fetchWorldScenes = createAsyncThunk(
   async ({ worldName }: { worldName: string }) => {
     const WorldsAPI = new Worlds();
     const scenes = await fetchWorldSceneList(WorldsAPI, worldName);
-    return (
-      scenes?.map(scene => ({
-        ...scene,
-        thumbnailUrl: getThumbnailUrlFromDeployment(scene.entity, $ =>
-          WorldsAPI.getContentSrcUrl($),
-        ),
-      })) ?? []
-    );
+    // A world with nothing deployed still answers with an empty list, so null is a failed
+    // request. Reading it as "no scenes" would offer a single-scene publish over existing ones.
+    if (!scenes) throw new Error(`Failed to fetch scenes for world "${worldName}"`);
+    return scenes.map(scene => ({
+      ...scene,
+      thumbnailUrl: getThumbnailUrlFromDeployment(scene.entity, $ => WorldsAPI.getContentSrcUrl($)),
+    }));
   },
 );
 
@@ -335,7 +335,8 @@ export const unpublishWorldScene = createAsyncThunk(
     const WorldsAPI = new Worlds();
     const success = await WorldsAPI.unpublishWorldScene(connectedAccount, worldName, sceneCoord);
     if (success) {
-      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      // The unpublish already happened; a failed refresh reports itself and must not undo that.
+      await dispatch(fetchWorldScenes({ worldName }));
       dispatch(fetchManagedProjectsFiltered({ resetPage: true }));
     } else {
       throw new Error('Failed to unpublish world scene');
@@ -352,7 +353,8 @@ export const unpublishEntireWorld = createAsyncThunk(
     const WorldsAPI = new Worlds();
     const success = await WorldsAPI.unpublishEntireWorld(connectedAccount, worldName);
     if (success) {
-      await dispatch(fetchWorldScenes({ worldName })).unwrap();
+      // The unpublish already happened; a failed refresh reports itself and must not undo that.
+      await dispatch(fetchWorldScenes({ worldName }));
       dispatch(fetchManagedProjectsFiltered({ resetPage: true }));
     } else {
       throw new Error('Failed to unpublish world');
@@ -449,7 +451,13 @@ export const fetchParcelsPermission = createAsyncThunk(
       { limit: LIMIT, offset: 0 },
     );
 
-    if (!firstPage || firstPage.total <= LIMIT) {
+    // A null first page means the request failed, not that the user has zero parcels.
+    // Fulfilling here would be indistinguishable from world-wide permission (empty parcels array).
+    if (!firstPage) {
+      throw new Error(`Failed to fetch parcels permission for world "${worldName}"`);
+    }
+
+    if (firstPage.total <= LIMIT) {
       return { walletAddress, parcels: firstPage };
     }
 
@@ -462,7 +470,10 @@ export const fetchParcelsPermission = createAsyncThunk(
     );
 
     const pages = await Promise.all(remainingPagesPromises);
-    const allParcels = [...firstPage.parcels, ...pages.flatMap(p => p?.parcels || [])];
+    if (pages.some(page => !page)) {
+      throw new Error(`Failed to fetch every parcels permission page for world "${worldName}"`);
+    }
+    const allParcels = [...firstPage.parcels, ...pages.flatMap(page => page!.parcels)];
 
     return {
       walletAddress,
@@ -670,22 +681,20 @@ const slice = createSlice({
         state.accountHoldings = action.payload;
       })
       .addCase(fetchWorldScenes.pending, (state, action) => {
-        if (state.worldSettings.worldName !== action.meta.arg.worldName) {
-          state.worldSettings.settings = {};
-          state.worldSettings.scenes = [];
-          state.worldSettings.status = 'loading';
-        }
-        state.worldSettings.worldName = action.meta.arg.worldName;
+        switchWorldSettings(state.worldSettings, action.meta.arg.worldName);
+        state.worldSettings.scenesStatus = 'loading';
       })
       .addCase(fetchWorldScenes.fulfilled, (state, action) => {
         if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
         state.worldSettings.scenes = action.payload ?? [];
+        state.worldSettings.scenesStatus = 'succeeded';
+      })
+      .addCase(fetchWorldScenes.rejected, (state, action) => {
+        if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
+        state.worldSettings.scenesStatus = 'failed';
       })
       .addCase(fetchWorldSettings.pending, (state, action) => {
-        if (state.worldSettings.worldName !== action.meta.arg.worldName) {
-          state.worldSettings.settings = {};
-        }
-        state.worldSettings.worldName = action.meta.arg.worldName;
+        switchWorldSettings(state.worldSettings, action.meta.arg.worldName);
         state.worldSettings.status = 'loading';
         state.worldSettings.error = null;
       })
@@ -739,9 +748,12 @@ const slice = createSlice({
       })
       .addCase(fetchParcelsPermission.pending, (state, action) => {
         const { walletAddress, worldName } = action.meta.arg;
+        // Parcels are stored per wallet, not per world: carrying another world's list over
+        // would show its parcels as deployable here until this fetch settles.
+        const sameWorld = state.worldPermissions.worldName === worldName;
         state.worldPermissions.worldName = worldName;
         state.worldPermissions.parcels[walletAddress] = {
-          parcels: state.worldPermissions.parcels[walletAddress]?.parcels || [],
+          parcels: sameWorld ? state.worldPermissions.parcels[walletAddress]?.parcels || [] : [],
           status: 'loading',
         };
       })
@@ -756,9 +768,7 @@ const slice = createSlice({
       .addCase(fetchParcelsPermission.rejected, (state, action) => {
         if (action.meta.arg.worldName !== state.worldPermissions.worldName) return;
         const { walletAddress } = action.meta.arg;
-        if (state.worldPermissions.parcels[walletAddress]) {
-          state.worldPermissions.parcels[walletAddress].status = 'failed';
-        }
+        state.worldPermissions.parcels[walletAddress] = { parcels: [], status: 'failed' };
       })
       .addCase(fetchLandDeployers.fulfilled, (state, action) => {
         Object.assign(state.lands.deployers, action.payload);
@@ -784,6 +794,17 @@ const slice = createSlice({
       });
   },
 });
+
+// Settings and scenes load separately, and whichever request starts first claims the new
+// world, so each must drop the previous world's data or it shows under the new name. The
+// settings read as loading until their own request lands for the new world.
+function switchWorldSettings(worldSettings: WorldSettingsState, worldName: string) {
+  if (worldSettings.worldName === worldName) return;
+  worldSettings.worldName = worldName;
+  worldSettings.settings = {};
+  worldSettings.scenes = [];
+  worldSettings.status = 'loading';
+}
 
 const getManagementState = (state: AppState) => state.management;
 const getManagedProjects = createSelector(

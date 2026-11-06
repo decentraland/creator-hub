@@ -93,14 +93,18 @@ export function Deploy(props: Props) {
   /** Publishing empties the world first: the same condition `handlePublish` undeploys on. */
   const willEmptyWorld = needsUndeploy && !!wallet && !!project.worldConfiguration?.name;
 
+  // Only the idle view shows the limit. A deployment whose publish server never answered
+  // (initializeDeployment rejected, e.g. offline) is failed and carries no parcels.
   const { limit: sceneSizeLimit, isLoading: isSceneSizeLimitLoading } = useSceneSizeLimit(
-    deployment && {
-      isWorld,
-      worldName: project.worldConfiguration?.name,
-      parcels: deployment.info.parcels,
-      replacesWorld: willEmptyWorld,
-      deploymentId: deployment.id,
-    },
+    deployment?.status === 'idle'
+      ? {
+          isWorld,
+          worldName: project.worldConfiguration?.name,
+          parcels: deployment.info.parcels,
+          replacesWorld: willEmptyWorld,
+          deploymentId: deployment.id,
+        }
+      : undefined,
   );
 
   /** True if any of the project parcels overlap with any of the existing world scenes parcels */
