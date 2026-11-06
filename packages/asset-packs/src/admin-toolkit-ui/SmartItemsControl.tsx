@@ -14,7 +14,7 @@ import { COLORS, RADIUS, SPACING, TYPE } from './theme';
 import { FieldLabel } from './Primitives';
 import { PillButton } from './Controls';
 import { selectSmartItem, setSmartItemAction, setSmartItemVisibility } from './actions';
-import { getActionPickerState } from './utils';
+import { getActionPickerState, resolveSelectedAction } from './utils';
 import { getSmartItems } from '.';
 
 type SmartItemList = NonNullable<AdminTools['smartItemsControl']['smartItems']>;
@@ -63,20 +63,17 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
   const hasSelection = selectedIndex !== undefined;
   const actions = hasSelection ? getSmartItemActions(engine, smartItems[selectedIndex]) : [];
 
-  const selectedActionIndex = hasSelection
-    ? actions.findIndex((action: Action) => {
-        const smartItem = smartItems[selectedIndex];
-        const stateSelectedAction = state.smartItemsControl.smartItems.get(
-          smartItem.entity as Entity,
-        )?.selectedAction;
-        return action.name === (stateSelectedAction ?? smartItem.defaultAction);
-      })
-    : -1;
+  const selectedSmartItem = hasSelection ? smartItems[selectedIndex] : undefined;
+  const { index: selectedActionIndex, action: selectedAction } = resolveSelectedAction(
+    actions,
+    selectedSmartItem
+      ? state.smartItemsControl.smartItems.get(selectedSmartItem.entity as Entity)?.selectedAction
+      : undefined,
+    selectedSmartItem?.defaultAction,
+  );
 
   const actionPicker = getActionPickerState(hasSelection, actions.length);
 
-  const selectedAction = selectedActionIndex >= 0 ? actions[selectedActionIndex] : undefined;
-  const selectedSmartItem = hasSelection ? smartItems[selectedIndex] : undefined;
   const isVisible =
     selectedSmartItem &&
     state.smartItemsControl.smartItems.get(selectedSmartItem.entity as Entity)?.visible;
@@ -116,13 +113,15 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
       >
         <FieldLabel text="Action" />
         <Dropdown
+          key={`action-${selectedSmartItem?.entity ?? 'none'}`}
           acceptEmpty
           emptyLabel={actionPicker.emptyLabel}
           options={actions.map((action: Action) => action.name)}
           selectedIndex={selectedActionIndex}
           disabled={actionPicker.disabled}
           onChange={idx => {
-            if (hasSelection) handleSelectAction(smartItems[selectedIndex], actions[idx]);
+            if (selectedSmartItem && actions[idx])
+              handleSelectAction(selectedSmartItem, actions[idx]);
           }}
           textAlign="middle-left"
           fontSize={TYPE.body}
