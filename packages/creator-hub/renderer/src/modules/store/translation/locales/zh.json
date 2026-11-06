@@ -536,6 +536,24 @@
           "world_settings": "世界设置",
           "indexing_note": "场景已经上线。它在浏览器中的卡片（标题、描述和缩略图）是单独索引的，可能需要几分钟才会更新。"
         }
+      },
+      "place_continuity": {
+        "title": "您的场景将失去其 Places 条目",
+        "land_description": "这些地块上已发布的场景在 Places 目录中拥有条目。此次发布既没有保留其基准地块，也没有保留其地块集合，因此 Decentraland 会将结果登记为一个新的地点，而不是更新该条目。",
+        "world_merge_description": "此位置与此 World 中 {overlap} 个现有场景重叠，因此 Decentraland 会将其登记为一个新的地点，并停用这些场景的条目。只有当发布恰好替换一个现有场景时，条目才会保留。",
+        "world_replace_description": "以单场景方式发布会先移除此 World 中的所有场景，因此 Decentraland 会将结果登记为一个新的地点，并停用当前条目。",
+        "consequences_title": "留在旧条目中的内容",
+        "consequences": {
+          "engagement": "它的点赞、收藏以及在 Places 排名中的位置。",
+          "analytics": "它的场景分析数据。新条目将从零开始。",
+          "storage": "它的多人服务器存储中的数据，这些数据可能会被清除。"
+        },
+        "tip": "若要保留当前条目，请发布到与之前相同的基准地块或相同的地块集合。",
+        "world_tip": "若要保留当前条目，请将场景放置在恰好替换此 World 中一个现有场景的位置。",
+        "world_replace_tip": "若要保留当前条目，请返回，为此 World 开启多场景，并将场景放置在它要替换的场景上。",
+        "cancel": "返回",
+        "confirm": "仍然发布",
+        "checking": "检查中…"
       }
     },
     "publish_history": {

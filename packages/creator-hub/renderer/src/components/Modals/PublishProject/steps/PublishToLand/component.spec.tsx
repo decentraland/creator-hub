@@ -10,6 +10,7 @@ import type { Project } from '/shared/types/projects';
 import { editor, scene } from '#preload';
 
 import { AuthContext } from '/@/contexts/AuthContext';
+import { type LandDeployment, Lands } from '/@/lib/land';
 import { setActiveSceneClient } from '/@/modules/rpc/active-scene';
 import type { SceneRpcClient } from '/@/modules/rpc/scene/client';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
@@ -174,6 +175,8 @@ describe('PublishToLand', () => {
       order.push('write');
       sceneJson = JSON.parse(JSON.stringify(written));
     });
+    // Nothing deployed on the picked parcels yet, so the Place continuity check never warns.
+    vi.spyOn(Lands.prototype, 'fetchLandPublishedScenes').mockResolvedValue([]);
     vi.mocked(editor.publishScene).mockImplementation(async () => {
       order.push('publish');
       deployedSceneJson = structuredClone(sceneJson);
@@ -183,6 +186,36 @@ describe('PublishToLand', () => {
 
   afterEach(() => {
     setActiveSceneClient(null);
+    vi.restoreAllMocks();
+  });
+
+  describe('when the deployment breaks the Place continuity and the user publishes anyway', () => {
+    beforeEach(() => {
+      vi.spyOn(Lands.prototype, 'fetchLandPublishedScenes').mockResolvedValue([
+        { metadata: { scene: { base: '70,79', parcels: ['70,79', '70,80'] } } } as LandDeployment,
+      ]);
+    });
+
+    it('should deploy a scene.json placed on the picked parcels, without a world', async () => {
+      renderStep();
+      const parcel = await screen.findByRole('button', { name: 'Parcel 70,80' });
+      act(() => {
+        fireEvent.mouseEnter(parcel);
+      });
+      act(() => {
+        fireEvent.click(parcel);
+      });
+      await screen.findByText(/70,80/, {
+        selector: '[data-testid="publish-modal-publish-to-land-placement"]',
+      });
+      fireEvent.click(screen.getByTestId('publish-modal-publish-to-land-action'));
+      fireEvent.click(await screen.findByRole('button', { name: 'Publish anyway' }));
+
+      await waitFor(() => expect(deployedSceneJson).toBeDefined());
+      expect(onStep).toHaveBeenCalledWith('deploy');
+      expect(deployedSceneJson?.scene).toEqual({ base: '70,80', parcels: ['70,80', '71,80'] });
+      expect(deployedSceneJson?.worldConfiguration).toBeUndefined();
+    });
   });
 
   describe('when a parcel other than the scene.json base is picked with the editor open', () => {
