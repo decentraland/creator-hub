@@ -42,6 +42,7 @@ function renderTab(authorizations: Authorization[], profiles: Record<string, str
       fetchProfile.fulfilled({ address, avatar: { name } as never }, 'r', { address }),
     );
   }
+  store.dispatch(fetchLandList.pending('r', { address: SELF }));
   store.dispatch(
     fetchLandList.fulfilled({ land: [], authorizations, rentals: [] }, 'r', { address: SELF }),
   );
