@@ -12,6 +12,7 @@ const base = {
   description: null,
   owner: '0xowner',
   operators: [],
+  deployable: true,
 };
 
 const parcel = (updateOperator: string | null): Land => ({
