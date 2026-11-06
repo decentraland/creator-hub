@@ -59,3 +59,30 @@ export type CamelCase<T> = {
         : T[K]
       : T[K];
 };
+
+// The smart-item action dropdown. An item with no actions (anything linked that isn't a smart
+// item) must not open: an open dropdown with no options draws as an empty white box over the
+// buttons below it.
+export function getActionPickerState(hasSelection: boolean, actionCount: number) {
+  const hasNoActions = hasSelection && actionCount === 0;
+  return {
+    disabled: !hasSelection || hasNoActions,
+    emptyLabel: hasNoActions ? 'This item has no actions' : 'Select action',
+  };
+}
+
+// The action the panel shows and plays for a smart item: the admin's pick, else the item's
+// configured default, else its first action. A name that is not one of the item's own actions
+// (stale pick, or a default that was removed) never wins, so the dropdown label and the Play
+// button always agree and can't carry over a previous item's action.
+export function resolveSelectedAction<T extends { name: string }>(
+  actions: T[],
+  pickedAction: string | undefined,
+  defaultAction: string | undefined,
+): { index: number; action: T | undefined } {
+  for (const name of [pickedAction, defaultAction]) {
+    const index = name ? actions.findIndex(action => action.name === name) : -1;
+    if (index >= 0) return { index, action: actions[index] };
+  }
+  return actions.length > 0 ? { index: 0, action: actions[0] } : { index: -1, action: undefined };
+}
