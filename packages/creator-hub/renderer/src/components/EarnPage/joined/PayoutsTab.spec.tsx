@@ -233,6 +233,16 @@ describe('PayoutsTab', () => {
       expect(misc.copyToClipboard).toHaveBeenCalledWith(WALLET.address);
     });
 
+    it('should copy the whole address when the address text in the chip is clicked', async () => {
+      await renderTab();
+      const copy = await (await walletCard()).findByRole('button', { name: 'Copy wallet address' });
+
+      fireEvent.click(within(copy).getByText('0x00000...00dEaD'));
+
+      expect(misc.copyToClipboard).toHaveBeenCalledWith(WALLET.address);
+      expect(copy.querySelector('button, [role="button"]')).toBeNull();
+    });
+
     it('should keep focus on EDIT after the change', async () => {
       vi.mocked(api.putPayoutWallet).mockResolvedValue(
         ok({ address: NEW_ADDRESS, updated_at: '2026-11-04T10:00:00Z' }),
@@ -518,7 +528,9 @@ describe('PayoutsTab', () => {
 
       await renderTab();
 
-      expect((await screen.findByRole('alert')).textContent).toBe("Couldn't load your payouts.");
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'Something went wrong while loading your payouts.',
+      );
       expect(screen.queryByRole('heading', { name: 'Payout Wallet' })).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
       expect(await screen.findByRole('heading', { name: 'Payout Wallet' })).toBeTruthy();

@@ -1836,7 +1836,7 @@
           "email_verified": "Correo verificado"
         },
         "cancel": "Cancelar",
-        "error": "No se pudieron cargar tus pagos."
+        "error": "Algo salió mal al cargar tus pagos."
       }
     },
     "errors": {
