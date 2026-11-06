@@ -16,12 +16,12 @@ let server: Server | null = null;
 let origin: string | null = null;
 
 /**
- * Starts the Creator Fund fixture server on a free `127.0.0.1` port when `CREATOR_FUND_FIXTURES=1`,
+ * Starts the Creator Fund fixture server on a free `127.0.0.1` port unless `CREATOR_FUND_FIXTURES=0`,
  * with its states set by the `MOCK_*` variables.
- * @returns the server's origin, or `null` when fixtures are off.
+ * @returns the server's origin, or `null` when fixtures are off (`CREATOR_FUND_FIXTURES=0`).
  */
 export async function startCreatorFundFixtures(env = process.env): Promise<string | null> {
-  if (env.CREATOR_FUND_FIXTURES !== '1') return null;
+  if (env.CREATOR_FUND_FIXTURES === '0') return null;
   const started = createMockServer(mockConfigFromEnv(env).options);
   await new Promise<void>((resolve, reject) => {
     started.once('error', reject).listen(0, '127.0.0.1', resolve);
