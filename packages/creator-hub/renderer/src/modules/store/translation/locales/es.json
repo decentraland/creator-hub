@@ -536,6 +536,24 @@
           "world_settings": "Configuración del Mundo",
           "indexing_note": "La escena ya está publicada. Su tarjeta en el explorador (título, descripción y miniatura) se indexa por separado y puede tardar unos minutos en actualizarse."
         }
+      },
+      "place_continuity": {
+        "title": "Tu escena perderá su ficha en Places",
+        "land_description": "Una escena ya publicada en estas parcelas tiene una ficha en el directorio Places. Esta publicación no conserva ni su parcela base ni su conjunto de parcelas, por lo que Decentraland registrará el resultado como un lugar nuevo en vez de actualizar esa ficha.",
+        "world_merge_description": "Esta ubicación se superpone con {overlap} escenas existentes de este World, por lo que Decentraland la registrará como un lugar nuevo y sus fichas se desactivarán. La ficha solo se conserva cuando la publicación reemplaza exactamente una escena existente.",
+        "world_replace_description": "Publicar como escena única primero elimina todas las escenas de este World, por lo que Decentraland registrará el resultado como un lugar nuevo y las fichas actuales se desactivarán.",
+        "consequences_title": "Lo que se queda en la ficha anterior",
+        "consequences": {
+          "engagement": "Sus me gusta, favoritos y posición en los rankings de Places.",
+          "analytics": "Sus analíticas de escena. La ficha nueva empieza desde cero.",
+          "storage": "Los datos de su almacenamiento del servidor multijugador, que podrían borrarse."
+        },
+        "tip": "Para conservar la ficha actual, publica en la misma parcela base o en el mismo conjunto de parcelas que antes.",
+        "world_tip": "Para conservar la ficha actual, ubica la escena de modo que reemplace exactamente una escena existente de este World.",
+        "world_replace_tip": "Para conservar la ficha actual, vuelve atrás, activa varias escenas para este World y ubica la escena sobre la que reemplaza.",
+        "cancel": "Volver",
+        "confirm": "Publicar de todos modos",
+        "checking": "Comprobando…"
       }
     },
     "publish_history": {
