@@ -22,6 +22,11 @@ vi.mock('../../../lib/creatorFundApi', () => ({
   getPlaces: vi.fn(),
   getNews: vi.fn(),
   getBanner: vi.fn(),
+  getPayouts: vi.fn(),
+  getPayoutWallet: vi.fn(),
+  putPayoutWallet: vi.fn(),
+  postEmailVerification: vi.fn(),
+  putEmailVerification: vi.fn(),
 }));
 vi.mock('../../../lib/metricsApi', () => ({ fetchMetrics: vi.fn() }));
 vi.mock('../../../lib/worlds', () => ({ Worlds: vi.fn() }));
@@ -401,6 +406,158 @@ describe('creatorFund slice', () => {
       await store.dispatch(actions.fetchNews());
 
       expect(store.getState().creatorFund.news.data).toEqual({ news: [] });
+    });
+  });
+
+  describe('when fetching the payout wallet', () => {
+    it('should read a 404 as no wallet', async () => {
+      vi.mocked(api.getPayoutWallet).mockResolvedValue(fail(404));
+
+      await store.dispatch(actions.fetchPayoutWallet());
+
+      expect(store.getState().creatorFund.payoutWallet).toMatchObject({
+        data: null,
+        status: 'succeeded',
+      });
+    });
+
+    it('should keep any other failure', async () => {
+      vi.mocked(api.getPayoutWallet).mockResolvedValue(fail(500));
+
+      await store.dispatch(actions.fetchPayoutWallet());
+
+      expect(store.getState().creatorFund.payoutWallet.status).toBe('failed');
+    });
+  });
+
+  describe('when saving the payout wallet', () => {
+    const WALLET = {
+      address: '0x0000000000000000000000000000000000000002',
+      updated_at: '2026-11-04T10:00:00Z',
+    };
+
+    it('should PUT it and put the answer on the card without fetching it again', async () => {
+      vi.mocked(api.putPayoutWallet).mockResolvedValue(ok(WALLET, 201));
+
+      await store.dispatch(actions.savePayoutWallet({ address: WALLET.address }));
+
+      expect(api.putPayoutWallet).toHaveBeenCalledWith({ address: WALLET.address });
+      expect(store.getState().creatorFund.payoutWallet).toMatchObject({
+        data: WALLET,
+        status: 'succeeded',
+      });
+      expect(api.getPayoutWallet).not.toHaveBeenCalled();
+    });
+
+    it('should keep the card as it was when the PUT is refused', async () => {
+      vi.mocked(api.putPayoutWallet).mockResolvedValue(fail(400, { error: 'invalid_address' }));
+
+      await store.dispatch(actions.savePayoutWallet({ address: '0x1' }));
+
+      expect(store.getState().creatorFund.payoutWallet.data).toBeNull();
+      expect(store.getState().creatorFund.payoutWalletSave.failure).toMatchObject({
+        status: 400,
+        body: { error: 'invalid_address' },
+      });
+    });
+  });
+
+  describe('when verifying the email', () => {
+    const SENT = {
+      sent_at: '2026-11-04T10:00:00Z',
+      expires_at: '2026-11-04T10:10:00Z',
+      resend_available_at: '2026-11-04T10:01:00Z',
+    };
+
+    it('should keep the timings of the sent code', async () => {
+      vi.mocked(api.postEmailVerification).mockResolvedValue(ok(SENT, 202));
+
+      await store.dispatch(actions.sendEmailVerification());
+
+      expect(store.getState().creatorFund.emailVerification.data).toEqual(SENT);
+    });
+
+    it('should put the verified enrollment in place once the code is confirmed', async () => {
+      vi.mocked(api.getEnrollment).mockResolvedValue(ok(ENROLLMENT));
+      await store.dispatch(actions.fetchEnrollment());
+      const verified = { ...ENROLLMENT, email_verified_at: '2026-11-04T10:02:00Z' };
+      vi.mocked(api.putEmailVerification).mockResolvedValue(ok(verified));
+
+      await store.dispatch(actions.confirmEmailVerification({ code: '000000' }));
+
+      expect(api.putEmailVerification).toHaveBeenCalledWith({ code: '000000' });
+      expect(store.getState().creatorFund.enrollment.data).toEqual(verified);
+      expect(api.getEnrollment).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep a wrong code as a failure and the enrollment unverified', async () => {
+      vi.mocked(api.getEnrollment).mockResolvedValue(ok(ENROLLMENT));
+      await store.dispatch(actions.fetchEnrollment());
+      vi.mocked(api.putEmailVerification).mockResolvedValue(fail(400, { error: 'invalid_code' }));
+
+      await store.dispatch(actions.confirmEmailVerification({ code: '123456' }));
+
+      expect(store.getState().creatorFund.enrollment.data?.email_verified_at).toBeNull();
+      expect(store.getState().creatorFund.emailVerificationConfirm.failure).toMatchObject({
+        status: 400,
+        body: { error: 'invalid_code' },
+      });
+    });
+  });
+
+  describe('when signing out or switching accounts', () => {
+    it('should forget the payouts, the wallet and the verification', async () => {
+      vi.mocked(api.getPayouts).mockResolvedValue(ok({ payouts: [] }));
+      vi.mocked(api.getPayoutWallet).mockResolvedValue(
+        ok({ address: '0x0000000000000000000000000000000000000002', updated_at: 'x' }),
+      );
+      vi.mocked(api.postEmailVerification).mockResolvedValue(
+        ok({ sent_at: 'a', expires_at: 'b', resend_available_at: 'c' }),
+      );
+      await store.dispatch(actions.fetchPayouts());
+      await store.dispatch(actions.fetchPayoutWallet());
+      await store.dispatch(actions.sendEmailVerification());
+
+      store.dispatch(actions.clearState());
+
+      const state = store.getState().creatorFund;
+      expect([state.payouts, state.payoutWallet, state.emailVerification]).toEqual([
+        expect.objectContaining({ data: null, status: 'idle' }),
+        expect.objectContaining({ data: null, status: 'idle' }),
+        expect.objectContaining({ data: null, status: 'idle' }),
+      ]);
+    });
+
+    it("should drop the previous account's wallet answer that lands after the switch", async () => {
+      let answer!: (value: unknown) => void;
+      vi.mocked(api.getPayoutWallet).mockReturnValue(
+        new Promise(resolve => (answer = resolve)) as never,
+      );
+      const pending = store.dispatch(actions.fetchPayoutWallet());
+      store.dispatch(actions.clearState());
+
+      answer(ok({ address: '0x0000000000000000000000000000000000000002', updated_at: 'x' }));
+      await pending;
+
+      expect(store.getState().creatorFund.payoutWallet.data).toBeNull();
+    });
+  });
+
+  describe('when naming the cycle of the first payout', () => {
+    it.each([
+      ['the running cycle', [CLOSED_OLD, RUNNING, UPCOMING], RUNNING],
+      [
+        'the next upcoming cycle when none runs',
+        [cycle(6, '2026-12-01', '2026-12-16', 'upcoming'), UPCOMING],
+        UPCOMING,
+      ],
+      ['nothing when there is neither', [CLOSED_OLD], null],
+    ])('should pick %s', async (_name, cycles, expected) => {
+      vi.mocked(api.getCycles).mockResolvedValue(ok({ cycles }));
+
+      await store.dispatch(actions.fetchCycles());
+
+      expect(selectors.getFirstPayoutCycle(store.getState())).toEqual(expected);
     });
   });
 });

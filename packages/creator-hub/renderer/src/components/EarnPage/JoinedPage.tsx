@@ -3,23 +3,33 @@ import { Tab } from 'decentraland-ui2';
 
 import { analytics } from '#preload';
 import { useSelector } from '#store';
+import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { selectors } from '/@/modules/store/creatorFund';
+import { FeatureFlag } from '/@/modules/store/featureFlags';
 import type { TranslationPath } from '/@/modules/store/translation/types';
 import { t } from '/@/modules/store/translation/utils';
 
 import { EarnHeader } from './joined/EarnHeader';
 import { LeaderboardTab } from './joined/LeaderboardTab';
 import { MyPlacesTab } from './joined/MyPlacesTab';
+import { PayoutsTab } from './joined/PayoutsTab';
 import { GradientDefs, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
 
-export type JoinedTab = 'leaderboard' | 'my_places';
+export type JoinedTab = 'leaderboard' | 'my_places' | 'payouts';
 
 const TABS: { id: JoinedTab; label: TranslationPath }[] = [
   { id: 'leaderboard', label: 'earn.joined.tabs.leaderboard' },
   { id: 'my_places', label: 'earn.joined.tabs.my_places' },
+  { id: 'payouts', label: 'earn.joined.tabs.payouts' },
 ];
 
-/** The Creator Fund page for a joined user: the Leaderboard and My Places tabs. */
+const PANELS: Record<JoinedTab, () => React.ReactNode> = {
+  leaderboard: () => <LeaderboardTab />,
+  my_places: () => <MyPlacesTab />,
+  payouts: () => <PayoutsTab />,
+};
+
+/** The Creator Fund page for a joined user: the Leaderboard, My Places and Payouts tabs. */
 export function JoinedPage({
   tab,
   onTabChange,
@@ -28,15 +38,17 @@ export function JoinedPage({
   onTabChange: (tab: JoinedTab) => void;
 }) {
   const id = useId();
+  const payoutEnabled = useFeatureFlags().isEnabled(FeatureFlag.CREATOR_FUND_PAYOUT);
+  const tabs = payoutEnabled ? TABS : TABS.filter(entry => entry.id !== 'payouts');
+  const shown = tabs.some(entry => entry.id === tab) ? tab : tabs[0].id;
   const hasClosedCycle = useSelector(state => !!selectors.getLatestClosedCycle(state));
-  const gettingReady = useSelector(
-    state =>
-      tab === 'leaderboard' &&
-      state.creatorFund.cycles.status === 'succeeded' &&
-      !selectors.getLatestClosedCycle(state),
+  const fillsWindow = useSelector(state =>
+    shown === 'leaderboard'
+      ? state.creatorFund.cycles.status === 'succeeded' && !selectors.getLatestClosedCycle(state)
+      : shown === 'payouts' && state.creatorFund.payouts.data?.payouts.length === 0,
   );
   return (
-    <Page bottom={gettingReady ? 'flush' : 'padded'}>
+    <Page bottom={fillsWindow ? 'flush' : 'padded'}>
       <GradientDefs aria-hidden>
         <defs>
           <linearGradient
@@ -59,7 +71,7 @@ export function JoinedPage({
       </GradientDefs>
       <EarnHeader />
       <SectionTabs
-        value={tab}
+        value={shown}
         onChange={(_, value: JoinedTab) => {
           void analytics.track('Creator Fund Tab Viewed', {
             tab: value === 'leaderboard' && !hasClosedCycle ? 'home' : value,
@@ -68,7 +80,7 @@ export function JoinedPage({
         }}
         aria-label={t('earn.joined.sections')}
       >
-        {TABS.map(({ id: tabId, label }) => (
+        {tabs.map(({ id: tabId, label }) => (
           <Tab
             key={tabId}
             value={tabId}
@@ -82,9 +94,9 @@ export function JoinedPage({
       <TabPanel
         role="tabpanel"
         id={`${id}-panel`}
-        aria-labelledby={`${id}-${tab}`}
+        aria-labelledby={`${id}-${shown}`}
       >
-        {tab === 'leaderboard' ? <LeaderboardTab /> : <MyPlacesTab />}
+        {PANELS[shown]()}
       </TabPanel>
     </Page>
   );

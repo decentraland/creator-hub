@@ -5,7 +5,7 @@ import type { CommonProps } from '../../Icons/types';
 const PATH =
   'M14.25 4.8075L13.1925 3.75L9 7.9425L4.8075 3.75L3.75 4.8075L7.9425 9L3.75 13.1925L4.8075 14.25L9 10.0575L13.1925 14.25L14.25 13.1925L10.0575 9L14.25 4.8075Z';
 
-/** Figma's EARN close glyph: filled by CSS `color`, with its Snow inner stroke. */
+/** Figma's EARN close glyph: filled by CSS `color`, with its inner stroke in `--cf-close-stroke` (Snow). */
 export function CloseIcon({ className }: CommonProps) {
   const id = useId().replace(/:/g, '');
   const shape = `${id}-shape`;
@@ -46,7 +46,7 @@ export function CloseIcon({ className }: CommonProps) {
       <path
         d={PATH}
         strokeWidth="0.6"
-        style={{ stroke: 'var(--palette-neutral-softWhite)' }}
+        style={{ stroke: 'var(--cf-close-stroke, var(--palette-neutral-softWhite))' }}
         mask={`url(#${mask})`}
       />
       <defs>

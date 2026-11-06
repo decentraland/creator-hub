@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BASE = 'http://localhost:8788';
 const ADDRESS = '0xdeadbeef';
+const WALLET = '0x0000000000000000000000000000000000000001';
 
 const signedHeaders = vi.fn(() => new Headers({ 'x-identity-auth-chain-0': '{"type":"SIGNER"}' }));
 
@@ -72,6 +73,26 @@ describe('creatorFundApi', () => {
         '/v3/creator-fund/enrollment',
       ],
       ['places', () => api.getPlaces(), 'get', '/v3/creator-fund/places'],
+      ['payouts', () => api.getPayouts(), 'get', '/v3/creator-fund/payouts'],
+      ['the payout wallet', () => api.getPayoutWallet(), 'get', '/v3/creator-fund/payout-wallet'],
+      [
+        'the payout wallet write',
+        () => api.putPayoutWallet({ address: WALLET }),
+        'put',
+        '/v3/creator-fund/payout-wallet',
+      ],
+      [
+        'the verification send',
+        () => api.postEmailVerification(),
+        'post',
+        '/v3/creator-fund/enrollment/email-verification',
+      ],
+      [
+        'the verification confirm',
+        () => api.putEmailVerification({ code: '000000' }),
+        'put',
+        '/v3/creator-fund/enrollment/email-verification',
+      ],
     ])('should sign %s with its method and pathname', async (_name, call, method, path) => {
       await call();
 
@@ -95,6 +116,30 @@ describe('creatorFundApi', () => {
       expect(metadata).toEqual({
         hashPayload: createHash('sha256').update(rawBody!, 'utf8').digest('hex'),
       });
+    });
+
+    it.each([
+      ['payout wallet', () => api.putPayoutWallet({ address: WALLET }), { address: WALLET }],
+      ['verification code', () => api.putEmailVerification({ code: '000000' }), { code: '000000' }],
+    ])(
+      'should PUT the %s serialized once, signing the sha256 of those exact bytes',
+      async (_name, call, sent) => {
+        await call();
+
+        const { rawBody, body } = lastRequest();
+        expect(body).toBeUndefined();
+        expect(JSON.parse(rawBody!)).toEqual(sent);
+        expect(lastSigned()[3]).toEqual({
+          hashPayload: createHash('sha256').update(rawBody!, 'utf8').digest('hex'),
+        });
+      },
+    );
+
+    it('should POST the verification send with no body and empty metadata', async () => {
+      await api.postEmailVerification();
+
+      expect(lastRequest()).toMatchObject({ method: 'POST', rawBody: undefined });
+      expect(lastSigned()[3]).toEqual({});
     });
 
     it('should sign the reads with empty metadata', async () => {

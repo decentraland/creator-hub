@@ -9,6 +9,7 @@ import { misc } from '#preload';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/creatorFund';
+import { FeatureFlag, fetchFeatureFlags } from '/@/modules/store/featureFlags';
 import * as api from '/@/lib/creatorFundApi';
 
 import { tracked } from '../../../tests/utils/analytics';
@@ -23,6 +24,7 @@ vi.mock('/@/lib/creatorFundApi', () => ({
 }));
 vi.mock('./joined/LeaderboardTab', () => ({ LeaderboardTab: () => <p>leaderboard panel</p> }));
 vi.mock('./joined/MyPlacesTab', () => ({ MyPlacesTab: () => <p>my places panel</p> }));
+vi.mock('./joined/PayoutsTab', () => ({ PayoutsTab: () => <p>payouts panel</p> }));
 vi.mock('../Modals', async importOriginal => ({
   ...((await importOriginal()) as object),
   Modal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
@@ -39,8 +41,17 @@ const JOINED = {
   email_verified_at: null,
 };
 
-async function renderPage(tab: JoinedTab = 'leaderboard', { awaitCycles = true } = {}) {
+async function renderPage(
+  tab: JoinedTab = 'leaderboard',
+  { awaitCycles = true, payout = true } = {},
+) {
   const store = createTestStore();
+  store.dispatch(
+    fetchFeatureFlags.fulfilled(
+      { flags: { [FeatureFlag.CREATOR_FUND_PAYOUT]: payout }, variants: {} },
+      '',
+    ),
+  );
   await act(async () => {
     await store.dispatch(actions.fetchEnrollment());
     const cycles = store.dispatch(actions.fetchCycles());
@@ -100,6 +111,36 @@ describe('JoinedPage', () => {
     vi.clearAllMocks();
   });
 
+  describe('when the Payouts flag is off', () => {
+    it('should offer only the first tab and My Places', async () => {
+      await renderPage('leaderboard', { payout: false });
+
+      const tablist = screen.getByRole('tablist');
+      expect(
+        within(tablist)
+          .getAllByRole('tab')
+          .map(tab => tab.textContent),
+      ).toEqual(['Leaderboard', 'My Places']);
+    });
+
+    it('should fall back to the first tab when Payouts is the selected tab', async () => {
+      await renderPage('payouts', { payout: false });
+
+      expect(screen.getByRole('tab', { name: 'Leaderboard', selected: true })).toBeTruthy();
+      expect(within(screen.getByRole('tabpanel')).getByText('leaderboard panel')).toBeTruthy();
+      expect(screen.queryByText('payouts panel')).toBeNull();
+    });
+  });
+
+  describe('when the Payouts flag is on', () => {
+    it('should offer the Payouts tab and its panel', async () => {
+      await renderPage('payouts');
+
+      expect(screen.getByRole('tab', { name: 'Payouts', selected: true })).toBeTruthy();
+      expect(within(screen.getByRole('tabpanel')).getByText('payouts panel')).toBeTruthy();
+    });
+  });
+
   describe('when it renders', () => {
     it('should title the page, mark it beta and say when the user joined', async () => {
       await renderPage();
@@ -122,11 +163,14 @@ describe('JoinedPage', () => {
       expect(screen.queryByText(/^Joined on/)).toBeNull();
     });
 
-    it('should show the selected tab panel', async () => {
-      await renderPage('my_places');
+    it.each([
+      ['my_places', 'My Places', 'my places panel'],
+      ['payouts', 'Payouts', 'payouts panel'],
+    ] as const)('should show the selected tab panel for %s', async (tab, name, panel) => {
+      await renderPage(tab);
 
-      expect(screen.getByRole('tab', { name: 'My Places', selected: true })).toBeTruthy();
-      expect(screen.getByRole('tabpanel').textContent).toBe('my places panel');
+      expect(screen.getByRole('tab', { name, selected: true })).toBeTruthy();
+      expect(screen.getByRole('tabpanel').textContent).toBe(panel);
     });
 
     it('should name the first tab Leaderboard once a cycle has closed', async () => {
@@ -147,6 +191,16 @@ describe('JoinedPage', () => {
       await renderPage();
 
       expect(screen.getByRole('tab', { name: 'Home', selected: true })).toBeTruthy();
+    });
+
+    it('should list Payouts third, after My Places', async () => {
+      await renderPage();
+
+      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+        'Leaderboard',
+        'My Places',
+        'Payouts',
+      ]);
     });
   });
 
@@ -191,7 +245,7 @@ describe('JoinedPage', () => {
       expect(screen.queryByRole('checkbox')).toBeNull();
     });
 
-    it.each(['leaderboard', 'my_places'] as const)(
+    it.each(['leaderboard', 'my_places', 'payouts'] as const)(
       'should open support in the browser from Contact Support on %s',
       async tab => {
         await renderPage(tab);
@@ -215,7 +269,11 @@ describe('JoinedPage', () => {
     it('should name the first tab Home', async () => {
       await renderPage();
 
-      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Home', 'My Places']);
+      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+        'Home',
+        'My Places',
+        'Payouts',
+      ]);
     });
 
     it('should offer support only from the More options menu, not from a header button', async () => {
@@ -248,10 +306,12 @@ describe('JoinedPage', () => {
       await renderPage();
 
       fireEvent.click(screen.getByRole('tab', { name: 'My Places' }));
+      fireEvent.click(screen.getByRole('tab', { name: 'Payouts' }));
       fireEvent.click(screen.getByRole('tab', { name: 'Leaderboard' }));
 
       expect(tracked('Creator Fund Tab Viewed')).toEqual([
         { tab: 'my_places' },
+        { tab: 'payouts' },
         { tab: 'leaderboard' },
       ]);
     });

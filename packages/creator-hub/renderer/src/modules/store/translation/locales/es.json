@@ -1692,6 +1692,7 @@
       "tabs": {
         "my_places": "Mis lugares",
         "leaderboard": "Clasificación",
+        "payouts": "Pagos",
         "home": "Inicio"
       },
       "title_prefix": "Ganar",
@@ -1793,6 +1794,74 @@
         "create_scene": "Crear una escena",
         "error": "Algo salió mal al cargar tus lugares.",
         "replaced_tooltip": "Este lugar se volvió a publicar como uno nuevo. Se conservan sus cifras anteriores."
+      },
+      "payouts": {
+        "wallet": {
+          "title": "Billetera de pagos",
+          "info_label": "Acerca de las billeteras de pagos",
+          "info": "Una billetera digital es donde guardas y gestionas tus activos digitales. Puedes usarla para enviar, recibir y seguir tus fondos de forma segura, incluidas tus recompensas en USDC del Creator Fund.",
+          "learn_more": "Más información",
+          "copy": "Copiar la dirección de la billetera",
+          "edit": "Editar",
+          "add": "Agregar billetera"
+        },
+        "contact": {
+          "title": "Información de contacto",
+          "full_name": "Nombre completo",
+          "email": "Correo electrónico",
+          "unverified": "Sin verificar",
+          "verify": "Verificar correo"
+        },
+        "table": {
+          "label": "Pagos",
+          "cycle": "Ciclo",
+          "status": "Estado",
+          "paid_places": "Lugares pagados",
+          "amount": "Monto",
+          "transaction": "Transacción",
+          "pending": "Pendiente",
+          "paid": "Pagado",
+          "usdc": "{amount} USDC",
+          "view_transaction": "Ver la transacción en Etherscan"
+        },
+        "empty": {
+          "title": "¡Tu camino de recompensas empieza aquí!",
+          "first_payout": "Tu primer pago llegará cuando termine el ciclo {cycle}.",
+          "body": "¡Sigue construyendo, reúne a los jugadores y crea experiencias a las que quieran volver!"
+        },
+        "add": {
+          "title": "Agregar billetera de pagos",
+          "body": "Te enviaremos aquí los pagos del Creator Fund en USDC.",
+          "submit": "Agregar billetera"
+        },
+        "change": {
+          "title": "Cambiar billetera de pagos",
+          "body": "Los próximos pagos irán a esta billetera en cuanto guardes.",
+          "submit": "Guardar"
+        },
+        "wallet_field": {
+          "label": "Dirección de la billetera",
+          "placeholder": "0x…",
+          "invalid": "Dirección de billetera no válida. Debe empezar con 0x y tener 42 caracteres."
+        },
+        "erc20": "Asegúrate de que esta billetera pueda recibir USDC en Ethereum (ERC-20). Los fondos enviados a una billetera que no lo admite no se pueden recuperar.",
+        "verify": {
+          "title": "Verifica tu correo",
+          "body_sent": "Enviamos un código de 6 dígitos a <b>{email}</b>.",
+          "body_instruction": "Introduce el código a continuación para completar la verificación.",
+          "digit": "Dígito {n} de 6",
+          "resend": "Reenviar código",
+          "incorrect": "Código incorrecto. Revisa el correo e inténtalo de nuevo.",
+          "expired": "Este código caducó. Reenvía uno nuevo.",
+          "submit": "Verificar"
+        },
+        "snackbar": {
+          "wallet_added": "Billetera de pagos agregada",
+          "wallet_updated": "Billetera de pagos actualizada",
+          "email_verified": "Correo verificado"
+        },
+        "cancel": "Cancelar",
+        "error": "Algo salió mal al cargar tus pagos."
       }
     },
     "errors": {
