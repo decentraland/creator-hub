@@ -9,6 +9,7 @@ import { misc } from '#preload';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/creatorFund';
+import { FeatureFlag, fetchFeatureFlags } from '/@/modules/store/featureFlags';
 import * as api from '/@/lib/creatorFundApi';
 
 import { createTestStore } from '../../../tests/utils/testStore';
@@ -39,8 +40,17 @@ const JOINED = {
   email_verified_at: null,
 };
 
-async function renderPage(tab: JoinedTab = 'leaderboard', { awaitCycles = true } = {}) {
+async function renderPage(
+  tab: JoinedTab = 'leaderboard',
+  { awaitCycles = true, payout = true } = {},
+) {
   const store = createTestStore();
+  store.dispatch(
+    fetchFeatureFlags.fulfilled(
+      { flags: { [FeatureFlag.CREATOR_FUND_PAYOUT]: payout }, variants: {} },
+      '',
+    ),
+  );
   await act(async () => {
     await store.dispatch(actions.fetchEnrollment());
     const cycles = store.dispatch(actions.fetchCycles());
@@ -98,6 +108,36 @@ describe('JoinedPage', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  describe('when the Payouts flag is off', () => {
+    it('should offer only the first tab and My Places', async () => {
+      await renderPage('leaderboard', { payout: false });
+
+      const tablist = screen.getByRole('tablist');
+      expect(
+        within(tablist)
+          .getAllByRole('tab')
+          .map(tab => tab.textContent),
+      ).toEqual(['Leaderboard', 'My Places']);
+    });
+
+    it('should fall back to the first tab when Payouts is the selected tab', async () => {
+      await renderPage('payouts', { payout: false });
+
+      expect(screen.getByRole('tab', { name: 'Leaderboard', selected: true })).toBeTruthy();
+      expect(within(screen.getByRole('tabpanel')).getByText('leaderboard panel')).toBeTruthy();
+      expect(screen.queryByText('payouts panel')).toBeNull();
+    });
+  });
+
+  describe('when the Payouts flag is on', () => {
+    it('should offer the Payouts tab and its panel', async () => {
+      await renderPage('payouts');
+
+      expect(screen.getByRole('tab', { name: 'Payouts', selected: true })).toBeTruthy();
+      expect(within(screen.getByRole('tabpanel')).getByText('payouts panel')).toBeTruthy();
+    });
   });
 
   describe('when it renders', () => {

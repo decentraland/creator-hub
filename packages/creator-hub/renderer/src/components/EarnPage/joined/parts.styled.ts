@@ -119,7 +119,7 @@ const MetricLabel = styled('dt')({
   ...typeToken('h7-semi'),
   display: 'flex',
   alignItems: 'center',
-  gap: 10,
+  gap: 6,
   height: 28,
   minWidth: 0,
   color: 'var(--dcl-silver)',
@@ -172,6 +172,29 @@ const StateBox = styled('div')({
   '&[data-kind="error"]': { paddingTop: 200 },
 });
 
+const InfoButton = styled('button')({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  width: 24,
+  height: 24,
+  padding: 0,
+  border: 0,
+  borderRadius: 'var(--r-pill)',
+  backgroundColor: 'transparent',
+  color: 'var(--dcl-silver)',
+  cursor: 'pointer',
+  '& svg': { width: 14.4, height: 14.4 },
+  '&[aria-describedby]': { backgroundColor: 'var(--palette-whiteTransparent-subtle)' },
+  ...focusRing,
+});
+
+const MetricInfoButton = styled(InfoButton)({
+  color: 'var(--dropdown)',
+  '&:hover': { backgroundColor: 'var(--palette-whiteTransparent-subtle)' },
+});
+
 const ErrorLine = styled('p')({
   ...typeToken('h6-regular'),
   maxWidth: 550,
@@ -189,8 +212,10 @@ export {
   FilterLabel,
   FilterNote,
   FilterSentence,
+  InfoButton,
   JumpIn,
   Metric,
+  MetricInfoButton,
   MetricLabel,
   MetricLabelText,
   MetricSkeleton,
