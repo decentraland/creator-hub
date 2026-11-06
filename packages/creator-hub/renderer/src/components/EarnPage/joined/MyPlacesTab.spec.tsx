@@ -1,6 +1,6 @@
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
@@ -137,12 +137,12 @@ describe('MyPlacesTab', () => {
       expect(await screen.findByRole('article', { name: 'Example Place a' })).toBeTruthy();
       expect(api.getPlaces).toHaveBeenCalledWith(RUNNING.id);
       expect(screen.getByRole('combobox', { name: 'Cycle' }).textContent).toBe('Current cycle');
-      expect((await screen.findByText(/^Last update /)).textContent).toMatch(
-        /^Last update \d{1,2}:\d{2}\s[AP]M$/,
+      expect((await screen.findByText(/^Last updated /)).textContent).toMatch(
+        /^Last updated \d{1,2}:\d{2}\s[AP]M$/,
       );
       expect(
         screen.getByRole('toolbar', {
-          name: 'Performance of your Places participating in the program',
+          name: 'Performance of your places in the program',
         }),
       ).toBeTruthy();
       expect(screen.getByRole('heading', { level: 2, name: 'Example Place a' })).toBeTruthy();
@@ -196,7 +196,7 @@ describe('MyPlacesTab', () => {
           ok(myPlaces(PLACES, cycle === target().id ? target() : RUNNING)),
         );
         renderTab();
-        await screen.findByText(/^Last update /);
+        await screen.findByText(/^Last updated /);
         vi.mocked(metricsApi.fetchMetrics).mockClear();
 
         await chooseCycle(label);
@@ -208,7 +208,7 @@ describe('MyPlacesTab', () => {
         expect(within(entry).queryByText('New Players Attributable')).toBeNull();
         expect(entry.querySelector('dl')).toBeNull();
         expect(metricsApi.fetchMetrics).not.toHaveBeenCalled();
-        expect(screen.queryByText(/^Last update /)).toBeNull();
+        expect(screen.queryByText(/^Last updated /)).toBeNull();
       });
     },
   );
@@ -246,7 +246,7 @@ describe('MyPlacesTab', () => {
       const combobox = screen.getByRole('combobox', { name: 'Cycle' });
       expect(combobox.textContent).toBe('Current cycle');
       expect(metricsApi.fetchMetrics).not.toHaveBeenCalled();
-      expect(screen.queryByText(/^Last update /)).toBeNull();
+      expect(screen.queryByText(/^Last updated /)).toBeNull();
       fireEvent.mouseDown(combobox);
       expect((await screen.findAllByRole('option')).map(option => option.textContent)).toEqual([
         'Current cycle',
@@ -344,6 +344,47 @@ describe('MyPlacesTab', () => {
       expect(within(entry).queryByText('Ranking Position')).toBeNull();
     });
 
+    it('should explain D3 Retention in a tooltip when its info button is hovered', async () => {
+      const { container } = renderTab();
+      const entry = await within(container).findByRole('article', { name: 'Example Place a' });
+
+      fireEvent.mouseOver(within(entry).getByRole('button', { name: 'About D3 Retention' }));
+
+      expect((await screen.findByRole('tooltip')).textContent).toBe(
+        'The percentage of new users who returned to your place within 3 days of their first visit.',
+      );
+    });
+
+    it('should explain Total Playtime in a tooltip when its info button gets keyboard focus', async () => {
+      const { container } = renderTab();
+      const entry = await within(container).findByRole('article', { name: 'Example Place a' });
+      const info = within(entry).getByRole('button', { name: 'About Total Playtime' });
+      const matches = Element.prototype.matches;
+      const keyboardFocus = vi.spyOn(Element.prototype, 'matches').mockImplementation(function (
+        this: Element,
+        selector: string,
+      ) {
+        return selector === ':focus-visible' || matches.call(this, selector);
+      });
+
+      try {
+        act(() => info.focus());
+
+        expect((await screen.findByRole('tooltip')).textContent).toBe(
+          'Average time each player spent in your place over the last 30 days.',
+        );
+      } finally {
+        keyboardFocus.mockRestore();
+      }
+    });
+
+    it('should explain no other metric', async () => {
+      const { container } = renderTab();
+      const entry = await within(container).findByRole('article', { name: 'Example Place a' });
+
+      expect(within(entry).getAllByRole('button', { name: /^About / })).toHaveLength(2);
+    });
+
     it('should show "-" named "No data" for a missing metric', async () => {
       vi.mocked(metricsApi.fetchMetrics).mockResolvedValue(
         metricsBatch(PLACES, { new_decentraland_players_30d: 3 }),
@@ -382,7 +423,7 @@ describe('MyPlacesTab', () => {
 
       const entry = await screen.findByRole('article', { name: 'Example Place a' });
       await waitFor(() => expect(within(entry).getAllByText('No data')).toHaveLength(3));
-      expect(screen.queryByText(/^Last update /)).toBeNull();
+      expect(screen.queryByText(/^Last updated /)).toBeNull();
     });
   });
 

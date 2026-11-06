@@ -15,6 +15,7 @@ export { InfoIcon } from './InfoIcon';
 export { JumpInIcon } from './JumpInIcon';
 export { KebabIcon } from './KebabIcon';
 export { MapPinIcon } from './MapPinIcon';
+export { MetricInfoIcon } from './MetricInfoIcon';
 export { NameIcon } from './NameIcon';
 export { NewPlayersIcon } from './NewPlayersIcon';
 export { NotEligibleIcon } from './NotEligibleIcon';
