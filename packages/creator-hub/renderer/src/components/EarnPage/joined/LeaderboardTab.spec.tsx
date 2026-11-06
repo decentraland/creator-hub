@@ -4,13 +4,14 @@ import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
 import { Worlds } from '/@/lib/worlds';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
+import { watchFor } from '../../../../tests/utils/watchFor';
 import { CYCLES, LATEST_CLOSED, fail, leaderboard, ok } from './fixtures';
 import { LeaderboardTab } from './LeaderboardTab';
 import { SnapshotBanner } from './SnapshotBanner';
@@ -33,14 +34,26 @@ const NEWS = {
   })),
 };
 
-const renderTab = () =>
+const mountTab = (store: ReturnType<typeof createTestStore>) =>
   render(
-    <Provider store={createTestStore()}>
+    <Provider store={store}>
       <ThemeProvider theme={dark}>
         <LeaderboardTab />
       </ThemeProvider>
     </Provider>,
   );
+
+const renderTab = () => {
+  const store = createTestStore();
+  mountTab(store);
+  return store;
+};
+
+const ALERT = '[role="alert"]';
+const SPINNER = '[role="progressbar"]';
+const ROWS = '[aria-label^="Jump In to"]';
+const NEWS_ENTRY = (element: Element) =>
+  element.childElementCount === 0 && element.textContent === 'Example news 6';
 
 async function chooseCycle(name: string) {
   fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Cycle' }));
@@ -296,6 +309,127 @@ describe('LeaderboardTab', () => {
     });
   });
 
+  describe('when the first load ends with the leaderboard failed and the news loaded', () => {
+    it('should show the error block beside the news, never a row', async () => {
+      vi.mocked(api.getLeaderboard).mockResolvedValue(fail(404));
+      const rows = watchFor(ROWS);
+
+      try {
+        renderTab();
+
+        expect((await screen.findByRole('alert')).textContent).toBe(
+          'Something went wrong while loading the leaderboard.',
+        );
+        expect(await screen.findByRole('complementary', { name: 'News' })).toBeTruthy();
+        expect(rows.seen()).toBe(false);
+      } finally {
+        rows.stop();
+      }
+    });
+  });
+
+  describe('when the first load ends with the leaderboard loaded and the news failed', () => {
+    it('should list the places across the width, never showing the news', async () => {
+      vi.mocked(api.getNews).mockResolvedValue(fail(404));
+      const news = watchFor(NEWS_ENTRY);
+
+      try {
+        const store = renderTab();
+
+        await screen.findByText('Example Place 1');
+        await waitFor(() => expect(store.getState().creatorFund.news.status).toBe('failed'));
+        expect(screen.queryByRole('alert')).toBeNull();
+        expect(news.seen()).toBe(false);
+      } finally {
+        news.stop();
+      }
+    });
+  });
+
+  describe('when the tab mounts again after its leaderboard failed', () => {
+    it('should show only the spinner while it loads again, never the earlier error', async () => {
+      vi.mocked(api.getLeaderboard).mockResolvedValue(fail(404));
+      const store = renderTab();
+      await screen.findByRole('alert');
+      cleanup();
+      vi.mocked(api.getLeaderboard).mockReturnValue(new Promise(() => {}));
+      const error = watchFor(ALERT);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+        expect(error.seen()).toBe(false);
+      } finally {
+        error.stop();
+      }
+    });
+
+    it('should go from the spinner to the error block when it fails again', async () => {
+      vi.mocked(api.getLeaderboard).mockResolvedValue(fail(404));
+      const store = renderTab();
+      await screen.findByRole('alert');
+      cleanup();
+      const rows = watchFor(ROWS);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+        expect((await screen.findByRole('alert')).textContent).toBe(
+          'Something went wrong while loading the leaderboard.',
+        );
+        expect(rows.seen()).toBe(false);
+      } finally {
+        rows.stop();
+      }
+    });
+  });
+
+  describe('when the tab mounts again after everything loaded', () => {
+    it('should show the places at once and refetch them without the spinner', async () => {
+      const store = renderTab();
+      await screen.findByText('Example Place 1');
+      cleanup();
+      vi.mocked(api.getLeaderboard).mockClear();
+      const spinner = watchFor(SPINNER);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByText('Example Place 1')).toBeTruthy();
+        await waitFor(() =>
+          expect(store.getState().creatorFund.leaderboard.status).toBe('succeeded'),
+        );
+        expect(api.getLeaderboard).toHaveBeenCalledTimes(1);
+        expect(spinner.seen()).toBe(false);
+      } finally {
+        spinner.stop();
+      }
+    });
+  });
+
+  describe('when the tab mounts again after the cycles failed', () => {
+    it('should show the error block at once, never a spinner first', async () => {
+      vi.mocked(api.getCycles).mockResolvedValue(fail(404));
+      const store = renderTab();
+      await screen.findByRole('alert');
+      cleanup();
+      const spinner = watchFor(SPINNER);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByRole('alert').textContent).toBe(
+          'Something went wrong while loading the leaderboard.',
+        );
+        expect(spinner.seen()).toBe(false);
+      } finally {
+        spinner.stop();
+      }
+    });
+  });
+
   describe('when it opens in v0', () => {
     it('should neither fetch nor show the announcement banner', async () => {
       renderTab();
@@ -359,6 +493,36 @@ describe('LeaderboardTab', () => {
 
       await waitFor(() => expect(api.getCycles).toHaveBeenCalledTimes(2));
       await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    });
+  });
+
+  describe('when the user acts on the leaderboard', () => {
+    const tracked = (event: string) =>
+      vi
+        .mocked(analytics.track)
+        .mock.calls.filter(([name]) => name === event)
+        .map(([, properties]) => properties);
+
+    it.each([
+      ['Oct 1 - Oct 15, 2026', 1],
+      ['All cycles', 'all'],
+    ] as const)('should track choosing %s once', async (label, cycleId) => {
+      renderTab();
+      await screen.findByText('Example Place 1');
+
+      await chooseCycle(label);
+
+      expect(tracked('Creator Fund Cycle Changed')).toEqual([
+        { tab: 'leaderboard', cycle_id: cycleId },
+      ]);
+    });
+
+    it('should track a Jump In once with the rank and place id', async () => {
+      renderTab();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Jump In to Example Place 1' }));
+
+      expect(tracked('Creator Fund Jump In')).toEqual([{ rank: 1, place_id: 'place-0' }]);
     });
   });
 });

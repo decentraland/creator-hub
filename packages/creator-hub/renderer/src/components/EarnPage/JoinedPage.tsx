@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { Tab } from 'decentraland-ui2';
 
+import { analytics } from '#preload';
 import { useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { selectors } from '/@/modules/store/creatorFund';
@@ -71,7 +72,12 @@ export function JoinedPage({
       <EarnHeader />
       <SectionTabs
         value={shown}
-        onChange={(_, value: JoinedTab) => onTabChange(value)}
+        onChange={(_, value: JoinedTab) => {
+          void analytics.track('Creator Fund Tab Viewed', {
+            tab: value === 'leaderboard' && !hasClosedCycle ? 'home' : value,
+          });
+          onTabChange(value);
+        }}
         aria-label={t('earn.joined.sections')}
       >
         {tabs.map(({ id: tabId, label }) => (
