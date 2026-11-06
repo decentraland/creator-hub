@@ -10,11 +10,9 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
 
-import { EarnMenu } from './joined/EarnHeader';
 import { JoinedPage, type JoinedTab } from './JoinedPage';
 import { IneligibleModal, JoinFlow, type JoinOutcome } from './JoinFlow';
 import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing';
-import { MenuCorner } from './component.styled';
 import { Spinner } from './Spinner';
 import { TermsModal } from './TermsModal';
 
@@ -140,14 +138,9 @@ function EarnContent() {
 
   if (enrollment && enrollment.status !== 'active') {
     return (
-      <>
-        <MenuCorner>
-          <EarnMenu />
-        </MenuCorner>
-        <Landing audience="signed_in">
-          <LandingStatus />
-        </Landing>
-      </>
+      <Landing audience="signed_in">
+        <LandingStatus />
+      </Landing>
     );
   }
 
