@@ -90,7 +90,11 @@ describe('PublishToWorld', () => {
       </Provider>,
     );
     const action = await screen.findByTestId('publish-modal-publish-to-world-select-world-action');
-    await waitFor(() => expect((action as HTMLButtonElement).disabled).toBe(false));
+    // Next stays disabled until the world's settings, scenes and permissions have loaded,
+    // which takes longer than waitFor's 1 s default when CI runs every suite in parallel.
+    await waitFor(() => expect((action as HTMLButtonElement).disabled).toBe(false), {
+      timeout: 10_000,
+    });
     fireEvent.click(action);
     await waitFor(() => expect(onStep).toHaveBeenCalledWith('deploy', expect.anything()));
     await waitFor(() => expect(deployedSceneJson).toBeDefined());
