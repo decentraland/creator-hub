@@ -1,9 +1,8 @@
 import { useCallback } from 'react';
 
-import type { DeployOptions } from '/shared/types/deploy';
 import type { PreviewOptions } from '/shared/types/settings';
 
-import { actions as editorActions } from '/@/modules/store/editor';
+import { actions as editorActions, type PublishSceneOptions } from '/@/modules/store/editor';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
 import type { Method, Params } from '/@/modules/rpc/storage';
 import type { RPCInfo } from '/@/modules/rpc';
@@ -26,7 +25,7 @@ export const useEditor = () => {
   }, [dispatch, editorActions.startInspector]);
 
   const publishScene = useCallback(
-    (opts: Omit<DeployOptions, 'path' | 'chainId' | 'wallet'> = {}) => {
+    (opts: Omit<PublishSceneOptions, 'path' | 'chainId' | 'wallet'> = {}) => {
       if (project && chainId && wallet) {
         return dispatch(
           editorActions.publishScene({ ...opts, path: project.path, chainId, wallet }),

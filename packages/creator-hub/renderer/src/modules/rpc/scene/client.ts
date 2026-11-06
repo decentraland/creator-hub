@@ -191,6 +191,22 @@ const REQUEST_TIMEOUT_MS = 5000;
 // that was about to succeed.
 const SAVE_SCENE_TIMEOUT_MS = 60_000;
 
+/** No inspector answered within the request's timeout: none is listening, or it hung. */
+export class SceneRpcTimeoutError extends Error {
+  constructor(readonly method: string) {
+    super(`Scene RPC "${method}" timed out (no renderer response)`);
+    this.name = 'SceneRpcTimeoutError';
+  }
+}
+
+/** The inspector answered, but predates `method` (mini-rpc has no handler for it). */
+export class SceneRpcUnsupportedError extends Error {
+  constructor(readonly method: string) {
+    super(`Method "${method}" not implemented`);
+    this.name = 'SceneRpcUnsupportedError';
+  }
+}
+
 export class SceneRpcClient extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
     super('SceneRpcInbound', transport);
@@ -200,14 +216,17 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeoutMs = method === Method.SAVE_SCENE ? SAVE_SCENE_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
     const timeout = new Promise<never>((_resolve, reject) => {
-      timer = setTimeout(
-        () => reject(new Error(`Scene RPC "${method}" timed out (no renderer response)`)),
-        timeoutMs,
-      );
+      timer = setTimeout(() => reject(new SceneRpcTimeoutError(method)), timeoutMs);
     });
-    return Promise.race([super.request(method, params), timeout]).finally(() =>
-      clearTimeout(timer),
-    );
+    // mini-rpc reports a missing handler only as the text of a plain Error, so it is
+    // recognised once here and callers branch on the type.
+    const answered = super.request(method, params).catch((error: unknown) => {
+      if (error instanceof Error && error.message === `Method "${method}" not implemented`) {
+        throw new SceneRpcUnsupportedError(method);
+      }
+      throw error;
+    });
+    return Promise.race([answered, timeout]).finally(() => clearTimeout(timer));
   }
 
   toggleComponent = (component: string, enabled: boolean) => {
