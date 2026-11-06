@@ -8,7 +8,7 @@ import { t } from '/@/modules/store/translation/utils';
 import type { WorldData, WorldPermissionsResponse, WorldScene, Worlds } from '/@/lib/worlds';
 import { WorldRoleType } from '/@/lib/worlds';
 
-import type { WorldPermissionsState, WorldSettingsState } from './slice';
+import type { ParcelsPermission, WorldPermissionsState, WorldSettingsState } from './slice';
 
 type SceneCoords = { x: number; y: number };
 
@@ -430,6 +430,7 @@ export const getWorldSettingsInitialState = (): WorldSettingsState => ({
   worldName: '',
   settings: {},
   scenes: [],
+  scenesStatus: 'idle',
   status: 'idle',
   error: null,
 });
@@ -443,6 +444,10 @@ export const getWorldPermissionsInitialState = (): WorldPermissionsState => ({
   status: 'idle',
   error: null,
 });
+
+// World-wide permission is represented by a successfully fetched, empty parcels array.
+export const hasWorldWidePermission = (parcelsPermission?: ParcelsPermission): boolean =>
+  parcelsPermission?.status === 'succeeded' && parcelsPermission.parcels.length === 0;
 
 /**
  * Whether `wallet` may deploy anywhere in the World. It reads the server's own `worldWide` flag on
