@@ -57,11 +57,12 @@ export function DetailPage({ children }: { children: ReactNode }) {
 }
 
 /** The detail page's not-found state, with the way back to Manage. */
-export function DetailMissing({ message }: { message: string }) {
+export function DetailMissing({ message, description }: { message: string; description?: string }) {
   const navigate = useNavigate();
   return (
     <EmptyState
       title={message}
+      description={description}
       action={{
         label: t('land_detail.back_to_manage'),
         variant: 'secondary',

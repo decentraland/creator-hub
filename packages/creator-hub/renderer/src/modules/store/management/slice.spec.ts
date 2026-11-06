@@ -6,12 +6,16 @@ import { createTestStore } from '../../../../tests/utils/testStore';
 import type { Land, LandDeployment } from '../../../lib/land';
 import { LandType, RoleType } from '../../../lib/land';
 import { clearLandScene } from '../../../lib/landUnpublish';
+import { fetchContributableNames } from '../ens';
 import { fetchLandList } from '../land';
+import { accountChanged } from '../account';
 import type * as ManagementUtils from './utils';
 import {
   actions,
   initialState,
+  reducer,
   selectors,
+  fetchAllManagedProjectsData,
   fetchManagedProjectsFiltered,
   fetchStorageStats,
   fetchAccountHoldings,
@@ -139,6 +143,9 @@ vi.mock('/@/modules/store/ens', async importOriginal => {
         return promise;
       };
     }),
+    fetchContributableNames: vi.fn(() => () => ({
+      unwrap: async () => ({ names: [], streamOnly: [] }),
+    })),
   };
 });
 
@@ -194,6 +201,7 @@ describe('management slice', () => {
     mockWorldsAPI = createMockWorldsAPI();
     mockLandsAPI = createMockLandsAPI();
     mockAccountAPI = createMockAccountAPI();
+    vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
     store = createTestStore();
   });
 
@@ -333,12 +341,16 @@ describe('management slice', () => {
       beforeEach(() => {
         vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
         store.dispatch({
+          type: 'ens/fetchENSList/pending',
+          meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
+        });
+        store.dispatch({
           type: 'ens/fetchENSList/fulfilled',
           payload: [
             { subdomain: 'zeta.dcl.eth', nftOwnerAddress: TEST_ADDRESS },
             { subdomain: 'beta.dcl.eth', nftOwnerAddress: TEST_ADDRESS },
           ],
-          meta: { arg: { address: TEST_ADDRESS } },
+          meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
         });
         mockWorldsAPI.fetchWorlds.mockResolvedValue({
           worlds: [
@@ -1215,12 +1227,17 @@ describe('management slice', () => {
   });
 
   describe('fetchStreamOnlyWorlds', () => {
+    let onRequest: (dispatch: typeof store.dispatch) => void;
+
     beforeEach(() => {
-      store.dispatch({
-        type: 'ens/fetchContributableNames/fulfilled',
-        payload: { names: [], streamOnly: ['live.dcl.eth', 'broken.dcl.eth'] },
-        meta: { arg: { address: TEST_ADDRESS } },
-      });
+      onRequest = () => {};
+      vi.mocked(fetchContributableNames).mockImplementation((() =>
+        (dispatch: typeof store.dispatch) => {
+          onRequest(dispatch);
+          return {
+            unwrap: async () => ({ names: [], streamOnly: ['live.dcl.eth', 'broken.dcl.eth'] }),
+          };
+        }) as never);
       mockWorldsAPI.fetchWorldSettings.mockResolvedValue({});
       mockWorldsAPI.fetchWorldScenes.mockImplementation(async (name: string) => {
         if (name === 'broken.dcl.eth') throw new Error('boom');
@@ -1229,13 +1246,39 @@ describe('management slice', () => {
     });
 
     it('should list every stream-only World, showing one it could not read as unpublished', async () => {
-      await store.dispatch(fetchStreamOnlyWorlds({ address: TEST_ADDRESS }));
+      await store.dispatch(
+        fetchStreamOnlyWorlds({
+          address: TEST_ADDRESS,
+          names: ['live.dcl.eth', 'broken.dcl.eth'],
+        }),
+      );
 
       const projects = store.getState().management.streamOnlyProjects;
       expect(projects.map(project => [project.id, project.access, !!project.deployment])).toEqual([
         ['live.dcl.eth', 'stream', true],
         ['broken.dcl.eth', 'stream', false],
       ]);
+    });
+
+    describe("when a newer NAME request starts while the Manage list's names are in flight", () => {
+      beforeEach(() => {
+        store.dispatch(actions.setPublishFilter(FilterBy.UNPUBLISHED));
+        onRequest = dispatch => {
+          dispatch({
+            type: 'ens/fetchContributableNames/pending',
+            meta: { arg: { address: TEST_ADDRESS }, requestId: 'newer' },
+          });
+        };
+      });
+
+      it('should list the stream-only Worlds its own request returned', async () => {
+        await store.dispatch(fetchManagedProjectsFiltered());
+
+        expect(store.getState().management.streamOnlyProjects.map(project => project.id)).toEqual([
+          'live.dcl.eth',
+          'broken.dcl.eth',
+        ]);
+      });
     });
   });
 
@@ -1274,9 +1317,13 @@ describe('management slice', () => {
         },
       ];
       store.dispatch({
+        type: 'ens/fetchENSList/pending',
+        meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
+      });
+      store.dispatch({
         type: 'ens/fetchENSList/fulfilled',
         payload: ensDataArray,
-        meta: { arg: { address: TEST_ADDRESS } },
+        meta: { arg: { address: TEST_ADDRESS }, requestId: 'r' },
       });
     });
 
@@ -1895,12 +1942,18 @@ describe('management slice', () => {
     const landListResolves = (land: Land[]) =>
       vi.mocked(fetchLandList).mockImplementation(({ address }) => {
         const payload = { land, authorizations: [], rentals: [] };
-        return {
-          type: 'land/fetchLandList/fulfilled',
-          payload,
-          meta: { arg: { address } },
-          unwrap: () => Promise.resolve(payload),
-        } as any;
+        return ((dispatch: (action: unknown) => void) => {
+          dispatch({
+            type: 'land/fetchLandList/pending',
+            meta: { arg: { address }, requestId: 'r' },
+          });
+          dispatch({
+            type: 'land/fetchLandList/fulfilled',
+            payload,
+            meta: { arg: { address }, requestId: 'r' },
+          });
+          return { unwrap: () => Promise.resolve(payload) };
+        }) as any;
       });
 
     beforeEach(() => {
@@ -2002,11 +2055,11 @@ describe('management slice', () => {
         });
       });
 
-      describe('when the state is cleared while the fetch is in flight', () => {
+      describe('when the account changes while the fetch is in flight', () => {
         beforeEach(async () => {
           vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
           const pending = store.dispatch(fetchLandProjects());
-          store.dispatch(actions.clearState());
+          store.dispatch(accountChanged());
           await pending;
         });
 
@@ -2109,6 +2162,61 @@ describe('management slice', () => {
           expect(clearLandScene).not.toHaveBeenCalled();
         });
       });
+    });
+  });
+
+  describe('when the account changes while the previous account Manage requests are in flight', () => {
+    const args = { address: TEST_ADDRESS };
+    const world = { id: 'previous.dcl.eth' } as ManagedProject;
+    const state = [
+      fetchAllManagedProjectsData.pending('all', args),
+      fetchManagedProjectsFiltered.pending('filtered', undefined),
+      fetchWorlds.pending('worlds', args),
+      fetchEmptyWorlds.pending('empty', args),
+      fetchStreamOnlyWorlds.pending('stream', args),
+      fetchStorageStats.pending('stats', args),
+      fetchAccountHoldings.pending('holdings', args),
+      accountChanged(),
+      fetchWorlds.fulfilled({ worlds: [world], total: 1 }, 'worlds', args),
+      fetchEmptyWorlds.fulfilled([world], 'empty', args),
+      fetchStreamOnlyWorlds.fulfilled([world], 'stream', args),
+      fetchStorageStats.fulfilled({ usedSpace: '1' } as WorldsWalletStats, 'stats', args),
+      fetchAccountHoldings.fulfilled({ ownedLands: 1 } as AccountHoldings, 'holdings', args),
+      fetchManagedProjectsFiltered.rejected(new Error('late'), 'filtered', undefined),
+      fetchAllManagedProjectsData.rejected(new Error('late'), 'all', args),
+    ].reduce(reducer, initialState);
+
+    it('should leave the Manage state as the reset left it', () => {
+      expect(state).toEqual(initialState);
+    });
+  });
+
+  describe('when an older storage stats request answers after a newer one', () => {
+    const args = { address: TEST_ADDRESS };
+    const state = [
+      fetchStorageStats.pending('older', args),
+      fetchStorageStats.pending('newer', args),
+      fetchStorageStats.fulfilled({ usedSpace: 'newer' } as WorldsWalletStats, 'newer', args),
+      fetchStorageStats.fulfilled({ usedSpace: 'older' } as WorldsWalletStats, 'older', args),
+    ].reduce(reducer, initialState);
+
+    it('should keep the newer stats', () => {
+      expect(state.storageStats).toEqual({ usedSpace: 'newer' });
+    });
+  });
+
+  describe('when the storage stats and the holdings load side by side', () => {
+    const args = { address: TEST_ADDRESS };
+    const state = [
+      fetchStorageStats.pending('stats', args),
+      fetchAccountHoldings.pending('holdings', args),
+      fetchStorageStats.fulfilled({ usedSpace: '1' } as WorldsWalletStats, 'stats', args),
+      fetchAccountHoldings.fulfilled({ ownedLands: 1 } as AccountHoldings, 'holdings', args),
+    ].reduce(reducer, initialState);
+
+    it('should keep both answers', () => {
+      expect(state.storageStats).toEqual({ usedSpace: '1' });
+      expect(state.accountHoldings).toEqual({ ownedLands: 1 });
     });
   });
 });

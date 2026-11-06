@@ -9,6 +9,10 @@ import { actions as editorActions } from '../editor';
 import { actions as workspaceActions } from '../workspace';
 import { actions as deploymentActions } from '../deployment';
 import { DeploymentError } from '../../../lib/deploy';
+import { accountChanged } from '../account';
+import { fetchENSList } from '../ens';
+import { fetchLandList } from '../land';
+import { fetchManagedProjectsFiltered } from '../management';
 import { actions as snackbarActions } from './slice';
 
 const projectWithOutdatedDeps = {
@@ -422,6 +426,42 @@ describe('snackbar slice', () => {
 
       it('should show the deploy notification', () => {
         expect(deployNotifications()).toHaveLength(1);
+      });
+    });
+  });
+
+  describe.each([
+    ['NAME list', fetchENSList, { address: '0xprevious' }, 'fetchENSList'],
+    ['LAND list', fetchLandList, { address: '0xprevious' }, 'fetchLandList'],
+    ['Manage list', fetchManagedProjectsFiltered, undefined, 'fetchManagedProjectsFiltered'],
+  ] as const)('when a %s request fails', (_, thunk, arg, toastId) => {
+    let store: ReturnType<typeof createTestStore>;
+    const toasts = () =>
+      store.getState().snackbar.notifications.filter($ => $.requestId === toastId);
+
+    beforeEach(() => {
+      store = createTestStore();
+      store.dispatch(thunk.pending('request', arg as never));
+    });
+
+    describe('and the account did not change', () => {
+      beforeEach(() => {
+        store.dispatch(thunk.rejected(new Error('boom'), 'request', arg as never));
+      });
+
+      it('should show the failure', () => {
+        expect(toasts()).toHaveLength(1);
+      });
+    });
+
+    describe('after the account changed', () => {
+      beforeEach(() => {
+        store.dispatch(accountChanged());
+        store.dispatch(thunk.rejected(new Error('boom'), 'request', arg as never));
+      });
+
+      it("should keep the previous account's failure off screen", () => {
+        expect(toasts()).toEqual([]);
       });
     });
   });

@@ -131,14 +131,19 @@ function renderPage(path: string) {
       address: WALLET,
     }),
   );
+  store.dispatch(fetchWorlds.pending('r', { address: '' }));
   store.dispatch(
     fetchWorlds.fulfilled({ worlds: [owned, untitled, shared], total: 3 }, 'r', { address: '' }),
   );
-  store.dispatch(fetchStreamOnlyWorlds.fulfilled([streamed], 'r', { address: '' }));
+  store.dispatch(fetchStreamOnlyWorlds.pending('r', { address: '', names: [] }));
+  store.dispatch(fetchStreamOnlyWorlds.fulfilled([streamed], 'r', { address: '', names: [] }));
+  store.dispatch({ type: 'ens/fetchENSList/pending', meta: { requestId: 'r' } });
   store.dispatch({
     type: 'ens/fetchENSList/fulfilled',
     payload: [{ subdomain: 'deep.dcl.eth', nftOwnerAddress: WALLET }],
+    meta: { requestId: 'r' },
   });
+  store.dispatch(fetchAllManagedProjectsData.pending('r', { address: '' }));
   store.dispatch(fetchAllManagedProjectsData.fulfilled(undefined, 'r', { address: '' }));
   render(
     <Provider store={store as never}>
@@ -218,9 +223,10 @@ describe('WorldDetailPage', () => {
     it('should stay mounted when a list refresh removes this World from page zero', async () => {
       const store = renderPage('/manage/world/plaza.dcl.eth/details');
       const input = await screen.findByRole('textbox', { name: 'World Name' });
-      act(() =>
-        store.dispatch(fetchWorlds.fulfilled({ worlds: [], total: 1 }, 'r2', { address: '' })),
-      );
+      act(() => {
+        store.dispatch(fetchWorlds.pending('r2', { address: '' }));
+        store.dispatch(fetchWorlds.fulfilled({ worlds: [], total: 1 }, 'r2', { address: '' }));
+      });
 
       expect(
         screen.getByRole('heading', { level: 1, name: 'Manage - Fixture Plaza' }),
