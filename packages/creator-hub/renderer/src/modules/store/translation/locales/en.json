@@ -388,7 +388,8 @@
             "publish": "Publish",
             "reset": "Reset",
             "cancel": "Cancel",
-            "confirm": "Confirm"
+            "confirm": "Confirm",
+            "retry": "Retry"
           },
           "ens_providers": {
             "dcl": "NAME",
@@ -411,7 +412,8 @@
             "description": "Publishing your scene here will delete the entire scenes present in the selected parcels.",
             "scenes_count": "Your parcel selection already contains <b>{count} {count, plural, one {scene} other {scenes}}</b>:",
             "scene_title_placeholder": "Scene {index}"
-          }
+          },
+          "load_error": "We couldn't load this world's details. Check your connection and try again."
         },
         "empty_names": {
           "title": "You don't have any available World",
