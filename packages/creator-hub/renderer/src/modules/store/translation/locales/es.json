@@ -1732,7 +1732,7 @@
         "title": "Novedades"
       },
       "my_places": {
-        "sentence": "Rendimiento de tus lugares que participan en el programa",
+        "sentence": "Rendimiento de tus lugares en el programa",
         "last_update": "Última actualización {time}",
         "status": {
           "in_program": "En el programa",
@@ -1750,7 +1750,10 @@
         "metrics": {
           "new_players": "Nuevos jugadores atribuibles",
           "d3_retention": "Retención D3",
+          "d3_retention_info_label": "Acerca de la retención D3",
           "playtime": "Tiempo de juego total",
+          "playtime_info": "Tiempo promedio que cada jugador pasó en tu place en los últimos 30 días.",
+          "playtime_info_label": "Acerca del tiempo de juego total",
           "minutes": "{value} min",
           "no_data": "Sin datos"
         },
