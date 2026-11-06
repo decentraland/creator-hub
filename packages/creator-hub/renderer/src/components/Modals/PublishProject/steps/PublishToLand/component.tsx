@@ -44,20 +44,20 @@ export function PublishToLand(props: Props) {
 
   const handleNext = useCallback(async () => {
     if (!placement) return;
-    const sceneUpdates: SceneParcels = {
+    const scene: SceneParcels = {
       base: `${placement.x},${placement.y}`,
       parcels: calculateParcels(project, placement).map(({ x, y }) => `${x},${y}`),
     };
-    await updateSceneJson(project.path, { scene: sceneUpdates, worldConfiguration: undefined });
-    updateProject({
-      ...project,
-      scene: sceneUpdates,
-      worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
-      updatedAt: Date.now(),
-    });
-    publishScene({ target: CONTENT_SERVER });
+    // Cannot deploy to a LAND with a world configuration
+    const sceneUpdates = { scene, worldConfiguration: undefined };
+    // Disk first: under Bevy the store update below reloads the editor at the new base, and
+    // the reloaded editor reads scene.json, so it must already hold the pick.
+    await updateSceneJson(project.path, sceneUpdates);
+    updateProject({ ...project, ...sceneUpdates, updatedAt: Date.now() });
+    // The deploy step reports a failed publish from the store (publishError).
+    publishScene({ target: CONTENT_SERVER, sceneUpdates })?.catch(() => undefined);
     props.onStep('deploy');
-  }, [placement, props.onStep]);
+  }, [placement, project, publishScene, updateProject, updateSceneJson, props.onStep]);
 
   const handleHover = useCallback((x: number, y: number) => {
     setHover({ x, y });
