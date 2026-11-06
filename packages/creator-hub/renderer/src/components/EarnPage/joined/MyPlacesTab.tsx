@@ -81,11 +81,19 @@ function PlaceStats({ reading, locale }: { reading: PlaceMetricsReading; locale:
         <MetricStat
           icon={<RetentionIcon />}
           label={t('earn.joined.my_places.metrics.d3_retention')}
+          info={{
+            name: t('earn.joined.my_places.metrics.d3_retention_info_label'),
+            tooltip: t('analytics.metrics.day_3_retention.tooltip'),
+          }}
           reading={stat('d3_retention_rate_30d', value => formatRatio(value, locale))}
         />
         <MetricStat
           icon={<PlaytimeIcon />}
           label={t('earn.joined.my_places.metrics.playtime')}
+          info={{
+            name: t('earn.joined.my_places.metrics.playtime_info_label'),
+            tooltip: t('earn.joined.my_places.metrics.playtime_info'),
+          }}
           reading={stat('avg_playtime_seconds_30d', value =>
             t('earn.joined.my_places.metrics.minutes', {
               value: formatCount(value / SECONDS_PER_MINUTE, locale),

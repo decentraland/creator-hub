@@ -1733,7 +1733,7 @@
         "title": "新闻"
       },
       "my_places": {
-        "sentence": "你参与计划的地点的表现",
+        "sentence": "你在计划中的地点的表现",
         "last_update": "最后更新 {time}",
         "status": {
           "in_program": "已加入计划",
@@ -1751,7 +1751,10 @@
         "metrics": {
           "new_players": "可归因的新玩家",
           "d3_retention": "D3 留存率",
+          "d3_retention_info_label": "关于 D3 留存率",
           "playtime": "总游戏时长",
+          "playtime_info": "过去 30 天内每位玩家在你的 Place 中停留的平均时长。",
+          "playtime_info_label": "关于总游玩时长",
           "minutes": "{value} 分钟",
           "no_data": "无数据"
         },
