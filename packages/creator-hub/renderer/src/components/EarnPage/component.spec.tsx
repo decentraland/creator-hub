@@ -104,6 +104,16 @@ function page(entry: Entry = '/earn') {
  */
 vi.setConfig({ testTimeout: 15_000 });
 
+const HERO_HIDE_RULE =
+  /@media \(max-width: ?1429\.46px\), ?\(max-height: ?597\.5px\)\{\.([\w-]+)\{display:none;?\}\}/;
+
+function hidesHeroBelowHalfItsFigmaSize(container: HTMLElement) {
+  const art = container.querySelector('img[width="1425"]');
+  const css = [...document.querySelectorAll('style')].map(style => style.textContent).join('\n');
+  const hiddenClass = css.match(HERO_HIDE_RULE)?.[1];
+  return !!art && !!hiddenClass && art.classList.contains(hiddenClass);
+}
+
 async function acceptUpdatedTerms(view: ReturnType<typeof within>) {
   const checkbox = await view.findByLabelText(ACCEPT_LABEL);
   const accept = view.getByRole('button', { name: 'Accept' });
@@ -179,6 +189,10 @@ describe('EarnPage', () => {
 
       expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
       expect(api.getEligibility).toHaveBeenCalledTimes(1);
+    });
+
+    it('should hide the hero art below half its Figma size', () => {
+      expect(hidesHeroBelowHalfItsFigmaSize(page().container)).toBe(true);
     });
 
     it('should open the read-only terms', async () => {
@@ -271,9 +285,13 @@ describe('EarnPage', () => {
     });
 
     it('should say so in place of the CTAs and offer a retry', async () => {
-      page();
+      const view = within(page().container);
 
-      expect(await screen.findByText("Couldn't load the Creator Fund.")).toBeTruthy();
+      const alert = await view.findByRole('alert');
+      expect(
+        within(alert).getByText('Something went wrong while loading the Creator Fund.'),
+      ).toBeTruthy();
+      expect(within(alert).getByRole('button', { name: 'Retry' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
       expect(screen.queryByRole('button', { name: 'Read Terms' })).toBeNull();
       expect(screen.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
@@ -286,7 +304,7 @@ describe('EarnPage', () => {
 
       expect(await screen.findByRole('button', { name: 'Join Creators Fund' })).toBeTruthy();
       expect(api.getEnrollment).toHaveBeenCalledTimes(2);
-      expect(screen.queryByText("Couldn't load the Creator Fund.")).toBeNull();
+      expect(screen.queryByText('Something went wrong while loading the Creator Fund.')).toBeNull();
     });
   });
 
@@ -304,30 +322,64 @@ describe('EarnPage', () => {
       expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
     });
 
-    it('should show the failure line above the CTAs when the check fails', async () => {
+    it('should hide the hero art below half its Figma size', async () => {
+      const { container } = page();
+      await screen.findByRole('button', { name: 'Join Creators Fund' });
+
+      expect(hidesHeroBelowHalfItsFigmaSize(container)).toBe(true);
+    });
+
+    it('should explain a failed check in a modal and go back to the landing from CLOSE', async () => {
       vi.mocked(api.getEligibility).mockResolvedValue({ ok: false, status: 500, error: 'x' });
-      page();
+      const view = within(page().container);
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Join Creators Fund' }));
+      fireEvent.click(await view.findByRole('button', { name: 'Join Creators Fund' }));
+      await view.findByRole('alertdialog', {
+        name: 'Something went wrong while checking your account',
+      });
+      fireEvent.click(view.getByText('Close'));
 
-      expect((await screen.findByRole('alert')).textContent).toBe(
-        'Something went wrong. Please try again.',
-      );
-      expect(screen.queryByRole('progressbar', { name: 'Checking eligibility' })).toBeNull();
+      expect(view.queryByRole('alertdialog')).toBeNull();
+      expect(view.queryByRole('alert')).toBeNull();
+      expect(view.getByRole('button', { name: 'Join Creators Fund' })).toBeTruthy();
     });
   });
 
   describe.each([['suspended', 'Your Creator Fund participation is suspended.']] as const)(
     'when the enrollment is %s',
     (status, copy) => {
-      it('should say so in place of the CTAs', async () => {
+      beforeEach(() => {
         auth.isSignedIn = true;
         vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2, status)));
-        page();
+      });
 
-        expect((await screen.findByRole('status')).textContent).toBe(copy);
-        expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
-        expect(screen.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
+      it('should say so in a snackbar in place of the CTAs, with no ⋮ menu', async () => {
+        const view = within(page().container);
+
+        const snackbar = await view.findByRole('status');
+        expect(within(snackbar).getByText(copy)).toBeTruthy();
+        expect(view.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
+        expect(view.queryByRole('button', { name: 'More options' })).toBeNull();
+        expect(view.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
+      });
+
+      it('should open the terms read-only from the snackbar', async () => {
+        const view = within(page().container);
+
+        const snackbar = await view.findByRole('status');
+        fireEvent.click(within(snackbar).getByText('Read Terms'));
+
+        expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
+        expect(screen.queryByRole('checkbox')).toBeNull();
+      });
+
+      it('should open support in the browser from the snackbar', async () => {
+        const view = within(page().container);
+
+        const snackbar = await view.findByRole('status');
+        fireEvent.click(within(snackbar).getByText('Contact Support'));
+
+        expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/help/');
       });
 
       it('should keep the ⋮ menu: the terms read-only and Contact Support', async () => {
