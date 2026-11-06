@@ -18,6 +18,7 @@ import {
   placeLocation,
   placeTitle,
 } from './format';
+import { MyPlacesEmpty } from './MyPlacesEmpty';
 import {
   Entry,
   List,
@@ -53,6 +54,11 @@ const chipOf = (place: CreatorFundPlace): ChipProps => {
 
 const hasStats = (place: CreatorFundPlace) =>
   place.status === 'in_program' || place.status === 'replaced';
+
+const chipsInProgram = (place: CreatorFundPlace) => chipOf(place).status === 'in_program';
+
+const inProgramFirst = (places: CreatorFundPlace[]) =>
+  [...places].sort((a, b) => Number(chipsInProgram(b)) - Number(chipsInProgram(a)));
 
 type PlaceMetricsReading =
   | { status: 'loading' }
@@ -132,6 +138,19 @@ function PlaceEntry({
   );
 }
 
+function FirstSteps() {
+  const { projects, status } = useSelector(state => state.workspace);
+  if (status === 'idle' || status === 'loading') return <ListState kind="loading" />;
+  return projects.length ? (
+    <MyPlacesEmpty
+      variant="unpublished"
+      projects={projects}
+    />
+  ) : (
+    <MyPlacesEmpty variant="no_scenes" />
+  );
+}
+
 /** The user's places in the Creator Fund and how each performed in the selected cycle. */
 export function MyPlacesTab() {
   const dispatch = useDispatch();
@@ -185,6 +204,14 @@ export function MyPlacesTab() {
     [myCycles, locale],
   );
 
+  const hasClosedCycle = sortedCycles.some(cycle => cycle.status === 'closed');
+  const firstSteps =
+    (cycles.status === 'succeeded' && selected === null && !preLaunch) ||
+    (!!shown &&
+      places.status !== 'failed' &&
+      shown.places.length === 0 &&
+      shown.cycle?.status !== 'closed');
+
   let body: React.ReactNode;
   if (cycles.status === 'failed') {
     body = (
@@ -194,13 +221,8 @@ export function MyPlacesTab() {
         onRetry={() => void dispatch(actions.fetchCycles())}
       />
     );
-  } else if (cycles.status === 'succeeded' && selected === null && !preLaunch) {
-    body = (
-      <ListState
-        kind="empty"
-        message={t('earn.joined.my_places.empty')}
-      />
-    );
+  } else if (firstSteps) {
+    body = <FirstSteps />;
   } else if (!shown || places.status === 'failed') {
     body =
       places.status === 'failed' ? (
@@ -216,17 +238,13 @@ export function MyPlacesTab() {
     body = (
       <ListState
         kind="empty"
-        message={t(
-          shown.cycle?.status === 'closed'
-            ? 'earn.joined.my_places.empty_closed_cycle'
-            : 'earn.joined.my_places.empty',
-        )}
+        message={t('earn.joined.my_places.empty_closed_cycle')}
       />
     );
   } else {
     body = (
       <List>
-        {shown.places.map(place => (
+        {inProgramFirst(shown.places).map(place => (
           <PlaceEntry
             key={place.id}
             place={place}
@@ -250,28 +268,30 @@ export function MyPlacesTab() {
 
   return (
     <Panel>
-      <FilterBar
-        role="toolbar"
-        aria-labelledby={sentenceId}
-      >
-        <FilterSentence id={sentenceId}>{t('earn.joined.my_places.sentence')}</FilterSentence>
-        <FilterGroup>
-          {running && !!shown?.places.length && metrics && (
-            <FilterNote>
-              {t('earn.joined.my_places.last_update', {
-                time: formatTime(metrics.exported_at, locale),
-              })}
-            </FilterNote>
-          )}
-          {cycles.status === 'succeeded' && (
-            <CycleSelect
-              value={selected === null ? NO_CYCLE : String(selected)}
-              options={options}
-              onChange={value => value !== NO_CYCLE && setChosen(Number(value))}
-            />
-          )}
-        </FilterGroup>
-      </FilterBar>
+      {(!firstSteps || hasClosedCycle) && (
+        <FilterBar
+          role="toolbar"
+          aria-labelledby={sentenceId}
+        >
+          <FilterSentence id={sentenceId}>{t('earn.joined.my_places.sentence')}</FilterSentence>
+          <FilterGroup>
+            {running && !!shown?.places.length && metrics && (
+              <FilterNote>
+                {t('earn.joined.my_places.last_update', {
+                  time: formatTime(metrics.exported_at, locale),
+                })}
+              </FilterNote>
+            )}
+            {cycles.status === 'succeeded' && (
+              <CycleSelect
+                value={selected === null ? NO_CYCLE : String(selected)}
+                options={options}
+                onChange={value => value !== NO_CYCLE && setChosen(Number(value))}
+              />
+            )}
+          </FilterGroup>
+        </FilterBar>
+      )}
       {body}
     </Panel>
   );

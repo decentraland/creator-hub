@@ -18,6 +18,7 @@ import { jumpInLocation, placeTitle } from './format';
 import {
   Chip,
   CycleSelectBox,
+  ErrorLine,
   FilterGroup,
   FilterLabel,
   JumpIn,
@@ -207,7 +208,7 @@ export type ListStateProps =
 /** A list's loading, empty or error state, centred where the rows would be. */
 export function ListState(props: ListStateProps) {
   return (
-    <StateBox>
+    <StateBox data-kind={props.kind}>
       {props.kind === 'loading' && (
         <Spinner
           label={t('earn.loading')}
@@ -217,7 +218,7 @@ export function ListState(props: ListStateProps) {
       {props.kind === 'empty' && <StatusLine role="status">{props.message}</StatusLine>}
       {props.kind === 'error' && (
         <>
-          <StatusLine role="alert">{props.message}</StatusLine>
+          <ErrorLine role="alert">{props.message}</ErrorLine>
           <ModalCta
             variant="contained"
             color="secondary"

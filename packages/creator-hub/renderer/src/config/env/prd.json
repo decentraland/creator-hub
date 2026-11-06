@@ -31,5 +31,5 @@
   "FEATURE_FLAGS_URL": "https://feature-flags.decentraland.org",
   "WORLDS_STORAGE_SERVICE_URL": "https://decentraland.org/storage",
   "METRICS_API_URL": "https://creators-data.decentraland.zone/v2",
-  "CREATOR_FUND_API_URL": "https://creators-data.decentraland.org"
+  "CREATOR_FUND_API_URL": "https://creators-data.decentraland.zone"
 }
