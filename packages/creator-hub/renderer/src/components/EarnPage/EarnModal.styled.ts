@@ -1,4 +1,4 @@
-import { Button, IconButton, Modal as MuiModal, styled } from 'decentraland-ui2';
+import { Button, CircularProgress, IconButton, Modal as MuiModal, styled } from 'decentraland-ui2';
 
 import { Modal } from '../Modals';
 
@@ -80,6 +80,24 @@ const ModalCta = styled(Button)({
 
 const SpinnerBox = styled('span')({
   display: 'inline-flex',
+});
+
+const CheckingSpinnerBox = styled('span')({
+  display: 'inline-grid',
+  placeItems: 'center',
+  width: 80,
+  height: 80,
+  '& > *': { gridArea: '1 / 1' },
+});
+
+const SpinnerTrack = styled(CircularProgress)({
+  color: 'var(--palette-neutral-softWhite)',
+  opacity: 0.3,
+});
+
+const SpinnerArc = styled(CircularProgress)({
+  color: 'var(--primary)',
+  '& .MuiCircularProgress-circle': { strokeLinecap: 'round' },
 });
 
 const TermsShell = styled(Modal)({
@@ -197,13 +215,16 @@ const VisuallyHidden = styled('span')({
 
 export {
   Actions,
+  CheckingSpinnerBox,
   CloseButton,
   ErrorLine,
   GlowLayer,
   ModalCta,
   ModalText,
   ModalTitle,
+  SpinnerArc,
   SpinnerBox,
+  SpinnerTrack,
   StatusBody,
   StatusDialog,
   StatusGlow,

@@ -186,16 +186,19 @@ describe('EarnPage', () => {
       expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
     });
 
-    it('should show the failure line above the CTAs when the check fails', async () => {
+    it('should explain a failed check in a modal and go back to the landing from CLOSE', async () => {
       vi.mocked(api.getEligibility).mockResolvedValue({ ok: false, status: 500, error: 'x' });
-      page();
+      const view = within(page().container);
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Join Creators Fund' }));
+      fireEvent.click(await view.findByRole('button', { name: 'Join Creators Fund' }));
+      await view.findByRole('alertdialog', {
+        name: 'Something went wrong while checking your account',
+      });
+      fireEvent.click(view.getByText('Close'));
 
-      expect((await screen.findByRole('alert')).textContent).toBe(
-        'Something went wrong. Please try again.',
-      );
-      expect(screen.queryByRole('progressbar', { name: 'Checking eligibility' })).toBeNull();
+      expect(view.queryByRole('alertdialog')).toBeNull();
+      expect(view.queryByRole('alert')).toBeNull();
+      expect(view.getByRole('button', { name: 'Join Creators Fund' })).toBeTruthy();
     });
   });
 

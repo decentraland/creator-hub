@@ -1633,6 +1633,10 @@
       "body_2": "这可能需要几秒钟。",
       "progress_label": "正在检查资格"
     },
+    "check_failed": {
+      "title": "检查你的账户时出了点问题",
+      "body": "如果问题仍然存在，请通过 {email} 联系我们的支持团队"
+    },
     "not_eligible": {
       "title": "你暂时无法加入",
       "got_it": "知道了",
