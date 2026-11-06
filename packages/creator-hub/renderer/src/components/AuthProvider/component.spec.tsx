@@ -1,53 +1,49 @@
+import { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setUser } from '@sentry/electron/renderer';
+import { ChainId, type Avatar } from '@dcl/schemas';
 
-import { auth as authPreload } from '#preload';
+import { auth } from '#preload';
+import { useDispatch } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
-import * as api from '/@/lib/creatorFundApi';
-import { initialState } from '/@/modules/store/creatorFund';
+import { AuthServerProvider } from '/@/lib/auth';
+import * as creatorFundApi from '/@/lib/creatorFundApi';
+import { LandType, RoleType, type Land } from '/@/lib/land';
+import { initialState as creatorFundInitialState } from '/@/modules/store/creatorFund';
+import { fetchENSList } from '/@/modules/store/ens';
+import type { ENS } from '/@/modules/store/ens/types';
+import { fetchLandList } from '/@/modules/store/land';
+import { fetchAllManagedProjectsData, fetchLandProjects } from '/@/modules/store/management';
+import { toLandProject } from '/@/modules/store/management/utils';
+import { fetchAnalytics } from '/@/modules/store/placeAnalytics';
 
 import { createTestStore } from '../../../tests/utils/testStore';
-import { AuthProvider } from '.';
+import { AuthProvider } from './component';
 
-const { account } = vi.hoisted(() => ({ account: { current: '0xaaaa' as string | null } }));
+const ACCOUNT_A = '0x00000000000000000000000000000000000000a1';
+const ACCOUNT_B = '0x00000000000000000000000000000000000000b2';
 
-vi.mock('/@/lib/auth', () => {
-  class AuthServerProvider {
+vi.mock('/@/lib/auth', () => ({
+  SignInError: class extends Error {},
+  AuthServerProvider: class {
     static setAuthServerUrl = vi.fn();
     static setAuthDappUrl = vi.fn();
-    static hasValidIdentity = () => account.current !== null;
-    static getAccount = () => account.current;
-    static deactivate = vi.fn(() => {
-      account.current = null;
-    });
-    static createSignInRequest = vi.fn(async () => ({ requestId: 'req', verifier: 'ver' }));
-    static applyDeepLinkIdentity = vi.fn(async () => {
-      account.current = '0xbbbb';
-      return '0xbbbb';
-    });
+    static hasValidIdentity = vi.fn();
+    static getAccount = vi.fn();
+    static deactivate = vi.fn();
+    static createSignInRequest = vi.fn();
+    static applyDeepLinkIdentity = vi.fn();
     static openAuthDapp = vi.fn();
-    request = vi.fn();
-  }
-  class SignInError extends Error {}
-  return { AuthServerProvider, SignInError };
-});
-vi.mock('/@/lib/profile', () => ({
-  Profiles: class {
-    fetchProfile = vi.fn(async () => undefined);
+    request = vi.fn(async () => null);
   },
 }));
-vi.mock('/@/lib/connection', () => ({ isNavigatorOnline: () => true }));
+
+const profileRequests: Array<{ address: string; answer: (avatar: Avatar) => void }> = [];
+
 vi.mock('/@/lib/creatorFundApi', () => ({ getEnrollment: vi.fn() }));
-vi.mock('/@/modules/store/land', async importOriginal => ({
-  ...((await importOriginal()) as object),
-  fetchTiles: () => ({ type: 'test/noop' }),
-}));
-vi.mock('/@/modules/store/management', async importOriginal => ({
-  ...((await importOriginal()) as object),
-  fetchAllManagedProjectsData: () => ({ type: 'test/noop' }),
-}));
 
 const ENROLLED = {
   status: 'active' as const,
@@ -59,81 +55,230 @@ const ENROLLED = {
   email_verified_at: null,
 };
 
-function Controls() {
-  const { signOut, signIn } = useAuth();
-  return (
-    <>
-      <button onClick={signOut}>sign out</button>
-      <button onClick={() => void signIn()}>sign in</button>
-    </>
+vi.mock('/@/lib/profile', () => ({
+  Profiles: class {
+    fetchProfile = (address: string) =>
+      new Promise(answer => profileRequests.push({ address, answer }));
+  },
+}));
+
+vi.mock('@sentry/electron/renderer', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  setUser: vi.fn(),
+}));
+
+const avatarOf = (address: string) => ({ name: address }) as Avatar;
+
+vi.mock('/@/modules/store/land', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  fetchTiles: () => ({ type: 'test/fetchTiles' }),
+}));
+
+vi.mock('/@/modules/store/management', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  fetchAllManagedProjectsData: vi.fn(),
+}));
+
+const landOf = (owner: string): Land => ({
+  id: '96,15',
+  tokenId: '1',
+  type: LandType.PARCEL,
+  roles: [RoleType.OWNER],
+  role: RoleType.OWNER,
+  x: 96,
+  y: 15,
+  name: 'Land Name',
+  description: null,
+  owner,
+  operators: [],
+  updateOperator: null,
+  deployable: true,
+});
+
+function seedWalletState(store: ReturnType<typeof createTestStore>, address: string) {
+  const land = landOf(address);
+  store.dispatch(fetchLandList.pending('seed', { address }));
+  store.dispatch(
+    fetchLandList.fulfilled({ land: [land], authorizations: [], rentals: [] }, 'seed', { address }),
+  );
+  store.dispatch(fetchLandProjects.pending('seed'));
+  store.dispatch(
+    fetchLandProjects.fulfilled(
+      { projects: [toLandProject(land, [], hash => hash)], deployments: {} },
+      'seed',
+    ),
+  );
+  store.dispatch(fetchENSList.pending('seed', { address }));
+  store.dispatch(fetchENSList.fulfilled([{ subdomain: 'a.dcl.eth' } as ENS], 'seed', { address }));
+  store.dispatch(fetchAnalytics.pending('seed'));
+  store.dispatch(
+    fetchAnalytics.fulfilled(
+      {
+        exportedAt: '2026-11-01T00:00:00.000Z',
+        places: [
+          {
+            placeId: land.id,
+            name: 'Land Name',
+            thumbnail: '',
+            location: { x: 96, y: 15 },
+            publishedIn: 'Genesis City',
+            lastUpdatedAt: null,
+          },
+        ],
+        metricsByPlaceId: {},
+      },
+      'seed',
+    ),
   );
 }
 
-function renderWithFlagOn() {
-  const store = createTestStore();
-  store.dispatch({
-    type: 'featureFlags/fetch/fulfilled',
-    payload: { flags: { 'creatorhub-creator-fund': true }, variants: {} },
-  });
-  render(
-    <Provider store={store}>
-      <MemoryRouter>
-        <AuthProvider>
-          <Controls />
-        </AuthProvider>
-      </MemoryRouter>
-    </Provider>,
-  );
-  return store;
+let session: ReturnType<typeof useAuth>;
+
+function SessionProbe() {
+  session = useAuth();
+  const dispatch = useDispatch();
+  const { wallet } = session;
+  useEffect(() => {
+    if (wallet) dispatch(fetchLandList.pending(`page-${wallet}`, { address: wallet }));
+  }, [wallet, dispatch]);
+  return null;
 }
 
 describe('AuthProvider', () => {
-  beforeEach(() => {
-    account.current = '0xaaaa';
-    vi.mocked(api.getEnrollment).mockResolvedValue({ ok: true, status: 200, data: ENROLLED });
+  let store: ReturnType<typeof createTestStore>;
+  let fetches: Array<{ address: string; landsAtDispatch: number }>;
+  let completeDeepLink: (link: { identityId: string; authRequestId: string }) => void;
+
+  beforeEach(async () => {
+    fetches = [];
+    profileRequests.length = 0;
+    vi.mocked(fetchAllManagedProjectsData).mockImplementation((({ address }: { address: string }) =>
+      (_dispatch: unknown, getState: () => ReturnType<typeof store.getState>) => {
+        fetches.push({ address, landsAtDispatch: getState().land.data.length });
+      }) as never);
+    vi.mocked(AuthServerProvider.hasValidIdentity).mockReturnValue(true);
+    vi.mocked(AuthServerProvider.getAccount).mockReturnValue(ACCOUNT_A);
+    vi.mocked(AuthServerProvider.createSignInRequest).mockResolvedValue({
+      requestId: 'sign-in',
+      verifier: 'verifier',
+    });
+    vi.mocked(auth.onDeepLinkSignIn).mockImplementation(listener => {
+      completeDeepLink = listener as typeof completeDeepLink;
+      return { cleanup: vi.fn() };
+    });
+
+    vi.mocked(creatorFundApi.getEnrollment).mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: ENROLLED,
+    });
+
+    store = createTestStore();
+    store.dispatch({
+      type: 'featureFlags/fetch/fulfilled',
+      payload: { flags: { 'creatorhub-creator-fund': true }, variants: {} },
+    });
+    render(
+      <Provider store={store as never}>
+        <MemoryRouter>
+          <AuthProvider>
+            <SessionProbe />
+          </AuthProvider>
+        </MemoryRouter>
+      </Provider>,
+    );
+    await vi.waitFor(() => expect(fetches).toEqual([{ address: ACCOUNT_A, landsAtDispatch: 0 }]));
+    act(() => seedWalletState(store, ACCOUNT_A));
+    await vi.waitFor(() => expect(store.getState().creatorFund.enrollment.data).toEqual(ENROLLED));
   });
 
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
+  afterEach(cleanup);
 
-  describe('when signed in with the Creator Fund flag on', () => {
-    it('should load the enrollment for the account', async () => {
-      const store = renderWithFlagOn();
+  describe('when the wallet changes from A to B without signing out', () => {
+    beforeEach(async () => {
+      vi.mocked(AuthServerProvider.applyDeepLinkIdentity).mockResolvedValue(ACCOUNT_B);
+      vi.mocked(creatorFundApi.getEnrollment).mockReturnValue(new Promise(() => {}));
+      await act(() => session.signIn());
+      await act(async () => completeDeepLink({ identityId: 'id', authRequestId: 'sign-in' }));
+      await vi.waitFor(() => expect(fetches).toHaveLength(2));
+    });
 
-      await waitFor(() => expect(store.getState().creatorFund.enrollment.data).toEqual(ENROLLED));
+    it("should drop A's LANDs, NAMEs, Manage lists and analytics", () => {
+      const state = store.getState();
+      expect(state.land.data).toEqual([]);
+      expect(state.management.lands.projects).toEqual([]);
+      expect(state.ens.data).toEqual({});
+      expect(state.placeAnalytics.places).toEqual([]);
+    });
+
+    it("should drop A's Creator Fund enrollment while B's loads", () => {
+      const { enrollment } = store.getState().creatorFund;
+      expect(enrollment.data).toBeNull();
+      expect(enrollment.status).toBe('loading');
+    });
+
+    it("should fetch B's data only after the reset", () => {
+      expect(fetches[1]).toEqual({ address: ACCOUNT_B, landsAtDispatch: 0 });
+    });
+
+    it("should keep a page's own fetch for B, started as B arrived", () => {
+      expect(store.getState().land.requestIds).toEqual([`page-${ACCOUNT_B}`]);
+    });
+
+    it('should identify the session as B', () => {
+      expect(store.getState().analytics.userId).toBe(ACCOUNT_B);
+    });
+
+    describe("and A's avatar arrives after B's", () => {
+      beforeEach(async () => {
+        const answerFor = (address: string) =>
+          profileRequests.find(request => request.address === address)!.answer;
+        await act(async () => answerFor(ACCOUNT_B)(avatarOf(ACCOUNT_B)));
+        await act(async () => answerFor(ACCOUNT_A)(avatarOf(ACCOUNT_A)));
+      });
+
+      it("should keep B's avatar", () => {
+        expect(session.avatar).toEqual(avatarOf(ACCOUNT_B));
+      });
     });
   });
 
   describe('when signing out', () => {
-    it("should clear the account's Creator Fund state", async () => {
-      const store = renderWithFlagOn();
-      await waitFor(() => expect(store.getState().creatorFund.enrollment.data).toEqual(ENROLLED));
+    beforeEach(() => {
+      act(() => session.signOut());
+    });
 
-      fireEvent.click(screen.getByRole('button', { name: 'sign out' }));
+    it("should drop A's wallet-scoped data, its analytics identity included", () => {
+      const state = store.getState();
+      expect(state.land.data).toEqual([]);
+      expect(state.management.lands.projects).toEqual([]);
+      expect(state.ens.data).toEqual({});
+      expect(state.placeAnalytics.places).toEqual([]);
+      expect(state.analytics.userId).toBeNull();
+    });
 
-      expect(store.getState().creatorFund).toEqual(initialState);
+    it("should clear A's Creator Fund state", () => {
+      expect(store.getState().creatorFund).toEqual(creatorFundInitialState);
+    });
+
+    it('should fetch nothing', () => {
+      expect(fetches).toHaveLength(1);
+    });
+
+    it('should clear the Sentry user', () => {
+      expect(setUser).toHaveBeenLastCalledWith(null);
     });
   });
 
-  describe('when a different account signs in', () => {
-    it("should drop the previous account's status before the new one loads", async () => {
-      let deliver: (payload: { identityId: string; authRequestId: string }) => void = () => {};
-      vi.mocked(authPreload.onDeepLinkSignIn).mockImplementation(callback => {
-        deliver = callback as typeof deliver;
-        return { cleanup: vi.fn() };
-      });
-      const store = renderWithFlagOn();
-      await waitFor(() => expect(store.getState().creatorFund.enrollment.data).toEqual(ENROLLED));
-      vi.mocked(api.getEnrollment).mockReturnValue(new Promise(() => {}));
+  describe('when only the network changes', () => {
+    beforeEach(async () => {
+      await act(() => session.changeNetwork(ChainId.ETHEREUM_SEPOLIA));
+      await vi.waitFor(() => expect(fetches).toHaveLength(2));
+    });
 
-      fireEvent.click(screen.getByRole('button', { name: 'sign in' }));
-      await waitFor(() => expect(authPreload.onDeepLinkSignIn).toHaveBeenCalled());
-      await act(async () => deliver({ identityId: 'id', authRequestId: 'req' }));
-
-      await waitFor(() => expect(store.getState().creatorFund.enrollment.status).toBe('loading'));
-      expect(store.getState().creatorFund.enrollment.data).toBeNull();
+    it("should keep A's data while refetching it", () => {
+      expect(fetches[1]).toEqual({ address: ACCOUNT_A, landsAtDispatch: 1 });
+      expect(store.getState().ens.chainId).toBe(ChainId.ETHEREUM_SEPOLIA);
     });
   });
 });

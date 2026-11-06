@@ -7,11 +7,9 @@ import { analytics, auth, misc } from '#preload';
 import { config } from '/@/config';
 import { AuthServerProvider, SignInError } from '/@/lib/auth';
 import { Profiles } from '/@/lib/profile';
+import { accountChanged } from '/@/modules/store/account';
 import { fetchTiles } from '/@/modules/store/land';
-import {
-  fetchAllManagedProjectsData,
-  actions as managementActions,
-} from '/@/modules/store/management';
+import { fetchAllManagedProjectsData } from '/@/modules/store/management';
 import { actions as ensActions } from '/@/modules/store/ens';
 import { actions as creatorFundActions } from '/@/modules/store/creatorFund';
 import { FeatureFlag } from '/@/modules/store/featureFlags';
@@ -56,17 +54,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const requestIdRef = useRef<string | null>(null);
   const verifierRef = useRef<string | null>(null);
 
-  const [wallet, setWallet] = useState<string>();
+  const [wallet, setWalletState] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [chainId, setChainId] = useState<ChainId>(DEFAULT_CHAIN_ID);
 
+  const walletRef = useRef<string>();
+  const setWallet = useCallback(
+    (next: string | undefined) => {
+      if (next === walletRef.current) return;
+      walletRef.current = next;
+      dispatch(accountChanged());
+      setWalletState(next);
+    },
+    [dispatch],
+  );
+
   const fetchAvatar = useCallback(async (address: string) => {
     try {
       const profile = new Profiles();
       const avatar = await profile.fetchProfile(address);
-      setAvatar(avatar);
+      if (address === walletRef.current) setAvatar(avatar);
     } catch (error) {
       console.error(error);
     }
@@ -102,7 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         navigate(-1);
       }
     },
-    [fetchAvatar, navigate, pushGeneric],
+    [setWallet, fetchAvatar, navigate, pushGeneric],
   );
 
   const signIn = useCallback(async () => {
@@ -200,9 +209,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAvatar(undefined);
     setIsSignedIn(false);
     AuthServerProvider.deactivate();
-    dispatch(managementActions.clearUserManagedProjects());
-    dispatch(creatorFundActions.clearState());
-  }, []);
+  }, [setWallet]);
 
   const changeNetwork = useCallback(async (chainId: ChainId = DEFAULT_CHAIN_ID) => {
     try {
@@ -235,6 +242,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [stopDeepLinkListener]);
 
   useEffect(() => {
+    if (!wallet) setUser(null);
     if (wallet && chainId) {
       dispatch(ensActions.setChainId(chainId));
       dispatch(fetchAllManagedProjectsData({ address: wallet }));
@@ -247,12 +255,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const creatorFundEnabled = useSelector(
     state => state.featureFlags.flags[FeatureFlag.CREATOR_FUND] === true,
   );
-  const lastWalletRef = useRef(wallet);
-  useEffect(() => {
-    const previous = lastWalletRef.current;
-    lastWalletRef.current = wallet;
-    if (previous && wallet && previous !== wallet) dispatch(creatorFundActions.clearState());
-  }, [wallet, dispatch]);
   useEffect(() => {
     if (wallet && creatorFundEnabled) void dispatch(creatorFundActions.fetchEnrollment());
   }, [wallet, creatorFundEnabled, dispatch]);

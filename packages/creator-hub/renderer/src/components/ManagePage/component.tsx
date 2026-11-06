@@ -63,10 +63,8 @@ export function ManagePage() {
   }, [wallet, dispatch]);
 
   useEffect(() => {
-    if (isSignedIn && tab === 'lands' && lands.status === 'idle') {
-      dispatch(managementActions.fetchLandProjects());
-    }
-  }, [isSignedIn, tab, lands.status, dispatch]);
+    if (isSignedIn && tab === 'lands') dispatch(managementActions.fetchLandProjects());
+  }, [isSignedIn, tab, wallet, dispatch]);
 
   const refetchWorlds = useCallback(() => {
     dispatch(managementActions.fetchManagedProjectsFiltered());
