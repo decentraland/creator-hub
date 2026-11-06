@@ -167,7 +167,10 @@ function getValueAndTypeFromType(
           member.key.type === 'Identifier' &&
           member.typeAnnotation?.type === 'TSTypeAnnotation'
         ) {
-          const child = getValueAndTypeFromType(member.typeAnnotation.typeAnnotation);
+          const child = applyParamTags(
+            getValueAndTypeFromType(member.typeAnnotation.typeAnnotation),
+            extractParamTags(member.leadingComments),
+          );
           fields[member.key.name] = member.optional ? { ...child, optional: true } : child;
           value[member.key.name] = child.value;
         }
@@ -200,6 +203,52 @@ function getValueAndTypeFromType(
   }
 
   return { type: 'string', value: '' };
+}
+
+type Comments = { type: string; value: string }[] | undefined | null;
+
+// Editor hints a script can put in the JSDoc of a param or of an object member. They only shape
+// the editor (the runtime still receives the plain value), so scripts stay valid on any SDK:
+//   @components <name> …  an Entity picks only entities with one of these components
+//   @actionsOf <key>      a string picks one of the actions of the entity in sibling `<key>`
+//   @format wallet        a string holds an Ethereum address
+// On a list, the hint applies to each element.
+type ParamTags = { components?: string[]; actionsOf?: string; format?: 'wallet' };
+
+function extractParamTags(comments: Comments): ParamTags {
+  const tags: ParamTags = {};
+  for (const comment of comments ?? []) {
+    if (comment.type !== 'CommentBlock') continue;
+    for (const rawLine of comment.value.split('\n')) {
+      const line = rawLine.trim().replace(/^\*\s?/, '');
+      const components = line.match(/^@components\s+(.+)/);
+      if (components) {
+        tags.components = components[1].split(/[\s,]+/).filter(Boolean);
+        continue;
+      }
+      const actionsOf = line.match(/^@actionsOf\s+([A-Za-z_$][\w$]*)/);
+      if (actionsOf) {
+        tags.actionsOf = actionsOf[1];
+        continue;
+      }
+      if (/^@format\s+wallet\b/.test(line)) tags.format = 'wallet';
+    }
+  }
+  return tags;
+}
+
+function applyParamTags(param: ScriptParamUnion, tags: ParamTags): ScriptParamUnion {
+  if (param.type === 'array') return { ...param, item: applyParamTags(param.item, tags) };
+  if (param.type === 'entity' && tags.components?.length) {
+    return { ...param, components: tags.components };
+  }
+  if (param.type === 'string') {
+    const next = { ...param };
+    if (tags.actionsOf) next.actionsOf = tags.actionsOf;
+    if (tags.format) next.format = tags.format;
+    return next;
+  }
+  return param;
 }
 
 function getIdentifier(param: FunctionParameter | TSParameterProperty): Identifier | undefined {
@@ -410,7 +459,8 @@ function extractParamsFromFunctionParams(
     if (!identifier) return;
 
     const name = identifier.name;
-    result[name] = { ...clampSliderValue(info), optional };
+    const tagged = applyParamTags(clampSliderValue(info), extractParamTags(param.leadingComments));
+    result[name] = { ...tagged, optional };
   });
 
   return result;
