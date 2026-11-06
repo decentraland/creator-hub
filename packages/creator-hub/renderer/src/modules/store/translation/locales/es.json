@@ -1591,7 +1591,7 @@
       "features": {
         "enrolment": {
           "title": "Inscripción automática",
-          "body": "Todas las escenas elegibles que tienes u operas se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
+          "body": "Todas las escenas elegibles que tienes se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
         },
         "cycles": {
           "title": "Recompensas cada 15 días",
@@ -1603,7 +1603,7 @@
         },
         "payout": {
           "title": "Cobra directamente en USDC",
-          "body": "Los pagos se envían a la billetera que elijas dentro de los 30 días posteriores al cierre de cada ciclo."
+          "body": "Los pagos se envían a la billetera que elijas dentro de los 14 días posteriores al cierre de cada ciclo."
         }
       },
       "join": "Unirse al Creators Fund",
@@ -1634,6 +1634,10 @@
       "body_1": "Estamos verificando tu cuenta con el Creator Fund.",
       "body_2": "Esto puede tardar unos segundos.",
       "progress_label": "Verificando elegibilidad"
+    },
+    "check_failed": {
+      "title": "Algo salió mal al verificar tu cuenta",
+      "body": "Si el problema persiste, contacta a nuestro equipo de soporte en {email}"
     },
     "not_eligible": {
       "title": "Todavía no puedes unirte",
@@ -1667,7 +1671,8 @@
       "sections": "Secciones del Creator Fund",
       "tabs": {
         "my_places": "Mis lugares",
-        "leaderboard": "Clasificación"
+        "leaderboard": "Clasificación",
+        "home": "Inicio"
       },
       "title_prefix": "Ganar",
       "title": "Creator Fund",
@@ -1695,11 +1700,13 @@
         "jump_in": "Entrar",
         "jump_in_label": "Entrar en {place}",
         "empty": "Todavía no hay pagos en este ciclo.",
-        "error": "No se pudo cargar la clasificación."
+        "error": "Algo salió mal al cargar la clasificación."
       },
       "get_ready": {
         "title": "¡Prepárate!",
         "body": "Tu primer ciclo de recompensas está por comenzar. Estas son algunas cosas que puedes hacer para empezar.",
+        "body_upcoming": "Tu primer ciclo de recompensas comienza el {date}.",
+        "body_started": "Tu primer ciclo de recompensas comenzó el {date}.",
         "build": {
           "title": "Crea tus escenas",
           "body": "Crea experiencias atractivas que traigan jugadores a Decentraland. Explora la <docs>documentación para creadores</docs> y las <refs>referencias</refs> para inspirarte."
@@ -1711,7 +1718,9 @@
         },
         "cycle": {
           "title": "Prepárate para el primer ciclo",
-          "body": "¡Tu primer ciclo de recompensas comienza!"
+          "body": "¡Tu primer ciclo de recompensas comienza!",
+          "body_upcoming": "El ciclo n.º 1 comienza el {date}.",
+          "body_started": "El ciclo n.º 1 comenzó el {date}."
         },
         "community": {
           "title": "Únete a la comunidad",
@@ -1753,7 +1762,7 @@
     },
     "errors": {
       "generic": "Algo salió mal. Vuelve a intentarlo.",
-      "load_status": "No se pudo cargar el Creator Fund.",
+      "load_status": "Algo salió mal al cargar el Creator Fund.",
       "retry": "Reintentar"
     }
   },

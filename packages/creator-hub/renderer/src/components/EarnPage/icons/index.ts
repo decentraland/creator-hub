@@ -1,7 +1,9 @@
+export { AlertIcon } from './AlertIcon';
 export { ArrowDownIcon } from './ArrowDownIcon';
 export { AutomaticEnrolmentIcon } from './AutomaticEnrolmentIcon';
 export { BuildIcon } from './BuildIcon';
 export { CalendarIcon } from './CalendarIcon';
+export { CheckboxTickIcon } from './CheckboxTickIcon';
 export { CheckmarkIcon } from './CheckmarkIcon';
 export { CloseIcon } from './CloseIcon';
 export { DiscordIcon } from './DiscordIcon';
@@ -19,3 +21,4 @@ export { RetentionIcon } from './RetentionIcon';
 export { SupportIcon } from './SupportIcon';
 export { TermsIcon } from './TermsIcon';
 export { WalletIcon } from './WalletIcon';
+export { WarningIcon } from './WarningIcon';
