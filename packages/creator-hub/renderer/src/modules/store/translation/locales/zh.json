@@ -1836,7 +1836,7 @@
           "email_verified": "邮箱已验证"
         },
         "cancel": "取消",
-        "error": "无法加载你的付款。"
+        "error": "加载你的付款时出了点问题。"
       }
     },
     "errors": {

@@ -132,16 +132,6 @@ describe('JoinedPage', () => {
       expect(screen.getByRole('tabpanel').textContent).toBe(panel);
     });
 
-    it('should list Payouts third, after My Places', async () => {
-      await renderPage();
-
-      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
-        'Leaderboard',
-        'My Places',
-        'Payouts',
-      ]);
-    });
-
     it('should name the first tab Leaderboard once a cycle has closed', async () => {
       await renderPage();
 
@@ -160,6 +150,16 @@ describe('JoinedPage', () => {
       await renderPage();
 
       expect(screen.getByRole('tab', { name: 'Home', selected: true })).toBeTruthy();
+    });
+
+    it('should list Payouts third, after My Places', async () => {
+      await renderPage();
+
+      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+        'Leaderboard',
+        'My Places',
+        'Payouts',
+      ]);
     });
   });
 
@@ -228,7 +228,11 @@ describe('JoinedPage', () => {
     it('should name the first tab Home', async () => {
       await renderPage();
 
-      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Home', 'My Places']);
+      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+        'Home',
+        'My Places',
+        'Payouts',
+      ]);
     });
 
     it('should offer support only from the More options menu, not from a header button', async () => {

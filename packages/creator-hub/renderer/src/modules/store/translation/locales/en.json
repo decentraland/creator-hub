@@ -1836,7 +1836,7 @@
           "email_verified": "Email verified"
         },
         "cancel": "Cancel",
-        "error": "Couldn't load your payouts."
+        "error": "Something went wrong while loading your payouts."
       }
     },
     "errors": {
