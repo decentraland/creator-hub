@@ -36,6 +36,14 @@ vi.mock('../../ProjectStepWrapper', () => ({
   ProjectStepWrapper: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+/** The worlds client calls `decentraland-crypto-fetch`, which on Node 24 bypasses a stubbed global
+ * fetch and hits undici with jsdom's AbortSignal. Route it through the global so the stub
+ * below answers it on every Node version. */
+vi.mock('decentraland-crypto-fetch', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  default: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
+}));
+
 vi.mock('/@/modules/store/deployment/utils', async importOriginal => ({
   ...((await importOriginal()) as object),
   fetchInfo: vi.fn(async () => ({ isWorld: true, rootCID: 'bafy' })),
@@ -90,11 +98,7 @@ describe('PublishToWorld', () => {
       </Provider>,
     );
     const action = await screen.findByTestId('publish-modal-publish-to-world-select-world-action');
-    // Next stays disabled until the world's settings, scenes and permissions have loaded,
-    // which takes longer than waitFor's 1 s default when CI runs every suite in parallel.
-    await waitFor(() => expect((action as HTMLButtonElement).disabled).toBe(false), {
-      timeout: 10_000,
-    });
+    await waitFor(() => expect((action as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(action);
     await waitFor(() => expect(onStep).toHaveBeenCalledWith('deploy', expect.anything()));
     await waitFor(() => expect(deployedSceneJson).toBeDefined());
