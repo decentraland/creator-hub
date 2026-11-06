@@ -1706,7 +1706,8 @@
       },
       "filter": {
         "cycle": "周期",
-        "all_cycles": "所有周期"
+        "all_cycles": "所有周期",
+        "current_cycle": "当前周期"
       },
       "leaderboard": {
         "sentence": "本周期收益最高的前 20 个地点",
@@ -1749,6 +1750,49 @@
       },
       "news": {
         "title": "新闻"
+      },
+      "my_places": {
+        "sentence": "你在计划中的地点的表现",
+        "last_update": "最后更新 {time}",
+        "status": {
+          "in_program": "已加入计划",
+          "not_eligible": "不符合条件",
+          "replaced": "已替换"
+        },
+        "reasons": {
+          "content_policy": "此场景不符合内容政策。",
+          "excluded": "此场景已被排除在 Creator Fund 之外。",
+          "not_owner": "只有所有者能通过此地点获得收益。你是协作者。",
+          "creator_not_eligible": "你的账户不符合条件，因此此地点不能参与。",
+          "terms_outdated": "接受更新后的计划条款即可参与。",
+          "unknown": "此场景目前不能参与。"
+        },
+        "metrics": {
+          "new_players": "可归因的新玩家",
+          "new_players_info": "过去 30 天内，首次进入 Decentraland、且第一天大部分时间都在你的地点度过的钱包。",
+          "new_players_info_label": "关于可归因的新玩家",
+          "d3_retention": "D3 留存率",
+          "d3_retention_info_label": "关于 D3 留存率",
+          "playtime": "总游戏时长",
+          "playtime_info": "过去 30 天内每位玩家在你的地点停留的平均时长。",
+          "playtime_info_label": "关于总游玩时长",
+          "minutes": "{value} 分钟",
+          "no_data": "无数据"
+        },
+        "empty_body": "发布场景后，它会显示在这里，并附上本周期的表现。",
+        "empty_closed_cycle": "本周期没有地点。",
+        "no_scenes": {
+          "title": "创建你的第一个场景，开始赚取收益"
+        },
+        "unpublished": {
+          "title": "发布一个场景，开始赚取收益",
+          "heading": "你未发布的场景",
+          "parcels": "{parcels} 个地块"
+        },
+        "start_from_template": "从模板开始",
+        "create_scene": "创建场景",
+        "error": "加载你的地点时出了点问题。",
+        "replaced_tooltip": "此地点已作为新地点重新发布。其之前的数据会保留。"
       }
     },
     "errors": {

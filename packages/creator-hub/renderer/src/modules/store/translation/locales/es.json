@@ -1706,7 +1706,8 @@
       },
       "filter": {
         "cycle": "Ciclo",
-        "all_cycles": "Todos los ciclos"
+        "all_cycles": "Todos los ciclos",
+        "current_cycle": "Ciclo actual"
       },
       "leaderboard": {
         "sentence": "Los 20 lugares con los pagos más altos de este ciclo",
@@ -1749,6 +1750,49 @@
       },
       "news": {
         "title": "Novedades"
+      },
+      "my_places": {
+        "sentence": "Rendimiento de tus lugares en el programa",
+        "last_update": "Última actualización {time}",
+        "status": {
+          "in_program": "En el programa",
+          "not_eligible": "No elegible",
+          "replaced": "Reemplazado"
+        },
+        "reasons": {
+          "content_policy": "Esta escena no cumple la Política de contenido.",
+          "excluded": "Esta escena está excluida del Creator Fund.",
+          "not_owner": "Solo el propietario gana con este lugar. Eres colaborador.",
+          "creator_not_eligible": "Tu cuenta no es elegible, así que este lugar no puede participar.",
+          "terms_outdated": "Acepta los Términos del Programa actualizados para participar.",
+          "unknown": "Esta escena no puede participar por ahora."
+        },
+        "metrics": {
+          "new_players": "Nuevos jugadores atribuibles",
+          "new_players_info": "Wallets nuevas en Decentraland cuyo primer día transcurrió mayormente en tu lugar, en los últimos 30 días.",
+          "new_players_info_label": "Acerca de los nuevos jugadores atribuibles",
+          "d3_retention": "Retención D3",
+          "d3_retention_info_label": "Acerca de la retención D3",
+          "playtime": "Tiempo de juego total",
+          "playtime_info": "Tiempo promedio que cada jugador pasó en tu lugar en los últimos 30 días.",
+          "playtime_info_label": "Acerca del tiempo de juego total",
+          "minutes": "{value} min",
+          "no_data": "Sin datos"
+        },
+        "empty_body": "Cuando publiques una escena, aparecerá aquí con su rendimiento en el ciclo actual.",
+        "empty_closed_cycle": "No hubo lugares en este ciclo.",
+        "no_scenes": {
+          "title": "Crea tu primera escena para empezar a ganar"
+        },
+        "unpublished": {
+          "title": "Publica una escena para empezar a ganar",
+          "heading": "Tus escenas sin publicar",
+          "parcels": "{parcels, plural, one {# parcela} other {# parcelas}}"
+        },
+        "start_from_template": "Empezar desde una plantilla",
+        "create_scene": "Crear una escena",
+        "error": "Algo salió mal al cargar tus lugares.",
+        "replaced_tooltip": "Este lugar se volvió a publicar como uno nuevo. Se conservan sus cifras anteriores."
       }
     },
     "errors": {

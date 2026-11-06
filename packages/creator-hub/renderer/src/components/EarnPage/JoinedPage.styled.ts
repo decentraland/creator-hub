@@ -43,4 +43,10 @@ const TabPanel = styled('div')({
   marginTop: 30,
 });
 
-export { Page, SectionTabs, TabPanel };
+const GradientDefs = styled('svg')({
+  position: 'absolute',
+  width: 0,
+  height: 0,
+});
+
+export { GradientDefs, Page, SectionTabs, TabPanel };
