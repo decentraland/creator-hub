@@ -1,0 +1,93 @@
+.PlaceContinuityWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px 24px;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--danger) 10%, transparent),
+    color-mix(in srgb, var(--danger) 4%, transparent)
+  );
+  text-align: left;
+}
+
+.PlaceContinuityWarning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+  font-size: 24px;
+}
+
+.PlaceContinuityWarning-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.PlaceContinuityWarning .PlaceContinuityWarning-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.PlaceContinuityWarning .PlaceContinuityWarning-description {
+  color: var(--text-on-secondary);
+}
+
+.PlaceContinuityWarning .PlaceContinuityWarning-subtitle {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  color: var(--dcl-silver);
+}
+
+.PlaceContinuityWarning-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.PlaceContinuityWarning-list li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--text);
+}
+
+.PlaceContinuityWarning-list li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.PlaceContinuityWarning-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider);
+  color: var(--dcl-silver);
+  font-size: 18px;
+}
+
+.PlaceContinuityWarning-tip .MuiTypography-root {
+  color: var(--text-on-secondary);
+}
