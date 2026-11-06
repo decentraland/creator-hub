@@ -1635,6 +1635,10 @@
       "body_2": "Esto puede tardar unos segundos.",
       "progress_label": "Verificando elegibilidad"
     },
+    "check_failed": {
+      "title": "Algo salió mal al verificar tu cuenta",
+      "body": "Si el problema persiste, contacta a nuestro equipo de soporte en {email}"
+    },
     "not_eligible": {
       "title": "Todavía no puedes unirte",
       "got_it": "Entendido",
