@@ -11,6 +11,7 @@ import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/creatorFund';
 import * as api from '/@/lib/creatorFundApi';
 
+import { tracked } from '../../../tests/utils/analytics';
 import { createTestStore } from '../../../tests/utils/testStore';
 import { CYCLES, ok } from './joined/fixtures';
 import { JoinedPage, type JoinedTab } from './JoinedPage';
@@ -238,6 +239,43 @@ describe('JoinedPage', () => {
       expect(screen.getByRole('tab', { name: 'My Places', selected: true })).toBe(myPlaces);
       expect(document.activeElement).toBe(myPlaces);
       expect(screen.getByRole('banner')).toBe(header);
+    });
+  });
+
+  describe('analytics', () => {
+    it('should report each tab the user selects, the first as Leaderboard once a cycle has closed', async () => {
+      await renderPage();
+
+      fireEvent.click(screen.getByRole('tab', { name: 'My Places' }));
+      fireEvent.click(screen.getByRole('tab', { name: 'Leaderboard' }));
+
+      expect(tracked('Creator Fund Tab Viewed')).toEqual([
+        { tab: 'my_places' },
+        { tab: 'leaderboard' },
+      ]);
+    });
+
+    it('should report the first tab as Home while it reads Home', async () => {
+      vi.mocked(api.getCycles).mockResolvedValue(
+        ok({ cycles: CYCLES.cycles.filter(cycle => cycle.status !== 'closed') }),
+      );
+      await renderPage('my_places');
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Home' }));
+
+      expect(tracked('Creator Fund Tab Viewed')).toEqual([{ tab: 'home' }]);
+    });
+
+    it('should report Read Terms and Contact Support from the menu', async () => {
+      await renderPage();
+
+      fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Read Terms' }));
+      fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Contact Support' }));
+
+      expect(tracked('Creator Fund Read Terms')).toEqual([{ source: 'menu' }]);
+      expect(tracked('Creator Fund Contact Support')).toEqual([{ source: 'menu' }]);
     });
   });
 });
