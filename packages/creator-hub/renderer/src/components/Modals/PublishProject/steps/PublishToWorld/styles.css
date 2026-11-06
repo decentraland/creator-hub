@@ -275,3 +275,11 @@
   width: 450px;
   margin-left: 0;
 }
+
+.WorldLoadError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
