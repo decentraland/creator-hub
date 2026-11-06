@@ -7,7 +7,11 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { misc } from '#preload';
 
 import type { Project } from '/shared/types/projects';
-import type { Deployment } from '/@/modules/store/deployment/slice';
+import {
+  initializeDeployment,
+  reducer as deploymentReducer,
+  type Deployment,
+} from '/@/modules/store/deployment/slice';
 import type { Props } from '/@/components/Modals/PublishProject/types';
 
 import { Deploy } from './component';
@@ -401,6 +405,38 @@ describe('Deploy step', () => {
       expect(hooks.fetchWorldSceneSizeLimit).toHaveBeenCalledWith('name.dcl.eth', ['0,0'], {
         replacesWorld: false,
       });
+    });
+  });
+  describe('when the publish server cannot be read, as when the connection drops on Review', () => {
+    beforeEach(() => {
+      const arg = {
+        path: PROJECT.path,
+        port: 4000,
+        supportsDeployResource: true,
+        hasCancelToken: true,
+        chainId: 1,
+        wallet: '0xabc',
+      };
+      const state = deploymentReducer(
+        undefined,
+        initializeDeployment.rejected(new TypeError('Failed to fetch'), 'request-1', arg),
+      );
+      hooks.deployment = state.deployments[PROJECT.path];
+      props = {
+        ...props,
+        previousStep: 'publish-to-world',
+        project: { ...PROJECT, worldConfiguration: { name: 'example.dcl.eth' } } as Project,
+      };
+      mount();
+    });
+
+    it('should show the error with a retry', () => {
+      expect(screen.getByTestId('publish-modal-deploy-error')).toBeTruthy();
+      expect(screen.getByTestId('publish-modal-deploy-error-retry')).toBeTruthy();
+    });
+
+    it('should not ask for a scene size limit', () => {
+      expect(hooks.fetchWorldSceneSizeLimit).not.toHaveBeenCalled();
     });
   });
 });
