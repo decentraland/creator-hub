@@ -76,6 +76,10 @@ function PlaceStats({ reading, locale }: { reading: PlaceMetricsReading; locale:
         <MetricStat
           icon={<NewPlayersIcon />}
           label={t('earn.joined.my_places.metrics.new_players')}
+          info={{
+            name: t('earn.joined.my_places.metrics.new_players_info_label'),
+            tooltip: t('earn.joined.my_places.metrics.new_players_info'),
+          }}
           reading={stat('new_decentraland_players_30d', value => formatCount(value, locale))}
         />
         <MetricStat

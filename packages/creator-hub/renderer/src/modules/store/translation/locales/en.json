@@ -1768,6 +1768,8 @@
         },
         "metrics": {
           "new_players": "New Players Attributable",
+          "new_players_info": "Wallets new to Decentraland whose first day was spent mostly in your place, over the last 30 days.",
+          "new_players_info_label": "About New Players Attributable",
           "d3_retention": "D3 Retention",
           "d3_retention_info_label": "About D3 Retention",
           "playtime": "Total Playtime",
