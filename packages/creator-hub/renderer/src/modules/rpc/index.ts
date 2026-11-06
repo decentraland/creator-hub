@@ -4,7 +4,11 @@ import { hasCustomCode } from '/shared/scene-parser';
 import { fs, custom, workspace, ai } from '#preload';
 
 import { SceneRpcClient } from './scene/client';
-import { clearActiveSceneClient, setActiveSceneClient } from './active-scene';
+import {
+  clearActiveSceneClient,
+  notifyActiveSceneReady,
+  setActiveSceneClient,
+} from './active-scene';
 import { SceneRpcServer } from './scene/server';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
 import { CodeParserRPC } from './code';
@@ -67,6 +71,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
         }
       })();
 
+      notifyActiveSceneReady(sceneClient);
       cbs.onReady?.(params);
     },
   });
