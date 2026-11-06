@@ -1,10 +1,12 @@
-import type { ManagedProject } from '/shared/types/manage';
-import { ManagedProjectType } from '/shared/types/manage';
+import type { LandPlace, ManagedProject } from '/shared/types/manage';
+import { FilterBy, ManagedProjectType, SortBy } from '/shared/types/manage';
 import { retry } from '/shared/utils';
 
-import { parseCoords } from '/@/lib/land';
-import type { WorldData, WorldScene, Worlds } from '/@/lib/worlds';
-import { WorldPermissionName, WorldRoleType } from '/@/lib/worlds';
+import type { Authorization, Land, LandDeployment } from '/@/lib/land';
+import { coordsToId, LandType, ownedCoords, parseCoords } from '/@/lib/land';
+import { t } from '/@/modules/store/translation/utils';
+import type { WorldData, WorldPermissionsResponse, WorldScene, Worlds } from '/@/lib/worlds';
+import { WorldRoleType } from '/@/lib/worlds';
 
 import type { ParcelsPermission, WorldPermissionsState, WorldSettingsState } from './slice';
 
@@ -73,19 +75,33 @@ export async function fetchWorldSceneCoords(
   worldsApi: Worlds,
   worldName: string,
 ): Promise<SceneCoords[] | null> {
+  return toSceneCoords(await fetchWorldSceneList(worldsApi, worldName));
+}
+
+/** Every scene of a World, read page by page; null when a page could not be read. */
+export async function fetchWorldSceneList(
+  worldsApi: Worlds,
+  worldName: string,
+): Promise<WorldScene[] | null> {
   try {
-    const scenes = await readAllPages(async offset => {
+    return await readAllPages(async offset => {
       const response = await worldsApi.fetchWorldScenes(worldName, {
         limit: PAGE_LIMIT,
         offset,
       });
       return response && { items: response.scenes, total: response.total };
     });
-
-    return scenes?.map(sceneBase).filter(coords => coords !== null) ?? null;
   } catch {
     return null;
   }
+}
+
+function toSceneCoords(scenes: WorldScene[] | null): SceneCoords[] | null {
+  return scenes?.map(sceneBase).filter(coords => coords !== null) ?? null;
+}
+
+function firstSceneTitle(scenes: WorldScene[] | null): string | undefined {
+  return scenes?.map(scene => scene.entity?.metadata?.display?.title).find(Boolean);
 }
 
 /**
@@ -100,6 +116,7 @@ export async function toManagedProject(
   address: string,
 ): Promise<ManagedProject> {
   const hasEverBeenDeployed = Boolean(world.owner);
+  const sceneList = world.deployedScenes ? await fetchWorldSceneList(worldsApi, world.name) : [];
 
   return {
     id: world.name,
@@ -109,42 +126,70 @@ export async function toManagedProject(
       world.owner?.toLowerCase() === address.toLowerCase()
         ? WorldRoleType.OWNER
         : WorldRoleType.COLLABORATOR,
+    owner: world.owner || undefined,
+    title: world.title || undefined,
     deployment: hasEverBeenDeployed
       ? {
-          title: world.title || world.name,
+          title: firstSceneTitle(sceneList) || world.name,
           description: world.description || '',
           thumbnail: world.thumbnailHash ? worldsApi.getContentSrcUrl(world.thumbnailHash) : '',
           lastPublishedAt: world.lastDeployedAt ? new Date(world.lastDeployedAt).getTime() : 0,
           scenesCount: world.deployedScenes || 0,
         }
       : undefined,
-    scenes: world.deployedScenes
-      ? ((await fetchWorldSceneCoords(worldsApi, world.name)) ?? undefined)
-      : [],
+    scenes: toSceneCoords(sceneList) ?? undefined,
   };
 }
 
 /**
- * Whether `address` may deploy anywhere in the world, read the way the World Settings modal
- * reads it, so a card offers the same view the modal opens. A failed lookup answers `false`:
- * the parcel-only view is the one that never promises more than the modal shows.
+ * A World the wallet can stream to but not publish to, as a Manage card: two requests, each allowed to fail.
+ * A World whose scenes cannot be read is listed as unpublished rather than dropped.
  */
-export async function fetchHasWorldWideDeployment(
+export async function toStreamOnlyProject(
   worldsApi: Worlds,
   worldName: string,
+): Promise<ManagedProject> {
+  const [scenes, settings] = await Promise.all([
+    worldsApi.fetchWorldScenes(worldName, { limit: 1 }).catch(() => null),
+    worldsApi.fetchWorldSettings(worldName).catch(() => null),
+  ]);
+
+  return {
+    id: worldName,
+    displayName: worldName,
+    type: ManagedProjectType.WORLD,
+    role: WorldRoleType.COLLABORATOR,
+    access: 'stream',
+    title: settings?.title || undefined,
+    deployment: scenes?.total
+      ? {
+          title: firstSceneTitle(scenes.scenes) || worldName,
+          description: settings?.description || '',
+          thumbnail: settings?.thumbnailHash
+            ? worldsApi.getContentSrcUrl(settings.thumbnailHash)
+            : '',
+          lastPublishedAt: 0,
+          scenesCount: scenes.total,
+        }
+      : undefined,
+  };
+}
+
+/** A World resolved by its NAME, for a detail page whose World the loaded Manage lists miss. */
+export async function resolveWorldProject(
+  worldsApi: Worlds,
+  ens: { subdomain: string; nftOwnerAddress?: string },
   address: string,
-): Promise<boolean> {
-  try {
-    const page = await worldsApi.fetchParcelsPermission(
-      worldName,
-      WorldPermissionName.Deployment,
-      address,
-      { limit: 1, offset: 0 },
-    );
-    return !!page && hasWorldWidePermission({ parcels: page.parcels, status: 'succeeded' });
-  } catch {
-    return false;
-  }
+): Promise<ManagedProject> {
+  const { access: _access, ...project } = await toStreamOnlyProject(worldsApi, ens.subdomain);
+  return {
+    ...project,
+    role:
+      ens.nftOwnerAddress?.toLowerCase() === address.toLowerCase()
+        ? WorldRoleType.OWNER
+        : WorldRoleType.COLLABORATOR,
+    owner: ens.nftOwnerAddress,
+  };
 }
 
 /**
@@ -197,12 +242,189 @@ export const getThumbnailUrlFromDeployment = (
     | undefined,
   getContentSrcUrl: (hash: string) => string,
 ) => {
-  if (!deployment?.metadata?.display.navmapThumbnail) return '';
+  if (!deployment?.metadata?.display?.navmapThumbnail) return '';
   const thumbnailFileName = deployment.metadata.display.navmapThumbnail;
   const thumbnailContent = deployment.content.find(item => item.file === thumbnailFileName);
   if (thumbnailContent) return getContentSrcUrl(thumbnailContent.hash);
   return '';
 };
+
+const parcelIds = (land: Land) => ownedCoords([land]).map(([x, y]) => coordsToId(x, y));
+
+/** Each LAND's deployments, keyed by LAND id; a LAND with none is left out. */
+export function groupLandDeployments(
+  lands: Land[],
+  deployments: LandDeployment[],
+): Record<string, LandDeployment[]> {
+  const landIdsByParcel = new Map<string, string[]>();
+  for (const land of lands) {
+    for (const parcel of parcelIds(land)) {
+      landIdsByParcel.set(parcel, [...(landIdsByParcel.get(parcel) ?? []), land.id]);
+    }
+  }
+
+  const grouped: Record<string, LandDeployment[]> = {};
+  for (const deployment of deployments) {
+    const landIds = new Set(deployment.pointers.flatMap(id => landIdsByParcel.get(id) ?? []));
+    for (const landId of landIds) {
+      grouped[landId] = [...(grouped[landId] ?? []), deployment];
+    }
+  }
+  return grouped;
+}
+
+function landPlace(land: Land): LandPlace {
+  if (land.type === LandType.PARCEL) return { kind: 'parcel', x: land.x ?? 0, y: land.y ?? 0 };
+  const [x, y] = ownedCoords([land]).sort((a, b) => a[0] - b[0] || a[1] - b[1])[0] ?? [0, 0];
+  return { kind: 'estate', size: land.parcels?.length ?? land.size ?? 0, base: { x, y } };
+}
+
+/** The name a LAND card shows: its on-chain name, else "Parcel x,y" or "Estate id". */
+export function getLandName(project: ManagedProject): string {
+  if (project.displayName) return project.displayName;
+  return project.place?.kind === 'parcel'
+    ? t('manage.cards.land.parcel_name', { coords: coordsToId(project.place.x, project.place.y) })
+    : t('manage.cards.land.estate_name', { id: project.id });
+}
+
+/** A LAND as a managed project, summarising its most recent deployment. */
+export function toLandProject(
+  land: Land,
+  deployments: LandDeployment[],
+  getContentSrcUrl: (hash: string) => string,
+): ManagedProject {
+  const latest = deployments.reduce<LandDeployment | undefined>(
+    (newest, deployment) =>
+      !newest || deployment.timestamp > newest.timestamp ? deployment : newest,
+    undefined,
+  );
+
+  return {
+    id: land.id,
+    displayName: land.name,
+    type: ManagedProjectType.LAND,
+    role: land.role,
+    deployment: latest && {
+      title: latest.metadata.display?.title || land.name,
+      description: latest.metadata.display?.description || '',
+      thumbnail: getThumbnailUrlFromDeployment(latest, getContentSrcUrl),
+      lastPublishedAt: latest.timestamp,
+      scenesCount: deployments.length,
+    },
+    scenes: deployments
+      .map(deployment => parseCoords(deployment.metadata.scene?.base ?? ''))
+      .filter(coords => coords !== null),
+    place: landPlace(land),
+  };
+}
+
+/** The Worlds list: published worlds in server order, then the empty worlds narrowed by search and sorted. */
+export function selectWorldProjects(
+  published: ManagedProject[],
+  empty: ManagedProject[],
+  filters: { sortBy: SortBy; searchQuery: string; publishFilter?: FilterBy },
+  streamOnly: ManagedProject[] = [],
+): ManagedProject[] {
+  const query = filters.searchQuery.trim().toLowerCase();
+  const byName = (a: ManagedProject, b: ManagedProject) =>
+    a.displayName.localeCompare(b.displayName);
+  const matchesQuery = (project: ManagedProject) =>
+    project.displayName.toLowerCase().includes(query);
+  const listed = new Set([...published, ...empty].map(project => project.id));
+  const streams = streamOnly.filter(
+    project =>
+      !listed.has(project.id) &&
+      matchesQuery(project) &&
+      (filters.publishFilter !== FilterBy.PUBLISHED || !!project.deployment) &&
+      (filters.publishFilter !== FilterBy.UNPUBLISHED || !project.deployment),
+  );
+  const unpublished = [
+    ...empty.filter(matchesQuery),
+    ...streams.filter(project => !project.deployment),
+  ];
+  const publishedStreams = streams.filter(project => !!project.deployment);
+
+  return filters.sortBy === SortBy.NAME
+    ? [...published, ...publishedStreams, ...unpublished].sort(byName)
+    : [...published, ...publishedStreams, ...unpublished.sort(byName)];
+}
+
+/** A scene deployed on a LAND, as the Scenes tab lists it. */
+export type LandScene = {
+  id: string;
+  title: string;
+  base: string;
+  parcels: string[];
+  timestamp: number;
+  thumbnail: string;
+};
+
+/** The LAND's deployments as Scenes-tab rows. */
+export function toLandScenes(
+  deployments: LandDeployment[],
+  getContentSrcUrl: (hash: string) => string,
+): LandScene[] {
+  return deployments.map(deployment => ({
+    id: deployment.id,
+    title: deployment.metadata.display?.title || deployment.metadata.scene?.base || deployment.id,
+    base: deployment.metadata.scene?.base ?? deployment.pointers[0] ?? '',
+    parcels: deployment.metadata.scene?.parcels ?? deployment.pointers,
+    timestamp: deployment.timestamp,
+    thumbnail: getThumbnailUrlFromDeployment(deployment, getContentSrcUrl),
+  }));
+}
+
+export type ManagerState = 'full' | 'land-only' | 'estate-only';
+
+/** The account's UpdateManagers, one per address; `land-only` or `estate-only` when only that registry approved it. */
+export function getManagers(
+  authorizations: Authorization[],
+): Array<{ address: string; state: ManagerState }> {
+  const types = new Map<string, Set<LandType>>();
+  for (const { address, type } of authorizations) {
+    types.set(address, (types.get(address) ?? new Set()).add(type));
+  }
+  return [...types].map(([address, registries]) => ({
+    address,
+    state:
+      registries.has(LandType.PARCEL) && registries.has(LandType.ESTATE)
+        ? 'full'
+        : registries.has(LandType.ESTATE)
+          ? 'estate-only'
+          : 'land-only',
+  }));
+}
+
+/** LAND projects narrowed by the publish filter and search (name or `x,y`), then sorted. */
+export function selectLandProjects(
+  projects: ManagedProject[],
+  lands: Land[],
+  filters: { publishFilter?: FilterBy; sortBy: SortBy; searchQuery: string },
+): ManagedProject[] {
+  const landsById = new Map(lands.map(land => [land.id, land]));
+  const name = filters.searchQuery.trim().toLowerCase();
+  const coords = name.replace(/\s/g, '');
+
+  const matchesSearch = (project: ManagedProject) => {
+    const land = landsById.get(project.id);
+    return (
+      getLandName(project).toLowerCase().includes(name) ||
+      (!!land && parcelIds(land).some(id => id.includes(coords)))
+    );
+  };
+  const matchesFilter = (project: ManagedProject) =>
+    filters.publishFilter === undefined ||
+    (filters.publishFilter === FilterBy.PUBLISHED) === !!project.deployment;
+
+  const byName = (a: ManagedProject, b: ManagedProject) =>
+    getLandName(a).localeCompare(getLandName(b));
+  const byLatest = (a: ManagedProject, b: ManagedProject) =>
+    (b.deployment?.lastPublishedAt ?? 0) - (a.deployment?.lastPublishedAt ?? 0);
+
+  return projects
+    .filter(project => matchesFilter(project) && matchesSearch(project))
+    .sort(filters.sortBy === SortBy.NAME ? byName : byLatest);
+}
 
 export const getWorldSettingsInitialState = (): WorldSettingsState => ({
   worldName: '',
@@ -219,7 +441,6 @@ export const getWorldPermissionsInitialState = (): WorldPermissionsState => ({
   permissions: null,
   summary: {},
   parcels: {},
-  loadingNewUser: false,
   status: 'idle',
   error: null,
 });
@@ -227,3 +448,16 @@ export const getWorldPermissionsInitialState = (): WorldPermissionsState => ({
 // World-wide permission is represented by a successfully fetched, empty parcels array.
 export const hasWorldWidePermission = (parcelsPermission?: ParcelsPermission): boolean =>
   parcelsPermission?.status === 'succeeded' && parcelsPermission.parcels.length === 0;
+
+/**
+ * Whether `wallet` may deploy anywhere in the World. It reads the server's own `worldWide` flag on
+ * the wallet's deployment grant, the check the Worlds content server makes before it accepts a
+ * settings PUT from anyone but the NAME owner, so whoever this marks can save Details and Settings.
+ */
+export function isWorldWideDeployer(
+  summary: WorldPermissionsResponse['summary'],
+  wallet: string,
+): boolean {
+  const grants = summary[wallet] ?? summary[wallet.toLowerCase()];
+  return !!grants?.some(grant => grant.permission === 'deployment' && grant.worldWide);
+}

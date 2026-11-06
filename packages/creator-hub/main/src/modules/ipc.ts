@@ -1,4 +1,5 @@
 import { AI_STREAM_EVENT } from '/shared/types/ipc';
+import { SCENE_EXPORT_PROGRESS_EVENT } from '/shared/types/scene-export';
 import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
@@ -29,6 +30,8 @@ import {
   revertTurn,
 } from './scene-mcp';
 import * as optimizer from './optimizer';
+import * as sceneExport from './scene-export';
+import * as landUnpublish from './land-unpublish';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -43,6 +46,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     electron.getWorkspaceConfigPath(path),
   );
   handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
+  handle('electron.showSaveDialog', (_event, opts) => electron.showSaveDialog(opts));
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
 
@@ -82,8 +86,6 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.start', (_event, path, opts, mobile) => cli.start(path, { ...opts, mobile }));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.stopPreview(path));
-  handle('cli.cancelPreview', (_event, path) => cli.cancelPreview(path));
-  handle('cli.supportsAssetBundles', (_event, path) => cli.supportsAssetBundles(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 
   // mobile debug session
@@ -211,4 +213,14 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('optimizer.revert', (_event, path) => optimizer.revert(path));
   handle('optimizer.tools', () => optimizer.tools());
   handle('optimizer.installTools', (_event, path) => optimizer.installTools(path));
+
+  handle('sceneExport.export', (event, entityId, title, source) =>
+    sceneExport.saveScene(entityId, title, source, progress => {
+      if (!event.sender.isDestroyed()) event.sender.send(SCENE_EXPORT_PROGRESS_EVENT, progress);
+    }),
+  );
+  handle('sceneExport.cancel', async (_event, entityId) => sceneExport.cancelSceneExport(entityId));
+
+  handle('landUnpublish.prepare', (_event, parcel) => landUnpublish.prepareEmptyScene(parcel));
+  handle('landUnpublish.deploy', (_event, request) => landUnpublish.deployEmptyScene(request));
 }

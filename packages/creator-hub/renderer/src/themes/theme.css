@@ -8,13 +8,23 @@
 
 :root {
   /* Colors */
-  --bg: #16141a;
+  --bg: #161518;
   --bg-inspector: #000;
   --metaverse-gradient: linear-gradient(to bottom, #060d2b, #132d7d 52%, #9763c1);
   --gradient-flare: linear-gradient(135deg, #ff2d55, #ffbc5b);
   --gradient-cerise: linear-gradient(135deg, #ff2d55, #c640cd);
   --gradient-amin: linear-gradient(135deg, #c640cd, #691fa9);
-  --purple-banner: #691ea9;
+  --gradient-skybox: linear-gradient(
+    90deg,
+    #361c75 0%,
+    #534787 12.5%,
+    #bf8dac 27.2%,
+    #46cee9 44.5%,
+    #af80a9 70.3%,
+    #714171 86.5%,
+    #40247b 100%
+  );
+  --purple-banner: #691fa9;
   --lavender: #c640cd;
   --purplish-grey-raw: 115, 110, 125;
   --white: #ffffff;
@@ -24,6 +34,7 @@
   --light-gray: #5e5b67;
   --dark-gray: #43404a;
   --darker-gray: var(--panel-2);
+  --palette-neutral-onyx: #35333b;
   --palette-neutral-softWhite: #fcfcfc;
   --palette-info-light: #63b4f6;
 
@@ -34,11 +45,11 @@
   --title-bar-button: #2d2a33;
   --ai-selected: #214272;
   --ai-selected-hover: #2e4a7a;
-  --ai-menu-bg: #2f2d34;
+  --ai-menu-bg: #35333b;
   --ai-session-selected: #244b7d;
   --ai-session-selected-hover: #243852;
-  --ai-input-bg: #28252d;
-  --ai-warning-bg: rgba(244, 130, 33, 0.16);
+  --ai-input-bg: #2d2a33;
+  --ai-warning-bg: rgba(254, 156, 42, 0.1);
   --dcl-silver: #a09ba8;
   --palette-neutral-softWhite: #fcfcfc;
   --chart-reference: #a99afe;
@@ -186,15 +197,15 @@
   --type-button-small-line-height: 24px;
   --type-button-small-letter-spacing: 0.46px;
 
-  --background: #18141a;
-  --warning: #ffa900;
+  --background: #161518;
+  --warning: #fe9c2a;
   --danger: var(--warning);
-  --error: #ff0000;
+  --error: #fb3b3b;
   --success: #34ce77;
   --brand: #ff2d55;
   --primary: var(--brand);
   --secondary: #242129;
-  --brand-hover: #ff3d61;
+  --brand-hover: #ff6280;
   --primary-hover: var(--brand-hover);
   --secondary-hover: #28262c;
   --secondary-on-modal: #67637033;
@@ -215,7 +226,7 @@
   --outline: 1px solid #00000005;
   --toast: #3d3b43;
   --toast-text: #ffffff;
-  --modal: #242129;
+  --modal: #181225;
   --page-shade: linear-gradient(
     180deg,
     rgb(0 0 0 / 52%) 0%,
@@ -289,6 +300,10 @@ body,
   font-optical-sizing: none;
 }
 
+html body {
+  letter-spacing: 0;
+}
+
 footer {
   padding: 32px;
 }
@@ -337,5 +352,5 @@ a {
 
 /* Temp: make disabled buttons look disabled */
 .Button.MuiButton-root.Mui-disabled {
-  opacity: 0.5;
+  opacity: 0.2;
 }

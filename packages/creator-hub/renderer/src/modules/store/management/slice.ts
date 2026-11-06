@@ -1,10 +1,13 @@
-import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createSelector, isPending, type PayloadAction } from '@reduxjs/toolkit';
 import pLimit from 'p-limit';
 import type { Async } from '/shared/types/async';
-import type { ManagedProject } from '/shared/types/manage';
+import type { ManagedProject, ManageTab } from '/shared/types/manage';
 import { FilterBy } from '/shared/types/manage';
 import { ManagedProjectType, SortBy } from '/shared/types/manage';
 import { AuthServerProvider } from '/@/lib/auth';
+import type { LandDeployment } from '/@/lib/land';
+import { Lands, ownedCoords } from '/@/lib/land';
+import { clearLandScene } from '/@/lib/landUnpublish';
 import type {
   WorldScene,
   WorldSettings,
@@ -12,19 +15,29 @@ import type {
   WorldPermissionsResponse,
   WorldPermissions,
 } from '/@/lib/worlds';
-import { WorldRoleType, Worlds, WorldPermissionType } from '/@/lib/worlds';
+import { WorldRoleType, Worlds } from '/@/lib/worlds';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import type { AppState } from '/@/modules/store';
-import { fetchENSList, actions as ensActions } from '/@/modules/store/ens';
-import { fetchLandList, actions as landActions } from '/@/modules/store/land';
+import { accountChanged, isSignedInAccount } from '/@/modules/store/account';
+import {
+  fetchContributableNames,
+  fetchENSList,
+  type ContributableNames,
+} from '/@/modules/store/ens';
+import { fetchLandList } from '/@/modules/store/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
 import {
+  fetchWorldSceneList,
   getThumbnailUrlFromDeployment,
   getWorldPermissionsInitialState,
   getWorldSettingsInitialState,
-  fetchHasWorldWideDeployment,
+  groupLandDeployments,
+  selectLandProjects,
+  selectWorldProjects,
+  toLandProject,
   toManagedProject,
+  toStreamOnlyProject,
 } from './utils';
 import type {
   AddressPermissionPayload,
@@ -52,38 +65,63 @@ export type WorldPermissionsState = {
   summary: WorldPermissionsResponse['summary'];
   permissions: WorldPermissions | null;
   parcels: Record<string, ParcelsPermission>;
-  loadingNewUser: boolean;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 };
 
-// state
+type LandProjectsState = {
+  projects: ManagedProject[];
+  deployments: Record<string, LandDeployment[]>;
+  deployers: Record<string, string>;
+  requestId: string | null;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  error: string | null;
+};
+
 export type ManagementState = {
+  tab: ManageTab;
   sortBy: SortBy;
-  publishFilter: FilterBy;
+  publishFilter: FilterBy | undefined;
   searchQuery: string;
   page: number;
   total: number;
   projects: ManagedProject[];
+  emptyProjects: ManagedProject[];
+  streamOnlyProjects: ManagedProject[];
   storageStats: WorldsWalletStats | null;
   accountHoldings: AccountHoldings | null;
   worldSettings: WorldSettingsState;
   worldPermissions: WorldPermissionsState;
+  lands: LandProjectsState;
+  /** The latest request id of each wallet-scoped thunk, keyed by its type prefix. */
+  requestIds: Partial<Record<string, string>>;
 };
 
 export const initialState: Async<ManagementState> = {
+  tab: 'worlds',
   sortBy: SortBy.LATEST,
-  publishFilter: FilterBy.PUBLISHED,
+  publishFilter: undefined,
   searchQuery: '',
   page: 0,
   total: 0,
   projects: [],
+  emptyProjects: [],
+  streamOnlyProjects: [],
   storageStats: null,
   accountHoldings: null,
   status: 'idle',
   error: null,
   worldSettings: getWorldSettingsInitialState(),
   worldPermissions: getWorldPermissionsInitialState(),
+  lands: {
+    projects: [],
+    deployments: {},
+    deployers: {},
+    requestId: null,
+    status: 'idle',
+    error: null,
+  },
+  requestIds: {},
 };
 
 const PROJECTS_PAGE_LIMIT = 50;
@@ -91,12 +129,10 @@ const PROJECTS_PAGE_LIMIT = 50;
 /** Scene lookups fan out one request per world, so they run a few at a time. */
 const limit = pLimit(6);
 
-// thunks
 /** Gets all user ENS, LANDs, storage stats and filtered managed projects */
 export const fetchAllManagedProjectsData = createAsyncThunk(
   'management/fetchAllManagedProjectsData',
   async ({ address }: { address: string }, { dispatch }) => {
-    // Fetch NAMEs and Land parcels/estates in parallel.
     await Promise.all([
       dispatch(fetchENSList({ address })).unwrap(),
       dispatch(fetchLandList({ address })).unwrap(),
@@ -110,15 +146,7 @@ export const fetchAllManagedProjectsData = createAsyncThunk(
 
     return projects;
   },
-);
-
-export const clearUserManagedProjects = createAsyncThunk(
-  'management/clearUserManagedProjects',
-  async (_, { dispatch }) => {
-    dispatch(actions.clearState());
-    dispatch(ensActions.clearState());
-    dispatch(landActions.clearState());
-  },
+  { condition: isSignedInAccount },
 );
 
 /** Fetches managed projects according to current filters in the state */
@@ -128,12 +156,18 @@ export const fetchManagedProjectsFiltered = createAsyncThunk(
     const connectedAccount = AuthServerProvider.getAccount();
     if (!connectedAccount) throw new Error('No connected account found');
 
-    const { publishFilter } = getState().management;
     if (args?.resetPage) dispatch(actions.setPage(0));
-    if (publishFilter === FilterBy.PUBLISHED) {
+    const { publishFilter, page } = getState().management;
+    if (publishFilter !== FilterBy.UNPUBLISHED) {
       await dispatch(fetchWorlds({ address: connectedAccount })).unwrap();
-    } else if (publishFilter === FilterBy.UNPUBLISHED) {
-      await dispatch(fetchEmptyWorlds({ address: connectedAccount })).unwrap();
+    }
+    if (page === 0) {
+      const address = connectedAccount;
+      const contributable = await dispatch(fetchContributableNames({ address })).unwrap();
+      if (publishFilter !== FilterBy.PUBLISHED) {
+        await dispatch(fetchEmptyWorlds({ address, contributable })).unwrap();
+      }
+      await dispatch(fetchStreamOnlyWorlds({ address, names: contributable.streamOnly })).unwrap();
     }
   },
 );
@@ -159,27 +193,22 @@ export const fetchWorlds = createAsyncThunk(
     }
 
     const worldProjects: ManagedProject[] = await Promise.all(
-      worldsResponse.worlds.map(world =>
-        limit(async () => {
-          const project = await toManagedProject(WorldsAPI, world, address);
-          if (project.role !== WorldRoleType.COLLABORATOR) return project;
-          return {
-            ...project,
-            worldWideDeployment: await fetchHasWorldWideDeployment(WorldsAPI, world.name, address),
-          };
-        }),
-      ),
+      worldsResponse.worlds.map(world => limit(() => toManagedProject(WorldsAPI, world, address))),
     );
 
     return { worlds: worldProjects, total: worldsResponse.total };
   },
+  { condition: isSignedInAccount },
 );
 
 /** Fetches unpublished worlds (0 published scenes) where the user is an owner or collaborator */
 export const fetchEmptyWorlds = createAsyncThunk(
   'management/fetchEmptyWorlds',
-  async ({ address }: { address: string }, { dispatch, getState }) => {
-    const ensList = await dispatch(fetchENSList({ address })).unwrap();
+  async (
+    { address, contributable }: { address: string; contributable?: ContributableNames },
+    { dispatch, getState },
+  ) => {
+    const ensList = await dispatch(fetchENSList({ address, contributable })).unwrap();
 
     const prevProjects = getState().management.projects;
     const worldsAPI = new Worlds();
@@ -193,7 +222,7 @@ export const fetchEmptyWorlds = createAsyncThunk(
           const worldScenes = await worldsAPI.fetchWorldScenes(ens.subdomain, { limit: 1 });
           scenesCount = worldScenes ? worldScenes.total : 0;
         } catch {
-          scenesCount = 0; // If there's an error fetching scenes, we assume it's empty.
+          scenesCount = 0;
         }
       }
 
@@ -206,6 +235,7 @@ export const fetchEmptyWorlds = createAsyncThunk(
           ens.nftOwnerAddress && ens.nftOwnerAddress?.toLowerCase() === address?.toLowerCase()
             ? WorldRoleType.OWNER
             : WorldRoleType.COLLABORATOR,
+        owner: ens.nftOwnerAddress || undefined,
         type: ManagedProjectType.WORLD,
         deployment: undefined,
       } as ManagedProject;
@@ -214,6 +244,17 @@ export const fetchEmptyWorlds = createAsyncThunk(
     const emptyProjectsList = await Promise.all(projectsPromises);
     return emptyProjectsList.filter(project => project !== null);
   },
+  { condition: isSignedInAccount },
+);
+
+/** Fetches the Worlds the account can stream to but not publish to, as unlinked collaborator cards */
+export const fetchStreamOnlyWorlds = createAsyncThunk(
+  'management/fetchStreamOnlyWorlds',
+  async ({ names }: { address: string; names: string[] }) => {
+    const worldsAPI = new Worlds();
+    return Promise.all(names.map(name => limit(() => toStreamOnlyProject(worldsAPI, name))));
+  },
+  { condition: isSignedInAccount },
 );
 
 export const fetchStorageStats = createAsyncThunk(
@@ -223,6 +264,7 @@ export const fetchStorageStats = createAsyncThunk(
     const stats = await WorldsAPI.fetchWalletStats(address);
     return stats;
   },
+  { condition: isSignedInAccount },
 );
 
 export const fetchAccountHoldings = createAsyncThunk(
@@ -232,6 +274,7 @@ export const fetchAccountHoldings = createAsyncThunk(
     const holdings = await AccountAPI.fetchAccountHoldings(address);
     return holdings;
   },
+  { condition: isSignedInAccount },
 );
 
 export const fetchWorldSettings = createAsyncThunk(
@@ -259,8 +302,12 @@ export const updateWorldSettings = createAsyncThunk(
       worldSettings,
     );
     if (!success) return rejectWithValue({ message: error });
-    await dispatch(fetchWorldSettings({ worldName })).unwrap();
-    dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
+    const refresh = await dispatch(fetchWorldSettings({ worldName }));
+    void dispatch(fetchManagedProjectsFiltered({ resetPage: true }));
+    return {
+      worldName,
+      worldSettings: refresh.payload ? null : worldSettings,
+    };
   },
 );
 
@@ -268,18 +315,14 @@ export const fetchWorldScenes = createAsyncThunk(
   'management/fetchWorldScenes',
   async ({ worldName }: { worldName: string }) => {
     const WorldsAPI = new Worlds();
-    const worldScenes = await WorldsAPI.fetchWorldScenes(worldName);
+    const scenes = await fetchWorldSceneList(WorldsAPI, worldName);
     // A world with nothing deployed still answers with an empty list, so null is a failed
     // request. Reading it as "no scenes" would offer a single-scene publish over existing ones.
-    if (!worldScenes) throw new Error(`Failed to fetch scenes for world "${worldName}"`);
-    return (
-      worldScenes.scenes.map(scene => ({
-        ...scene,
-        thumbnailUrl: getThumbnailUrlFromDeployment(scene.entity, $ =>
-          WorldsAPI.getContentSrcUrl($),
-        ),
-      })) ?? []
-    );
+    if (!scenes) throw new Error(`Failed to fetch scenes for world "${worldName}"`);
+    return scenes.map(scene => ({
+      ...scene,
+      thumbnailUrl: getThumbnailUrlFromDeployment(scene.entity, $ => WorldsAPI.getContentSrcUrl($)),
+    }));
   },
 );
 
@@ -294,7 +337,7 @@ export const unpublishWorldScene = createAsyncThunk(
     if (success) {
       // The unpublish already happened; a failed refresh reports itself and must not undo that.
       await dispatch(fetchWorldScenes({ worldName }));
-      dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
+      dispatch(fetchManagedProjectsFiltered({ resetPage: true }));
     } else {
       throw new Error('Failed to unpublish world scene');
     }
@@ -312,7 +355,7 @@ export const unpublishEntireWorld = createAsyncThunk(
     if (success) {
       // The unpublish already happened; a failed refresh reports itself and must not undo that.
       await dispatch(fetchWorldScenes({ worldName }));
-      dispatch(fetchManagedProjectsFiltered({ resetPage: true })); // Background refresh. No need to await.
+      dispatch(fetchManagedProjectsFiltered({ resetPage: true }));
     } else {
       throw new Error('Failed to unpublish world');
     }
@@ -401,8 +444,6 @@ export const fetchParcelsPermission = createAsyncThunk(
     const WorldsAPI = new Worlds();
     const LIMIT = 100;
 
-    // TODO: This is a workaround to fetch all parcels in parallel.
-    // We should use a more efficient approach to avoid overloading the API.
     const firstPage = await WorldsAPI.fetchParcelsPermission(
       worldName,
       permissionName,
@@ -489,7 +530,68 @@ export const removeParcelsPermission = createAsyncThunk(
   },
 );
 
-// slice
+/** Fetches the account's LANDs as managed projects, one per parcel or estate, with their deployments */
+export const fetchLandProjects = createAsyncThunk(
+  'management/fetchLandProjects',
+  async (_: void, { dispatch }) => {
+    const address = AuthServerProvider.getAccount();
+    if (!address) throw new Error('No connected account found');
+
+    const { land } = await dispatch(fetchLandList({ address })).unwrap();
+    const LandsAPI = new Lands();
+    const deployments = groupLandDeployments(
+      land,
+      await LandsAPI.fetchLandPublishedScenes(ownedCoords(land)),
+    );
+
+    return {
+      projects: land.map(item =>
+        toLandProject(item, deployments[item.id] ?? [], hash => LandsAPI.getContentSrcUrl(hash)),
+      ),
+      deployments,
+    };
+  },
+);
+
+/** Fetches who deployed each of the given scene entities, skipping the ones already known. */
+export const fetchLandDeployers = createAsyncThunk(
+  'management/fetchLandDeployers',
+  async (entityIds: string[], { getState }) => {
+    const known = getState().management.lands.deployers;
+    const unknown = entityIds.filter(id => !(id in known));
+    return unknown.length ? new Lands().fetchDeployers(unknown) : {};
+  },
+);
+
+/** Unpublishes a LAND scene by deploying an empty scene over it, then refetches the LAND projects */
+export const unpublishLandScene = createAsyncThunk(
+  'management/unpublishLandScene',
+  async ({ scene }: { scene: { base: string; parcels: string[] } }, { dispatch, getState }) => {
+    const address = AuthServerProvider.getAccount();
+    if (!address) throw new Error('No connected account found');
+
+    await clearLandScene(scene, getState().land.data, address);
+    await dispatch(fetchLandProjects()).unwrap();
+  },
+);
+
+const walletRequests = [
+  fetchAllManagedProjectsData,
+  fetchManagedProjectsFiltered,
+  fetchWorlds,
+  fetchEmptyWorlds,
+  fetchStreamOnlyWorlds,
+  fetchStorageStats,
+  fetchAccountHoldings,
+] as const;
+
+type RequestAction = { type: string; meta: { requestId: string } };
+
+const requestKey = ({ type }: RequestAction) => type.slice(0, type.lastIndexOf('/'));
+
+const isLatestRequest = (state: Pick<ManagementState, 'requestIds'>, action: RequestAction) =>
+  state.requestIds[requestKey(action)] === action.meta.requestId;
+
 const slice = createSlice({
   name: 'management',
   initialState,
@@ -498,10 +600,16 @@ const slice = createSlice({
       state.sortBy = action.payload;
       state.page = 0;
     },
-    setPublishFilter: (state, action: PayloadAction<FilterBy>) => {
+    setTab: (state, action: PayloadAction<ManageTab>) => {
+      state.tab = action.payload;
+    },
+    setPublishFilter: (state, action: PayloadAction<FilterBy | undefined>) => {
       state.publishFilter = action.payload;
       state.page = 0;
+      state.total = 0;
       state.projects = [];
+      state.emptyProjects = [];
+      state.streamOnlyProjects = [];
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
@@ -516,19 +624,21 @@ const slice = createSlice({
     clearPermissionsState: state => {
       state.worldPermissions = getWorldPermissionsInitialState();
     },
-    clearState: () => initialState,
   },
   extraReducers: builder => {
     builder
+      .addCase(accountChanged, () => initialState)
       .addCase(fetchAllManagedProjectsData.pending, state => {
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchAllManagedProjectsData.fulfilled, state => {
+      .addCase(fetchAllManagedProjectsData.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.status = 'succeeded';
         state.error = null;
       })
       .addCase(fetchAllManagedProjectsData.rejected, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects';
       })
@@ -536,29 +646,38 @@ const slice = createSlice({
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchManagedProjectsFiltered.fulfilled, state => {
+      .addCase(fetchManagedProjectsFiltered.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.status = 'succeeded';
         state.error = null;
       })
       .addCase(fetchManagedProjectsFiltered.rejected, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects filtered';
       })
       .addCase(fetchWorlds.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.projects =
           state.page === 0
-            ? (action.payload.worlds ?? []) // If it's the first page, replace the projects with the new ones.
-            : [...state.projects, ...(action.payload.worlds ?? [])]; //  Otherwise, append them to the existing list.
+            ? (action.payload.worlds ?? [])
+            : [...state.projects, ...(action.payload.worlds ?? [])];
         state.total = action.payload.total;
       })
       .addCase(fetchEmptyWorlds.fulfilled, (state, action) => {
-        state.projects = action.payload ?? []; // Not paginated.
-        state.total = action.payload.length;
+        if (!isLatestRequest(state, action)) return;
+        state.emptyProjects = action.payload ?? [];
+      })
+      .addCase(fetchStreamOnlyWorlds.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
+        state.streamOnlyProjects = action.payload;
       })
       .addCase(fetchStorageStats.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.storageStats = action.payload;
       })
       .addCase(fetchAccountHoldings.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.accountHoldings = action.payload;
       })
       .addCase(fetchWorldScenes.pending, (state, action) => {
@@ -581,24 +700,29 @@ const slice = createSlice({
       })
       .addCase(fetchWorldSettings.fulfilled, (state, action) => {
         if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
-        state.worldSettings.settings = action.payload ?? {};
+        state.worldSettings.settings = action.payload ?? state.worldSettings.settings;
         state.worldSettings.status = 'succeeded';
         state.worldSettings.error = null;
       })
-      .addCase(updateWorldSettings.rejected, (state, action) => {
-        state.worldSettings.status = 'failed';
-        state.worldSettings.error = action.error.message || 'Failed to save world settings';
+      .addCase(updateWorldSettings.fulfilled, (state, action) => {
+        if (action.payload.worldName !== state.worldSettings.worldName) return;
+        if (action.payload.worldSettings)
+          Object.assign(state.worldSettings.settings, action.payload.worldSettings);
+        state.worldSettings.status = 'succeeded';
+        state.worldSettings.error = null;
       })
       .addCase(fetchWorldSettings.rejected, (state, action) => {
         if (action.meta.arg.worldName !== state.worldSettings.worldName) return;
-        state.worldSettings.status = 'failed';
+        state.worldSettings.status = Object.keys(state.worldSettings.settings).length
+          ? 'succeeded'
+          : 'failed';
         state.worldSettings.error = action.error.message || 'Failed to fetch world settings';
       })
       .addCase(fetchWorldPermissions.pending, (state, action) => {
         const prevWorldName = state.worldPermissions.worldName;
         const newWorldName = action.meta.arg.worldName;
         if (prevWorldName && newWorldName !== prevWorldName) {
-          state.worldPermissions = getWorldPermissionsInitialState(); // Reset state when switching worlds
+          state.worldPermissions = getWorldPermissionsInitialState();
         }
         state.worldPermissions.worldName = newWorldName;
         state.worldPermissions.status = 'loading';
@@ -621,24 +745,6 @@ const slice = createSlice({
       .addCase(fetchWorldPermissions.rejected, (state, action) => {
         state.worldPermissions.status = 'failed';
         state.worldPermissions.error = action.error.message || 'Failed to fetch world permissions';
-      })
-      .addCase(addAddressPermission.pending, (state, action) => {
-        const { walletAddress, permissionName } = action.meta.arg;
-        const permissionData = state.worldPermissions.permissions?.[permissionName];
-        if (
-          permissionData &&
-          permissionData.type === WorldPermissionType.AllowList &&
-          !permissionData.wallets?.includes(walletAddress)
-        ) {
-          // Only show loading state if the user is not already in the allow list.
-          state.worldPermissions.loadingNewUser = true;
-        }
-      })
-      .addCase(addAddressPermission.fulfilled, state => {
-        state.worldPermissions.loadingNewUser = false;
-      })
-      .addCase(addAddressPermission.rejected, state => {
-        state.worldPermissions.loadingNewUser = false;
       })
       .addCase(fetchParcelsPermission.pending, (state, action) => {
         const { walletAddress, worldName } = action.meta.arg;
@@ -663,20 +769,43 @@ const slice = createSlice({
         if (action.meta.arg.worldName !== state.worldPermissions.worldName) return;
         const { walletAddress } = action.meta.arg;
         state.worldPermissions.parcels[walletAddress] = { parcels: [], status: 'failed' };
+      })
+      .addCase(fetchLandDeployers.fulfilled, (state, action) => {
+        Object.assign(state.lands.deployers, action.payload);
+      })
+      .addCase(fetchLandProjects.pending, (state, action) => {
+        state.lands.requestId = action.meta.requestId;
+        state.lands.status = 'loading';
+        state.lands.error = null;
+      })
+      .addCase(fetchLandProjects.fulfilled, (state, action) => {
+        if (action.meta.requestId !== state.lands.requestId) return;
+        state.lands.projects = action.payload.projects;
+        state.lands.deployments = action.payload.deployments;
+        state.lands.status = 'succeeded';
+      })
+      .addCase(fetchLandProjects.rejected, (state, action) => {
+        if (action.meta.requestId !== state.lands.requestId) return;
+        state.lands.status = 'failed';
+        state.lands.error = action.error.message || 'Failed to fetch LAND projects';
+      })
+      .addMatcher(isPending(...walletRequests), (state, action) => {
+        state.requestIds[requestKey(action)] = action.meta.requestId;
       });
   },
 });
 
 // Settings and scenes load separately, and whichever request starts first claims the new
-// world, so each must drop the previous world's data or it shows under the new name.
+// world, so each must drop the previous world's data or it shows under the new name. The
+// settings read as loading until their own request lands for the new world.
 function switchWorldSettings(worldSettings: WorldSettingsState, worldName: string) {
   if (worldSettings.worldName === worldName) return;
   worldSettings.worldName = worldName;
-  worldSettings.settings = {} as WorldSettings;
+  worldSettings.settings = {};
   worldSettings.scenes = [];
+  worldSettings.status = 'loading';
 }
 
-// selectors
 const getManagementState = (state: AppState) => state.management;
 const getManagedProjects = createSelector(
   getManagementState,
@@ -693,6 +822,31 @@ const getWorldScenes = createSelector(
   managementState => managementState.worldSettings.scenes,
 );
 
+const getWorldProjects = createSelector(
+  [
+    (state: AppState) => state.management.projects,
+    (state: AppState) => state.management.emptyProjects,
+    (state: AppState) => state.management.streamOnlyProjects,
+    (state: AppState) => state.management.sortBy,
+    (state: AppState) => state.management.searchQuery,
+    (state: AppState) => state.management.publishFilter,
+  ],
+  (published, empty, streamOnly, sortBy, searchQuery, publishFilter) =>
+    selectWorldProjects(published, empty, { sortBy, searchQuery, publishFilter }, streamOnly),
+);
+
+const getLandProjects = createSelector(
+  [
+    (state: AppState) => state.management.lands.projects,
+    (state: AppState) => state.land.data,
+    (state: AppState) => state.management.publishFilter,
+    (state: AppState) => state.management.sortBy,
+    (state: AppState) => state.management.searchQuery,
+  ],
+  (projects, lands, publishFilter, sortBy, searchQuery) =>
+    selectLandProjects(projects, lands, { publishFilter, sortBy, searchQuery }),
+);
+
 const getError = createSelector(getManagementState, managementState => managementState.error);
 
 const getPermissionsState = (state: AppState) => state.management.worldPermissions;
@@ -704,14 +858,13 @@ const getParcelsStateForAddress = (
   return state.management.worldPermissions.parcels[walletAddress];
 };
 
-// exports
 export const actions = {
   ...slice.actions,
   fetchAllManagedProjectsData,
-  clearUserManagedProjects,
   fetchManagedProjectsFiltered,
   fetchWorlds,
   fetchEmptyWorlds,
+  fetchStreamOnlyWorlds,
   fetchWorldSettings,
   updateWorldSettings,
   fetchStorageStats,
@@ -726,6 +879,9 @@ export const actions = {
   fetchParcelsPermission,
   addParcelsPermission,
   removeParcelsPermission,
+  fetchLandDeployers,
+  fetchLandProjects,
+  unpublishLandScene,
 };
 
 export const reducer = slice.reducer;
@@ -733,8 +889,10 @@ export const reducer = slice.reducer;
 export const selectors = {
   ...slice.selectors,
   getManagedProjects,
+  getWorldProjects,
   getWorldSettings,
   getWorldScenes,
+  getLandProjects,
   getError,
   getPermissionsState,
   getParcelsStateForAddress,

@@ -4,10 +4,10 @@ import {
   useDispatch as formerUseDispuseDispatch,
 } from 'react-redux';
 import { configureStore, createDraftSafeSelector } from '@reduxjs/toolkit';
-import logger from 'redux-logger';
 import { captureException } from '@sentry/electron/renderer';
 
 import { createAnalyticsMiddleware } from './analytics/middleware';
+import { logger } from './logger';
 import * as ai from './ai';
 import * as editor from './editor';
 import * as snackbar from './snackbar';

@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from 'decentraland-ui2';
 
-import { editor, scene } from '#preload';
+import { scene } from '#preload';
 
 import { PREVIEW_CLIENT } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
@@ -40,34 +40,7 @@ export function PreviewOptions({
   // default side) avoids a visible flash-then-flip when the flyout needs to go left.
   const [submenuAlign, setSubmenuAlign] = useState<'left' | 'right' | null>(null);
 
-  // No Unity desktop client ships for Linux, so an optimized preview has no client to
-  // open there — hide the toggle entirely. (abgen itself has Linux builds; the client
-  // is the missing piece.)
-  const platformSupportsOptimizedAssets = !navigator.userAgent.includes('Linux');
-  // ...and the scene's installed sdk-commands must carry the --asset-bundles sidecar flag,
-  // otherwise the toggle silently does nothing — so hide it entirely for unsupported scenes
-  const [sceneSupportsOptimizedAssets, setSceneSupportsOptimizedAssets] = useState(false);
-  const supportsOptimizedAssets = platformSupportsOptimizedAssets && sceneSupportsOptimizedAssets;
   const isDesktopClient = options.client === PREVIEW_CLIENT.DESKTOP;
-
-  useEffect(() => {
-    if (!platformSupportsOptimizedAssets) {
-      setSceneSupportsOptimizedAssets(false);
-      return;
-    }
-    let cancelled = false;
-    editor
-      .supportsAssetBundles(projectPath)
-      .then(supported => {
-        if (!cancelled) setSceneSupportsOptimizedAssets(supported);
-      })
-      .catch(() => {
-        if (!cancelled) setSceneSupportsOptimizedAssets(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [projectPath, platformSupportsOptimizedAssets]);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,24 +197,6 @@ export function PreviewOptions({
                       label={t('editor.header.actions.preview_options.mcp')}
                     />
                   </div>
-                )}
-                {supportsOptimizedAssets && (
-                  <Tooltip
-                    title={t('editor.header.actions.preview_options.optimized_assets_tooltip')}
-                    placement="left"
-                  >
-                    <div className="checkbox-row">
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={!!options.optimizedAssets}
-                            onChange={handleChange({ optimizedAssets: !options.optimizedAssets })}
-                          />
-                        }
-                        label={t('editor.header.actions.preview_options.optimized_assets')}
-                      />
-                    </div>
-                  </Tooltip>
                 )}
               </FormGroup>
             </div>
