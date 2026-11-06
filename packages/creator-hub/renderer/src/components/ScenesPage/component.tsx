@@ -11,7 +11,7 @@ import { sortProjectsBy } from './utils';
 import './styles.css';
 
 export function ScenesPage() {
-  const { isLoading, projects, sortBy, setSortBy } = useWorkspace();
+  const { isLoading, projects, settings, sortBy, setSortBy } = useWorkspace();
 
   return (
     <main
@@ -20,7 +20,7 @@ export function ScenesPage() {
     >
       <Navbar active={NavbarItem.SCENES} />
       <Container>
-        <TutorialsWrapper>
+        <TutorialsWrapper showTutorials={settings.showScenesTutorials}>
           {isLoading ? (
             <Loader size={70} />
           ) : (

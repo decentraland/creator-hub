@@ -55,11 +55,14 @@ export function Tutorials() {
   );
 }
 
-export function TutorialsWrapper(props: React.PropsWithChildren) {
+export function TutorialsWrapper({
+  children,
+  showTutorials = true,
+}: React.PropsWithChildren<{ showTutorials?: boolean }>) {
   return (
-    <div className="TutorialsWrapper">
-      <div className="content">{props.children}</div>
-      <Tutorials />
+    <div className={`TutorialsWrapper${showTutorials ? '' : ' full-width'}`}>
+      <div className="content">{children}</div>
+      {showTutorials && <Tutorials />}
     </div>
   );
 }

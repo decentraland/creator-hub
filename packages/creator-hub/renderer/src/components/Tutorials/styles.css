@@ -81,3 +81,7 @@
   flex: 1 0 auto;
   max-width: calc(100% - 256px - 64px);
 }
+
+.TutorialsWrapper.full-width > .content {
+  max-width: 100%;
+}

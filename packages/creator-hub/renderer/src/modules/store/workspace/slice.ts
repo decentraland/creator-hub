@@ -21,6 +21,7 @@ const initialState: Async<Workspace> = {
   settings: {
     scenesPath: '',
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+    showScenesTutorials: true,
     previewOptions: {
       debugger: true,
       skipAuthScreen: true,
