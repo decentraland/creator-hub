@@ -30,7 +30,6 @@ export class AdminTools {
    * @param textAnnouncementControl - Scene-wide text announcements.
    * @param videoControl - Video and stream screens the admin can control.
    * @param smartItemsControl - Other smart items whose actions the admin can trigger.
-   * @param rewardsControl - Reward campaigns the admin can dispense.
    *
    * The `@components`, `@actionsOf` and `@format` tags on the fields below only shape the
    * editor's pickers (which entities a list offers, which actions, an address field).
@@ -88,14 +87,6 @@ export class AdminTools {
         defaultAction: string;
       }>;
     } = { isEnabled: true, linkAllSmartItems: false, smartItems: [] },
-    public rewardsControl: {
-      isEnabled: boolean;
-      rewardItems: Array<{
-        /** @components asset-packs::Rewards */
-        entity: Entity;
-        customName: string;
-      }>;
-    } = { isEnabled: true, rewardItems: [] },
   ) {}
 
   start() {
@@ -159,7 +150,7 @@ export class AdminTools {
     return engine.getEntityState(this.entity) !== EntityState.UsedEntity;
   }
 
-  private buildConfig(): AdminConfig {
+  private buildConfig(): Omit<AdminConfig, 'rewardsControl'> {
     return {
       // The dropdown param is a string-literal union for the editor; the component's runtime
       // type is the AdminPermissions enum (same 'PUBLIC'/'PRIVATE' values).
@@ -169,7 +160,6 @@ export class AdminTools {
       textAnnouncementControl: this.textAnnouncementControl,
       videoControl: this.videoControl,
       smartItemsControl: this.smartItemsControl,
-      rewardsControl: this.rewardsControl,
     };
   }
 }

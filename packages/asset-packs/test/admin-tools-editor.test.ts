@@ -37,10 +37,8 @@ describe('when the Admin Tools item is placed', () => {
     expect(fields.defaultAction.actionsOf).toBe('entity');
   });
 
-  it('should offer only reward items as rewards', () => {
-    expect(list('rewardsControl', 'rewardItems').item.fields.entity.components).toEqual([
-      'asset-packs::Rewards',
-    ]);
+  it('should not expose a rewards control', () => {
+    expect(params).not.toHaveProperty('rewardsControl');
   });
 
   it('should edit the admin allow list as wallet addresses', () => {
