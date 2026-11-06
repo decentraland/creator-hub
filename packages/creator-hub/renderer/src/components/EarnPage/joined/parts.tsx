@@ -26,24 +26,28 @@ import {
 /**
  * Opens a place in the explorer: a scene in a World of several scenes at its own position.
  * @param props.scenesInWorld - the place's World scene count, when known.
+ * @param props.onJumpIn - called before the explorer opens.
  */
 export function JumpInButton({
   place,
   scenesInWorld = 0,
+  onJumpIn,
 }: {
   place: CreatorFundPlace;
   scenesInWorld?: number;
+  onJumpIn?: () => void;
 }) {
   return (
     <JumpIn
       variant="contained"
       disableRipple
       aria-label={t('earn.joined.leaderboard.jump_in_label', { place: placeTitle(place) })}
-      onClick={() =>
+      onClick={() => {
+        onJumpIn?.();
         void misc.openExternal(
           getSceneJumpInDeeplink(jumpInLocation(place), { position: scenesInWorld > 1 }),
-        )
-      }
+        );
+      }}
     >
       {t('earn.joined.leaderboard.jump_in')}
       <JumpInIcon />
