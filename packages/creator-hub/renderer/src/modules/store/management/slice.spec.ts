@@ -97,6 +97,9 @@ vi.mock('/@/lib/worlds', () => ({
     OWNER: 'owner',
     COLLABORATOR: 'collaborator',
   },
+  WorldPermissionName: {
+    Deployment: 'deployment',
+  },
   WorldPermissionType: {
     Unrestricted: 'unrestricted',
     AllowList: 'allowlist',
@@ -180,6 +183,7 @@ vi.mock('./utils', async importOriginal => ({
     worldName: '',
     settings: {},
     scenes: [],
+    scenesStatus: 'idle',
     status: 'idle',
     error: null,
   })),
@@ -228,6 +232,7 @@ describe('management slice', () => {
         worldName: '',
         settings: {},
         scenes: [],
+        scenesStatus: 'idle',
         status: 'idle',
         error: null,
       });
@@ -536,6 +541,41 @@ describe('management slice', () => {
 
       const state = store.getState().management;
       expect(state.worldSettings.scenes.length).toBe(mockScenes.length);
+      expect(state.worldSettings.scenesStatus).toBe('succeeded');
+    });
+
+    describe('when the scenes request fails', () => {
+      beforeEach(() => {
+        mockWorldsAPI.fetchWorldScenes.mockResolvedValue(null);
+      });
+
+      it('should reject and mark the scenes as failed instead of reporting an empty world', async () => {
+        const result = await store.dispatch(fetchWorldScenes({ worldName: TEST_WORLD_NAME }));
+
+        expect(result.meta.requestStatus).toBe('rejected');
+        expect(store.getState().management.worldSettings.scenesStatus).toBe('failed');
+      });
+    });
+
+    describe('when another world was loaded before', () => {
+      beforeEach(async () => {
+        mockWorldsAPI.fetchWorldScenes.mockResolvedValueOnce({
+          scenes: [{ entityId: 'other-scene', parcels: ['0,0'] }],
+        });
+        await store.dispatch(fetchWorldScenes({ worldName: 'other-world' }));
+        mockWorldsAPI.fetchWorldSettings.mockReturnValue(new Promise(() => {}));
+        mockWorldsAPI.fetchWorldScenes.mockReturnValue(new Promise(() => {}));
+      });
+
+      it("should drop the other world's scenes as soon as the new world starts loading", () => {
+        store.dispatch(fetchWorldSettings({ worldName: TEST_WORLD_NAME }));
+        store.dispatch(fetchWorldScenes({ worldName: TEST_WORLD_NAME }));
+
+        const { worldSettings } = store.getState().management;
+        expect(worldSettings.worldName).toBe(TEST_WORLD_NAME);
+        expect(worldSettings.scenes).toEqual([]);
+        expect(worldSettings.scenesStatus).toBe('loading');
+      });
     });
 
     it('should read every page of a World with more than 100 scenes', async () => {
@@ -785,11 +825,11 @@ describe('management slice', () => {
       });
     });
 
-    describe('when API returns null', () => {
-      it('should handle null response gracefully', async () => {
+    describe('when the first page request fails', () => {
+      it('should reject and set status to failed instead of succeeding with empty parcels', async () => {
         mockWorldsAPI.fetchParcelsPermission.mockResolvedValue(null);
 
-        await store.dispatch(
+        const result = await store.dispatch(
           fetchParcelsPermission({
             worldName: TEST_WORLD_NAME,
             permissionName: 'deployment',
@@ -797,14 +837,14 @@ describe('management slice', () => {
           }),
         );
 
+        expect(result.type).toBe('management/fetchParcelsPermission/rejected');
         const state = store.getState().management;
-        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual([]);
-        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('failed');
       });
     });
 
-    describe('when some pages fail', () => {
-      it('should collect successful results and skip failed pages', async () => {
+    describe('when a later page fails', () => {
+      it('should reject rather than succeed with a shortened parcel list', async () => {
         const firstPageParcels = Array.from({ length: 100 }, (_, i) => `${i},${i}`);
 
         mockWorldsAPI.fetchParcelsPermission
@@ -818,7 +858,7 @@ describe('management slice', () => {
           })
           .mockResolvedValueOnce(null);
 
-        await store.dispatch(
+        const result = await store.dispatch(
           fetchParcelsPermission({
             worldName: TEST_WORLD_NAME,
             permissionName: 'deployment',
@@ -826,9 +866,40 @@ describe('management slice', () => {
           }),
         );
 
+        expect(result.type).toBe('management/fetchParcelsPermission/rejected');
         const state = store.getState().management;
-        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toHaveLength(200);
-        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]).toEqual({
+          parcels: [],
+          status: 'failed',
+        });
+      });
+    });
+
+    describe("when another world's parcels were loaded before this world's fetch fails", () => {
+      it("should not keep the other world's parcels as deployable", async () => {
+        mockWorldsAPI.fetchParcelsPermission
+          .mockResolvedValueOnce({ parcels: ['1,1'], total: 1 })
+          .mockResolvedValueOnce(null);
+        const fetchFor = (worldName: string) =>
+          store.dispatch(
+            fetchParcelsPermission({
+              worldName,
+              permissionName: 'deployment',
+              walletAddress: TEST_WALLET_ADDRESS,
+            }),
+          );
+
+        await fetchFor('world-a.dcl.eth');
+        const pending = fetchFor('world-b.dcl.eth');
+        expect(
+          store.getState().management.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels,
+        ).toEqual([]);
+        await pending;
+
+        expect(store.getState().management.worldPermissions.parcels[TEST_WALLET_ADDRESS]).toEqual({
+          parcels: [],
+          status: 'failed',
+        });
       });
     });
 
@@ -1050,6 +1121,16 @@ describe('management slice', () => {
         TEST_WORLD_NAME,
         expect.anything(),
       );
+    });
+
+    it('should still resolve when only the scenes refresh after unpublishing fails', async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValueOnce(TEST_ADDRESS);
+      mockWorldsAPI.unpublishEntireWorld.mockResolvedValueOnce(true);
+      mockWorldsAPI.fetchWorldScenes.mockResolvedValueOnce(null);
+
+      await expect(
+        store.dispatch(unpublishEntireWorld({ worldName: TEST_WORLD_NAME })).unwrap(),
+      ).resolves.toBeUndefined();
     });
 
     it('should throw error when unpublishing fails', async () => {
