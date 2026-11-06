@@ -66,6 +66,11 @@ export type ScriptParamBoolean = ScriptParam & {
 export type ScriptParamString = ScriptParam & {
   type: 'string';
   value: string;
+  // `@actionsOf <key>`: the value names one of the actions on the entity held by the sibling
+  // field `<key>` of the same object, so the editor offers that entity's actions.
+  actionsOf?: string;
+  // `@format wallet`: the value is an Ethereum address.
+  format?: 'wallet';
 };
 
 // A string-literal union in the constructor (e.g. `shape: 'box' | 'sphere'`) becomes a
@@ -79,6 +84,9 @@ export type ScriptParamEnum = ScriptParam & {
 export type ScriptParamEntity = ScriptParam & {
   type: 'entity';
   value: Entity;
+  // `@components <name> …`: only entities carrying one of these components (full ECS names,
+  // e.g. `asset-packs::Actions`) can be picked.
+  components?: string[];
 };
 
 export type ScriptParamAction = ScriptParam & {

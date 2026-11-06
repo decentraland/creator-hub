@@ -12,6 +12,14 @@ type Props = {
   onUpdate: (update: ParamUpdate) => void;
 };
 
+// The sibling fields that name an action of the entity held in `key`; a picked action belongs
+// to the old entity, so they are cleared when it changes.
+function actionFieldsOf(fields: Record<string, ScriptParamUnion>, key: string): string[] {
+  return Object.entries(fields)
+    .filter(([, field]) => field.type === 'string' && field.actionsOf === key)
+    .map(([name]) => name);
+}
+
 // Renders a nested object param as a collapsible group of sub-fields. Each sub-field edits one
 // key and bubbles a FUNCTIONAL update up, merging into the freshest object rather than a stale
 // render-closure snapshot (see update.ts). `fields` is the schema (fresh from the parse); `value`
@@ -31,6 +39,7 @@ export function ObjectField({ name, param, getError, onUpdate }: Props) {
           key={key}
           name={key}
           param={{ ...fieldParam, value: value?.[key] ?? fieldParam.value } as ScriptParamUnion}
+          siblings={value}
           getError={getError}
           onUpdate={childUpdate =>
             onUpdate((prev: unknown) => {
@@ -38,7 +47,11 @@ export function ObjectField({ name, param, getError, onUpdate }: Props) {
                 prev && typeof prev === 'object' && !Array.isArray(prev)
                   ? (prev as Record<string, unknown>)
                   : {};
-              return { ...base, [key]: resolveParamUpdate(childUpdate, base[key]) };
+              const next = { ...base, [key]: resolveParamUpdate(childUpdate, base[key]) };
+              if (next[key] !== base[key]) {
+                for (const dependent of actionFieldsOf(fields, key)) next[dependent] = '';
+              }
+              return next;
             })
           }
         />
