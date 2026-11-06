@@ -1591,7 +1591,7 @@
       "features": {
         "enrolment": {
           "title": "Inscripción automática",
-          "body": "Todas las escenas elegibles que tienes u operas se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
+          "body": "Todas las escenas elegibles que tienes se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
         },
         "cycles": {
           "title": "Recompensas cada 15 días",
@@ -1603,7 +1603,7 @@
         },
         "payout": {
           "title": "Cobra directamente en USDC",
-          "body": "Los pagos se envían a la billetera que elijas dentro de los 30 días posteriores al cierre de cada ciclo."
+          "body": "Los pagos se envían a la billetera que elijas dentro de los 14 días posteriores al cierre de cada ciclo."
         }
       },
       "join": "Unirse al Creators Fund",
@@ -1667,9 +1667,13 @@
       "body": "Prepara tus escenas, atrae jugadores y empieza a ganar recompensas en USDC.",
       "lets_go": "Vamos"
     },
+    "joined": {
+      "read_terms": "Leer términos",
+      "contact_support": "Contactar con soporte"
+    },
     "errors": {
       "generic": "Algo salió mal. Vuelve a intentarlo.",
-      "load_status": "No se pudo cargar el Creator Fund.",
+      "load_status": "Algo salió mal al cargar el Creator Fund.",
       "retry": "Reintentar"
     }
   },
