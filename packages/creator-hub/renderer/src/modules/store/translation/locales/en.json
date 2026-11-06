@@ -1693,5 +1693,15 @@
   },
   "world_atlas": {
     "world_size": "World size: {size}"
+  },
+  "error_boundary": {
+    "title": "Something went wrong",
+    "description": "This screen hit an unexpected error. Your scenes and files are safe. Try again, or go back to Home.",
+    "modal_description": "This window hit an unexpected error. Your scene and files are safe. Try again, or close it and start over.",
+    "app_description": "Creator Hub hit an unexpected error. Your scenes and files are safe. Try again, or reload the window.",
+    "try_again": "Try again",
+    "go_home": "Go to Home",
+    "close": "Close",
+    "reload": "Reload"
   }
 }

@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch } from '#store';
 import { fetchENSList } from '/@/modules/store/ens';
 import { useAuth } from '/@/hooks/useAuth';
+import { ErrorBoundary } from '/@/components/ErrorBoundary';
 import { Initial } from './steps/Initial';
 import { AlternativeServers } from './steps/AlternativeServers';
 import { PublishToWorld } from './steps/PublishToWorld';
 import { PublishToLand } from './steps/PublishToLand';
 import { Deploy } from './steps/Deploy';
+import { PublishErrorFallback } from './PublishErrorFallback';
 
 import type { DeploymentMetadata, Props, Step } from './types';
 
@@ -67,13 +69,25 @@ export function PublishProject({
     onStep: handleStep,
   };
 
+  // Keyed on `open` too: the component stays mounted while closed, so a caught error
+  // would otherwise greet the user again on the next open.
   return (
-    <>
+    <ErrorBoundary
+      name="publish-modal"
+      resetKeys={[open, step]}
+      fallback={({ reset }) => (
+        <PublishErrorFallback
+          open={open}
+          onClose={handleClose}
+          onRetry={reset}
+        />
+      )}
+    >
       {step === 'initial' && <Initial {...props} />}
       {step === 'alternative-servers' && <AlternativeServers {...props} />}
       {step === 'publish-to-land' && <PublishToLand {...props} />}
       {step === 'publish-to-world' && <PublishToWorld {...props} />}
       {step === 'deploy' && <Deploy {...props} />}
-    </>
+    </ErrorBoundary>
   );
 }
