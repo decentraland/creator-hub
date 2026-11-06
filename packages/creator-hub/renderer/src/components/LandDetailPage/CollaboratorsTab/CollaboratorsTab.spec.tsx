@@ -67,6 +67,7 @@ const base = {
   description: null,
   owner: SELF,
   operators: [],
+  deployable: true,
 };
 
 const parcel = (updateOperator: string | null): Land => ({
