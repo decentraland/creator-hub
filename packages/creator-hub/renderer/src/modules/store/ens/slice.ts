@@ -10,23 +10,23 @@ import { fetch } from '/shared/fetch';
 import { DCLNames, ENS as ENSApi } from '/@/lib/ens';
 import { Worlds } from '/@/lib/worlds';
 import { createAsyncThunk } from '/@/modules/store/thunk';
+import { accountChanged, isSignedInAccount } from '/@/modules/store/account';
+import { settleRequest, settleRequestAndOlder } from '/@/modules/store/requests';
 import { ENS as ensAbi, DCLRegistrar as dclRegistrarAbi } from './abis';
 import { ens as ensContract, ensUniversalResolver, dclRegistrar } from './contracts';
-import { getEnsProvider, isValidENSName } from './utils';
+import { getEnsProvider, getStreamOnlyWorldNames, isValidENSName } from './utils';
 import { isMissingENSRecordError, resolveContent } from './resolveContent';
 import { withENSRecordClient } from './ccipRead';
-import { USER_PERMISSIONS, type ENS } from './types';
+import { USER_PERMISSIONS, type ContributableDomain, type ENS } from './types';
 
 const DEFAULT_CHAIN_ID: ChainId = Number(config.get('CHAIN_ID')) || ChainId.ETHEREUM_MAINNET;
 const REQUESTS_BATCH_SIZE = 25;
 const limit = pLimit(REQUESTS_BATCH_SIZE);
 
 // actions
-export const fetchContributeENSNames = async (address: string) => {
+const fetchContributableDomains = async (address: string) => {
   try {
-    const WorldAPI = new Worlds();
-    const domains = await WorldAPI.fetchContributableDomains(address);
-    return domains.filter(domain => domain.user_permissions.includes(USER_PERMISSIONS.DEPLOYMENT));
+    return await new Worlds().fetchContributableDomains(address);
   } catch (error) {
     captureException(error, {
       tags: {
@@ -37,6 +37,12 @@ export const fetchContributeENSNames = async (address: string) => {
     return [];
   }
 };
+
+const isDeployable = (domain: ContributableDomain) =>
+  domain.user_permissions.includes(USER_PERMISSIONS.DEPLOYMENT);
+
+export const fetchContributeENSNames = async (address: string) =>
+  (await fetchContributableDomains(address)).filter(isDeployable);
 
 export const fetchBannedNames = async () => {
   const dclListsUrl = config.get('DCL_LISTS_URL');
@@ -153,6 +159,7 @@ export const fetchDCLNames = createAsyncThunk(
 
     return Promise.all(promisesOfDCLENS);
   },
+  { condition: isSignedInAccount },
 );
 
 export const fetchENS = createAsyncThunk(
@@ -186,20 +193,24 @@ export const fetchENS = createAsyncThunk(
     });
     return Promise.all(promisesOfENS);
   },
+  { condition: isSignedInAccount },
 );
+
+export type ContributableNames = { names: ENS[]; streamOnly: string[] };
 
 export const fetchContributableNames = createAsyncThunk(
   'ens/fetchContributableNames',
-  async ({ address }: { address: string }) => {
+  async ({ address }: { address: string }): Promise<ContributableNames> => {
     const dclNamesApi = new DCLNames();
     const ensApi = new ENSApi();
     const bannedNames = await fetchBannedNames();
     const bannedNamesSet = new Set(bannedNames.map(x => x.toLowerCase()));
 
-    let names = await fetchContributeENSNames(address);
-    names = names.filter(({ name }) =>
-      name.split('.').every(nameSegment => !bannedNamesSet.has(nameSegment)),
-    );
+    const isAllowed = (name: string) =>
+      name.split('.').every(nameSegment => !bannedNamesSet.has(nameSegment));
+    const domains = await fetchContributableDomains(address);
+    const names = domains.filter(isDeployable).filter(({ name }) => isAllowed(name));
+    const streamOnly = getStreamOnlyWorldNames(domains).filter(isAllowed);
 
     const [ownerByNameDomain, ownerByEnsDomain]: [Record<string, string>, Record<string, string>] =
       await Promise.all([
@@ -235,25 +246,39 @@ export const fetchContributableNames = createAsyncThunk(
       });
     });
 
-    return Promise.all(promisesOfContributableENSNames);
+    return { names: await Promise.all(promisesOfContributableENSNames), streamOnly };
   },
+  { condition: isSignedInAccount },
 );
 
 export const fetchENSList = createAsyncThunk(
   'ens/fetchENSList',
-  async (payload: { address: string }, thunkApi) => {
-    const dclNames = await thunkApi.dispatch(fetchDCLNames(payload)).unwrap();
-    const ensNames = await thunkApi.dispatch(fetchENS(payload)).unwrap();
-    const contributableNames = await thunkApi.dispatch(fetchContributableNames(payload)).unwrap();
+  async (
+    { address, contributable }: { address: string; contributable?: ContributableNames },
+    thunkApi,
+  ) => {
+    const dclNames = await thunkApi.dispatch(fetchDCLNames({ address })).unwrap();
+    const ensNames = await thunkApi.dispatch(fetchENS({ address })).unwrap();
+    const { names: contributableNames } =
+      contributable ?? (await thunkApi.dispatch(fetchContributableNames({ address })).unwrap());
 
-    return [...dclNames, ...ensNames, ...contributableNames];
+    const owned = [...dclNames, ...ensNames];
+    const ownedSubdomains = new Set(owned.map(({ subdomain }) => subdomain));
+
+    return [
+      ...owned,
+      ...contributableNames.filter(({ subdomain }) => !ownedSubdomains.has(subdomain)),
+    ];
   },
+  { condition: isSignedInAccount },
 );
 
 // state
 export type ENSState = {
   chainId: ChainId;
   data: Record<string, ENS>;
+  /** NAME list requests still in flight for the current account, oldest first. */
+  requestIds: string[];
 };
 
 export const initialState: Async<ENSState> = {
@@ -261,6 +286,7 @@ export const initialState: Async<ENSState> = {
   data: {},
   status: 'idle',
   error: null,
+  requestIds: [],
 };
 
 // slice
@@ -268,17 +294,19 @@ export const slice = createSlice({
   name: 'ens',
   initialState,
   reducers: {
-    clearState: () => initialState,
     setChainId: (state, action: { payload: ChainId }) => {
       state.chainId = action.payload;
     },
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchENSList.pending, state => {
+      .addCase(accountChanged, state => ({ ...initialState, chainId: state.chainId }))
+      .addCase(fetchENSList.pending, (state, action) => {
         state.status = 'loading';
+        state.requestIds.push(action.meta.requestId);
       })
       .addCase(fetchENSList.fulfilled, (state, action) => {
+        if (!settleRequestAndOlder(state.requestIds, action.meta.requestId)) return;
         state.data = {
           ...state.data,
           ...action.payload.reduce(
@@ -292,10 +320,12 @@ export const slice = createSlice({
         state.status = 'succeeded';
       })
       .addCase(fetchENSList.rejected, (state, action) => {
-        state.status = 'failed';
-        // Kept rather than nulled: the UI needs to tell "the lookup failed" apart from "you
-        // own no NAMEs", which previously rendered the same empty screen. Sentry alone is
-        // not enough — the user is the one who has to decide whether to retry.
+        if (!settleRequest(state.requestIds, action.meta.requestId)) return;
+        state.status = state.requestIds.length
+          ? 'loading'
+          : Object.keys(state.data).length
+            ? 'succeeded'
+            : 'failed';
         state.error = action.error.message ?? 'Failed to load NAMEs';
         captureException(action.error, {
           tags: { source: 'ens', event: 'fetch-ens-list' },

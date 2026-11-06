@@ -909,6 +909,38 @@ describe('SceneServer RPC scene settings spawn points', () => {
     });
   });
 
+  describe('when the layout is patched with the parcels picked for publishing', () => {
+    it('should store the new base and parcels on the Scene component', async () => {
+      const layout = {
+        base: { x: 50, y: 60 },
+        parcels: [
+          { x: 50, y: 60 },
+          { x: 51, y: 60 },
+        ],
+      };
+
+      const set = await host.request('set_scene_settings', { layout });
+
+      expect(storedValue().layout).toEqual(layout);
+      expect(storedValue().name).toBe('s');
+      expect(set.settings.layout).toEqual(layout);
+    });
+  });
+
+  describe('when the patched layout is malformed', () => {
+    it.each([
+      [{ parcels: [{ x: 1, y: 1 }] }, 'layout.base'],
+      [{ base: { x: 1, y: 1 }, parcels: [] }, 'layout.parcels'],
+      [{ base: { x: 1, y: 1 }, parcels: [{ x: '1', y: 1 }] }, 'layout.parcels'],
+      [{ base: { x: 1.5, y: 1 }, parcels: [{ x: 1, y: 1 }] }, 'layout.base'],
+    ])('should reject %j and leave the component unchanged', async (layout, message) => {
+      const before = structuredClone(storedValue());
+
+      await expect(host.request('set_scene_settings', { layout })).rejects.toThrow(message);
+      expect(storedValue()).toEqual(before);
+    });
+  });
+
   describe('when another field is patched after a ranges write', () => {
     it('should keep the stored spawn points as range cases', async () => {
       await host.request('set_scene_settings', { spawnPoints: [rangeSpawnPoint] });

@@ -1,0 +1,1 @@
+export { ScenesTab } from './ScenesTab';

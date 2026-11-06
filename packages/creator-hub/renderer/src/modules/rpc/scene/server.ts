@@ -93,6 +93,10 @@ export type SceneRpcServerCallbacks = {
   onReady?: () => void;
 };
 
+/** Identifies a layout regardless of the order its parcels are listed in. */
+const layoutKey = (scene: { base: string; parcels: string[] } | undefined) =>
+  scene ? `${scene.base}|${[...scene.parcels].sort().join(';')}` : undefined;
+
 export class SceneRpcServer extends RPC<Method, Params, Result> {
   constructor(transport: Transport, project: Project, callbacks: SceneRpcServerCallbacks = {}) {
     super('SceneRpcOutbound', transport);
@@ -101,13 +105,21 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       callbacks.onReady?.();
     });
 
+    // The layout the editor reported last, seeded with the one it opened with. A notice
+    // repeats it whenever only the title changed, and taking it again would undo parcels
+    // picked meanwhile in the publish dialog (an editor that could not take them still
+    // holds its old layout).
+    let lastEditorLayout = layoutKey(project.scene);
     this.handle('notify_scene_metadata', async ({ title, scene }) => {
       const current = store.getState().editor.project ?? project;
+      const layout = scene && layoutKey(scene);
+      const layoutChanged = !!layout && layout !== lastEditorLayout;
+      if (layout) lastEditorLayout = layout;
       store.dispatch(
         workspaceActions.updateProject({
           ...current,
           title: title || current.title,
-          scene: scene ?? current.scene,
+          scene: layoutChanged ? scene : current.scene,
         }),
       );
     });

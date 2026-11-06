@@ -501,3 +501,25 @@ describe('Worlds.fetchReplacedScenesParcels', () => {
     });
   });
 });
+
+describe('Worlds.fetchWorldSettings', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+  });
+
+  describe('when the World has no settings yet', () => {
+    it('should return null', async () => {
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
+
+      expect(await new Worlds().fetchWorldSettings('plaza.dcl.eth')).toBeNull();
+    });
+  });
+
+  describe('when the server fails', () => {
+    it('should reject instead of answering with empty settings', async () => {
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 503 });
+
+      await expect(new Worlds().fetchWorldSettings('plaza.dcl.eth')).rejects.toThrow('503');
+    });
+  });
+});

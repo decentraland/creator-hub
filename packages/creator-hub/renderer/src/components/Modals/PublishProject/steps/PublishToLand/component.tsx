@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SceneParcels } from '@dcl/schemas';
 import { Atlas } from 'decentraland-ui2/dist/components/Atlas/Atlas';
 import { Box, Button, styled, Typography } from 'decentraland-ui2';
@@ -8,11 +8,13 @@ import { useSelector } from '#store';
 import { config } from '/@/config';
 import { t } from '/@/modules/store/translation/utils';
 import { selectors as landSelectors } from '/@/modules/store/land';
+import { Lands } from '/@/lib/land';
 import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { COLORS, type Props, type Coordinate } from '../../types';
-import { calculateParcels, parseCoords } from '../../utils';
+import { breaksLandPlaceContinuity, calculateParcels, parseCoords } from '../../utils';
 import { PublishModal } from '../../PublishModal';
+import { PlaceContinuityWarning } from '../../PlaceContinuityWarning';
 
 const CONTENT_SERVER = config.get('PEER_URL');
 
@@ -31,6 +33,18 @@ export function PublishToLand(props: Props) {
   const [placement, setPlacement] = useState<Coordinate | null>(null);
   const [initialPlacement, setInitialPlacement] = useState<Coordinate | null>(null);
   const [didAutoPlace, setDidAutoPlace] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  /** Scene waiting for the user to confirm a deployment that breaks its Place continuity. */
+  const [pendingScene, setPendingScene] = useState<SceneParcels | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  // The lookup can take up to a minute; closing the modal meanwhile must not publish.
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   if (!project) return null;
 
@@ -42,22 +56,66 @@ export function PublishToLand(props: Props) {
     [project, placement],
   );
 
+  const publish = useCallback(
+    async (scene: SceneParcels) => {
+      setIsPublishing(true);
+      // Cannot deploy to a LAND with a world configuration
+      const sceneUpdates = { scene, worldConfiguration: undefined };
+      // Disk first: under Bevy the store update below reloads the editor at the new base, and
+      // the reloaded editor reads scene.json, so it must already hold the pick.
+      await updateSceneJson(project.path, sceneUpdates);
+      updateProject({ ...project, ...sceneUpdates, updatedAt: Date.now() });
+      // The deploy step reports a failed publish from the store (publishError).
+      publishScene({ target: CONTENT_SERVER, sceneUpdates })?.catch(() => undefined);
+      props.onStep('deploy');
+    },
+    [project, publishScene, updateProject, updateSceneJson, props.onStep],
+  );
+
   const handleNext = useCallback(async () => {
     if (!placement) return;
-    const sceneUpdates: SceneParcels = {
+    const scene: SceneParcels = {
       base: `${placement.x},${placement.y}`,
       parcels: calculateParcels(project, placement).map(({ x, y }) => `${x},${y}`),
     };
-    await updateSceneJson(project.path, { scene: sceneUpdates, worldConfiguration: undefined });
-    updateProject({
-      ...project,
-      scene: sceneUpdates,
-      worldConfiguration: undefined, // Cannot deploy to a LAND with a world configuration
-      updatedAt: Date.now(),
-    });
-    publishScene({ target: CONTENT_SERVER });
-    props.onStep('deploy');
-  }, [placement, props.onStep]);
+
+    // A redeployment keeps the scene's Place unless it changes both the base parcel and the set
+    // of occupied parcels. Look up what is currently deployed where the scene is being placed.
+    setIsChecking(true);
+    let continuityBroken = false;
+    try {
+      const deployed = await new Lands().fetchLandPublishedScenes(
+        calculateParcels(project, placement).map(({ x, y }): [number, number] => [x, y]),
+      );
+      continuityBroken = breaksLandPlaceContinuity(
+        deployed.map(deployment => ({
+          base: deployment.metadata?.scene?.base ?? '',
+          parcels: deployment.metadata?.scene?.parcels ?? deployment.pointers ?? [],
+        })),
+        scene,
+      );
+    } catch (error) {
+      // Not being able to tell must not block publishing.
+      console.error('Could not check the Place continuity of the deployment', error);
+    } finally {
+      if (isMountedRef.current) setIsChecking(false);
+    }
+
+    if (!isMountedRef.current) return;
+    if (continuityBroken) {
+      setPendingScene(scene);
+    } else {
+      await publish(scene);
+    }
+  }, [placement, project, publish]);
+
+  const handleConfirmWarning = useCallback(async () => {
+    if (pendingScene && !isPublishing) await publish(pendingScene);
+  }, [pendingScene, isPublishing, publish]);
+
+  const handleCancelWarning = useCallback(() => {
+    setPendingScene(null);
+  }, []);
 
   const handleHover = useCallback((x: number, y: number) => {
     setHover({ x, y });
@@ -156,6 +214,53 @@ export function PublishToLand(props: Props) {
     }
   }, [placement, setPlacement, initialPlacement, didAutoPlace, setDidAutoPlace, landTiles]);
 
+  if (pendingScene) {
+    return (
+      <PublishModal
+        title={t('modal.publish_project.land.action')}
+        size="large"
+        {...props}
+        onBack={handleCancelWarning}
+      >
+        <Box
+          display="flex"
+          flexDirection="column"
+          gap={3}
+          padding={4}
+          margin="auto"
+          maxWidth={640}
+          borderRadius={2}
+          sx={{ backgroundColor: 'var(--black)' }}
+        >
+          <PlaceContinuityWarning kind="land" />
+          <Box
+            display="flex"
+            gap={1}
+          >
+            <Button
+              color="secondary"
+              variant="outlined"
+              size="large"
+              fullWidth
+              onClick={handleCancelWarning}
+            >
+              {t('modal.publish_project.place_continuity.cancel')}
+            </Button>
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              disabled={isPublishing}
+              onClick={handleConfirmWarning}
+            >
+              {t('modal.publish_project.place_continuity.confirm')}
+            </Button>
+          </Box>
+        </Box>
+      </PublishModal>
+    );
+  }
+
   return (
     <PublishToLandModal
       title={t('modal.publish_project.land.action')}
@@ -223,11 +328,13 @@ export function PublishToLand(props: Props) {
             color="primary"
             size="large"
             onClick={handleNext}
-            disabled={!placement}
+            disabled={!placement || isChecking || isPublishing}
             data-testid="publish-modal-publish-to-land-action"
             sx={{ height: '45px' }}
           >
-            {t('modal.publish_project.land.select_parcel.actions.publish')}
+            {isChecking
+              ? t('modal.publish_project.place_continuity.checking')
+              : t('modal.publish_project.land.select_parcel.actions.publish')}
           </Button>
         </Box>
       </Box>

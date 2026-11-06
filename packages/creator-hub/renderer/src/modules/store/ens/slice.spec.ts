@@ -11,12 +11,17 @@ import type * as Viem from 'viem';
 import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import type * as SharedFetch from '/shared/fetch';
 import type * as EnsLib from '/@/lib/ens';
+import { FilterBy } from '/shared/types/manage';
 import { createTestStore } from '../../../../tests/utils/testStore';
+import { accountChanged } from '../account';
+import { actions as managementActions, fetchManagedProjectsFiltered } from '../management';
 import { ens as ensContract, dclRegistrar } from './contracts';
-import { actions, fetchDCLNames } from './slice';
+import { actions, fetchDCLNames, fetchENSList, slice } from './slice';
 import { resolveContent } from './resolveContent';
 import type * as ResolveContent from './resolveContent';
 import { ENS_RECORD_TIMEOUT_MS } from './ccipRead';
+import type { ENS } from './types';
+import { USER_PERMISSIONS } from './types';
 
 vi.mock('./resolveContent', async importOriginal => ({
   ...(await importOriginal<typeof ResolveContent>()),
@@ -34,6 +39,8 @@ const registryResolverMock = vi.fn();
 
 const getContractMock = vi.fn();
 const fetchNamesMock = vi.fn();
+const fetchNamesOwnersMock = vi.fn();
+const fetchContributableDomainsMock = vi.fn();
 const fetchMock = vi.fn();
 
 vi.mock('viem', async importOriginal => ({
@@ -46,8 +53,21 @@ vi.mock('/@/lib/ens', async importOriginal => ({
   ...(await importOriginal<typeof EnsLib>()),
   DCLNames: class {
     fetchNames = fetchNamesMock;
+    fetchNamesOwners = fetchNamesOwnersMock;
+  },
+  ENS: class {
+    fetchNames = async () => [];
+    fetchNamesOwners = async () => ({});
   },
 }));
+
+vi.mock('/@/lib/worlds', () => ({
+  Worlds: class {
+    fetchContributableDomains = fetchContributableDomainsMock;
+  },
+}));
+
+vi.mock('/@/lib/auth', () => ({ AuthServerProvider: { getAccount: () => OWNER } }));
 
 vi.mock('/shared/fetch', async importOriginal => ({
   ...(await importOriginal<typeof SharedFetch>()),
@@ -277,5 +297,145 @@ describe('when fetching DCL names', () => {
       `ENS contract for chainId ${ChainId.MATIC_MAINNET} not found.`,
     );
     expect(getEnsAddressMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('fetchENSList', () => {
+  let store: ReturnType<typeof createTestStore>;
+
+  beforeEach(() => {
+    store = createTestStore();
+    store.dispatch(actions.setChainId(ChainId.ETHEREUM_MAINNET));
+    fakeContracts(ChainId.ETHEREUM_MAINNET);
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+    registryResolverMock.mockResolvedValue(CURRENT_RESOLVER);
+    vi.mocked(resolveContent).mockResolvedValue({
+      content: CONTENT_HASH,
+      resolver: CURRENT_RESOLVER,
+    });
+    getEnsAddressMock.mockResolvedValue(RECORD_ADDRESS);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('when the wallet owns a NAME and is also on its World deployment allow-list', () => {
+    beforeEach(() => {
+      fetchNamesMock.mockResolvedValue(['fixtureone.dcl.eth']);
+      fetchNamesOwnersMock.mockResolvedValue({ fixtureone: OWNER, fixturetwo: '0xother' });
+      fetchContributableDomainsMock.mockResolvedValue([
+        {
+          name: 'fixtureone.dcl.eth',
+          user_permissions: [USER_PERMISSIONS.DEPLOYMENT],
+          owner: OWNER,
+          size: '10',
+        },
+        {
+          name: 'fixturetwo.dcl.eth',
+          user_permissions: [USER_PERMISSIONS.DEPLOYMENT],
+          owner: '0xother',
+          size: '20',
+        },
+      ]);
+    });
+
+    it("should keep the owned entry's on-chain records", async () => {
+      await store.dispatch(fetchENSList({ address: OWNER })).unwrap();
+
+      expect(store.getState().ens.data['fixtureone.dcl.eth']).toMatchObject({
+        ensOwnerAddress: OWNER,
+        resolver: CURRENT_RESOLVER,
+        content: CONTENT_HASH,
+      });
+    });
+
+    it('should list the owned NAME once', async () => {
+      const list = await store.dispatch(fetchENSList({ address: OWNER })).unwrap();
+
+      expect(list.filter(({ subdomain }) => subdomain === 'fixtureone.dcl.eth')).toHaveLength(1);
+    });
+
+    it('should keep the NAMEs it can only contribute to', async () => {
+      await store.dispatch(fetchENSList({ address: OWNER })).unwrap();
+
+      expect(store.getState().ens.data['fixturetwo.dcl.eth']).toMatchObject({
+        nftOwnerAddress: '0xother',
+        userPermissions: [USER_PERMISSIONS.DEPLOYMENT],
+        size: '20',
+      });
+    });
+  });
+});
+
+describe('when the Manage list loads its first page of unpublished Worlds', () => {
+  beforeEach(async () => {
+    const store = createTestStore();
+    store.dispatch(actions.setChainId(ChainId.ETHEREUM_MAINNET));
+    fakeContracts(ChainId.ETHEREUM_MAINNET);
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+    fetchNamesMock.mockResolvedValue([]);
+    fetchContributableDomainsMock.mockResolvedValue([]);
+    store.dispatch(managementActions.setPublishFilter(FilterBy.UNPUBLISHED));
+
+    await store.dispatch(fetchManagedProjectsFiltered()).unwrap();
+  });
+
+  it('should ask for the contributable names once', () => {
+    expect(fetchContributableDomainsMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ens reducer', () => {
+  describe('when the account changes while the NAME requests are in flight', () => {
+    const args = { address: '0xprevious' };
+    const name = { subdomain: 'previous.dcl.eth' } as ENS;
+    const state = [
+      slice.actions.setChainId(ChainId.ETHEREUM_SEPOLIA),
+      fetchENSList.pending('loaded', args),
+      fetchENSList.fulfilled([name], 'loaded', args),
+      fetchENSList.pending('late', args),
+      accountChanged(),
+      fetchENSList.fulfilled([name], 'late', args),
+    ].reduce(slice.reducer, slice.getInitialState());
+
+    it('should drop the previous account NAMEs and their late answers', () => {
+      expect(state.data).toEqual({});
+      expect(state.status).toBe('idle');
+    });
+
+    it('should keep the network, which belongs to no account', () => {
+      expect(state.chainId).toBe(ChainId.ETHEREUM_SEPOLIA);
+    });
+  });
+
+  describe('when two NAME requests overlap and the newer one fails after the older one lands', () => {
+    const args = { address: OWNER };
+    const state = [
+      fetchENSList.pending('older', args),
+      fetchENSList.pending('newer', args),
+      fetchENSList.fulfilled([{ subdomain: 'older.dcl.eth' } as ENS], 'older', args),
+      fetchENSList.rejected(new Error('boom'), 'newer', args),
+    ].reduce(slice.reducer, slice.getInitialState());
+
+    it('should keep the older NAMEs as loaded ones', () => {
+      expect(Object.keys(state.data)).toEqual(['older.dcl.eth']);
+      expect(state.status).toBe('succeeded');
+    });
+  });
+
+  describe('when an older NAME request answers after a newer one', () => {
+    const args = { address: OWNER };
+    const state = [
+      fetchENSList.pending('older', args),
+      fetchENSList.pending('newer', args),
+      fetchENSList.fulfilled([{ subdomain: 'newer.dcl.eth' } as ENS], 'newer', args),
+      fetchENSList.fulfilled([{ subdomain: 'older.dcl.eth' } as ENS], 'older', args),
+    ].reduce(slice.reducer, slice.getInitialState());
+
+    it('should keep the newer NAMEs', () => {
+      expect(Object.keys(state.data)).toEqual(['newer.dcl.eth']);
+    });
   });
 });
