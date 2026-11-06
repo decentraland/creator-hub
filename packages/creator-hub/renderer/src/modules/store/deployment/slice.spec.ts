@@ -7,10 +7,12 @@ import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { FeatureFlag, fetchFeatureFlags } from '../featureFlags';
 import { DeploymentError } from '../../../lib/deploy';
+import { accountChanged } from '../account';
 import { actions, cancelDeployment, executeDeployment, initializeDeployment } from './slice';
 
 const TEST_PATH = '/test/path';
 const TEST_WALLET = '0x123';
+const NEXT_WALLET = '0x456';
 const TEST_CHAIN_ID = ChainId.ETHEREUM_MAINNET;
 const TEST_PORT = 3000;
 const TEST_SCENE_INFO = {
@@ -32,6 +34,7 @@ vi.mock('../../../lib/auth', () => ({
   AuthServerProvider: {
     hasValidIdentity: vi.fn(() => true),
     deactivate: vi.fn(),
+    getAccount: vi.fn(),
   },
 }));
 
@@ -416,6 +419,32 @@ describe('deployment slice', () => {
       it('should not retry on success', async () => {
         await store.dispatch(executeDeployment(TEST_PATH)).unwrap();
         expect(deploy).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('when the account changes before the deployment completes', () => {
+      beforeEach(async () => {
+        vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_WALLET);
+        store = await initDeploymentStore();
+        mockDeploySuccess();
+        vi.mocked(checkDeploymentStatus).mockImplementation(async () => {
+          store.dispatch(accountChanged());
+          vi.mocked(AuthServerProvider.getAccount).mockReturnValue(NEXT_WALLET);
+          return { status: 'complete' } as never;
+        });
+        await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should still complete the deployment', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.status).toBe('complete');
+      });
+
+      it("should keep the previous account's refetch out of the NAMEs, LANDs and Manage lists", () => {
+        const { ens, land, management } = store.getState();
+        expect([ens.status, land.status, management.status]).toEqual(['idle', 'idle', 'idle']);
+        expect(ens.data).toEqual({});
+        expect(land.data).toEqual([]);
+        expect(management.projects).toEqual([]);
       });
     });
 

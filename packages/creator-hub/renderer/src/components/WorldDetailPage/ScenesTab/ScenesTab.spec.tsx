@@ -140,8 +140,13 @@ async function renderTab(scenes: WorldScene[], access: Access = 'owner') {
   });
   const store = createTestStore();
   store.dispatch({
+    type: 'management/fetchStorageStats/pending',
+    meta: { requestId: 'r' },
+  });
+  store.dispatch({
     type: 'management/fetchStorageStats/fulfilled',
     payload: { wallet: OWNER, dclNames: [], ensNames: [], usedSpace: '0', maxAllowedSpace: '0' },
+    meta: { requestId: 'r' },
   });
   render(
     <Provider store={store as never}>
