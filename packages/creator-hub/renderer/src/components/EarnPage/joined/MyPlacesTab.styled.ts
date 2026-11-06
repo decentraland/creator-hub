@@ -2,7 +2,7 @@ import { styled } from 'decentraland-ui2';
 
 import { typeToken } from '../tokens';
 
-const STATS_BELOW = '@media (max-width: 1380.97px)';
+const STATS_BELOW = '@media (max-width: 1411.04px)';
 
 const Panel = styled('div')({
   display: 'flex',
@@ -82,6 +82,7 @@ const WhereText = styled('span')({
 });
 
 const Stats = styled('div')({
+  flex: '0 1 798px',
   padding: 9,
   [STATS_BELOW]: { flexBasis: '100%', padding: '10px 9px 9px' },
 });
