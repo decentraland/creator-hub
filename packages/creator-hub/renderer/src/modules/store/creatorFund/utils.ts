@@ -32,3 +32,28 @@ export function formatCycleDays(cycle: Pick<Cycle, 'start_at' | 'end_at'>, local
   const end = new Date(new Date(cycle.end_at).getTime() - DAY_MS);
   return `${day.format(new Date(cycle.start_at))} - ${day.format(end)}`;
 }
+
+const ORDINAL_SUFFIX: Partial<Record<Intl.LDMLPluralRule, string>> = {
+  one: 'st',
+  two: 'nd',
+  few: 'rd',
+};
+
+/**
+ * Formats the day a cycle starts in UTC: `November 15th` in English, the locale's long day elsewhere.
+ * @param locale - a BCP 47 locale for the month name and the day.
+ */
+export function formatCycleStartDay(cycle: Pick<Cycle, 'start_at'>, locale: string) {
+  const start = new Date(cycle.start_at);
+  if (!locale.startsWith('en')) {
+    return new Intl.DateTimeFormat(locale, {
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(start);
+  }
+  const month = new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(start);
+  const day = start.getUTCDate();
+  const suffix = ORDINAL_SUFFIX[new Intl.PluralRules(locale, { type: 'ordinal' }).select(day)];
+  return `${month} ${day}${suffix ?? 'th'}`;
+}

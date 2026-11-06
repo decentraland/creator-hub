@@ -1,4 +1,7 @@
 import { misc } from '#preload';
+import { useSelector } from '#store';
+import { selectors } from '/@/modules/store/creatorFund';
+import { formatCycleStartDay } from '/@/modules/store/creatorFund/utils';
 import { DISCORD_URL } from '/@/modules/utils';
 import type { TranslationPath } from '/@/modules/store/translation/types';
 import { getCurrentLocale, t } from '/@/modules/store/translation/utils';
@@ -47,8 +50,25 @@ type Step = {
   key: string;
   Icon: (props: CommonProps) => React.ReactElement;
   title: TranslationPath;
-  body: () => React.ReactNode;
+  body: (copy: FirstCycleCopy) => React.ReactNode;
 };
+
+type FirstCycleCopy = { body: string; cycle: string };
+
+type FirstCycleState = 'unlisted' | 'upcoming' | 'started';
+
+const FIRST_CYCLE_COPY: Record<FirstCycleState, { body: TranslationPath; cycle: TranslationPath }> =
+  {
+    unlisted: { body: 'earn.joined.get_ready.body', cycle: 'earn.joined.get_ready.cycle.body' },
+    upcoming: {
+      body: 'earn.joined.get_ready.body_upcoming',
+      cycle: 'earn.joined.get_ready.cycle.body_upcoming',
+    },
+    started: {
+      body: 'earn.joined.get_ready.body_started',
+      cycle: 'earn.joined.get_ready.cycle.body_started',
+    },
+  };
 
 const STEPS: Step[] = [
   {
@@ -95,7 +115,7 @@ const STEPS: Step[] = [
     key: 'cycle',
     Icon: CalendarIcon,
     title: 'earn.joined.get_ready.cycle.title',
-    body: () => t('earn.joined.get_ready.cycle.body'),
+    body: copy => copy.cycle,
   },
   {
     key: 'community',
@@ -114,8 +134,22 @@ const STEPS: Step[] = [
   },
 ];
 
+function useFirstCycleCopy(): FirstCycleCopy {
+  const firstCycle = useSelector(selectors.getFirstCycle);
+  const locale = useSelector(state => state.translation.locale);
+  const state: FirstCycleState = !firstCycle
+    ? 'unlisted'
+    : firstCycle.status === 'upcoming'
+      ? 'upcoming'
+      : 'started';
+  const date = firstCycle ? formatCycleStartDay(firstCycle, locale) : undefined;
+  const copy = FIRST_CYCLE_COPY[state];
+  return { body: t(copy.body, { date }), cycle: t(copy.cycle, { date }) };
+}
+
 /** The Leaderboard tab before any cycle has closed: what to do while the first one runs. */
 export function GetReady() {
+  const copy = useFirstCycleCopy();
   return (
     <Area>
       <Scenery>
@@ -133,7 +167,7 @@ export function GetReady() {
       <Column>
         <Intro>
           <Title as="h2">{t('earn.joined.get_ready.title')}</Title>
-          <Body>{t('earn.joined.get_ready.body')}</Body>
+          <Body>{copy.body}</Body>
         </Intro>
         <Features as="ol">
           {STEPS.map(({ key, Icon, title, body }) => (
@@ -142,7 +176,7 @@ export function GetReady() {
                 <Icon />
                 {t(title)}
               </FeatureTitle>
-              <FeatureBody>{body()}</FeatureBody>
+              <FeatureBody>{body(copy)}</FeatureBody>
             </Feature>
           ))}
         </Features>

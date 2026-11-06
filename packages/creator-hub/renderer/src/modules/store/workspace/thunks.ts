@@ -6,10 +6,12 @@ import { actions } from './index';
 import { fs, npm, pkg, scene, settings, skills, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
+import type { Info } from '/@/lib/deploy';
 
 import {
   type DependencyState,
   type Project,
+  type ProjectDeployment,
   ProjectError,
   PROJECT_ALREADY_IMPORTED_ERROR_PREFIX,
 } from '/shared/types/projects';
@@ -246,6 +248,29 @@ export const updateSceneJson = createAsyncThunk(
 export const updateProjectInfo = createAsyncThunk(
   'workspace/updateProjectInfo',
   workspace.updateProjectInfo,
+);
+
+/** The `ProjectInfo.deployments` key of a publish target. */
+export const deploymentKey = ({ parcel, worldName }: ProjectDeployment) =>
+  worldName ? `world:${worldName}:${parcel}` : `land:${parcel}`;
+
+/** Records a successful publish in the scene's project info; resolves with its deployments. */
+export const recordDeployment = createAsyncThunk(
+  'workspace/recordDeployment',
+  async ({ path, info }: { path: string; info: Info }, { dispatch, getState }) => {
+    const project = getState().workspace.projects.find($ => $.path === path);
+    const worldName = info.isWorld ? project?.worldConfiguration?.name : undefined;
+    if (!project || (info.isWorld && !worldName)) return null;
+    const record: ProjectDeployment = {
+      publishedAt: Date.now(),
+      deploymentHash: info.rootCID,
+      parcel: info.baseParcel,
+      ...(worldName && { worldName }),
+    };
+    const deployments = { ...project.info.deployments, [deploymentKey(record)]: record };
+    await dispatch(updateProjectInfo({ path, info: { deployments } })).unwrap();
+    return deployments;
+  },
 );
 
 export const getAvailable = createAsyncThunk(

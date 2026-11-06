@@ -1,13 +1,20 @@
 import { Provider } from 'react-redux';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
+import type { Project } from '/shared/types/projects';
+
+import { fs, workspace } from '#preload';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
+import { actions as workspaceActions } from '/@/modules/store/workspace';
 import * as api from '/@/lib/creatorFundApi';
 import * as metricsApi from '/@/lib/metricsApi';
+import { Lands, type LandDeployment } from '/@/lib/land';
+import type * as LandModule from '/@/lib/land';
 import { Worlds } from '/@/lib/worlds';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
@@ -31,16 +38,69 @@ vi.mock('/@/lib/creatorFundApi', () => ({
 }));
 vi.mock('/@/lib/metricsApi', () => ({ fetchMetrics: vi.fn() }));
 vi.mock('/@/lib/worlds', () => ({ Worlds: vi.fn() }));
+vi.mock('/@/lib/land', async importOriginal => ({
+  ...(await importOriginal<typeof LandModule>()),
+  Lands: vi.fn(),
+}));
 Worlds.prototype.fetchWorldScenes = vi.fn();
+Lands.prototype.fetchLandPublishedScenes = vi.fn();
 
-const renderTab = () =>
-  render(
-    <Provider store={createTestStore()}>
+const localProject = (title: string, overrides: Partial<Project> = {}) =>
+  ({
+    id: title,
+    path: `/scenes/${title}`,
+    title,
+    thumbnail: '',
+    scene: { base: '0,0', parcels: ['0,0', '0,1'] },
+    createdAt: 1,
+    updatedAt: 1,
+    publishedAt: 0,
+    info: { id: title, skipPublishWarning: false },
+    ...overrides,
+  }) as Project;
+
+const publishedOnLand = (title: string, deploymentHash: string, updatedAt: number) =>
+  localProject(title, {
+    updatedAt,
+    info: {
+      id: title,
+      skipPublishWarning: false,
+      deployments: { 'land:1,1': { publishedAt: 1, deploymentHash, parcel: '1,1' } },
+    },
+  });
+
+const renderTab = ({ projects = [] as Project[] | 'loading' } = {}) => {
+  const store = createTestStore();
+  if (projects !== 'loading') {
+    const { settings, sortBy } = store.getState().workspace;
+    store.dispatch(
+      workspaceActions.getWorkspace.fulfilled({ settings, sortBy, projects, missing: [] }, ''),
+    );
+  }
+  const view = render(
+    <Provider store={store}>
       <ThemeProvider theme={dark}>
-        <MyPlacesTab />
+        <MemoryRouter initialEntries={['/earn']}>
+          <Routes>
+            <Route
+              path="/earn"
+              element={<MyPlacesTab />}
+            />
+            <Route
+              path="/editor"
+              element={<h1>Editor</h1>}
+            />
+            <Route
+              path="/templates"
+              element={<h1>Templates</h1>}
+            />
+          </Routes>
+        </MemoryRouter>
       </ThemeProvider>
     </Provider>,
   );
+  return { store, ...view };
+};
 
 async function chooseCycle(name: string) {
   fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Cycle' }));
@@ -195,17 +255,16 @@ describe('MyPlacesTab', () => {
   });
 
   describe('when no cycle exists', () => {
-    it('should show Current cycle as the only option and the empty state, asking for no places', async () => {
+    it('should offer to create the first scene with no filter bar, asking for no places', async () => {
       vi.mocked(api.getCycles).mockResolvedValue(ok({ cycles: [] }));
-      renderTab();
+      const { container } = renderTab();
 
-      expect((await screen.findByRole('status')).textContent).toMatch(/^None of your places/);
-      const combobox = screen.getByRole('combobox', { name: 'Cycle' });
-      expect(combobox.textContent).toBe('Current cycle');
-      fireEvent.mouseDown(combobox);
-      expect((await screen.findAllByRole('option')).map(option => option.textContent)).toEqual([
-        'Current cycle',
-      ]);
+      expect(
+        await within(container).findByRole('heading', {
+          name: 'Create your first scene to start earning',
+        }),
+      ).toBeTruthy();
+      expect(within(container).queryByRole('toolbar')).toBeNull();
       expect(api.getPlaces).not.toHaveBeenCalled();
     });
   });
@@ -403,6 +462,51 @@ describe('MyPlacesTab', () => {
     });
   });
 
+  describe('when the places come in mixed statuses', () => {
+    const MIXED = [
+      place('x', { status: 'not_eligible', reasons: ['excluded'] }),
+      place('a'),
+      place('r', { status: 'replaced' }),
+      place('e', { status: 'eligible' }),
+      place('b'),
+    ];
+    const ORDER = [
+      'Example Place a',
+      'Example Place e',
+      'Example Place b',
+      'Example Place x',
+      'Example Place r',
+    ];
+
+    const names = (container: HTMLElement) =>
+      within(container)
+        .getAllByRole('article')
+        .map(entry => entry.getAttribute('aria-labelledby'))
+        .map(id => container.ownerDocument.getElementById(id!)!.textContent);
+
+    it('should list the places chipped "In program" first, keeping the server order within each group', async () => {
+      vi.mocked(api.getPlaces).mockResolvedValue(ok(myPlaces(MIXED)));
+      const { container } = renderTab();
+
+      await within(container).findByRole('article', { name: 'Example Place a' });
+
+      expect(names(container)).toEqual(ORDER);
+    });
+
+    it('should order a closed cycle the same way', async () => {
+      vi.mocked(api.getPlaces).mockImplementation(async cycle =>
+        ok(cycle === OLDEST_CLOSED.id ? myPlaces(MIXED, OLDEST_CLOSED) : myPlaces(PLACES)),
+      );
+      const { container } = renderTab();
+      await within(container).findByRole('article', { name: 'Example Place a' });
+
+      await chooseCycle('Oct 1 - Oct 15, 2026');
+
+      await within(container).findByRole('article', { name: 'Example Place r' });
+      expect(names(container)).toEqual(ORDER);
+    });
+  });
+
   describe('when a place has no title', () => {
     it('should name it by its location', async () => {
       vi.mocked(api.getPlaces).mockResolvedValue(
@@ -415,14 +519,153 @@ describe('MyPlacesTab', () => {
   });
 
   describe('when there are no places in the current cycle', () => {
-    it('should say how places join and not ask for metrics', async () => {
+    beforeEach(() => {
       vi.mocked(api.getPlaces).mockResolvedValue(ok(myPlaces([])));
-      renderTab();
+    });
 
-      expect((await screen.findByRole('status')).textContent).toBe(
-        'None of your places are in the program yet. Publish a scene on LAND or an open World and it joins automatically.',
-      );
-      expect(metricsApi.fetchMetrics).not.toHaveBeenCalled();
+    describe('and there are no local scenes', () => {
+      it('should offer to create the first scene, and not ask for metrics', async () => {
+        const { container } = renderTab();
+
+        expect(
+          await within(container).findByRole('heading', {
+            name: 'Create your first scene to start earning',
+          }),
+        ).toBeTruthy();
+        expect(
+          within(container).getByText(
+            'Once you publish a scene, it shows up here with its performance for the current cycle.',
+          ),
+        ).toBeTruthy();
+        expect(metricsApi.fetchMetrics).not.toHaveBeenCalled();
+      });
+
+      it('should create a scene with the default name and open the editor, with no name modal', async () => {
+        vi.mocked(workspace.createProject).mockResolvedValue({ path: '/scenes/New Scene' });
+        const { container } = renderTab();
+
+        fireEvent.click(await within(container).findByRole('button', { name: 'Create a scene' }));
+
+        expect(await within(container).findByRole('heading', { name: 'Editor' })).toBeTruthy();
+        expect(workspace.createProject).toHaveBeenCalledWith({});
+        expect(screen.queryByRole('dialog')).toBeNull();
+      });
+
+      it('should open the templates catalog from Start from a template', async () => {
+        const { container } = renderTab();
+
+        fireEvent.click(
+          await within(container).findByRole('button', { name: 'Start from a template' }),
+        );
+
+        expect(await within(container).findByRole('heading', { name: 'Templates' })).toBeTruthy();
+        expect(workspace.createProject).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('and there are local scenes', () => {
+      const PROJECTS = [
+        localProject('Scene Old', { updatedAt: 10 }),
+        publishedOnLand('Scene Live', 'bafy-live', 90),
+        localProject('Scene Newest', { updatedAt: 80 }),
+        localProject('Scene Middle', { updatedAt: 50 }),
+        localProject('Scene Newer', { updatedAt: 70 }),
+      ];
+
+      beforeEach(() => {
+        vi.mocked(Lands.prototype.fetchLandPublishedScenes).mockResolvedValue([
+          { id: 'bafy-live' } as LandDeployment,
+        ]);
+      });
+
+      it('should list the three newest scenes the content servers do not hold, newest edit first', async () => {
+        const { container } = renderTab({ projects: PROJECTS });
+
+        expect(
+          await within(container).findByRole('heading', {
+            name: 'Publish a scene to start earning',
+          }),
+        ).toBeTruthy();
+        const section = within(container).getByRole('region', { name: 'Your unpublished scenes' });
+        expect(within(section).getAllByRole('button')).toHaveLength(3);
+        expect(
+          within(section)
+            .getAllByText(/^Scene /)
+            .map(name => name.textContent),
+        ).toEqual(['Scene Newest', 'Scene Newer', 'Scene Middle']);
+        expect(within(section).getByRole('button', { name: 'Scene Newest' })).toBeTruthy();
+        expect(within(section).getAllByText('2 Parcels')).toHaveLength(3);
+      });
+
+      it('should open a scene in the editor when its card is clicked', async () => {
+        vi.mocked(fs.exists).mockResolvedValue(true);
+        vi.mocked(workspace.hasNodeModules).mockReturnValue(new Promise(() => {}));
+        const { container, store } = renderTab({ projects: PROJECTS });
+
+        fireEvent.click(await within(container).findByRole('button', { name: 'Scene Newer' }));
+
+        expect(await within(container).findByRole('heading', { name: 'Editor' })).toBeTruthy();
+        expect(store.getState().editor.openingProjectPath).toBe('/scenes/Scene Newer');
+      });
+
+      it('should count a scene whose recorded deployment was replaced as unpublished', async () => {
+        const { container } = renderTab({
+          projects: [publishedOnLand('Scene Replaced', 'bafy-old', 90)],
+        });
+
+        const section = await within(container).findByRole('region', {
+          name: 'Your unpublished scenes',
+        });
+        expect(within(section).getByRole('button', { name: 'Scene Replaced' })).toBeTruthy();
+      });
+
+      it('should show the publish prompt without the unpublished section when every scene is published', async () => {
+        const { container } = renderTab({
+          projects: [publishedOnLand('Scene Live', 'bafy-live', 90)],
+        });
+
+        expect(
+          await within(container).findByRole('heading', {
+            name: 'Publish a scene to start earning',
+          }),
+        ).toBeTruthy();
+        expect(
+          within(container).queryByRole('region', { name: 'Your unpublished scenes' }),
+        ).toBeNull();
+      });
+    });
+
+    describe('and the local scenes are still loading', () => {
+      it('should show the loading spinner', async () => {
+        const { container, store } = renderTab({ projects: 'loading' });
+
+        await waitFor(() => expect(store.getState().creatorFund.places.status).toBe('succeeded'));
+        expect(within(container).getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+        expect(within(container).queryByRole('heading')).toBeNull();
+      });
+    });
+
+    describe('and a cycle has closed', () => {
+      it('should keep the filter bar above the empty state', async () => {
+        const { container } = renderTab();
+
+        await within(container).findByRole('heading', {
+          name: 'Create your first scene to start earning',
+        });
+        expect(within(container).getByRole('combobox', { name: 'Cycle' })).toBeTruthy();
+      });
+    });
+
+    describe('and no cycle has closed yet', () => {
+      it('should hide the filter bar', async () => {
+        vi.mocked(api.getCycles).mockResolvedValue(ok({ cycles: [RUNNING] }));
+        const { container } = renderTab();
+
+        await within(container).findByRole('heading', {
+          name: 'Create your first scene to start earning',
+        });
+        expect(within(container).queryByRole('toolbar')).toBeNull();
+      });
     });
   });
 
@@ -445,7 +688,9 @@ describe('MyPlacesTab', () => {
       vi.mocked(api.getPlaces).mockResolvedValueOnce(fail());
       renderTab();
 
-      expect((await screen.findByRole('alert')).textContent).toBe("Couldn't load your places.");
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'Something went wrong while loading your places.',
+      );
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
       expect(await screen.findByRole('article', { name: 'Example Place a' })).toBeTruthy();
@@ -457,7 +702,9 @@ describe('MyPlacesTab', () => {
       vi.mocked(api.getCycles).mockResolvedValueOnce(fail());
       renderTab();
 
-      expect((await screen.findByRole('alert')).textContent).toBe("Couldn't load your places.");
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'Something went wrong while loading your places.',
+      );
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
       expect(await screen.findByRole('article', { name: 'Example Place a' })).toBeTruthy();

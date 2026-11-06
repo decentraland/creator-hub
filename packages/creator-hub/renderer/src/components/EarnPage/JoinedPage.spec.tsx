@@ -39,11 +39,12 @@ const JOINED = {
   email_verified_at: null,
 };
 
-async function renderPage(tab: JoinedTab = 'leaderboard') {
+async function renderPage(tab: JoinedTab = 'leaderboard', { awaitCycles = true } = {}) {
   const store = createTestStore();
   await act(async () => {
     await store.dispatch(actions.fetchEnrollment());
-    await store.dispatch(actions.fetchCycles());
+    const cycles = store.dispatch(actions.fetchCycles());
+    if (awaitCycles) await cycles;
   });
   const onTabChange = vi.fn();
   render(
@@ -131,6 +132,26 @@ describe('JoinedPage', () => {
       expect(screen.getByRole('tabpanel').textContent).toBe(panel);
     });
 
+    it('should name the first tab Leaderboard once a cycle has closed', async () => {
+      await renderPage();
+
+      expect(screen.getByRole('tab', { name: 'Leaderboard', selected: true })).toBeTruthy();
+    });
+
+    it('should name the first tab Home while the cycles load', async () => {
+      vi.mocked(api.getCycles).mockReturnValue(new Promise(() => {}));
+      await renderPage('leaderboard', { awaitCycles: false });
+
+      expect(screen.getByRole('tab', { name: 'Home', selected: true })).toBeTruthy();
+    });
+
+    it('should name the first tab Home when the cycles fail to load', async () => {
+      vi.mocked(api.getCycles).mockResolvedValue({ ok: false, status: 500, error: 'boom' });
+      await renderPage();
+
+      expect(screen.getByRole('tab', { name: 'Home', selected: true })).toBeTruthy();
+    });
+
     it('should list Payouts third, after My Places', async () => {
       await renderPage();
 
@@ -202,6 +223,16 @@ describe('JoinedPage', () => {
       vi.mocked(api.getCycles).mockResolvedValue(
         ok({ cycles: CYCLES.cycles.filter(cycle => cycle.status !== 'closed') }),
       );
+    });
+
+    it('should name the first tab Home', async () => {
+      await renderPage();
+
+      expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+        'Home',
+        'My Places',
+        'Payouts',
+      ]);
     });
 
     it('should offer support only from the More options menu, not from a header button', async () => {
