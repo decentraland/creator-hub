@@ -1,12 +1,16 @@
 export { AlertIcon } from './AlertIcon';
+export { ArrowDownIcon } from './ArrowDownIcon';
 export { AutomaticEnrolmentIcon } from './AutomaticEnrolmentIcon';
 export { BuildIcon } from './BuildIcon';
 export { CalendarIcon } from './CalendarIcon';
 export { CheckboxTickIcon } from './CheckboxTickIcon';
+export { CheckmarkIcon } from './CheckmarkIcon';
 export { CloseIcon } from './CloseIcon';
 export { DiscordIcon } from './DiscordIcon';
 export { InfoIcon } from './InfoIcon';
+export { JumpInIcon } from './JumpInIcon';
 export { KebabIcon } from './KebabIcon';
+export { MapPinIcon } from './MapPinIcon';
 export { NameIcon } from './NameIcon';
 export { PlayerActivityIcon } from './PlayerActivityIcon';
 export { SupportIcon } from './SupportIcon';
