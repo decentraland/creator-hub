@@ -1699,7 +1699,7 @@
         "jump_in": "Entrar",
         "jump_in_label": "Entrar en {place}",
         "empty": "Todavía no hay pagos en este ciclo.",
-        "error": "No se pudo cargar la clasificación."
+        "error": "Algo salió mal al cargar la clasificación."
       },
       "get_ready": {
         "title": "¡Prepárate!",
