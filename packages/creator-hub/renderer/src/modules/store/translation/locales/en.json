@@ -1633,6 +1633,10 @@
       "body_2": "This may take a few seconds.",
       "progress_label": "Checking eligibility"
     },
+    "check_failed": {
+      "title": "Something went wrong while checking your account",
+      "body": "If the issue persists, contact our support team at {email}"
+    },
     "not_eligible": {
       "title": "You can't join yet",
       "got_it": "Got it",
