@@ -62,8 +62,7 @@ const PAYOUTS = [
   payout(OLDEST_CLOSED, 'paid', [[place('b', { title: 'Example Place B' }), 5]]),
 ];
 
-async function renderTab() {
-  const store = createTestStore();
+function mountTab(store: ReturnType<typeof createTestStore>) {
   render(
     <Provider store={store}>
       <ThemeProvider theme={dark}>
@@ -71,6 +70,11 @@ async function renderTab() {
       </ThemeProvider>
     </Provider>,
   );
+}
+
+async function renderTab() {
+  const store = createTestStore();
+  mountTab(store);
   return store;
 }
 
@@ -78,6 +82,33 @@ const cycleButton = (table: HTMLElement, name: string) =>
   within(table).getByRole('button', { name });
 const walletCard = async () => within(await screen.findByTestId('payouts-wallet-card'));
 const contactCard = async () => within(await screen.findByTestId('payouts-contact-card'));
+
+const WALLET_CARD = '[data-testid="payouts-wallet-card"]';
+const CARDS = '[data-testid="payouts-wallet-card"], [data-testid="payouts-contact-card"]';
+const SPINNER = '[role="progressbar"]';
+
+/** Records whether an element matching `selector` was ever on the page, however briefly. */
+function watchFor(selector: string) {
+  let seen = !!document.querySelector(selector);
+  const record = (records: MutationRecord[]) => {
+    for (const { addedNodes, removedNodes } of records) {
+      for (const node of [...addedNodes, ...removedNodes]) {
+        if (node instanceof Element && (node.matches(selector) || node.querySelector(selector))) {
+          seen = true;
+        }
+      }
+    }
+  };
+  const observer = new MutationObserver(record);
+  observer.observe(document.body, { childList: true, subtree: true });
+  return {
+    seen: () => {
+      record(observer.takeRecords());
+      return seen;
+    },
+    stop: () => observer.disconnect(),
+  };
+}
 
 /*
  * Each case renders the tab and its modals and queries them by role and accessible name, which
@@ -101,6 +132,136 @@ describe('PayoutsTab', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  describe('when the tab first loads', () => {
+    it('should show only the spinner while the payouts and the payout wallet are pending', async () => {
+      vi.mocked(api.getPayouts).mockReturnValue(new Promise(() => {}));
+      vi.mocked(api.getPayoutWallet).mockReturnValue(new Promise(() => {}));
+      await renderTab();
+
+      expect(await screen.findByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+      expect(document.querySelector(WALLET_CARD)).toBeNull();
+      expect(screen.queryByTestId('payouts-contact-card')).toBeNull();
+    });
+
+    it('should keep the spinner and no cards while the payout wallet is still pending', async () => {
+      vi.mocked(api.getPayoutWallet).mockReturnValue(new Promise(() => {}));
+      const store = await renderTab();
+
+      await waitFor(() => expect(store.getState().creatorFund.payouts.status).toBe('succeeded'));
+
+      expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+      expect(document.querySelector(WALLET_CARD)).toBeNull();
+      expect(screen.queryByRole('table')).toBeNull();
+    });
+
+    it('should go from the spinner straight to the error block, never showing the cards, when the payouts fail', async () => {
+      vi.mocked(api.getPayouts).mockResolvedValue(fail(404));
+      const cards = watchFor(WALLET_CARD);
+
+      try {
+        await renderTab();
+
+        expect((await screen.findByRole('alert')).textContent).toBe(
+          'Something went wrong while loading your payouts.',
+        );
+        expect(cards.seen()).toBe(false);
+      } finally {
+        cards.stop();
+      }
+    });
+
+    it('should show the cards and the table once both have loaded', async () => {
+      await renderTab();
+
+      expect(await screen.findByRole('table', { name: 'Payouts' })).toBeTruthy();
+      expect(document.querySelector(WALLET_CARD)).toBeTruthy();
+      expect(screen.getByTestId('payouts-contact-card')).toBeTruthy();
+      expect(screen.queryByRole('progressbar')).toBeNull();
+    });
+
+    it('should go back to the spinner on Retry', async () => {
+      vi.mocked(api.getPayouts).mockResolvedValueOnce(fail(500));
+      await renderTab();
+      fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
+
+      expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+      expect(document.querySelector(WALLET_CARD)).toBeNull();
+      expect(await screen.findByRole('table', { name: 'Payouts' })).toBeTruthy();
+    });
+  });
+
+  describe('when the tab mounts again after its payouts failed', () => {
+    it('should go from the spinner to the error block without ever showing the cards', async () => {
+      vi.mocked(api.getPayouts).mockResolvedValue(fail(404));
+      vi.mocked(api.getPayoutWallet).mockResolvedValue(fail(404));
+      const store = await renderTab();
+      await screen.findByRole('alert');
+      cleanup();
+      const cards = watchFor(CARDS);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+        expect((await screen.findByRole('alert')).textContent).toBe(
+          'Something went wrong while loading your payouts.',
+        );
+        expect(cards.seen()).toBe(false);
+      } finally {
+        cards.stop();
+      }
+    });
+  });
+
+  describe('when the tab mounts again after everything loaded', () => {
+    it('should show the cards at once and refetch without the spinner', async () => {
+      const store = await renderTab();
+      await screen.findByRole('table', { name: 'Payouts' });
+      cleanup();
+      vi.mocked(api.getPayouts).mockClear();
+      const spinner = watchFor(SPINNER);
+
+      try {
+        mountTab(store);
+
+        expect(document.querySelector(WALLET_CARD)).toBeTruthy();
+        expect(screen.getByRole('table', { name: 'Payouts' })).toBeTruthy();
+        await waitFor(() => expect(store.getState().creatorFund.payouts.status).toBe('succeeded'));
+        expect(api.getPayouts).toHaveBeenCalledTimes(1);
+        expect(document.querySelector(WALLET_CARD)).toBeTruthy();
+        expect(spinner.seen()).toBe(false);
+      } finally {
+        spinner.stop();
+      }
+    });
+  });
+
+  describe('when the payout wallet is saved after the tab has loaded', () => {
+    it('should keep the cards on screen, never falling back to the spinner', async () => {
+      vi.mocked(api.putPayoutWallet).mockResolvedValue(
+        ok({ address: NEW_ADDRESS, updated_at: '2026-11-04T10:00:00Z' }),
+      );
+      await renderTab();
+      await screen.findByRole('table', { name: 'Payouts' });
+      fireEvent.click(await (await walletCard()).findByRole('button', { name: 'Edit' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Change payout wallet' });
+      fireEvent.change(within(dialog).getByLabelText('Wallet address'), {
+        target: { value: NEW_ADDRESS },
+      });
+      const spinner = watchFor(SPINNER);
+
+      try {
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+        expect((await screen.findByRole('status')).textContent).toBe('Payout wallet updated');
+        expect(document.querySelector(WALLET_CARD)).toBeTruthy();
+        expect(spinner.seen()).toBe(false);
+      } finally {
+        spinner.stop();
+      }
+    });
   });
 
   describe('when there are payouts', () => {
