@@ -1610,8 +1610,8 @@
       "description": "The <hl>Decentraland Creator Fund</hl> <hl>rewards LAND and World owners</hl> for bringing in new players, building activity, and keeping players coming back.",
       "features": {
         "enrolment": {
-          "title": "Automatic enrolment",
-          "body": "All eligible scenes you own or operate are included when you join. New eligible scenes are added automatically."
+          "title": "Automatic enrollment",
+          "body": "All eligible scenes you own are included when you join. New eligible scenes are added automatically."
         },
         "cycles": {
           "title": "Rewards every 15 days",
@@ -1623,7 +1623,7 @@
         },
         "payout": {
           "title": "Get paid directly in USDC",
-          "body": "Payments are sent to your selected wallet within 30 days after each cycle ends."
+          "body": "Payouts are sent to your selected wallet within 14 days after each cycle ends."
         }
       },
       "join": "Join Creators Fund",
@@ -1687,9 +1687,13 @@
       "body": "Get your scenes ready, bring players in, and start earning USDC rewards.",
       "lets_go": "Let's go"
     },
+    "joined": {
+      "read_terms": "Read Terms",
+      "contact_support": "Contact Support"
+    },
     "errors": {
       "generic": "Something went wrong. Please try again.",
-      "load_status": "Couldn't load the Creator Fund.",
+      "load_status": "Something went wrong while loading the Creator Fund.",
       "retry": "Retry"
     }
   },
