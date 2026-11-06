@@ -237,6 +237,21 @@ function resolveComponent(engine: IEngine, nameOrId: string) {
   return null;
 }
 
+const isParcelCoords = (value: unknown): value is { x: number; y: number } =>
+  !!value &&
+  Number.isInteger((value as { x: unknown }).x) &&
+  Number.isInteger((value as { y: unknown }).y);
+
+// The host pushes the parcels picked in the publish dialog through set_scene_settings; a
+// malformed layout would fail later inside the CRDT serializer, far from the bad call.
+function assertSceneLayout(layout: unknown): void {
+  const { base, parcels } = (layout ?? {}) as { base?: unknown; parcels?: unknown };
+  if (!isParcelCoords(base)) throw new Error('layout.base must be integer { x, y } coords');
+  if (!Array.isArray(parcels) || parcels.length === 0 || !parcels.every(isParcelCoords)) {
+    throw new Error('layout.parcels must be a non-empty array of integer { x, y } coords');
+  }
+}
+
 export class SceneServer extends RPC<Method, Params, Result> {
   // `renderer` (the Babylon internals) is OPTIONAL: only the camera + screenshot
   // handlers need it. Every other message is renderer-agnostic store dispatch
@@ -635,6 +650,7 @@ export class SceneServer extends RPC<Method, Params, Result> {
             }
           }
         });
+        if (patch.layout !== undefined) assertSceneLayout(patch.layout);
         const Scene = resolveActiveSceneComponent(engine);
         const current = (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown>;
         operations.updateValue(Scene as never, engine.RootEntity, {

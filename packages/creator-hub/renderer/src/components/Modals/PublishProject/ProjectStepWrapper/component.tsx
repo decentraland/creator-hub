@@ -43,9 +43,12 @@ const ProjectStepWrapper: React.FC<Props> = ({ isWorld, name, project, children,
     } else if (!isWorld && project.scene.base) {
       const landEntry = landData.find(
         land =>
-          (land.type === 'parcel' && coordsToId(land.x!, land.y!) === project.scene.base) ||
-          (land.type === 'estate' &&
-            land.parcels?.some(parcel => coordsToId(parcel.x!, parcel.y!) === project.scene.base)),
+          land.deployable &&
+          ((land.type === 'parcel' && coordsToId(land.x!, land.y!) === project.scene.base) ||
+            (land.type === 'estate' &&
+              land.parcels?.some(
+                parcel => coordsToId(parcel.x!, parcel.y!) === project.scene.base,
+              ))),
       );
 
       if (landEntry) {
