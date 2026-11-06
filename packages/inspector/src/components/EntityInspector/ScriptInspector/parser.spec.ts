@@ -286,3 +286,59 @@ export function start(src: string, entity: Entity, speed: Slider<0, 10> = 5) {}
     });
   });
 });
+
+describe('when a script tags its params with editor hints', () => {
+  it('should narrow an entity to the components named by @components', () => {
+    const { params } = getScriptParams(
+      classScript(`
+        /** @components asset-packs::Actions, asset-packs::VideoScreen */
+        public target: Entity,`),
+    );
+    expect(params.target).toMatchObject({
+      type: 'entity',
+      components: ['asset-packs::Actions', 'asset-packs::VideoScreen'],
+    });
+  });
+
+  it('should tie a string in a list of objects to its sibling entity with @actionsOf', () => {
+    const { params } = getScriptParams(
+      classScript(`
+        public smartItems: Array<{
+          /** @components asset-packs::Actions */
+          entity: Entity;
+          /** @actionsOf entity */
+          defaultAction: string;
+        }> = [],`),
+    );
+    expect(params.smartItems).toMatchObject({
+      type: 'array',
+      item: {
+        type: 'object',
+        fields: {
+          entity: { type: 'entity', components: ['asset-packs::Actions'] },
+          defaultAction: { type: 'string', actionsOf: 'entity' },
+        },
+      },
+    });
+  });
+
+  it('should apply @format wallet to each element of a string list', () => {
+    const { params } = getScriptParams(
+      classScript(`
+        public users: {
+          /** @format wallet */
+          adminAllowList: string[];
+        } = { adminAllowList: [] },`),
+    );
+    expect(params.users).toMatchObject({
+      fields: { adminAllowList: { type: 'array', item: { type: 'string', format: 'wallet' } } },
+    });
+  });
+
+  it('should leave untagged params as they were', () => {
+    const { params } = getScriptParams(classScript('public target: Entity, public label: string,'));
+    expect(params.target).not.toHaveProperty('components');
+    expect(params.label).not.toHaveProperty('actionsOf');
+    expect(params.label).not.toHaveProperty('format');
+  });
+});
