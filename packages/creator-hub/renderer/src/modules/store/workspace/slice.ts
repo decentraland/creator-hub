@@ -220,6 +220,10 @@ export const slice = createSlice({
         if (projectIdx !== -1) {
           state.projects[projectIdx] = { ...state.projects[projectIdx], publishedAt: Date.now() };
         }
+      })
+      .addCase(thunks.recordDeployment.fulfilled, (state, { meta, payload: deployments }) => {
+        const project = state.projects.find($ => $.path === meta.arg.path);
+        if (project && deployments) project.info = { ...project.info, deployments };
       });
   },
 });

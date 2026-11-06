@@ -1754,9 +1754,19 @@
           "minutes": "{value} 分钟",
           "no_data": "无数据"
         },
-        "empty": "你的地点尚未加入计划。在 LAND 或开放的 World 上发布场景，它会自动加入。",
+        "empty_body": "发布场景后，它会显示在这里，并附上本周期的表现。",
         "empty_closed_cycle": "本周期没有地点。",
-        "error": "无法加载你的地点。",
+        "no_scenes": {
+          "title": "创建你的第一个场景，开始赚取收益"
+        },
+        "unpublished": {
+          "title": "发布一个场景，开始赚取收益",
+          "heading": "你未发布的场景",
+          "parcels": "{parcels} 个地块"
+        },
+        "start_from_template": "从模板开始",
+        "create_scene": "创建场景",
+        "error": "加载你的地点时出了点问题。",
         "replaced_tooltip": "此地点已作为新地点重新发布。其之前的数据会保留。"
       }
     },

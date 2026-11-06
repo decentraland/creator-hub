@@ -1754,9 +1754,19 @@
           "minutes": "{value} min",
           "no_data": "No data"
         },
-        "empty": "None of your places are in the program yet. Publish a scene on LAND or an open World and it joins automatically.",
+        "empty_body": "Once you publish a scene, it shows up here with its performance for the current cycle.",
         "empty_closed_cycle": "No places in this cycle.",
-        "error": "Couldn't load your places.",
+        "no_scenes": {
+          "title": "Create your first scene to start earning"
+        },
+        "unpublished": {
+          "title": "Publish a scene to start earning",
+          "heading": "Your unpublished scenes",
+          "parcels": "{parcels, plural, one {# Parcel} other {# Parcels}}"
+        },
+        "start_from_template": "Start from a template",
+        "create_scene": "Create a scene",
+        "error": "Something went wrong while loading your places.",
         "replaced_tooltip": "This place was republished as a new one. Its earlier numbers are kept."
       }
     },

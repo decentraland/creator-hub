@@ -1754,9 +1754,19 @@
           "minutes": "{value} min",
           "no_data": "Sin datos"
         },
-        "empty": "Ninguno de tus lugares está en el programa todavía. Publica una escena en LAND o en un World abierto y se unirá automáticamente.",
+        "empty_body": "Cuando publiques una escena, aparecerá aquí con su rendimiento en el ciclo actual.",
         "empty_closed_cycle": "No hubo lugares en este ciclo.",
-        "error": "No se pudieron cargar tus lugares.",
+        "no_scenes": {
+          "title": "Crea tu primera escena para empezar a ganar"
+        },
+        "unpublished": {
+          "title": "Publica una escena para empezar a ganar",
+          "heading": "Tus escenas sin publicar",
+          "parcels": "{parcels, plural, one {# parcela} other {# parcelas}}"
+        },
+        "start_from_template": "Empezar desde una plantilla",
+        "create_scene": "Crear una escena",
+        "error": "Algo salió mal al cargar tus lugares.",
         "replaced_tooltip": "Este lugar se volvió a publicar como uno nuevo. Se conservan sus cifras anteriores."
       }
     },

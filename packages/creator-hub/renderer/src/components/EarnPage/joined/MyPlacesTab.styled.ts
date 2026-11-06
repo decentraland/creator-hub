@@ -83,7 +83,7 @@ const WhereText = styled('span')({
 
 const Stats = styled('div')({
   padding: 9,
-  [STATS_BELOW]: { flexBasis: '100%', paddingTop: 0 },
+  [STATS_BELOW]: { flexBasis: '100%', padding: '10px 9px 9px' },
 });
 
 const StatsList = styled('dl')({
