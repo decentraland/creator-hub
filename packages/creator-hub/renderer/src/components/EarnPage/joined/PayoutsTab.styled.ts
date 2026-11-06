@@ -6,7 +6,7 @@ import { focusRing, fontFace, typeToken } from '../tokens';
 
 const GRID = 'repeat(4, minmax(0, 1fr)) 110px';
 const GUTTER = 'clamp(16px, 5.104vw, 98px)';
-const HIDE_ART = '@media (max-width: 1377.1px)';
+const HIDE_ART = '@media (max-width: 1377.1px), (max-height: 708.2px)';
 
 const Panel = styled('div')({
   display: 'flex',
@@ -74,6 +74,7 @@ const CornerButton = styled(Button)({
     ...focusRing,
   },
   '&&&:hover': { backgroundColor: 'var(--palette-whiteTransparent-subtle)' },
+  '&&&&&&&:hover, &&&&&&&.Mui-focusVisible': { color: 'var(--palette-neutral-softWhite)' },
   '& .MuiTouchRipple-root': { display: 'none' },
 });
 
@@ -122,32 +123,26 @@ const LearnMore = styled('a')({
   ...focusRing,
 });
 
-const AddressChip = styled('div')({
+const AddressChip = styled(CopyToClipboard)({
   display: 'inline-flex',
   alignItems: 'center',
   alignSelf: 'flex-start',
   gap: 10,
   height: 32,
   padding: '0 10px',
+  border: 0,
   borderRadius: 'var(--shape-borderRadiusMedium)',
   backgroundColor: 'var(--black-60)',
+  color: 'var(--dropdown)',
   whiteSpace: 'nowrap',
+  cursor: 'pointer',
+  '& svg': { flexShrink: 0 },
+  ...focusRing,
 });
 
 const Address = styled('span')({
   ...typeToken('h7-regular'),
   color: 'var(--pearl)',
-});
-
-const CopyButton = styled(CopyToClipboard)({
-  display: 'flex',
-  padding: 0,
-  border: 0,
-  borderRadius: 'var(--shape-borderRadiusMedium)',
-  backgroundColor: 'transparent',
-  color: 'var(--dropdown)',
-  cursor: 'pointer',
-  ...focusRing,
 });
 
 const ContactValues = styled('div')({
@@ -305,6 +300,7 @@ const PlaceRow = styled('div')({
 const PlaceSpan = styled('div')({
   gridColumn: '1 / 4',
   paddingLeft: 26,
+  paddingRight: 100,
 });
 
 const EmptyPanel = styled(Panel)({
@@ -313,17 +309,17 @@ const EmptyPanel = styled(Panel)({
 
 const EmptyArea = styled('section')({
   '--g': GUTTER,
-  '--s': `min(1, (100vw - 8px - (${GUTTER} + 823px) - clamp(32px, 6.667vw, 128px)) / 864px)`,
+  '--s': `min(1, (100vw - 8px - (${GUTTER} + 823px) - clamp(32px, 6.667vw, 128px)) / 864px, (100vh - 466px) / 545px)`,
   position: 'relative',
   flex: 1,
   display: 'grid',
-  gridTemplateRows: 'minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 239px)',
+  gridTemplateRows: 'minmax(0, 125fr) auto minmax(0, 352fr)',
 });
 
 const EmptyArt = styled('img')({
   position: 'absolute',
   zIndex: 0,
-  top: 'calc(-218px * var(--s))',
+  bottom: 'calc(10px * var(--s))',
   right: 'calc(-1 * var(--g))',
   width: 'calc(1361px * var(--s))',
   height: 'auto',
@@ -399,7 +395,6 @@ export {
   ContactText,
   ContactValue,
   ContactValues,
-  CopyButton,
   CornerButton,
   CycleCell,
   CycleRow,

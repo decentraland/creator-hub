@@ -286,7 +286,9 @@ describe('LeaderboardTab', () => {
       vi.mocked(api.getLeaderboard).mockResolvedValueOnce(fail());
       renderTab();
 
-      expect((await screen.findByRole('alert')).textContent).toBe("Couldn't load the leaderboard.");
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'Something went wrong while loading the leaderboard.',
+      );
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
       await screen.findByText('Example Place 1');

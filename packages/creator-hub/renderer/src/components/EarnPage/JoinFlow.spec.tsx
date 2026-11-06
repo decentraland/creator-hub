@@ -130,11 +130,59 @@ describe('JoinFlow', () => {
   });
 
   describe('when the check fails', () => {
-    it('should exit as failed', async () => {
+    const CHECK_FAILED = 'Something went wrong while checking your account';
+
+    beforeEach(() => {
       vi.mocked(api.getEligibility).mockResolvedValue(fail(500));
+    });
+
+    it('should say so in a modal with the support address', async () => {
       const { onExit } = renderFlow();
 
-      await waitFor(() => expect(onExit).toHaveBeenCalledWith('failed'));
+      const dialog = await screen.findByRole('alertdialog', { name: CHECK_FAILED });
+      const description = document.getElementById(dialog.getAttribute('aria-describedby')!);
+      expect(description?.textContent).toBe(
+        'If the issue persists, contact our support team at creatorfund@decentraland.org',
+      );
+      expect(screen.getByText('creatorfund@decentraland.org').getAttribute('href')).toBe(
+        'mailto:creatorfund@decentraland.org',
+      );
+      expect(onExit).not.toHaveBeenCalled();
+    });
+
+    it('should check again from RETRY', async () => {
+      renderFlow();
+      await screen.findByRole('alertdialog', { name: CHECK_FAILED });
+      vi.mocked(api.getEligibility).mockReturnValue(new Promise(() => {}));
+
+      fireEvent.click(screen.getByText('Retry'));
+
+      expect(await screen.findByRole('progressbar', { name: 'Checking eligibility' })).toBeTruthy();
+      expect(api.getEligibility).toHaveBeenCalledTimes(2);
+    });
+
+    it('should open the terms when the retried check passes', async () => {
+      renderFlow();
+      await screen.findByRole('alertdialog', { name: CHECK_FAILED });
+      vi.mocked(api.getEligibility).mockResolvedValue(ok({ eligible: true, reasons: [] }));
+
+      fireEvent.click(screen.getByText('Retry'));
+
+      expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
+    });
+
+    it.each([
+      ['CLOSE', () => fireEvent.click(screen.getByText('Close'))],
+      ['the X', () => fireEvent.click(screen.getByLabelText('Close'))],
+      ['Escape', () => fireEvent.keyDown(screen.getByRole('alertdialog'), { key: 'Escape' })],
+    ])('should exit as cancelled from %s', async (_, dismiss) => {
+      const { onExit } = renderFlow();
+      await screen.findByRole('alertdialog', { name: CHECK_FAILED });
+
+      dismiss();
+
+      expect(onExit).toHaveBeenCalledWith('cancelled');
+      expect(onExit).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -153,6 +201,18 @@ describe('JoinFlow', () => {
       expect(description?.textContent).toBe(copy);
 
       fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
+      expect(onExit).toHaveBeenCalledWith('cancelled');
+    });
+
+    it('should exit as cancelled from the X, as from GOT IT', async () => {
+      vi.mocked(api.getEligibility).mockResolvedValue(
+        ok({ eligible: false, reasons: ['internal'] }),
+      );
+      const { onExit } = renderFlow();
+      await screen.findByRole('alertdialog', { name: "You can't join yet" });
+
+      fireEvent.click(screen.getByLabelText('Close'));
+
       expect(onExit).toHaveBeenCalledWith('cancelled');
     });
 

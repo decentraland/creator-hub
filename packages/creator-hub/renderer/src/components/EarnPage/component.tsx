@@ -11,11 +11,10 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
 
-import { EarnMenu } from './joined/EarnHeader';
 import { JoinedPage, type JoinedTab } from './JoinedPage';
 import { IneligibleModal, JoinFlow, type JoinOutcome } from './JoinFlow';
 import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing';
-import { MenuCorner, StickyNavbar } from './component.styled';
+import { StickyNavbar } from './component.styled';
 import { Spinner } from './Spinner';
 import { TermsModal } from './TermsModal';
 
@@ -37,7 +36,6 @@ function EarnContent() {
   const [attempt, setAttempt] = useState(0);
   const [checked, setChecked] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [joinFailed, setJoinFailed] = useState(false);
   const [reacceptFailed, setReacceptFailed] = useState(false);
   const [reaccepting, setReaccepting] = useState(false);
   const [tab, setTab] = useState<JoinedTab>('leaderboard');
@@ -56,10 +54,7 @@ function EarnContent() {
     };
   }, [isSignedIn, attempt, dispatch]);
 
-  const startJoin = useCallback(() => {
-    setJoinFailed(false);
-    setJoining(true);
-  }, []);
+  const startJoin = useCallback(() => setJoining(true), []);
 
   useEffect(() => {
     if (!joinAfterSignIn || isSigningIn || (isSignedIn && !settled)) return;
@@ -84,7 +79,6 @@ function EarnContent() {
 
   const handleExit = useCallback((outcome: JoinOutcome) => {
     setJoining(false);
-    setJoinFailed(outcome === 'failed');
     if (outcome === 'joined') setTab('my_places');
     if (outcome === 'conflict') setAttempt(value => value + 1);
   }, []);
@@ -148,14 +142,9 @@ function EarnContent() {
 
   if (enrollment && enrollment.status !== 'active') {
     return (
-      <>
-        <MenuCorner>
-          <EarnMenu />
-        </MenuCorner>
-        <Landing audience="signed_in">
-          <LandingStatus />
-        </Landing>
-      </>
+      <Landing audience="signed_in">
+        <LandingStatus />
+      </Landing>
     );
   }
 
@@ -192,7 +181,6 @@ function EarnContent() {
         <LandingCtas
           audience="signed_in"
           onJoin={startJoin}
-          error={joinFailed ? t('earn.errors.generic') : undefined}
         />
       </Landing>
       {joining && <JoinFlow onExit={handleExit} />}

@@ -169,11 +169,21 @@ const StateBox = styled('div')({
   alignItems: 'center',
   gap: 20,
   padding: 60,
+  '&[data-kind="error"]': { paddingTop: 200 },
+});
+
+const ErrorLine = styled('p')({
+  ...typeToken('h6-regular'),
+  maxWidth: 550,
+  margin: 0,
+  color: 'var(--dcl-silver)',
+  textAlign: 'center',
 });
 
 export {
   Chip,
   CycleSelectBox,
+  ErrorLine,
   FilterBar,
   FilterGroup,
   FilterLabel,

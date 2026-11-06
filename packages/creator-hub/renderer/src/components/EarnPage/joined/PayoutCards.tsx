@@ -20,7 +20,6 @@ import {
   ContactText,
   ContactValue,
   ContactValues,
-  CopyButton,
   CornerButton,
   InfoButton,
   InfoGroup,
@@ -92,7 +91,7 @@ function WalletInfo() {
 }
 
 /**
- * The payout wallet: its short address with a copy button and EDIT, or ADD WALLET when none is set.
+ * The payout wallet: its short address as a chip that copies it, and EDIT; ADD WALLET when none is set.
  * @param props.wallet - `undefined` while it loads.
  */
 export function WalletCard({
@@ -118,15 +117,13 @@ export function WalletCard({
       </CardHeader>
       {wallet && (
         <>
-          <AddressChip>
+          <AddressChip
+            text={wallet.address}
+            label={t('earn.joined.payouts.wallet.copy')}
+            showPopup
+          >
             <Address title={wallet.address}>{shortAddress(wallet.address)}</Address>
-            <CopyButton
-              text={wallet.address}
-              label={t('earn.joined.payouts.wallet.copy')}
-              showPopup
-            >
-              <CopyIcon />
-            </CopyButton>
+            <CopyIcon />
           </AddressChip>
           <CornerButton
             ref={editRef}
