@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
+import { analytics } from '#preload';
 import { useDispatch } from '#store';
 import { actions } from '/@/modules/store/creatorFund';
 import type { TranslationPath } from '/@/modules/store/translation/types';
@@ -126,6 +127,10 @@ export function WalletModal({
     if (!valid || submission === 'saving') return;
     setSubmission('saving');
     const result = await dispatch(actions.savePayoutWallet({ address }));
+    void analytics.track('Creator Fund Payout Wallet Saved', {
+      action: variant === 'add' ? 'add' : 'edit',
+      ok: actions.savePayoutWallet.fulfilled.match(result),
+    });
     if (actions.savePayoutWallet.fulfilled.match(result)) {
       onDone(copy.done);
       return;

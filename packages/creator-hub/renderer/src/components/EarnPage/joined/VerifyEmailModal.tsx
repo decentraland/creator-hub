@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import type { Events } from '/shared/types/analytics';
+
+import { analytics } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { actions } from '/@/modules/store/creatorFund';
 import type { TranslationPath } from '/@/modules/store/translation/types';
@@ -26,6 +29,12 @@ const SEND_FAILED: TranslationPath = 'earn.errors.generic';
 const ERRORS: Record<number, TranslationPath> = {
   400: 'earn.joined.payouts.verify.incorrect',
   410: EXPIRED,
+};
+
+const VERDICTS: Record<number, Events['Creator Fund Email Code Submitted']['result']> = {
+  400: 'incorrect',
+  410: 'expired',
+  429: 'locked',
 };
 
 /** When a resend is allowed again, by the last send's answer; `null` while nothing holds it. */
@@ -103,10 +112,15 @@ export function VerifyEmailModal({
     const result = await dispatch(actions.confirmEmailVerification({ code: code.join('') }));
     setVerifying(false);
     if (actions.confirmEmailVerification.fulfilled.match(result)) {
+      void analytics.track('Creator Fund Email Code Submitted', { result: 'verified' });
       onDone('earn.joined.payouts.snackbar.email_verified');
       return;
     }
-    setError(ERRORS[result.payload?.status ?? 0] ?? 'earn.errors.generic');
+    const status = result.payload?.status ?? 0;
+    if (VERDICTS[status]) {
+      void analytics.track('Creator Fund Email Code Submitted', { result: VERDICTS[status] });
+    }
+    setError(ERRORS[status] ?? 'earn.errors.generic');
   };
 
   return (

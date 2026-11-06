@@ -6,7 +6,7 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import type { Enrollment, PayoutWallet } from '/shared/types/creator-fund';
 
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
@@ -108,6 +108,25 @@ function watchFor(selector: string) {
     },
     stop: () => observer.disconnect(),
   };
+}
+
+const tracked = (event: string) =>
+  vi
+    .mocked(analytics.track)
+    .mock.calls.filter(([name]) => name === event)
+    .map(([, properties]) => properties);
+
+const PRIVATE_VALUES = [
+  ENROLLMENT.email,
+  ENROLLMENT.first_name,
+  ENROLLMENT.last_name,
+  WALLET.address,
+  NEW_ADDRESS,
+];
+
+function expectNoPrivateValuesTracked() {
+  const sent = JSON.stringify(vi.mocked(analytics.track).mock.calls);
+  PRIVATE_VALUES.forEach(value => expect(sent).not.toContain(value));
 }
 
 /*
@@ -558,6 +577,42 @@ describe('PayoutsTab', () => {
         clipboardData: { getData: () => code },
       });
 
+    it('should track the start of email verification once, with no properties', async () => {
+      await openVerify();
+
+      expect(tracked('Creator Fund Email Verification Started')).toEqual([undefined]);
+      expectNoPrivateValuesTracked();
+    });
+
+    it.each([
+      ['verified', ok({ ...ENROLLMENT, email_verified_at: '2026-11-04T10:02:00Z' })],
+      ['incorrect', { ...fail(400), body: { error: 'invalid_code' } }],
+      ['expired', { ...fail(410), body: { error: 'code_expired' } }],
+      ['locked', { ...fail(429), body: { error: 'too_many_attempts' } }],
+    ] as const)('should track a %s code once', async (result, response) => {
+      vi.mocked(api.putEmailVerification).mockResolvedValue(response as never);
+      const dialog = await openVerify();
+
+      typeCode(dialog, '123456');
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+      await waitFor(() =>
+        expect(tracked('Creator Fund Email Code Submitted')).toEqual([{ result }]),
+      );
+      expectNoPrivateValuesTracked();
+    });
+
+    it('should track no code verdict when the check itself fails', async () => {
+      vi.mocked(api.putEmailVerification).mockResolvedValue(fail(500));
+      const dialog = await openVerify();
+
+      typeCode(dialog, '123456');
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Verify' }));
+
+      await within(dialog).findByRole('alert');
+      expect(tracked('Creator Fund Email Code Submitted')).toEqual([]);
+    });
+
     it('should show the contact values with the Unverified badge', async () => {
       await renderTab();
 
@@ -725,6 +780,73 @@ describe('PayoutsTab', () => {
       expect(await screen.findByText('Jane Doe')).toBeTruthy();
       expect(screen.queryByText('Unverified')).toBeNull();
       expect((await contactCard()).queryByRole('button', { name: 'Verify email' })).toBeNull();
+    });
+  });
+
+  describe('when a payout wallet is saved', () => {
+    async function saveWallet(button: 'Add wallet' | 'Edit', dialogName: string, submit: string) {
+      await renderTab();
+      fireEvent.click(await (await walletCard()).findByRole('button', { name: button }));
+      const dialog = await screen.findByRole('dialog', { name: dialogName });
+      fireEvent.change(within(dialog).getByLabelText('Wallet address'), {
+        target: { value: NEW_ADDRESS },
+      });
+      fireEvent.click(within(dialog).getByRole('button', { name: submit }));
+    }
+
+    it('should track a first wallet as an add that worked', async () => {
+      vi.mocked(api.getPayoutWallet).mockResolvedValue(fail(404));
+      vi.mocked(api.putPayoutWallet).mockResolvedValue(
+        ok({ address: NEW_ADDRESS, updated_at: '2026-11-04T10:00:00Z' }, 201),
+      );
+
+      await saveWallet('Add wallet', 'Add payout wallet', 'Add wallet');
+
+      await waitFor(() =>
+        expect(tracked('Creator Fund Payout Wallet Saved')).toEqual([{ action: 'add', ok: true }]),
+      );
+      expectNoPrivateValuesTracked();
+    });
+
+    it('should track a changed wallet as an edit that worked', async () => {
+      vi.mocked(api.putPayoutWallet).mockResolvedValue(
+        ok({ address: NEW_ADDRESS, updated_at: '2026-11-04T10:00:00Z' }),
+      );
+
+      await saveWallet('Edit', 'Change payout wallet', 'Save');
+
+      await waitFor(() =>
+        expect(tracked('Creator Fund Payout Wallet Saved')).toEqual([{ action: 'edit', ok: true }]),
+      );
+      expectNoPrivateValuesTracked();
+    });
+
+    it('should track a refused wallet as a save that failed', async () => {
+      vi.mocked(api.putPayoutWallet).mockResolvedValue({
+        ...fail(400),
+        body: { error: 'invalid_address' },
+      });
+
+      await saveWallet('Edit', 'Change payout wallet', 'Save');
+
+      await waitFor(() =>
+        expect(tracked('Creator Fund Payout Wallet Saved')).toEqual([
+          { action: 'edit', ok: false },
+        ]),
+      );
+      expectNoPrivateValuesTracked();
+    });
+  });
+
+  describe('when a paid transaction is opened', () => {
+    it('should track it once, with no properties', async () => {
+      await renderTab();
+      const table = await screen.findByRole('table', { name: 'Payouts' });
+
+      fireEvent.click(within(table).getByRole('button', { name: 'View transaction on Etherscan' }));
+
+      expect(tracked('Creator Fund Transaction Viewed')).toEqual([undefined]);
+      expectNoPrivateValuesTracked();
     });
   });
 });
