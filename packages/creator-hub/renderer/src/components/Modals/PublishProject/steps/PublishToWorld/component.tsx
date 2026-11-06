@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowForwardIcon from '@mui/icons-material/ChevronRight';
 import MultiSceneIcon from '@mui/icons-material/Layers';
@@ -131,9 +131,14 @@ export function PublishToWorld(props: Props) {
     [wallet],
   );
 
+  // Every choice made across the steps (world name, then location), so the publish can
+  // put all of them in the scene.json it deploys rather than only the last step's.
+  const chosenUpdates = useRef<Partial<Project>>({});
+
   const handleUpdateProject = useCallback(
     async (projectUpdates: Partial<Project>) => {
       if (!project) return;
+      chosenUpdates.current = { ...chosenUpdates.current, ...projectUpdates };
       await updateSceneJson(project.path, projectUpdates);
       updateProject({ ...project, ...projectUpdates, updatedAt: Date.now() });
     },
@@ -143,7 +148,15 @@ export function PublishToWorld(props: Props) {
   const handlePublish = useCallback(
     async (projectUpdates?: Partial<Project>) => {
       if (projectUpdates) await handleUpdateProject(projectUpdates);
-      publishScene({ targetContent: WORLDS_CONTENT_SERVER });
+      const { worldConfiguration, scene } = chosenUpdates.current;
+      // The deploy step reports a failed publish from the store (publishError).
+      publishScene({
+        targetContent: WORLDS_CONTENT_SERVER,
+        sceneUpdates: {
+          ...(worldConfiguration && { worldConfiguration }),
+          ...(scene && { scene }),
+        },
+      })?.catch(() => undefined);
       props.onStep('deploy', { deploymentMetadata: { isMultiScene: isMultiSceneEnabled } });
     },
     [isMultiSceneEnabled, props.onStep, publishScene, handleUpdateProject],
@@ -227,7 +240,7 @@ export function PublishToWorld(props: Props) {
               project={project}
               worldScenes={worldSettings.scenes}
               onCancel={handleBack}
-              onConfirm={handlePublish}
+              onConfirm={() => handlePublish()}
             />
           )}
         </ProjectStepWrapper>

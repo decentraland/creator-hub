@@ -26,6 +26,7 @@ import type { CreatorFundResponse } from '/@/lib/creatorFundApi';
 import { fetchMetrics, type LocationMetrics, type MetricLocation } from '/@/lib/metricsApi';
 import { Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
+import { accountChanged } from '/@/modules/store/account';
 import { createAsyncThunk as createAppAsyncThunk } from '/@/modules/store/thunk';
 
 import { formatCycleLabel } from './utils';
@@ -232,6 +233,7 @@ const slice = createSlice({
     clearState: () => initialState,
   },
   extraReducers: builder => {
+    builder.addCase(accountChanged, () => initialState);
     track(builder, 'enrollment', fetchEnrollment);
     track(builder, 'enrollmentSave', saveEnrollment, (state, payload) => {
       state.enrollmentSave.data = payload;

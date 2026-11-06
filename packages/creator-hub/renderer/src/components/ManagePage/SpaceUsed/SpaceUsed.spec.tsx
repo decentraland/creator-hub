@@ -25,9 +25,11 @@ describe('SpaceUsed', () => {
   describe('when the account has used part of its storage', () => {
     beforeEach(() => {
       const store = createTestStore();
+      store.dispatch({ type: fetchStorageStats.pending.type, meta: { requestId: 'r' } });
       store.dispatch({
         type: fetchStorageStats.fulfilled.type,
         payload: { usedSpace: String(20.02 * MB), maxAllowedSpace: String(900 * MB) },
+        meta: { requestId: 'r' },
       });
       render(
         <Provider store={store as never}>

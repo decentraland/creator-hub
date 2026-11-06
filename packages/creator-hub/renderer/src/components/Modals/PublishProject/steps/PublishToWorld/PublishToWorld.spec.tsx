@@ -57,9 +57,11 @@ async function renderStep() {
     publishScene: vi.fn(),
   } as unknown as ReturnType<typeof useEditor>);
   const store = createTestStore();
+  store.dispatch({ type: 'ens/fetchENSList/pending', meta: { requestId: 'r' } });
   store.dispatch({
     type: 'ens/fetchENSList/fulfilled',
     payload: [{ subdomain: 'plaza.dcl.eth', nftOwnerAddress: OWNER, provider: 'dcl' }],
+    meta: { requestId: 'r' },
   });
   render(
     <Provider store={store as never}>
