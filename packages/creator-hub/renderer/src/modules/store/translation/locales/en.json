@@ -1699,7 +1699,7 @@
         "jump_in": "Jump In",
         "jump_in_label": "Jump In to {place}",
         "empty": "No payouts for this cycle yet.",
-        "error": "Couldn't load the leaderboard."
+        "error": "Something went wrong while loading the leaderboard."
       },
       "get_ready": {
         "title": "Get ready!",

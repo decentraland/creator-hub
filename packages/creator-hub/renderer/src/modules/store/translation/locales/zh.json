@@ -1699,7 +1699,7 @@
         "jump_in": "进入",
         "jump_in_label": "进入 {place}",
         "empty": "本周期暂无付款。",
-        "error": "无法加载排行榜。"
+        "error": "加载排行榜时出了点问题。"
       },
       "get_ready": {
         "title": "准备好了吗！",
