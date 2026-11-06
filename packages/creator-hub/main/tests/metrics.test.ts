@@ -184,6 +184,93 @@ describe('request', () => {
     });
   });
 
+  describe('when the method is GET', () => {
+    it('should pass the method through and send no body', async () => {
+      const fetchSpy = stubFetch({ text: () => Promise.resolve('{}') });
+
+      await request({ baseUrl: BASE, path: '/creator-fund/terms', method: 'GET' });
+
+      const [, init] = fetchSpy.mock.calls[0];
+      expect(init.method).toBe('GET');
+      expect(init.body).toBeUndefined();
+      expect(init.headers['content-type']).toBeUndefined();
+    });
+
+    it('should keep the query string on the requested URL', async () => {
+      const fetchSpy = stubFetch({ text: () => Promise.resolve('{}') });
+
+      await request({ baseUrl: BASE, path: '/creator-fund/leaderboard?cycle=all', method: 'GET' });
+
+      const [url] = fetchSpy.mock.calls[0];
+      expect(url.toString()).toBe(
+        'https://creators-data.decentraland.zone/v1/creator-fund/leaderboard?cycle=all',
+      );
+    });
+  });
+
+  describe('when the method is PUT with a raw body', () => {
+    it("should send the renderer's bytes verbatim, never re-serialized", async () => {
+      const fetchSpy = stubFetch({ text: () => Promise.resolve('{}') });
+      const rawBody = '{"first_name":"Jane",  "terms_version":1}';
+
+      await request({
+        baseUrl: 'http://localhost:8788',
+        path: '/v3/creator-fund/enrollment',
+        method: 'PUT',
+        rawBody,
+      });
+
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(url.toString()).toBe('http://localhost:8788/v3/creator-fund/enrollment');
+      expect(init.method).toBe('PUT');
+      expect(init.body).toBe(rawBody);
+      expect(init.headers['content-type']).toBe('application/json');
+    });
+  });
+
+  describe('when the base is a bare host with no path', () => {
+    it('should join the path at the host root', () => {
+      expect(
+        resolveUrl({
+          baseUrl: 'https://creators-data.decentraland.org',
+          path: '/creator-fund/cycles',
+        }).toString(),
+      ).toBe('https://creators-data.decentraland.org/creator-fund/cycles');
+    });
+  });
+
+  describe('when the service answers with no content', () => {
+    it('should succeed with null data', async () => {
+      stubFetch({ status: 204, text: () => Promise.resolve('') });
+
+      expect(await request({ baseUrl: BASE, path: '/creator-fund/banner', method: 'GET' })).toEqual(
+        { ok: true, status: 204, data: null },
+      );
+    });
+  });
+
+  describe('when the service rejects the request with a JSON body', () => {
+    it('should hand the parsed body back beside the message', async () => {
+      const errorBody = {
+        error: 'Unprocessable Entity',
+        message: 'Invalid contact information',
+        fields: { email: 'Not a valid email' },
+      };
+      stubFetch({
+        ok: false,
+        status: 422,
+        text: () => Promise.resolve(JSON.stringify(errorBody)),
+      });
+
+      expect(await request({ baseUrl: BASE, path: '/creator-fund/me/enrollment', body })).toEqual({
+        ok: false,
+        status: 422,
+        error: 'Invalid contact information',
+        body: errorBody,
+      });
+    });
+  });
+
   describe('when the service rejects the request', () => {
     it('should surface a 400 that names the offending entry', async () => {
       const message = 'locations[0]: "Not A Name" is not a valid ENS name';
@@ -198,6 +285,7 @@ describe('request', () => {
         ok: false,
         status: 400,
         error: message,
+        body: { error: 'Bad request', message },
       });
     });
 

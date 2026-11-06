@@ -2,15 +2,15 @@
 .Header.Navbar {
   height: 100px;
   margin-bottom: 30px;
-  padding: 0 32px;
+  padding: 0 clamp(16px, calc(50vw - 557.6px), 32px);
   align-items: center;
   box-sizing: border-box;
 }
 
 .Navbar .menu {
   display: flex;
-  margin-left: 26px;
-  gap: 40px;
+  margin-left: clamp(16px, calc(100vw - 1203.2px), 26px);
+  gap: clamp(12px, calc(12.5vw - 141.65px), 40px);
 }
 
 .Navbar .logo {
@@ -25,10 +25,24 @@
   letter-spacing: 0;
   cursor: pointer;
   text-transform: uppercase;
-  padding: 10px 4px;
+  padding: 10px clamp(2px, calc(6.25vw - 72.2px), 4px);
   color: var(--dcl-silver);
   text-decoration: none;
   box-sizing: border-box;
+}
+
+.Navbar .menu .menu-item .label {
+  position: relative;
+}
+
+.Navbar .menu .menu-item .notification-dot {
+  position: absolute;
+  top: -5px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--primary);
 }
 
 .Navbar .menu .menu-item:hover {
@@ -52,5 +66,5 @@
 }
 
 .Header.Navbar > .user {
-  margin-left: 20px;
+  margin-left: clamp(12px, calc(100vw - 1167.2px), 20px);
 }

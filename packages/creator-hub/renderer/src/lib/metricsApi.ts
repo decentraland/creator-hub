@@ -55,23 +55,30 @@ export type MetricsBatch = {
 };
 
 /**
- * ADR-44 signed-fetch headers for the request the main process will make.
+ * ADR-44 signed-fetch headers for a request the main process will make.
  *
- * The signed payload is `post:<pathname>:<timestamp>:<metadata>` — the body is
- * not part of it, so the pathname is signed bare, with no query string and no
- * body hash. It comes from the same helper main uses to resolve the URL, because
- * a mismatch reads as a 401 with no clue why. Signing happens here because the
- * identity lives in the renderer's storage; only the headers cross to main.
+ * The signed payload is `<method>:<pathname>:<timestamp>:<metadata>`, lowercased
+ * by the signer. The body is not part of it, and the pathname comes from the
+ * same helper main uses to resolve the URL, so any query string on `path` is
+ * left out.
+ *
+ * @param metadata - signed with the payload and sent as `x-identity-metadata`, e.g. a body's `hashPayload`.
+ * @throws when no account is connected or it has no stored identity.
  */
-function buildSignedHeaders(): Record<string, string> {
+export function buildSignedHeaders(
+  baseUrl: string,
+  path: string,
+  method: 'get' | 'post' | 'put' = 'post',
+  metadata: Record<string, string> = {},
+): Record<string, string> {
   const address = AuthServerProvider.getAccount();
   if (!address) throw new Error('No connected account found');
 
   const identity = localStorageGetIdentity(address);
   if (!identity) throw new Error('No identity found');
 
-  const { pathname } = buildMetricsUrl(METRICS_API_URL, PATH);
-  return Object.fromEntries(signedHeaders(identity, 'post', pathname, {}).entries());
+  const { pathname } = buildMetricsUrl(baseUrl, path);
+  return Object.fromEntries(signedHeaders(identity, method, pathname, metadata).entries());
 }
 
 /**
@@ -111,7 +118,7 @@ export async function fetchMetrics(locations: MetricLocation[]): Promise<Metrics
       const response = await metrics.request<MetricsBatch>({
         baseUrl: METRICS_API_URL,
         path: PATH,
-        headers: buildSignedHeaders(),
+        headers: buildSignedHeaders(METRICS_API_URL, PATH),
         body: { locations: group },
       });
       if (!response.ok) throw new Error(response.error);
