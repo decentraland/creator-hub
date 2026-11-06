@@ -13,6 +13,7 @@ export default defineConfig({
       ),
       '~system/SignedFetch': fileURLToPath(new URL('./test/mocks/system.ts', import.meta.url)),
       '~system/Runtime': fileURLToPath(new URL('./test/mocks/system.ts', import.meta.url)),
+      '~system/EngineApi': fileURLToPath(new URL('./test/mocks/system.ts', import.meta.url)),
     },
   },
 });
