@@ -97,23 +97,6 @@ const InfoGroup = styled('span')({
   display: 'inline-flex',
 });
 
-const InfoButton = styled('button')({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 24,
-  height: 24,
-  padding: 0,
-  border: 0,
-  borderRadius: 'var(--r-pill)',
-  backgroundColor: 'transparent',
-  color: 'var(--dcl-silver)',
-  cursor: 'pointer',
-  '& svg': { width: 14.4, height: 14.4 },
-  '&[aria-describedby]': { backgroundColor: 'var(--palette-whiteTransparent-subtle)' },
-  ...focusRing,
-});
-
 const LearnMore = styled('a')({
   ...typeToken('h7-semi'),
   fontWeight: 'var(--fw-bold)',
@@ -411,7 +394,6 @@ export {
   Figure,
   HeaderCell,
   HeaderRow,
-  InfoButton,
   InfoGroup,
   LearnMore,
   Notice,

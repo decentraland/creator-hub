@@ -2,7 +2,9 @@ import { useId } from 'react';
 import { Tab } from 'decentraland-ui2';
 
 import { useSelector } from '#store';
+import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { selectors } from '/@/modules/store/creatorFund';
+import { FeatureFlag } from '/@/modules/store/featureFlags';
 import type { TranslationPath } from '/@/modules/store/translation/types';
 import { t } from '/@/modules/store/translation/utils';
 
@@ -35,11 +37,14 @@ export function JoinedPage({
   onTabChange: (tab: JoinedTab) => void;
 }) {
   const id = useId();
+  const payoutEnabled = useFeatureFlags().isEnabled(FeatureFlag.CREATOR_FUND_PAYOUT);
+  const tabs = payoutEnabled ? TABS : TABS.filter(entry => entry.id !== 'payouts');
+  const shown = tabs.some(entry => entry.id === tab) ? tab : tabs[0].id;
   const hasClosedCycle = useSelector(state => !!selectors.getLatestClosedCycle(state));
   const fillsWindow = useSelector(state =>
-    tab === 'leaderboard'
+    shown === 'leaderboard'
       ? state.creatorFund.cycles.status === 'succeeded' && !selectors.getLatestClosedCycle(state)
-      : tab === 'payouts' && state.creatorFund.payouts.data?.payouts.length === 0,
+      : shown === 'payouts' && state.creatorFund.payouts.data?.payouts.length === 0,
   );
   return (
     <Page bottom={fillsWindow ? 'flush' : 'padded'}>
@@ -65,11 +70,11 @@ export function JoinedPage({
       </GradientDefs>
       <EarnHeader />
       <SectionTabs
-        value={tab}
+        value={shown}
         onChange={(_, value: JoinedTab) => onTabChange(value)}
         aria-label={t('earn.joined.sections')}
       >
-        {TABS.map(({ id: tabId, label }) => (
+        {tabs.map(({ id: tabId, label }) => (
           <Tab
             key={tabId}
             value={tabId}
@@ -83,9 +88,9 @@ export function JoinedPage({
       <TabPanel
         role="tabpanel"
         id={`${id}-panel`}
-        aria-labelledby={`${id}-${tab}`}
+        aria-labelledby={`${id}-${shown}`}
       >
-        {PANELS[tab]()}
+        {PANELS[shown]()}
       </TabPanel>
     </Page>
   );
