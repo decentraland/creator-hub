@@ -26,6 +26,7 @@ export function JoinedPage({
   onTabChange: (tab: JoinedTab) => void;
 }) {
   const id = useId();
+  const hasClosedCycle = useSelector(state => !!selectors.getLatestClosedCycle(state));
   const gettingReady = useSelector(
     state =>
       tab === 'leaderboard' &&
@@ -44,7 +45,7 @@ export function JoinedPage({
           <Tab
             key={tabId}
             value={tabId}
-            label={t(label)}
+            label={t(tabId === 'leaderboard' && !hasClosedCycle ? 'earn.joined.tabs.home' : label)}
             id={`${id}-${tabId}`}
             aria-controls={`${id}-panel`}
             disableRipple

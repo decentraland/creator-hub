@@ -17,15 +17,17 @@ import {
   Gate,
   Glow,
   Hint,
+  Scroller,
   Scrollview,
   Subtitle,
   Title,
   TitleBar,
   TitleBarClose,
   TermsText,
+  TickBox,
   TitleText,
 } from './TermsModal.styled';
-import { CloseIcon, InfoIcon } from './icons';
+import { CheckboxTickIcon, CloseIcon, InfoIcon } from './icons';
 
 const BOTTOM_TOLERANCE_PX = 4;
 
@@ -62,7 +64,7 @@ export function TermsModal(props: TermsModalProps) {
   const locale = useSelector(state => state.translation.locale);
   const titleId = useId();
   const hintId = useId();
-  const boxRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(false);
   const [checked, setChecked] = useState(false);
   /*
@@ -85,8 +87,11 @@ export function TermsModal(props: TermsModalProps) {
   }, [loadTerms]);
 
   const checkBottom = useCallback(() => {
-    const box = boxRef.current;
-    if (box && box.scrollTop + box.clientHeight >= box.scrollHeight - BOTTOM_TOLERANCE_PX) {
+    const scroller = scrollerRef.current;
+    if (
+      scroller &&
+      scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - BOTTOM_TOLERANCE_PX
+    ) {
       setAtBottom(true);
     }
   }, []);
@@ -148,38 +153,39 @@ export function TermsModal(props: TermsModalProps) {
         </TitleBar>
         <Glow aria-hidden />
         <Scrollview data-variant={variant}>
-          <Box
-            ref={boxRef}
-            role="region"
-            aria-label={t('earn.terms.region')}
-            tabIndex={0}
-            data-variant={variant}
-            onScroll={checkBottom}
-          >
-            {terms.data ? (
-              <TermsText onClick={openMarkdownLink}>
-                <MarkdownRenderer
-                  content={terms.data.content}
-                  overrides={TERMS_OVERRIDES}
-                />
-              </TermsText>
-            ) : terms.status === 'failed' ? (
-              <BoxState>
-                <span role="alert">{t('earn.terms.load_error')}</span>
-                <ModalCta
-                  variant="contained"
-                  color="secondary"
-                  size="large"
-                  onClick={loadTerms}
-                >
-                  {t('earn.errors.retry')}
-                </ModalCta>
-              </BoxState>
-            ) : (
-              <BoxState>
-                <Spinner label={t('earn.loading')} />
-              </BoxState>
-            )}
+          <Box data-variant={variant}>
+            <Scroller
+              ref={scrollerRef}
+              role="region"
+              aria-label={t('earn.terms.region')}
+              tabIndex={0}
+              onScroll={checkBottom}
+            >
+              {terms.data ? (
+                <TermsText onClick={openMarkdownLink}>
+                  <MarkdownRenderer
+                    content={terms.data.content}
+                    overrides={TERMS_OVERRIDES}
+                  />
+                </TermsText>
+              ) : terms.status === 'failed' ? (
+                <BoxState>
+                  <span role="alert">{t('earn.terms.load_error')}</span>
+                  <ModalCta
+                    variant="contained"
+                    color="secondary"
+                    size="large"
+                    onClick={loadTerms}
+                  >
+                    {t('earn.errors.retry')}
+                  </ModalCta>
+                </BoxState>
+              ) : (
+                <BoxState>
+                  <Spinner label={t('earn.loading')} />
+                </BoxState>
+              )}
+            </Scroller>
           </Box>
           {variant !== 'read' && (
             <Gate>
@@ -188,6 +194,13 @@ export function TermsModal(props: TermsModalProps) {
                   control={
                     <Checkbox
                       color="primary"
+                      disableRipple
+                      icon={<TickBox />}
+                      checkedIcon={
+                        <TickBox data-checked>
+                          <CheckboxTickIcon />
+                        </TickBox>
+                      }
                       checked={checked}
                       onChange={event => setChecked(event.target.checked)}
                     />

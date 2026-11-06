@@ -81,15 +81,31 @@ const Scrollview = styled('div')({
 const Box = styled('div')({
   flex: 1,
   minHeight: 0,
-  overflowY: 'auto',
+  overflow: 'hidden',
+  boxSizing: 'border-box',
   borderRadius: 'var(--shape-borderRadiusLarge)',
-  padding: '30px 50px 30px 40px',
+  padding: '10px 10px 10px 0',
   backgroundColor: 'var(--palette-blackTransparent-blurry)',
   display: 'flex',
   flexDirection: 'column',
-  gap: 30,
-  overscrollBehavior: 'contain',
   '&[data-variant="read"]': { backgroundColor: 'var(--palette-blackTransparent-soft)' },
+  '&:has(> :focus-visible)': {
+    outline: '2px solid var(--palette-info-light)',
+    outlineOffset: 2,
+  },
+});
+
+const Scroller = styled('div')({
+  flex: 1,
+  minHeight: 0,
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+  boxSizing: 'border-box',
+  padding: '20px 28px 20px 40px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 30,
+  outline: 'none',
   '&::-webkit-scrollbar': { width: 12 },
   '&::-webkit-scrollbar-track': { background: 'transparent' },
   '&::-webkit-scrollbar-thumb': {
@@ -97,7 +113,6 @@ const Box = styled('div')({
     border: '1px solid var(--scrollbar-thumb-border)',
     borderRadius: 'var(--r-pill)',
   },
-  ...focusRing,
 });
 
 const TermsText = styled('div')({
@@ -143,14 +158,37 @@ const Gate = styled('div')({
   minHeight: 42,
   color: 'var(--dcl-silver)',
   '& > svg': { flexShrink: 0 },
-  '& .MuiCheckbox-root .MuiSvgIcon-root': { fontSize: 18 },
-  '& .MuiFormControlLabel-root': { margin: 0, gap: 10 },
+  '& .MuiFormControlLabel-root': { margin: 0, gap: 10, paddingBlock: 1 },
   '& .MuiFormControlLabel-label': { ...typeToken('h7-regular'), color: 'var(--dcl-silver)' },
   '& .MuiCheckbox-root': { padding: 0 },
-  '& .MuiCheckbox-root.Mui-focusVisible': {
+});
+
+const TickBox = styled('span')({
+  position: 'relative',
+  boxSizing: 'border-box',
+  width: 20,
+  height: 20,
+  borderRadius: 5,
+  boxShadow: 'inset 0 0 0 1px var(--palette-whiteTransparent-blurry)',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    inset: -6,
+    zIndex: -1,
+    borderRadius: 100,
+  },
+  '.MuiFormControlLabel-root:hover &::before': {
+    backgroundColor: 'var(--palette-whiteTransparent-subtle)',
+  },
+  '&[data-checked]': { backgroundColor: 'var(--primary)', boxShadow: 'none' },
+  '.MuiFormControlLabel-root:hover &[data-checked]::before': {
+    backgroundColor: 'color-mix(in srgb, var(--primary) 20%, transparent)',
+  },
+  '.Mui-focusVisible > &': {
     outline: '2px solid var(--palette-info-light)',
     outlineOffset: 2,
   },
+  '& > svg': { position: 'absolute', left: 4, top: 5, color: 'var(--black)' },
 });
 
 const Hint = styled('span')({
@@ -164,9 +202,11 @@ export {
   Gate,
   Glow,
   Hint,
+  Scroller,
   Scrollview,
   Subtitle,
   TermsText,
+  TickBox,
   Title,
   TitleBar,
   TitleBarClose,
