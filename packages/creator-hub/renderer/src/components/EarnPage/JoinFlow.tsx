@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import welcomeImage from '/assets/images/earn/welcome.webp';
 
-import { misc } from '#preload';
+import { analytics, misc } from '#preload';
 
 import type { WalletReason } from '/shared/types/creator-fund';
 
@@ -170,6 +170,9 @@ function CheckFailedModal({ onRetry, onClose }: { onRetry: () => void; onClose: 
                     href={`mailto:${SUPPORT_EMAIL}`}
                     onClick={event => {
                       event.preventDefault();
+                      void analytics.track('Creator Fund Contact Support', {
+                        source: 'check_failed',
+                      });
                       void misc.openExternal(`mailto:${SUPPORT_EMAIL}`);
                     }}
                   >
@@ -234,13 +237,22 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
     checkRef.current = check;
     check
       .unwrap()
-      .then(result =>
-        setStep(
-          result.eligible ? { name: 'terms' } : { name: 'ineligible', reasons: result.reasons },
-        ),
-      )
+      .then(result => {
+        if (result.eligible) {
+          void analytics.track('Creator Fund Eligibility Checked', { result: 'eligible' });
+          setStep({ name: 'terms' });
+          return;
+        }
+        void analytics.track('Creator Fund Eligibility Checked', {
+          result: 'ineligible',
+          reasons: result.reasons,
+        });
+        setStep({ name: 'ineligible', reasons: result.reasons });
+      })
       .catch(error => {
-        if (error?.name !== 'AbortError') setStep({ name: 'check_failed' });
+        if (error?.name === 'AbortError') return;
+        void analytics.track('Creator Fund Eligibility Checked', { result: 'error' });
+        setStep({ name: 'check_failed' });
       });
     return () => check.abort();
   }, [dispatch, checkAttempt]);
@@ -265,8 +277,14 @@ export function JoinFlow({ onExit }: { onExit: (outcome: JoinOutcome) => void })
       const result = await dispatch(
         actions.saveEnrollment({ terms_version: step.termsVersion, ...values }),
       );
+      const joined = actions.saveEnrollment.fulfilled.match(result);
+      void analytics.track(
+        'Creator Fund Contact Submitted',
+        joined ? { ok: true } : { ok: false, status: result.payload?.status },
+      );
+      if (joined) void analytics.track('Creator Fund Joined', { terms_version: step.termsVersion });
       if (exitedRef.current) return;
-      if (actions.saveEnrollment.fulfilled.match(result)) {
+      if (joined) {
         setStep({ name: 'welcome' });
         return;
       }

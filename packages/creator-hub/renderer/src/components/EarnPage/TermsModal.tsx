@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Checkbox, FormControlLabel } from 'decentraland-ui2';
 
+import { analytics } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { actions } from '/@/modules/store/creatorFund';
 import { t } from '/@/modules/store/translation/utils';
@@ -30,6 +31,8 @@ import {
 import { CheckboxTickIcon, CloseIcon, InfoIcon } from './icons';
 
 const BOTTOM_TOLERANCE_PX = 4;
+
+const FLOW = { accept: 'join', reaccept: 'reaccept' } as const;
 
 const ImageAltText = ({ alt }: { alt?: string }) => <>{alt}</>;
 const TERMS_OVERRIDES = { img: { component: ImageAltText } };
@@ -105,15 +108,34 @@ export function TermsModal(props: TermsModalProps) {
     return () => window.removeEventListener('resize', checkBottom);
   }, [checkBottom]);
 
+  const decline = useCallback(
+    (via: 'not_now' | 'close' | 'escape') => {
+      if (variant !== 'read') {
+        void analytics.track('Creator Fund Terms Declined', {
+          terms_version: terms.data?.version ?? null,
+          flow: FLOW[variant],
+          via,
+        });
+      }
+      onClose();
+    },
+    [variant, terms.data, onClose],
+  );
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      if (event.key === 'Escape' && variant !== 'reaccept') onClose();
+      if (event.key === 'Escape' && variant !== 'reaccept') decline('escape');
     },
-    [variant, onClose],
+    [variant, decline],
   );
 
   const handleAccept = useCallback(() => {
-    if (props.variant !== 'read' && terms.data) props.onAccept(terms.data.version);
+    if (props.variant === 'read' || !terms.data) return;
+    void analytics.track('Creator Fund Terms Accepted', {
+      terms_version: terms.data.version,
+      flow: FLOW[props.variant],
+    });
+    props.onAccept(terms.data.version);
   }, [props, terms.data]);
 
   const heading =
@@ -145,7 +167,7 @@ export function TermsModal(props: TermsModalProps) {
           {variant !== 'reaccept' && (
             <TitleBarClose
               aria-label={t('earn.close')}
-              onClick={onClose}
+              onClick={() => decline('close')}
             >
               <CloseIcon />
             </TitleBarClose>
@@ -226,7 +248,7 @@ export function TermsModal(props: TermsModalProps) {
               variant="contained"
               color="secondary"
               size="large"
-              onClick={onClose}
+              onClick={() => decline('not_now')}
             >
               {variant === 'read' ? t('earn.terms.close') : t('earn.terms.not_now')}
             </ModalCta>
