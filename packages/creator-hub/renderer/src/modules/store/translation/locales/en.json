@@ -536,6 +536,24 @@
           "world_settings": "World Settings",
           "indexing_note": "The scene itself is live now. Its card in the explorer — title, description and thumbnail — is indexed separately and can take a few minutes to catch up."
         }
+      },
+      "place_continuity": {
+        "title": "Your scene will lose its Places listing",
+        "land_description": "A scene already published on these parcels has a listing in the Places directory. This publish keeps neither its base parcel nor its set of parcels, so Decentraland will register the result as a new place instead of updating that listing.",
+        "world_merge_description": "This placement overlaps {overlap} existing scenes in this World, so Decentraland will register it as a new place and their listings will be disabled. A listing is only kept when the publish replaces exactly one existing scene.",
+        "world_replace_description": "Publishing as a single scene first removes every scene from this World, so Decentraland will register the result as a new place and the current listings will be disabled.",
+        "consequences_title": "What stays with the old listing",
+        "consequences": {
+          "engagement": "Its likes, favorites and position in the Places rankings.",
+          "analytics": "Its scene analytics. The new listing starts from zero.",
+          "storage": "The data in its Multiplayer Server storage, which may be erased."
+        },
+        "tip": "To keep the current listing, publish to the same base parcel or to the same set of parcels as before.",
+        "world_tip": "To keep the current listing, place the scene so that it replaces exactly one existing scene in this World.",
+        "world_replace_tip": "To keep the current listing, go back, turn on multiple scenes for this World and place the scene over the one it replaces.",
+        "cancel": "Go back",
+        "confirm": "Publish anyway",
+        "checking": "Checking…"
       }
     },
     "publish_history": {
