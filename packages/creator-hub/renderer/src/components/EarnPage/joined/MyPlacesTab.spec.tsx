@@ -378,11 +378,28 @@ describe('MyPlacesTab', () => {
       }
     });
 
-    it('should explain no other metric', async () => {
+    it('should explain New Players Attributable in a tooltip when its info button is hovered', async () => {
       const { container } = renderTab();
       const entry = await within(container).findByRole('article', { name: 'Example Place a' });
 
-      expect(within(entry).getAllByRole('button', { name: /^About / })).toHaveLength(2);
+      fireEvent.mouseOver(
+        within(entry).getByRole('button', { name: 'About New Players Attributable' }),
+      );
+
+      expect((await screen.findByRole('tooltip')).textContent).toBe(
+        'Wallets new to Decentraland whose first day was spent mostly in your place, over the last 30 days.',
+      );
+    });
+
+    it('should give each of the three metrics one info button', async () => {
+      const { container } = renderTab();
+      const entry = await within(container).findByRole('article', { name: 'Example Place a' });
+
+      expect(
+        within(entry)
+          .getAllByRole('button', { name: /^About / })
+          .map(button => button.getAttribute('aria-label')),
+      ).toEqual(['About New Players Attributable', 'About D3 Retention', 'About Total Playtime']);
     });
 
     it('should show "-" named "No data" for a missing metric', async () => {
