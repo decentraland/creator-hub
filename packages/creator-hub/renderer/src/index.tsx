@@ -37,6 +37,7 @@ import { VideosPage } from '/@/components/VideosPage';
 import { DocsPage } from '/@/components/DocsPage';
 import { Snackbar } from '/@/components/Snackbar';
 import { ScrollToTop } from '/@/components/ScrollToTop';
+import { RouteErrorBoundary } from '/@/components/ErrorBoundary';
 
 import { store } from '#store';
 
@@ -111,72 +112,74 @@ if (isAiChatWindow || isConsoleWindow) {
               <Router>
                 <ScrollToTop />
                 <AuthProvider>
-                  <Routes>
-                    <Route
-                      path="/"
-                      element={<HomePage />}
-                    />
-                    <Route
-                      path="/home"
-                      element={<HomePage />}
-                    />
-                    <Route
-                      path="/scenes"
-                      element={<ScenesPage />}
-                    />
-                    <Route
-                      path="/templates"
-                      element={<TemplatesPage />}
-                    />
-                    <Route
-                      path="/collections"
-                      element={<CollectionsPage />}
-                    />
-                    <Route
-                      path="/analytics"
-                      element={<AnalyticsPage />}
-                    />
-                    <Route
-                      path="/analytics/:placeId"
-                      element={<AnalyticsDetailPage />}
-                    />
-                    <Route
-                      path="/manage"
-                      element={<ManagePage />}
-                    />
-                    <Route
-                      path="/manage/land/:id/:tab?"
-                      element={<LandDetailPage />}
-                    />
-                    <Route
-                      path="/manage/world/:name/:tab?"
-                      element={<WorldDetailPage />}
-                    />
-                    <Route
-                      path="/learn"
-                      element={<LearnPage />}
-                    />
-                    <Route
-                      path="/learn/videos"
-                      element={<VideosPage />}
-                    />
-                    <Route
-                      path="/learn/docs"
-                      element={<DocsPage />}
-                    />
-                    <Route
-                      path="/more"
-                      element={<MorePage />}
-                    />
-                    <Route
-                      path="/editor"
-                      element={<EditorPage />}
-                    />
-                    <Route
-                      path="/sign-in"
-                      element={<SignInPage />}
-                    />
-                  </Routes>
+                  <RouteErrorBoundary>
+                    <Routes>
+                      <Route
+                        path="/"
+                        element={<HomePage />}
+                      />
+                      <Route
+                        path="/home"
+                        element={<HomePage />}
+                      />
+                      <Route
+                        path="/scenes"
+                        element={<ScenesPage />}
+                      />
+                      <Route
+                        path="/templates"
+                        element={<TemplatesPage />}
+                      />
+                      <Route
+                        path="/collections"
+                        element={<CollectionsPage />}
+                      />
+                      <Route
+                        path="/analytics"
+                        element={<AnalyticsPage />}
+                      />
+                      <Route
+                        path="/analytics/:placeId"
+                        element={<AnalyticsDetailPage />}
+                      />
+                      <Route
+                        path="/manage"
+                        element={<ManagePage />}
+                      />
+                      <Route
+                        path="/manage/land/:id/:tab?"
+                        element={<LandDetailPage />}
+                      />
+                      <Route
+                        path="/manage/world/:name/:tab?"
+                        element={<WorldDetailPage />}
+                      />
+                      <Route
+                        path="/learn"
+                        element={<LearnPage />}
+                      />
+                      <Route
+                        path="/learn/videos"
+                        element={<VideosPage />}
+                      />
+                      <Route
+                        path="/learn/docs"
+                        element={<DocsPage />}
+                      />
+                      <Route
+                        path="/more"
+                        element={<MorePage />}
+                      />
+                      <Route
+                        path="/editor"
+                        element={<EditorPage />}
+                      />
+                      <Route
+                        path="/sign-in"
+                        element={<SignInPage />}
+                      />
+                    </Routes>
+                  </RouteErrorBoundary>
                   <Snackbar />
                 </AuthProvider>
               </Router>
