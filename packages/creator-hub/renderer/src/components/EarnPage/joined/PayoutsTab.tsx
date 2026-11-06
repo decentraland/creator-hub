@@ -36,21 +36,31 @@ export function PayoutsTab() {
   const enrollment = useSelector(state => state.creatorFund.enrollment);
   const payouts = useSelector(state => state.creatorFund.payouts);
   const wallet = useSelector(state => state.creatorFund.payoutWallet);
+  const [loaded, setLoaded] = useState(() =>
+    [payouts, wallet, enrollment].every(resource => resource.status === 'succeeded'),
+  );
   const [modal, setModal] = useState<OpenModal | null>(null);
   const [notice, setNotice] = useState<{ message: TranslationPath; open: boolean } | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const editRef = useRef<HTMLButtonElement>(null);
   const contactTitleRef = useRef<HTMLHeadingElement>(null);
+  const mounted = useRef(false);
 
-  const loadPayouts = () => void dispatch(actions.fetchPayouts());
-  const loadWallet = () => void dispatch(actions.fetchPayoutWallet());
-  const loadEnrollment = () => void dispatch(actions.fetchEnrollment());
+  const loadedWhenSettled = (requests: Promise<unknown>[]) =>
+    void Promise.all(requests).then(() => mounted.current && setLoaded(true));
 
   useEffect(() => {
+    mounted.current = true;
     if (cycles.status === 'idle') void dispatch(actions.fetchCycles());
-    if (enrollment.status === 'idle') loadEnrollment();
-    loadPayouts();
-    loadWallet();
+    const requests: Promise<unknown>[] = [
+      dispatch(actions.fetchPayouts()),
+      dispatch(actions.fetchPayoutWallet()),
+    ];
+    if (enrollment.status === 'idle') requests.push(dispatch(actions.fetchEnrollment()));
+    loadedWhenSettled(requests);
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -67,17 +77,22 @@ export function PayoutsTab() {
   };
 
   const retry = () => {
-    if (payouts.status === 'failed') loadPayouts();
-    if (wallet.status === 'failed') loadWallet();
-    if (enrollment.status === 'failed') loadEnrollment();
+    setLoaded(false);
+    const requests: Promise<unknown>[] = [];
+    if (payouts.status === 'failed') requests.push(dispatch(actions.fetchPayouts()));
+    if (wallet.status === 'failed') requests.push(dispatch(actions.fetchPayoutWallet()));
+    if (enrollment.status === 'failed') requests.push(dispatch(actions.fetchEnrollment()));
+    loadedWhenSettled(requests);
   };
 
   const failed = [payouts, wallet, enrollment].some(resource => resource.status === 'failed');
-  const empty = !failed && payouts.data?.payouts.length === 0;
+  const empty = loaded && !failed && payouts.data?.payouts.length === 0;
   const Shell = empty ? EmptyPanel : Panel;
 
   let body: React.ReactNode;
-  if (failed) {
+  if (!loaded) {
+    body = <ListState kind="loading" />;
+  } else if (failed) {
     body = (
       <ListState
         kind="error"
