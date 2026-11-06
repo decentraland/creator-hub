@@ -9,6 +9,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { CopyIcon, InfoIcon, WarningIcon } from '../icons';
 
 import { TOOLTIP_SLOTS } from './parts';
+import { InfoButton } from './parts.styled';
 import {
   AddWalletButton,
   Address,
@@ -21,7 +22,6 @@ import {
   ContactValue,
   ContactValues,
   CornerButton,
-  InfoButton,
   InfoGroup,
   LearnMore,
   UnverifiedBadge,

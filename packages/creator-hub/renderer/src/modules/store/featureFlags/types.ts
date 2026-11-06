@@ -8,6 +8,8 @@ export enum FeatureFlag {
   ANALYTICS = 'creatorhub-analytics',
   /** The Creator Fund (EARN) section. Created in the flag service only at launch. */
   CREATOR_FUND = 'creatorhub-creator-fund',
+  /** The Creator Fund Payouts tab. Off until the payouts backend ships. */
+  CREATOR_FUND_PAYOUT = 'creatorhub-creator-fund-payout',
   /**
    * Reads asset-bundle conversion status from the abgen registry instead of the Unity
    * converter's. Owned by the explorer, which flips its registry and CDN together on this
