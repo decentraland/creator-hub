@@ -1598,5 +1598,15 @@
   },
   "world_atlas": {
     "world_size": "世界大小：{size}"
+  },
+  "error_boundary": {
+    "title": "出了点问题",
+    "description": "此页面遇到意外错误。你的场景和文件是安全的。请重试，或返回主页。",
+    "modal_description": "此窗口遇到意外错误。你的场景和文件是安全的。请重试，或关闭后重新开始。",
+    "app_description": "Creator Hub 遇到意外错误。你的场景和文件是安全的。请重试，或重新加载窗口。",
+    "try_again": "重试",
+    "go_home": "返回主页",
+    "close": "关闭",
+    "reload": "重新加载"
   }
 }
