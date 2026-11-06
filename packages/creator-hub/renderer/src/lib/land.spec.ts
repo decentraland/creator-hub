@@ -164,11 +164,41 @@ const landQuery = (data: Record<string, unknown>) => ({
         ownerEstates: [],
         updateOperatorParcels: [],
         updateOperatorEstates: [],
+        approvedParcels: [],
+        approvedEstates: [],
         ownerAuthorizations: [],
         operatorAuthorizations: [],
         ...data,
       },
     }),
+});
+
+const grantorParcels = [parcelFields(2, 2)];
+const grantorEstates = [estateFields('7', [null])];
+
+const answerSubgraph = (data: Record<string, unknown>) =>
+  fetchMock.mockImplementation((_url: string, init: { body: string }) => {
+    const { query, variables } = JSON.parse(init.body);
+    if (!query.includes('query GrantorLand')) return Promise.resolve(landQuery(data));
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          data: {
+            parcels: variables.parcelOwners.includes('0xowner') ? grantorParcels : [],
+            estates: variables.estateOwners.includes('0xowner') ? grantorEstates : [],
+          },
+        }),
+    });
+  });
+
+const grantedBy = (tokenAddress: string, isApproved: boolean, timestamp = '100') => ({
+  type: 'UpdateManager',
+  owner: { address: '0xowner' },
+  isApproved,
+  tokenAddress,
+  timestamp,
 });
 
 describe('Lands.fetchLand', () => {
@@ -218,21 +248,7 @@ describe('Lands.fetchLand', () => {
 
   describe('when an owner made the account an UpdateManager of their LAND', () => {
     beforeEach(() => {
-      fetchMock.mockResolvedValue(
-        landQuery({
-          operatorAuthorizations: [
-            {
-              owner: {
-                address: '0xowner',
-                parcels: [parcelFields(2, 2)],
-                estates: [estateFields('7', [null])],
-              },
-              isApproved: true,
-              tokenAddress: '0xland',
-            },
-          ],
-        }),
-      );
+      answerSubgraph({ operatorAuthorizations: [grantedBy('0xland', true)] });
     });
 
     it('should give the parcels the manager role, apart from token operators', async () => {
@@ -250,21 +266,7 @@ describe('Lands.fetchLand', () => {
 
   describe('when an owner made the account an UpdateManager of their estates', () => {
     beforeEach(() => {
-      fetchMock.mockResolvedValue(
-        landQuery({
-          operatorAuthorizations: [
-            {
-              owner: {
-                address: '0xowner',
-                parcels: [parcelFields(2, 2)],
-                estates: [estateFields('7', [null])],
-              },
-              isApproved: true,
-              tokenAddress: '0xestate',
-            },
-          ],
-        }),
-      );
+      answerSubgraph({ operatorAuthorizations: [grantedBy('0xestate', true)] });
     });
 
     it('should list only the estates, as managed', async () => {
@@ -276,17 +278,7 @@ describe('Lands.fetchLand', () => {
 
   describe('when the UpdateManager approval was revoked', () => {
     beforeEach(() => {
-      fetchMock.mockResolvedValue(
-        landQuery({
-          operatorAuthorizations: [
-            {
-              owner: { address: '0xowner', parcels: [parcelFields(2, 2)], estates: [] },
-              isApproved: false,
-              tokenAddress: '0xland',
-            },
-          ],
-        }),
-      );
+      answerSubgraph({ operatorAuthorizations: [grantedBy('0xland', false)] });
     });
 
     it('should not list the owner LAND', async () => {
@@ -297,19 +289,15 @@ describe('Lands.fetchLand', () => {
   });
 
   describe('when the subgraph returns both the UpdateManager grant and its later revoke', () => {
-    const managedBy = (isApproved: boolean, timestamp: string) => ({
-      owner: { address: '0xowner', parcels: [parcelFields(2, 2)], estates: [] },
-      isApproved,
-      tokenAddress: '0xland',
-      timestamp,
-    });
+    const managedBy = (isApproved: boolean, timestamp: string) =>
+      grantedBy('0xland', isApproved, timestamp);
 
     describe('and the revoke is the latest event', () => {
       it.each([
         ['grant first', [managedBy(true, '100'), managedBy(false, '200')]],
         ['revoke first', [managedBy(false, '200'), managedBy(true, '100')]],
       ])('should not list the owner LAND when the rows arrive %s', async (_order, events) => {
-        fetchMock.mockResolvedValue(landQuery({ operatorAuthorizations: events }));
+        answerSubgraph({ operatorAuthorizations: events });
 
         const [lands] = await new Lands().fetchLand('0xme');
 
@@ -319,15 +307,13 @@ describe('Lands.fetchLand', () => {
 
     describe('and the owner granted it again after the revoke', () => {
       beforeEach(() => {
-        fetchMock.mockResolvedValue(
-          landQuery({
-            operatorAuthorizations: [
-              managedBy(true, '300'),
-              managedBy(true, '100'),
-              managedBy(false, '200'),
-            ],
-          }),
-        );
+        answerSubgraph({
+          operatorAuthorizations: [
+            managedBy(true, '300'),
+            managedBy(true, '100'),
+            managedBy(false, '200'),
+          ],
+        });
       });
 
       it('should list the owner LAND as managed', async () => {
@@ -340,6 +326,7 @@ describe('Lands.fetchLand', () => {
 
   describe('when the owner revoked an UpdateManager after granting it', () => {
     const managing = (isApproved: boolean, timestamp: string) => ({
+      type: 'UpdateManager',
       operator: '0xmanager',
       isApproved,
       tokenAddress: '0xland',

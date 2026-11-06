@@ -42,6 +42,7 @@ const land: Land = {
   description: null,
   owner: SELF,
   operators: [],
+  deployable: true,
   updateOperator: null,
 };
 

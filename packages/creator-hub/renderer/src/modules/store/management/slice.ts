@@ -1,4 +1,4 @@
-import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createSelector, isPending, type PayloadAction } from '@reduxjs/toolkit';
 import pLimit from 'p-limit';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject, ManageTab } from '/shared/types/manage';
@@ -18,8 +18,13 @@ import type {
 import { WorldRoleType, Worlds } from '/@/lib/worlds';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import type { AppState } from '/@/modules/store';
-import { fetchENSList, actions as ensActions } from '/@/modules/store/ens';
-import { fetchLandList, actions as landActions } from '/@/modules/store/land';
+import { accountChanged, isSignedInAccount } from '/@/modules/store/account';
+import {
+  fetchContributableNames,
+  fetchENSList,
+  type ContributableNames,
+} from '/@/modules/store/ens';
+import { fetchLandList } from '/@/modules/store/land';
 import type { AccountHoldings } from '/@/lib/account';
 import { Account } from '/@/lib/account';
 import {
@@ -87,6 +92,8 @@ export type ManagementState = {
   worldSettings: WorldSettingsState;
   worldPermissions: WorldPermissionsState;
   lands: LandProjectsState;
+  /** The latest request id of each wallet-scoped thunk, keyed by its type prefix. */
+  requestIds: Partial<Record<string, string>>;
 };
 
 export const initialState: Async<ManagementState> = {
@@ -113,6 +120,7 @@ export const initialState: Async<ManagementState> = {
     status: 'idle',
     error: null,
   },
+  requestIds: {},
 };
 
 const PROJECTS_PAGE_LIMIT = 50;
@@ -137,15 +145,7 @@ export const fetchAllManagedProjectsData = createAsyncThunk(
 
     return projects;
   },
-);
-
-export const clearUserManagedProjects = createAsyncThunk(
-  'management/clearUserManagedProjects',
-  async (_, { dispatch }) => {
-    dispatch(actions.clearState());
-    dispatch(ensActions.clearState());
-    dispatch(landActions.clearState());
-  },
+  { condition: isSignedInAccount },
 );
 
 /** Fetches managed projects according to current filters in the state */
@@ -160,11 +160,13 @@ export const fetchManagedProjectsFiltered = createAsyncThunk(
     if (publishFilter !== FilterBy.UNPUBLISHED) {
       await dispatch(fetchWorlds({ address: connectedAccount })).unwrap();
     }
-    if (publishFilter !== FilterBy.PUBLISHED && page === 0) {
-      await dispatch(fetchEmptyWorlds({ address: connectedAccount })).unwrap();
-    }
     if (page === 0) {
-      await dispatch(fetchStreamOnlyWorlds({ address: connectedAccount })).unwrap();
+      const address = connectedAccount;
+      const contributable = await dispatch(fetchContributableNames({ address })).unwrap();
+      if (publishFilter !== FilterBy.PUBLISHED) {
+        await dispatch(fetchEmptyWorlds({ address, contributable })).unwrap();
+      }
+      await dispatch(fetchStreamOnlyWorlds({ address, names: contributable.streamOnly })).unwrap();
     }
   },
 );
@@ -195,13 +197,17 @@ export const fetchWorlds = createAsyncThunk(
 
     return { worlds: worldProjects, total: worldsResponse.total };
   },
+  { condition: isSignedInAccount },
 );
 
 /** Fetches unpublished worlds (0 published scenes) where the user is an owner or collaborator */
 export const fetchEmptyWorlds = createAsyncThunk(
   'management/fetchEmptyWorlds',
-  async ({ address }: { address: string }, { dispatch, getState }) => {
-    const ensList = await dispatch(fetchENSList({ address })).unwrap();
+  async (
+    { address, contributable }: { address: string; contributable?: ContributableNames },
+    { dispatch, getState },
+  ) => {
+    const ensList = await dispatch(fetchENSList({ address, contributable })).unwrap();
 
     const prevProjects = getState().management.projects;
     const worldsAPI = new Worlds();
@@ -237,19 +243,17 @@ export const fetchEmptyWorlds = createAsyncThunk(
     const emptyProjectsList = await Promise.all(projectsPromises);
     return emptyProjectsList.filter(project => project !== null);
   },
+  { condition: isSignedInAccount },
 );
 
 /** Fetches the Worlds the account can stream to but not publish to, as unlinked collaborator cards */
 export const fetchStreamOnlyWorlds = createAsyncThunk(
   'management/fetchStreamOnlyWorlds',
-  async (_args: { address: string }, { getState }) => {
+  async ({ names }: { address: string; names: string[] }) => {
     const worldsAPI = new Worlds();
-    return Promise.all(
-      getState().ens.streamOnlyWorlds.map(name =>
-        limit(() => toStreamOnlyProject(worldsAPI, name)),
-      ),
-    );
+    return Promise.all(names.map(name => limit(() => toStreamOnlyProject(worldsAPI, name))));
   },
+  { condition: isSignedInAccount },
 );
 
 export const fetchStorageStats = createAsyncThunk(
@@ -259,6 +263,7 @@ export const fetchStorageStats = createAsyncThunk(
     const stats = await WorldsAPI.fetchWalletStats(address);
     return stats;
   },
+  { condition: isSignedInAccount },
 );
 
 export const fetchAccountHoldings = createAsyncThunk(
@@ -268,6 +273,7 @@ export const fetchAccountHoldings = createAsyncThunk(
     const holdings = await AccountAPI.fetchAccountHoldings(address);
     return holdings;
   },
+  { condition: isSignedInAccount },
 );
 
 export const fetchWorldSettings = createAsyncThunk(
@@ -558,6 +564,23 @@ export const unpublishLandScene = createAsyncThunk(
   },
 );
 
+const walletRequests = [
+  fetchAllManagedProjectsData,
+  fetchManagedProjectsFiltered,
+  fetchWorlds,
+  fetchEmptyWorlds,
+  fetchStreamOnlyWorlds,
+  fetchStorageStats,
+  fetchAccountHoldings,
+] as const;
+
+type RequestAction = { type: string; meta: { requestId: string } };
+
+const requestKey = ({ type }: RequestAction) => type.slice(0, type.lastIndexOf('/'));
+
+const isLatestRequest = (state: Pick<ManagementState, 'requestIds'>, action: RequestAction) =>
+  state.requestIds[requestKey(action)] === action.meta.requestId;
+
 const slice = createSlice({
   name: 'management',
   initialState,
@@ -590,19 +613,21 @@ const slice = createSlice({
     clearPermissionsState: state => {
       state.worldPermissions = getWorldPermissionsInitialState();
     },
-    clearState: () => initialState,
   },
   extraReducers: builder => {
     builder
+      .addCase(accountChanged, () => initialState)
       .addCase(fetchAllManagedProjectsData.pending, state => {
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchAllManagedProjectsData.fulfilled, state => {
+      .addCase(fetchAllManagedProjectsData.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.status = 'succeeded';
         state.error = null;
       })
       .addCase(fetchAllManagedProjectsData.rejected, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects';
       })
@@ -610,15 +635,18 @@ const slice = createSlice({
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(fetchManagedProjectsFiltered.fulfilled, state => {
+      .addCase(fetchManagedProjectsFiltered.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.status = 'succeeded';
         state.error = null;
       })
       .addCase(fetchManagedProjectsFiltered.rejected, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch managed projects filtered';
       })
       .addCase(fetchWorlds.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.projects =
           state.page === 0
             ? (action.payload.worlds ?? [])
@@ -626,15 +654,19 @@ const slice = createSlice({
         state.total = action.payload.total;
       })
       .addCase(fetchEmptyWorlds.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.emptyProjects = action.payload ?? [];
       })
       .addCase(fetchStreamOnlyWorlds.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.streamOnlyProjects = action.payload;
       })
       .addCase(fetchStorageStats.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.storageStats = action.payload;
       })
       .addCase(fetchAccountHoldings.fulfilled, (state, action) => {
+        if (!isLatestRequest(state, action)) return;
         state.accountHoldings = action.payload;
       })
       .addCase(fetchWorldScenes.pending, (state, action) => {
@@ -746,6 +778,9 @@ const slice = createSlice({
         if (action.meta.requestId !== state.lands.requestId) return;
         state.lands.status = 'failed';
         state.lands.error = action.error.message || 'Failed to fetch LAND projects';
+      })
+      .addMatcher(isPending(...walletRequests), (state, action) => {
+        state.requestIds[requestKey(action)] = action.meta.requestId;
       });
   },
 });
@@ -805,7 +840,6 @@ const getParcelsStateForAddress = (
 export const actions = {
   ...slice.actions,
   fetchAllManagedProjectsData,
-  clearUserManagedProjects,
   fetchManagedProjectsFiltered,
   fetchWorlds,
   fetchEmptyWorlds,
