@@ -8,6 +8,7 @@ import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import * as api from '/@/lib/creatorFundApi';
 
+import { tracked, trackedAnyOf } from '../../../tests/utils/analytics';
 import { createTestStore } from '../../../tests/utils/testStore';
 import { JoinFlow } from './JoinFlow';
 
@@ -407,6 +408,76 @@ describe('JoinFlow', () => {
       fillContact();
 
       await waitFor(() => expect(onExit).toHaveBeenCalledWith('conflict'));
+    });
+  });
+
+  describe('analytics', () => {
+    const PII = ['Jane', 'Doe', 'jane.doe@example.com'];
+
+    it('should report an eligible check once, with no reasons', async () => {
+      renderFlow();
+      await screen.findByRole('region', { name: 'Program Terms' });
+
+      expect(tracked('Creator Fund Eligibility Checked')).toEqual([{ result: 'eligible' }]);
+    });
+
+    it('should report an ineligible check with its reason codes', async () => {
+      vi.mocked(api.getEligibility).mockResolvedValue(
+        ok({ eligible: false, reasons: ['internal', 'excluded'] }),
+      );
+      renderFlow();
+      await screen.findByRole('alertdialog', { name: "You can't join yet" });
+
+      expect(tracked('Creator Fund Eligibility Checked')).toEqual([
+        { result: 'ineligible', reasons: ['internal', 'excluded'] },
+      ]);
+    });
+
+    it('should report a failed check as an error, and support from its email link', async () => {
+      vi.mocked(api.getEligibility).mockResolvedValue(fail(500));
+      renderFlow();
+      await screen.findByRole('alertdialog', {
+        name: 'Something went wrong while checking your account',
+      });
+
+      fireEvent.click(screen.getByText('creatorfund@decentraland.org'));
+
+      expect(tracked('Creator Fund Eligibility Checked')).toEqual([{ result: 'error' }]);
+      expect(tracked('Creator Fund Contact Support')).toEqual([{ source: 'check_failed' }]);
+    });
+
+    it('should report a cancelled check as nothing', async () => {
+      vi.mocked(api.getEligibility).mockReturnValue(new Promise(() => {}));
+      renderFlow();
+
+      fireEvent.click(screen.getByLabelText('Close'));
+      await act(async () => {});
+
+      expect(tracked('Creator Fund Eligibility Checked')).toEqual([]);
+    });
+
+    it('should report the accepted terms, the sent contact and the join, and no personal data', async () => {
+      renderFlow();
+      await acceptTerms();
+      fillContact();
+
+      await screen.findByRole('heading', { name: /welcome/i });
+      expect(tracked('Creator Fund Terms Accepted')).toEqual([{ terms_version: 1, flow: 'join' }]);
+      expect(tracked('Creator Fund Contact Submitted')).toEqual([{ ok: true }]);
+      expect(tracked('Creator Fund Joined')).toEqual([{ terms_version: 1 }]);
+      expect(trackedAnyOf(PII)).toBe(false);
+    });
+
+    it('should report a failed contact submission with its status and no join', async () => {
+      vi.mocked(api.putEnrollment).mockResolvedValue(fail(500));
+      renderFlow();
+      await acceptTerms();
+      fillContact();
+
+      await screen.findByText('Something went wrong. Please try again.');
+      expect(tracked('Creator Fund Contact Submitted')).toEqual([{ ok: false, status: 500 }]);
+      expect(tracked('Creator Fund Joined')).toEqual([]);
+      expect(trackedAnyOf(PII)).toBe(false);
     });
   });
 });
