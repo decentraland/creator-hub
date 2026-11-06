@@ -36,6 +36,14 @@ vi.mock('../../ProjectStepWrapper', () => ({
   ProjectStepWrapper: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+/** The worlds client calls `decentraland-crypto-fetch`, which on Node 24 bypasses a stubbed global
+ * fetch and hits undici with jsdom's AbortSignal. Route it through the global so the stub
+ * below answers it on every Node version. */
+vi.mock('decentraland-crypto-fetch', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  default: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
+}));
+
 vi.mock('/@/modules/store/deployment/utils', async importOriginal => ({
   ...((await importOriginal()) as object),
   fetchInfo: vi.fn(async () => ({ isWorld: true, rootCID: 'bafy' })),
@@ -97,11 +105,14 @@ describe('PublishToWorld', () => {
   };
 
   beforeEach(() => {
-    // The world's settings, scenes and permissions come from the worlds server; an owner
-    // of an empty world publishes it as a single scene without them.
+    // The worlds server answers for an empty world: no settings yet (404) and no scenes. Every
+    // other request fails, which the publish to an owned, empty world does not need.
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => {
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes(`/world/${WORLD}/settings`)) return new Response(null, { status: 404 });
+        if (url.includes(`/world/${WORLD}/scenes`)) return Response.json({ scenes: [], total: 0 });
         throw new Error('offline');
       }),
     );
