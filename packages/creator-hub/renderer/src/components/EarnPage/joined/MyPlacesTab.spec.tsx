@@ -7,7 +7,7 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import type { Project } from '/shared/types/projects';
 
-import { fs, workspace } from '#preload';
+import { analytics, fs, workspace } from '#preload';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
@@ -18,6 +18,7 @@ import type * as LandModule from '/@/lib/land';
 import { Worlds } from '/@/lib/worlds';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
+import { watchFor } from '../../../../tests/utils/watchFor';
 import {
   CYCLES,
   LATEST_CLOSED,
@@ -77,7 +78,12 @@ const renderTab = ({ projects = [] as Project[] | 'loading' } = {}) => {
       workspaceActions.getWorkspace.fulfilled({ settings, sortBy, projects, missing: [] }, ''),
     );
   }
-  const view = render(
+  const view = mountTab(store);
+  return { store, ...view };
+};
+
+function mountTab(store: ReturnType<typeof createTestStore>) {
+  return render(
     <Provider store={store}>
       <ThemeProvider theme={dark}>
         <MemoryRouter initialEntries={['/earn']}>
@@ -99,8 +105,13 @@ const renderTab = ({ projects = [] as Project[] | 'loading' } = {}) => {
       </ThemeProvider>
     </Provider>,
   );
-  return { store, ...view };
-};
+}
+
+const ALERT = '[role="alert"]';
+const ENTRIES = 'article';
+const METRIC_LOADING = '[aria-busy="true"]';
+const NO_DATA = (element: Element) =>
+  element.childElementCount === 0 && element.textContent === 'No data';
 
 async function chooseCycle(name: string) {
   fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Cycle' }));
@@ -765,6 +776,134 @@ describe('MyPlacesTab', () => {
     });
   });
 
+  describe('when the first load ends with the places failed', () => {
+    it('should go from the spinner to the error block, never showing a place', async () => {
+      vi.mocked(api.getPlaces).mockResolvedValue(fail(404));
+      const entries = watchFor(ENTRIES);
+
+      try {
+        renderTab();
+
+        expect((await screen.findByRole('alert')).textContent).toBe(
+          'Something went wrong while loading your places.',
+        );
+        expect(entries.seen()).toBe(false);
+      } finally {
+        entries.stop();
+      }
+    });
+  });
+
+  describe('when the tab mounts again after its places failed', () => {
+    it('should show only the spinner while they load again, never the earlier error', async () => {
+      vi.mocked(api.getPlaces).mockResolvedValue(fail(404));
+      const { store } = renderTab();
+      await screen.findByRole('alert');
+      cleanup();
+      vi.mocked(api.getPlaces).mockReturnValue(new Promise(() => {}));
+      const error = watchFor(ALERT);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+        expect(error.seen()).toBe(false);
+      } finally {
+        error.stop();
+      }
+    });
+
+    it('should go from the spinner to the error block when they fail again', async () => {
+      vi.mocked(api.getPlaces).mockResolvedValue(fail(404));
+      const { store } = renderTab();
+      await screen.findByRole('alert');
+      cleanup();
+      const entries = watchFor(ENTRIES);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+        expect((await screen.findByRole('alert')).textContent).toBe(
+          'Something went wrong while loading your places.',
+        );
+        expect(entries.seen()).toBe(false);
+      } finally {
+        entries.stop();
+      }
+    });
+  });
+
+  describe('when the tab mounts again after everything loaded', () => {
+    it('should show the places and their metrics at once and refetch them quietly', async () => {
+      const { store } = renderTab();
+      await screen.findAllByText('1,234');
+      cleanup();
+      vi.mocked(api.getPlaces).mockClear();
+      vi.mocked(metricsApi.fetchMetrics).mockClear();
+      const loading = watchFor(METRIC_LOADING);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByRole('article', { name: 'Example Place a' })).toBeTruthy();
+        expect(screen.getAllByText('1,234').length).toBeGreaterThan(0);
+        await waitFor(() => expect(metricsApi.fetchMetrics).toHaveBeenCalled());
+        await waitFor(() =>
+          expect(store.getState().creatorFund.placeMetrics.status).toBe('succeeded'),
+        );
+        expect(api.getPlaces).toHaveBeenCalledTimes(1);
+        expect(screen.getAllByText('1,234').length).toBeGreaterThan(0);
+        expect(loading.seen()).toBe(false);
+      } finally {
+        loading.stop();
+      }
+    });
+  });
+
+  describe('when the tab mounts again after the metrics failed', () => {
+    it('should hold the metrics as loading while they load again, never "No data"', async () => {
+      vi.mocked(metricsApi.fetchMetrics).mockRejectedValue(new Error('down'));
+      const { store } = renderTab();
+      const entry = await screen.findByRole('article', { name: 'Example Place a' });
+      await waitFor(() => expect(within(entry).getAllByText('No data')).toHaveLength(3));
+      cleanup();
+      vi.mocked(metricsApi.fetchMetrics).mockReturnValue(new Promise(() => {}));
+      const noData = watchFor(NO_DATA);
+
+      try {
+        mountTab(store);
+
+        const again = screen.getByRole('article', { name: 'Example Place a' });
+        expect(within(again).getAllByText('Loading')).toHaveLength(3);
+        expect(noData.seen()).toBe(false);
+      } finally {
+        noData.stop();
+      }
+    });
+  });
+
+  describe('when the tab mounts again after the cycles failed', () => {
+    it('should show the error block at once, never a place', async () => {
+      vi.mocked(api.getCycles).mockResolvedValue(fail(404));
+      const { store } = renderTab();
+      await screen.findByRole('alert');
+      cleanup();
+      const entries = watchFor(ENTRIES);
+
+      try {
+        mountTab(store);
+
+        expect(screen.getByRole('alert').textContent).toBe(
+          'Something went wrong while loading your places.',
+        );
+        expect(entries.seen()).toBe(false);
+      } finally {
+        entries.stop();
+      }
+    });
+  });
+
   describe('when the cycles fail to load', () => {
     it('should say so and retry the cycles', async () => {
       vi.mocked(api.getCycles).mockResolvedValueOnce(fail());
@@ -776,6 +915,56 @@ describe('MyPlacesTab', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
       expect(await screen.findByRole('article', { name: 'Example Place a' })).toBeTruthy();
+    });
+  });
+
+  describe('when the user acts on My Places', () => {
+    const tracked = (event: string) =>
+      vi
+        .mocked(analytics.track)
+        .mock.calls.filter(([name]) => name === event)
+        .map(([, properties]) => properties);
+
+    it('should track choosing a closed cycle once', async () => {
+      const { container } = renderTab();
+      await within(container).findByRole('article', { name: 'Example Place a' });
+
+      await chooseCycle('Oct 1 - Oct 15, 2026');
+
+      expect(tracked('Creator Fund Cycle Changed')).toEqual([
+        { tab: 'my_places', cycle_id: OLDEST_CLOSED.id },
+      ]);
+    });
+
+    describe('and the current cycle has no places', () => {
+      beforeEach(() => {
+        vi.mocked(api.getPlaces).mockResolvedValue(ok(myPlaces([])));
+      });
+
+      it.each([
+        ['Create a scene', 'create_scene'],
+        ['Start from a template', 'start_from_template'],
+      ] as const)('should track %s once', async (button, action) => {
+        vi.mocked(workspace.createProject).mockResolvedValue({ path: '/scenes/New Scene' });
+        const { container } = renderTab();
+
+        fireEvent.click(await within(container).findByRole('button', { name: button }));
+
+        expect(tracked('Creator Fund Empty State Action')).toEqual([{ action }]);
+      });
+
+      it('should track opening an unpublished scene once, without its name or path', async () => {
+        vi.mocked(fs.exists).mockResolvedValue(true);
+        vi.mocked(workspace.hasNodeModules).mockReturnValue(new Promise(() => {}));
+        const { container } = renderTab({ projects: [localProject('Scene Private')] });
+
+        fireEvent.click(await within(container).findByRole('button', { name: 'Scene Private' }));
+
+        expect(tracked('Creator Fund Empty State Action')).toEqual([{ action: 'open_scene' }]);
+        expect(JSON.stringify(vi.mocked(analytics.track).mock.calls)).not.toContain(
+          'Scene Private',
+        );
+      });
     });
   });
 });

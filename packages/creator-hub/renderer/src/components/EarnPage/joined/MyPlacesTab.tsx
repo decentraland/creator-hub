@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import type { CreatorFundPlace } from '/shared/types/creator-fund';
 
+import { analytics } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import type { LocationMetrics } from '/@/lib/metricsApi';
 import { actions, selectors } from '/@/modules/store/creatorFund';
@@ -177,28 +178,55 @@ export function MyPlacesTab() {
   const sentenceId = useId();
   const selected = chosen ?? defaultCycle?.id ?? null;
   const preLaunch = selected === null && sortedCycles.some(cycle => cycle.status === 'upcoming');
+  const [placesLoaded, setPlacesLoaded] = useState(() => places.status === 'succeeded');
+  const [metricsLoaded, setMetricsLoaded] = useState(() => placeMetrics.status === 'succeeded');
+  const mounted = useRef(false);
 
   useEffect(() => {
+    mounted.current = true;
     if (cycles.status === 'idle') void dispatch(actions.fetchCycles());
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   const loadPlaces = useCallback(() => {
-    if (selected !== null) void dispatch(actions.fetchPlaces(selected));
-    else if (preLaunch) void dispatch(actions.fetchPlaces(undefined));
+    if (selected === null && !preLaunch) return;
+    void dispatch(actions.fetchPlaces(selected ?? undefined)).then(
+      () => mounted.current && setPlacesLoaded(true),
+    );
   }, [dispatch, selected, preLaunch]);
   useEffect(loadPlaces, [loadPlaces]);
 
+  const retryPlaces = () => {
+    setPlacesLoaded(false);
+    loadPlaces();
+  };
+
+  const placesFailed = placesLoaded && places.status === 'failed';
   const shown =
-    places.data && (preLaunch || places.data.cycle?.id === selected) ? places.data : null;
+    placesLoaded &&
+    !placesFailed &&
+    places.data &&
+    (preLaunch || places.data.cycle?.id === selected)
+      ? places.data
+      : null;
 
   const running = shown?.cycle?.status === 'running';
 
   useEffect(() => {
-    if (running && shown?.places.length) void dispatch(actions.fetchPlaceMetrics(shown.places));
+    if (!running || !shown?.places.length) return;
+    void dispatch(actions.fetchPlaceMetrics(shown.places)).then(
+      () => mounted.current && setMetricsLoaded(true),
+    );
   }, [running, shown, dispatch]);
 
-  const metrics = running && placeMetrics.status === 'succeeded' ? placeMetrics.data : null;
-  const metricsPending = placeMetrics.status === 'idle' || placeMetrics.status === 'loading';
+  const cachedMetrics = placeMetrics.data;
+  const metricsCoverShown =
+    !!shown && !!cachedMetrics && shown.places.every(place => place.id in cachedMetrics.byPlaceId);
+  const metricsFailed = metricsLoaded && placeMetrics.status === 'failed';
+  const metricsPending = !metricsLoaded || (!metricsFailed && !metricsCoverShown);
+  const metrics = running && !metricsPending && !metricsFailed ? placeMetrics.data : null;
 
   const sceneCounts = useWorldSceneCounts(shown?.places ?? []);
 
@@ -219,10 +247,7 @@ export function MyPlacesTab() {
   const hasClosedCycle = sortedCycles.some(cycle => cycle.status === 'closed');
   const firstSteps =
     (cycles.status === 'succeeded' && selected === null && !preLaunch) ||
-    (!!shown &&
-      places.status !== 'failed' &&
-      shown.places.length === 0 &&
-      shown.cycle?.status !== 'closed');
+    (!!shown && shown.places.length === 0 && shown.cycle?.status !== 'closed');
 
   let body: React.ReactNode;
   if (cycles.status === 'failed') {
@@ -235,17 +260,16 @@ export function MyPlacesTab() {
     );
   } else if (firstSteps) {
     body = <FirstSteps />;
-  } else if (!shown || places.status === 'failed') {
-    body =
-      places.status === 'failed' ? (
-        <ListState
-          kind="error"
-          message={t('earn.joined.my_places.error')}
-          onRetry={loadPlaces}
-        />
-      ) : (
-        <ListState kind="loading" />
-      );
+  } else if (!shown) {
+    body = placesFailed ? (
+      <ListState
+        kind="error"
+        message={t('earn.joined.my_places.error')}
+        onRetry={retryPlaces}
+      />
+    ) : (
+      <ListState kind="loading" />
+    );
   } else if (shown.places.length === 0) {
     body = (
       <ListState
@@ -298,7 +322,14 @@ export function MyPlacesTab() {
               <CycleSelect
                 value={selected === null ? NO_CYCLE : String(selected)}
                 options={options}
-                onChange={value => value !== NO_CYCLE && setChosen(Number(value))}
+                onChange={value => {
+                  if (value === NO_CYCLE) return;
+                  void analytics.track('Creator Fund Cycle Changed', {
+                    tab: 'my_places',
+                    cycle_id: Number(value),
+                  });
+                  setChosen(Number(value));
+                }}
               />
             )}
           </FilterGroup>
