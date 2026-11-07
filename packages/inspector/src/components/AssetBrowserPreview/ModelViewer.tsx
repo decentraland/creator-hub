@@ -67,19 +67,31 @@ export function ModelViewer({ source, onStats, onEmote, onDuration, onFailed }: 
   const [emoteFile, setEmoteFile] = useState<File | undefined>();
   const [wireframe, setWireframe] = useState(false);
   const wireframeRef = useRef(false);
+  const onFailedRef = useRef(onFailed);
+  onFailedRef.current = onFailed;
 
   // One engine for the lifetime of the viewer; models are swapped in and out of its scene.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // Each selection mounts a fresh viewer. Without an explicit context loss the old contexts wait
-    // for GC, and once the browser's live-context cap is hit it drops the OLDEST one: the editor's
-    // own viewport.
-    const engine = new Engine(canvas, true, {
-      preserveDrawingBuffer: false,
-      stencil: false,
-      loseContextOnDispose: true,
-    });
+    let engine: Engine;
+    try {
+      // Each selection mounts a fresh viewer. Without an explicit context loss the old contexts
+      // wait for GC, and once the browser's live-context cap is hit it drops the OLDEST one: the
+      // editor's own viewport.
+      engine = new Engine(canvas, true, {
+        preserveDrawingBuffer: false,
+        stencil: false,
+        loseContextOnDispose: true,
+      });
+    } catch (error) {
+      // `new Engine` throws when the browser refuses a WebGL context (a blocked or crashed GPU
+      // process). Thrown out of the effect it would unmount the whole inspector; reported, the
+      // pane falls back to the thumbnail.
+      console.error('Could not start the model preview:', error);
+      onFailedRef.current();
+      return;
+    }
     const { scene, camera } = createPreviewScene(engine);
     camera.attachControl(canvas, true);
     camera.useAutoRotationBehavior = true;
