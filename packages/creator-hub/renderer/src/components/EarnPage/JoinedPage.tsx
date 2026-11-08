@@ -12,6 +12,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { EarnHeader } from './joined/EarnHeader';
 import { LeaderboardTab } from './joined/LeaderboardTab';
 import { MyPlacesTab } from './joined/MyPlacesTab';
+import { PAYOUT_SETUP_LOCKED, PayoutsLocked } from './joined/PayoutsLocked';
 import { PayoutsTab } from './joined/PayoutsTab';
 import { GradientDefs, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
 
@@ -26,7 +27,7 @@ const TABS: { id: JoinedTab; label: TranslationPath }[] = [
 const PANELS: Record<JoinedTab, () => React.ReactNode> = {
   leaderboard: () => <LeaderboardTab />,
   my_places: () => <MyPlacesTab />,
-  payouts: () => <PayoutsTab />,
+  payouts: () => (PAYOUT_SETUP_LOCKED ? <PayoutsLocked /> : <PayoutsTab />),
 };
 
 /** The Creator Fund page for a joined user: the Leaderboard, My Places and Payouts tabs. */
@@ -45,7 +46,8 @@ export function JoinedPage({
   const fillsWindow = useSelector(state =>
     shown === 'leaderboard'
       ? state.creatorFund.cycles.status === 'succeeded' && !selectors.getLatestClosedCycle(state)
-      : shown === 'payouts' && state.creatorFund.payouts.data?.payouts.length === 0,
+      : shown === 'payouts' &&
+        (PAYOUT_SETUP_LOCKED || state.creatorFund.payouts.data?.payouts.length === 0),
   );
   return (
     <Page bottom={fillsWindow ? 'flush' : 'padded'}>

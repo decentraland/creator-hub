@@ -1607,22 +1607,22 @@
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "Crea experiencias. Reúne jugadores. Gana USDC.",
       "tagline_signed_out": "Crea experiencias. Reúne jugadores. Gana dinero.",
-      "description": "El <hl>Decentraland Creator Fund</hl> <hl>recompensa a los propietarios de LAND y Worlds</hl> por atraer nuevos jugadores, generar actividad y hacer que los jugadores vuelvan.",
+      "description": "<hl>Fondo de 30.000 USDC</hl> repartido en <hl>3 ciclos</hl> según los <hl>nuevos jugadores de Decentraland</hl>, el <hl>tiempo de juego total</hl> y la <hl>retención D3</hl> de tu escena.",
       "features": {
         "enrolment": {
           "title": "Inscripción automática",
-          "body": "Todas las escenas elegibles que tienes se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
+          "body": "Las escenas elegibles que tienes empiezan a participar cuando te unes."
         },
         "cycles": {
           "title": "Recompensas cada 15 días",
-          "body": "Cada mes tiene dos ciclos de recompensas: del 1 al 15 y del 16 a fin de mes."
+          "body": "Cada mes tiene dos ciclos de recompensas."
         },
         "activity": {
           "title": "Recompensas según la actividad de los jugadores",
           "body": "Gana según los jugadores que tus escenas atraen y hacen volver."
         },
         "payout": {
-          "title": "Cobra directamente en USDC",
+          "title": "Pagos en USD",
           "body": "Los pagos se envían a la billetera que elijas dentro de los 14 días posteriores al cierre de cada ciclo."
         }
       },
@@ -1824,6 +1824,7 @@
           "usdc": "{amount} USDC",
           "view_transaction": "Ver la transacción en Etherscan"
         },
+        "locked": "La configuración de la billetera de pagos se habilita el 25 de noviembre",
         "empty": {
           "title": "¡Tu camino de recompensas empieza aquí!",
           "first_payout": "Tu primer pago llegará cuando termine el ciclo {cycle}.",

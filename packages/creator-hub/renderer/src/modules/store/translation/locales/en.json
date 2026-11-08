@@ -1607,22 +1607,22 @@
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "Create experiences. Bring players together. Earn USDC.",
       "tagline_signed_out": "Create experiences. Bring players together. Earn money.",
-      "description": "The <hl>Decentraland Creator Fund</hl> <hl>rewards LAND and World owners</hl> for bringing in new players, building activity, and keeping players coming back.",
+      "description": "<hl>30,000 USDC pool</hl> split over <hl>3 cycles</hl> based on <hl>Decentraland New Players</hl>, <hl>Total Playtime</hl> and <hl>D3 Retention</hl> on your scene.",
       "features": {
         "enrolment": {
           "title": "Automatic enrollment",
-          "body": "All eligible scenes you own are included when you join. New eligible scenes are added automatically."
+          "body": "Eligible scenes you own start participating when you join."
         },
         "cycles": {
           "title": "Rewards every 15 days",
-          "body": "Each month has two reward cycles: 1st–15th and 16th–end of month."
+          "body": "Each month has two reward cycles."
         },
         "activity": {
           "title": "Rewards based on player activity",
           "body": "Earn based on the players your scenes attract and bring back."
         },
         "payout": {
-          "title": "Get paid directly in USDC",
+          "title": "Payouts in USD",
           "body": "Payouts are sent to your selected wallet within 14 days after each cycle ends."
         }
       },
@@ -1824,6 +1824,7 @@
           "usdc": "{amount} USDC",
           "view_transaction": "View transaction on Etherscan"
         },
+        "locked": "Payout Wallet setup unlocks November 25th",
         "empty": {
           "title": "Your rewards journey starts here!",
           "first_payout": "Your first payout is coming after the {cycle} cycle ends.",

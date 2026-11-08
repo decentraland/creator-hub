@@ -31,6 +31,8 @@ vi.mock('../Modals', async importOriginal => ({
     open ? <div>{children}</div> : null,
 }));
 
+const PAYOUTS_LOCKED = 'Payout Wallet setup unlocks November 25th';
+
 const JOINED = {
   status: 'active' as const,
   enrolled_at: '2026-10-30T14:02:11Z',
@@ -129,15 +131,19 @@ describe('JoinedPage', () => {
       expect(screen.getByRole('tab', { name: 'Leaderboard', selected: true })).toBeTruthy();
       expect(within(screen.getByRole('tabpanel')).getByText('leaderboard panel')).toBeTruthy();
       expect(screen.queryByText('payouts panel')).toBeNull();
+      expect(screen.queryByText(PAYOUTS_LOCKED)).toBeNull();
     });
   });
 
   describe('when the Payouts flag is on', () => {
-    it('should offer the Payouts tab and its panel', async () => {
+    it('should show the payout wallet setup date instead of the payouts while setup is locked', async () => {
       await renderPage('payouts');
 
       expect(screen.getByRole('tab', { name: 'Payouts', selected: true })).toBeTruthy();
-      expect(within(screen.getByRole('tabpanel')).getByText('payouts panel')).toBeTruthy();
+      expect(
+        within(screen.getByRole('tabpanel')).getByRole('heading', { name: PAYOUTS_LOCKED }),
+      ).toBeTruthy();
+      expect(screen.queryByText('payouts panel')).toBeNull();
     });
   });
 
@@ -165,7 +171,7 @@ describe('JoinedPage', () => {
 
     it.each([
       ['my_places', 'My Places', 'my places panel'],
-      ['payouts', 'Payouts', 'payouts panel'],
+      ['payouts', 'Payouts', PAYOUTS_LOCKED],
     ] as const)('should show the selected tab panel for %s', async (tab, name, panel) => {
       await renderPage(tab);
 

@@ -123,16 +123,17 @@ const CtaArea = styled('div')({
   position: 'relative',
   zIndex: 1,
   marginTop: 30,
+  marginLeft: 'var(--m)',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
+  alignItems: 'flex-start',
   gap: 10,
 });
 
 const CtaRow = styled('div')({
   display: 'flex',
   flexWrap: 'wrap',
-  justifyContent: 'center',
+  justifyContent: 'flex-start',
   gap: 20,
   maxWidth: '100%',
   '&& .MuiButton-root + .MuiButton-root': { marginLeft: 0 },
