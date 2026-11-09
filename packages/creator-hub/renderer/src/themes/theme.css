@@ -36,6 +36,9 @@
   --darker-gray: var(--panel-2);
   --palette-neutral-onyx: #35333b;
   --palette-neutral-softWhite: #fcfcfc;
+  --gray: #cfcdd4;
+  --onyx: #35333b;
+  --pearl: #ecebed;
   --palette-info-light: #63b4f6;
 
   --dcl: var(--brand);
@@ -124,6 +127,8 @@
   --type-display-regular-weight: 400;
   --type-display-regular-line-height: normal;
   --type-display-regular-letter-spacing: 0;
+  --fs-display: 48px;
+  --fw-bold: 700;
   --type-h1-semi-size: 30px;
   --type-h1-semi-weight: 600;
   --type-h1-semi-line-height: 100%;
@@ -202,6 +207,9 @@
   --danger: var(--warning);
   --error: #fb3b3b;
   --success: #34ce77;
+  --success-bg: rgba(44, 140, 85, 0.1);
+  --error-bg: rgba(172, 40, 40, 0.1);
+  --warning-bg: rgba(254, 156, 42, 0.1);
   --brand: #ff2d55;
   --primary: var(--brand);
   --secondary: #242129;
@@ -236,15 +244,19 @@
   );
   --scrim: #000000dd;
   --dimmer: var(--scrim);
+  --black-60: rgba(0, 0, 0, 0.6);
+  --black-80: rgba(0, 0, 0, 0.8);
   --text-area-border: #676370;
   --clear-divider: #a09ba8;
   --brightness: brightness(100);
 
   --shape-borderRadiusMedium: 8px;
+  --ui-radius: 10px;
   --shape-borderRadiusLarge: 12px;
   --r-card: 16px;
   --shape-borderRadiusXLarge: var(--r-card);
   --shape-borderRadiusXXLarge: 24px;
+  --r-pill: 100px;
   --shadow-tooltip: 0 2px 3px rgba(0, 0, 0, 0.25);
   --shadow-toast: 0 4px 4px rgba(0, 0, 0, 0.1);
 

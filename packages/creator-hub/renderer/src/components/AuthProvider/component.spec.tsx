@@ -10,7 +10,9 @@ import { auth } from '#preload';
 import { useDispatch } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
 import { AuthServerProvider } from '/@/lib/auth';
+import * as creatorFundApi from '/@/lib/creatorFundApi';
 import { LandType, RoleType, type Land } from '/@/lib/land';
+import { initialState as creatorFundInitialState } from '/@/modules/store/creatorFund';
 import { fetchENSList } from '/@/modules/store/ens';
 import type { ENS } from '/@/modules/store/ens/types';
 import { fetchLandList } from '/@/modules/store/land';
@@ -40,6 +42,18 @@ vi.mock('/@/lib/auth', () => ({
 }));
 
 const profileRequests: Array<{ address: string; answer: (avatar: Avatar) => void }> = [];
+
+vi.mock('/@/lib/creatorFundApi', () => ({ getEnrollment: vi.fn() }));
+
+const ENROLLED = {
+  status: 'active' as const,
+  enrolled_at: '2026-10-30T14:02:11Z',
+  terms_version: 1,
+  first_name: 'Jane',
+  last_name: 'Doe',
+  email: 'jane.doe@example.com',
+  email_verified_at: null,
+};
 
 vi.mock('/@/lib/profile', () => ({
   Profiles: class {
@@ -153,7 +167,17 @@ describe('AuthProvider', () => {
       return { cleanup: vi.fn() };
     });
 
+    vi.mocked(creatorFundApi.getEnrollment).mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: ENROLLED,
+    });
+
     store = createTestStore();
+    store.dispatch({
+      type: 'featureFlags/fetch/fulfilled',
+      payload: { flags: { 'creatorhub-creator-fund': true }, variants: {} },
+    });
     render(
       <Provider store={store as never}>
         <MemoryRouter>
@@ -165,6 +189,7 @@ describe('AuthProvider', () => {
     );
     await vi.waitFor(() => expect(fetches).toEqual([{ address: ACCOUNT_A, landsAtDispatch: 0 }]));
     act(() => seedWalletState(store, ACCOUNT_A));
+    await vi.waitFor(() => expect(store.getState().creatorFund.enrollment.data).toEqual(ENROLLED));
   });
 
   afterEach(cleanup);
@@ -172,6 +197,7 @@ describe('AuthProvider', () => {
   describe('when the wallet changes from A to B without signing out', () => {
     beforeEach(async () => {
       vi.mocked(AuthServerProvider.applyDeepLinkIdentity).mockResolvedValue(ACCOUNT_B);
+      vi.mocked(creatorFundApi.getEnrollment).mockReturnValue(new Promise(() => {}));
       await act(() => session.signIn());
       await act(async () => completeDeepLink({ identityId: 'id', authRequestId: 'sign-in' }));
       await vi.waitFor(() => expect(fetches).toHaveLength(2));
@@ -183,6 +209,12 @@ describe('AuthProvider', () => {
       expect(state.management.lands.projects).toEqual([]);
       expect(state.ens.data).toEqual({});
       expect(state.placeAnalytics.places).toEqual([]);
+    });
+
+    it("should drop A's Creator Fund enrollment while B's loads", () => {
+      const { enrollment } = store.getState().creatorFund;
+      expect(enrollment.data).toBeNull();
+      expect(enrollment.status).toBe('loading');
     });
 
     it("should fetch B's data only after the reset", () => {
@@ -223,6 +255,10 @@ describe('AuthProvider', () => {
       expect(state.ens.data).toEqual({});
       expect(state.placeAnalytics.places).toEqual([]);
       expect(state.analytics.userId).toBeNull();
+    });
+
+    it("should clear A's Creator Fund state", () => {
+      expect(store.getState().creatorFund).toEqual(creatorFundInitialState);
     });
 
     it('should fetch nothing', () => {

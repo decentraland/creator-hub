@@ -6,14 +6,13 @@ import './MarkdownRenderer.css';
 
 interface Props {
   content: string;
+  overrides?: MarkdownToJSX.Overrides;
 }
 
-const MarkdownRenderer: React.FC<Props> = ({ content }) => {
+const MarkdownRenderer: React.FC<Props> = ({ content, overrides }) => {
   const options: MarkdownToJSX.Options = useMemo(
-    () => ({
-      disableParsingRawHTML: true, // Only allow standard markdown, no raw HTML
-    }),
-    [],
+    () => ({ disableParsingRawHTML: true, overrides }),
+    [overrides],
   );
 
   return (

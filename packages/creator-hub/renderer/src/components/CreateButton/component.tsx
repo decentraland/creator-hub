@@ -1,16 +1,19 @@
 import { useCallback, useRef, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import { MenuItem } from 'decentraland-ui2';
+import { MenuItem, Tooltip } from 'decentraland-ui2';
 
 import arrowDown from '/assets/images/arrow-down.svg';
+import { useMatchMedia } from '/@/hooks/useMatchMedia';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { t } from '/@/modules/store/translation/utils';
 import { CreateProject } from '../Modals/CreateProject';
 
+import { ICON_ONLY_QUERY } from './breakpoints';
 import {
   StyledButtonRow,
   StyledLabelButton,
+  StyledLabelText,
   StyledMenu,
   StyledToggleButton,
 } from './component.styled';
@@ -21,6 +24,7 @@ export function CreateButton() {
   const anchorRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [newProject, setNewProject] = useState<NewProjectPayload | undefined>();
+  const iconOnly = useMatchMedia(ICON_ONLY_QUERY);
 
   const handleOpenMenu = useCallback(() => setOpen(true), []);
   const handleCloseMenu = useCallback(() => setOpen(false), []);
@@ -53,20 +57,26 @@ export function CreateButton() {
   return (
     <>
       <StyledButtonRow ref={anchorRef}>
-        <StyledLabelButton
-          variant="contained"
-          disableRipple
-          data-testid="create-button"
-          startIcon={<AddIcon sx={{ fontSize: 18 }} />}
-          onClick={handleClickNewScene}
+        <Tooltip
+          title={iconOnly ? t('navbar.create.label') : ''}
+          placement="bottom"
+          classes={{ tooltip: 'AccountTooltip' }}
         >
-          {t('navbar.create.label')}
-        </StyledLabelButton>
+          <StyledLabelButton
+            variant="contained"
+            disableRipple
+            data-testid="create-button"
+            startIcon={<AddIcon sx={{ fontSize: 18 }} />}
+            onClick={handleClickNewScene}
+          >
+            <StyledLabelText>{t('navbar.create.label')}</StyledLabelText>
+          </StyledLabelButton>
+        </Tooltip>
         <StyledToggleButton
           variant="contained"
           disableRipple
           data-testid="create-button-toggle"
-          aria-label={t('navbar.create.label')}
+          aria-label={t('navbar.create.options')}
           aria-haspopup="menu"
           aria-expanded={open ? 'true' : undefined}
           onClick={handleOpenMenu}

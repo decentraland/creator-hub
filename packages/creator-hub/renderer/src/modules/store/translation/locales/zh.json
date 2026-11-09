@@ -309,9 +309,11 @@
       "collections": "收藏",
       "analytics": "数据分析",
       "manage": "管理",
+      "earn": "赚取",
       "learn": "学习",
       "more": "更多"
     },
+    "earn_not_joined": "EARN，尚未加入",
     "feedback": "给我们反馈",
     "report_an_issue": "报告问题",
     "user_menu": {
@@ -321,6 +323,7 @@
     },
     "create": {
       "label": "创建",
+      "options": "创建选项",
       "new_scene": "新建场景",
       "import_scene": "导入场景"
     },
@@ -1594,6 +1597,98 @@
     "errors": {
       "NO_INTERNET_CONNECTION": "无可用的互联网连接",
       "REQUEST_TIMEOUT": "请求超时。请检查您的连接并重试。"
+    }
+  },
+  "earn": {
+    "close": "关闭",
+    "loading": "加载中",
+    "landing": {
+      "title_prefix": "赚取",
+      "title": "Decentraland Creator Fund",
+      "tagline_signed_in": "创造体验。汇聚玩家。赚取 USDC。",
+      "description": "<hl>Decentraland Creator Fund</hl> <hl>奖励 LAND 和 World 所有者</hl>，表彰他们吸引新玩家、带动活跃度并让玩家持续回访。",
+      "features": {
+        "enrolment": {
+          "title": "自动加入",
+          "body": "加入后，你拥有或运营的所有符合条件的场景都会被纳入。新的符合条件的场景会自动添加。"
+        },
+        "cycles": {
+          "title": "每 15 天发放奖励",
+          "body": "每月有两个奖励周期：1 日至 15 日，以及 16 日至月末。"
+        },
+        "activity": {
+          "title": "按玩家活跃度发放奖励",
+          "body": "根据你的场景吸引并带回的玩家获得收益。"
+        },
+        "payout": {
+          "title": "直接以 USDC 支付",
+          "body": "每个周期结束后 30 天内，款项会发送到你选择的钱包。"
+        }
+      },
+      "join": "加入 Creators Fund",
+      "read_terms": "阅读条款",
+      "status": {
+        "suspended": "你在 Creator Fund 的参与已被暂停。"
+      }
+    },
+    "terms": {
+      "updated_line": "最后更新：{date} · 版本 {version}",
+      "region": "计划条款",
+      "hint": "滚动到底部以查看完整条款。",
+      "accept_checkbox": "我已阅读并接受 Creator Fund 计划条款",
+      "gate_open": "现在可以接受条款了",
+      "not_now": "暂不",
+      "accept_and_join": "接受并加入",
+      "close": "关闭",
+      "load_error": "无法加载条款。"
+    },
+    "reaccept": {
+      "title": "计划条款已更新",
+      "subtitle": "请查看更新后的条款以继续获得收益。",
+      "accept": "接受"
+    },
+    "checking": {
+      "title": "Decentraland Creator Fund",
+      "body_1": "我们正在通过 Creator Fund 核查你的账户。",
+      "body_2": "这可能需要几秒钟。",
+      "progress_label": "正在检查资格"
+    },
+    "check_failed": {
+      "title": "检查你的账户时出了点问题",
+      "body": "如果问题仍然存在，请通过 {email} 联系我们的支持团队"
+    },
+    "not_eligible": {
+      "title": "你暂时无法加入",
+      "got_it": "知道了",
+      "reasons": {
+        "internal": "Foundation 和 Regenesis Labs 的账户不能加入 Creator Fund。",
+        "suspended": "你的账户已被 Creator Fund 暂停。",
+        "excluded": "你的账户不符合 Creator Fund 的资格。",
+        "unknown": "你的账户目前无法加入 Creator Fund。"
+      }
+    },
+    "contact": {
+      "title": "联系信息",
+      "body": "我们需要这些信息来确认你是计划受益人，并就你参与 Creator Fund 及付款事宜与你联系。请注意，这些信息之后无法更改。",
+      "first_name": "名",
+      "last_name": "姓",
+      "email": "电子邮箱",
+      "first_name_placeholder": "名",
+      "last_name_placeholder": "姓",
+      "email_placeholder": "name@email.com",
+      "invalid_email": "电子邮箱无效",
+      "cancel": "取消",
+      "submit": "提交"
+    },
+    "welcome": {
+      "title": "欢迎加入 Creator Fund",
+      "body": "准备好你的场景，吸引玩家，开始赚取 USDC 奖励。",
+      "lets_go": "开始吧"
+    },
+    "errors": {
+      "generic": "出了点问题，请重试。",
+      "load_status": "无法加载 Creator Fund。",
+      "retry": "重试"
     }
   },
   "world_atlas": {
