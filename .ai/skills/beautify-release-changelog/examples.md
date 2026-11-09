@@ -5,19 +5,19 @@
 ```markdown
 ## What's Changed
 
-- trigger area activates only on your player by @nearnshaw in https://github.com/decentraland/creator-hub/pull/1142
-- Scale gizmo white center fix by @nearnshaw in https://github.com/decentraland/creator-hub/pull/1082
-- remove save icon by @nearnshaw in https://github.com/decentraland/creator-hub/pull/1152
-- Smart item fixes by @nearnshaw in https://github.com/decentraland/creator-hub/pull/1110
-- Log & delete actions by @nearnshaw in https://github.com/decentraland/creator-hub/pull/1131
-- fix: Devtools by @cyaiox in https://github.com/decentraland/creator-hub/pull/1109
-- placeholder component by @nearnshaw in https://github.com/decentraland/creator-hub/pull/1154
-- fix: Upload asset-packs pipeline by @cyaiox in https://github.com/decentraland/creator-hub/pull/1170
-- fix: slow connection warning removed by @kevindecibe in https://github.com/decentraland/creator-hub/pull/1169
-- fix: fix virtual camera component and select camera action by @alejandralevy in https://github.com/decentraland/creator-hub/pull/1160
-- Backup/components versioning tmp by @alejandralevy in https://github.com/decentraland/creator-hub/pull/1167
-- fix: custom code detection updated by @kevindecibe in https://github.com/decentraland/creator-hub/pull/1171
-- feat: Multi-Scene Worlds by @RocioCM in https://github.com/decentraland/creator-hub/pull/1089
+- trigger area activates only on your player by @contributor-c in https://github.com/decentraland/creator-hub/pull/1142
+- Scale gizmo white center fix by @contributor-c in https://github.com/decentraland/creator-hub/pull/1082
+- remove save icon by @contributor-c in https://github.com/decentraland/creator-hub/pull/1152
+- Smart item fixes by @contributor-c in https://github.com/decentraland/creator-hub/pull/1110
+- Log & delete actions by @contributor-c in https://github.com/decentraland/creator-hub/pull/1131
+- fix: Devtools by @contributor-a in https://github.com/decentraland/creator-hub/pull/1109
+- placeholder component by @contributor-c in https://github.com/decentraland/creator-hub/pull/1154
+- fix: Upload asset-packs pipeline by @contributor-a in https://github.com/decentraland/creator-hub/pull/1170
+- fix: slow connection warning removed by @contributor-d in https://github.com/decentraland/creator-hub/pull/1169
+- fix: fix virtual camera component and select camera action by @contributor-e in https://github.com/decentraland/creator-hub/pull/1160
+- Backup/components versioning tmp by @contributor-e in https://github.com/decentraland/creator-hub/pull/1167
+- fix: custom code detection updated by @contributor-d in https://github.com/decentraland/creator-hub/pull/1171
+- feat: Multi-Scene Worlds by @contributor-b in https://github.com/decentraland/creator-hub/pull/1089
 
 **Full Changelog**: https://github.com/decentraland/creator-hub/compare/0.33.1...0.34.0
 ```
