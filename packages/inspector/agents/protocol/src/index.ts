@@ -43,6 +43,16 @@ export type GizmoMode = 'translate' | 'rotate' | 'scale' | 'free';
  */
 export type CameraMode = 'avatar' | 'free';
 
+/** Which fly-camera movement keys are held (WASD = planar, E/Space = up, Q = down). */
+export interface FlyInput {
+  forward: boolean;
+  backward: boolean;
+  left: boolean;
+  right: boolean;
+  up: boolean;
+  down: boolean;
+}
+
 /**
  * A spawn area to draw in the editor (#1374). `center` is the scene-local spawn
  * position (the range midpoint on each axis); `halfExtents` is the box's half-size
@@ -269,14 +279,21 @@ export type PageToScene =
   // scratch so anything that moved (a walking NPC) returns to start. Freeze is
   // re-asserted by the inspector afterwards (a fresh scene starts running).
   | { kind: 'reset-scene' }
-  // Vertical fly-camera movement held state (E = up, Q = down). Unlike WASD/Space
-  // — which the engine delivers to the fly camera as InputActions — Q has NO
-  // Decentraland `InputAction`, so the engine can't read it. The inspector (host)
-  // captures E/Q keydown/keyup on the engine window and forwards the held state
-  // here; the agent's fly camera adds it to its per-frame move. `up`/`down` are the
-  // current held state of each key (keydown → true, keyup → false); both may be
-  // true (net zero) or false (no vertical). Ignored outside free-camera mode.
-  | { kind: 'set-vertical-input'; up: boolean; down: boolean }
+  // The fly-camera movement keys currently held on the HOST. While the editor
+  // camera is free, the inspector swallows WASD / Space / E / Q on the engine window
+  // (so the same keys can't also walk the engine's avatar — the engine never sees
+  // them) and forwards their held state here; the agent's fly camera reads it in
+  // place of the engine InputActions. Q has no InputAction at all, so it could only
+  // ever arrive this way. Each flag is keydown → true, keyup → false; opposite
+  // flags may both be true (net zero). Ignored outside free-camera mode.
+  | ({ kind: 'set-fly-input' } & FlyInput)
+  // Show or hide the player's avatar in the editor viewport. The engine always
+  // spawns the player, but an avatar standing at the spawn point while you edit
+  // reads as scene content — it belongs only while the scene runs (Play) or the
+  // user drives the player camera. The agent enacts it with a HIDE_AVATARS
+  // AvatarModifierArea covering the world (the engine hides the local avatar
+  // through the same modifier it applies to other players).
+  | { kind: 'set-avatar-visible'; visible: boolean }
   // Enable (`true`, default) or disable (`false`) viewport EDITING — the agent's
   // click-to-pick + gizmo grab. Disabled lets a viewport click reach the running
   // scene instead (so a button opens its door, etc.) rather than selecting/moving

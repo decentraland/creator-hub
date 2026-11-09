@@ -17,9 +17,11 @@
 export interface ModifierTracker {
   /** True while a multi-select modifier (Shift / Ctrl / Cmd) is held down. */
   isMultiSelect(): boolean;
-  /** True while Shift specifically is held down. Used to toggle snap during a
-   * gizmo drag (Shift inverts the Snap panel: snap on → smooth, off → snapped),
-   * matching Babylon's `initKeyboard` shift-held-toggles-snap behaviour. */
+  /** True while Shift is held down IN THE VIEWPORT (engine-window key events
+   * only). Used to toggle snap during a gizmo drag (Shift inverts the Snap panel:
+   * snap on → smooth, off → snapped), matching Babylon's `initKeyboard`, which
+   * scopes it to the canvas. Shift typed into an inspector field or held for a
+   * tree Shift-click must not flip the global Snap setting. */
   isShift(): boolean;
   /** Subscribe to Shift press/release transitions. The snap the selection bridge
    * sends to the agent depends on `isShift()`, so a Shift toggle must re-post the
@@ -54,8 +56,11 @@ export function createModifierTracker(options: ModifierTrackerOptions): Modifier
     for (const cb of shiftListeners) cb();
   };
 
-  const sync = (e: KeyboardEvent) => {
+  const syncHost = (e: KeyboardEvent) => {
     multi = e.shiftKey || e.ctrlKey || e.metaKey;
+  };
+  const syncEngine = (e: KeyboardEvent) => {
+    syncHost(e);
     setShift(e.shiftKey);
   };
   // A blur (tab/window switch) can eat the keyup, stranding `multi`/`shift` true —
@@ -66,13 +71,13 @@ export function createModifierTracker(options: ModifierTrackerOptions): Modifier
     setShift(false);
   };
 
-  const attach = (w: Window) => {
+  const attach = (w: Window, sync: (e: KeyboardEvent) => void) => {
     for (const type of ['keydown', 'keyup'] as const) {
       w.addEventListener(type, sync as EventListener, { capture: true });
     }
     w.addEventListener('blur', clear, { capture: true });
   };
-  const detach = (w: Window) => {
+  const detach = (w: Window, sync: (e: KeyboardEvent) => void) => {
     for (const type of ['keydown', 'keyup'] as const) {
       w.removeEventListener(type, sync as EventListener, { capture: true } as never);
     }
@@ -82,8 +87,8 @@ export function createModifierTracker(options: ModifierTrackerOptions): Modifier
   // Track the engine window separately so it can be swapped on a reboot; the host
   // window stays put for the tracker's lifetime.
   let currentEngineWindow = engineWindow;
-  attach(hostWindow);
-  attach(currentEngineWindow);
+  attach(hostWindow, syncHost);
+  attach(currentEngineWindow, syncEngine);
 
   return {
     isMultiSelect: () => multi,
@@ -94,15 +99,15 @@ export function createModifierTracker(options: ModifierTrackerOptions): Modifier
     },
     retarget: (nextEngineWindow: Window) => {
       if (nextEngineWindow === currentEngineWindow) return;
-      detach(currentEngineWindow);
+      detach(currentEngineWindow, syncEngine);
       currentEngineWindow = nextEngineWindow;
       clear(); // a reboot drops any held keys
-      attach(currentEngineWindow);
+      attach(currentEngineWindow, syncEngine);
     },
     disconnect: () => {
       shiftListeners.clear();
-      detach(hostWindow);
-      detach(currentEngineWindow);
+      detach(hostWindow, syncHost);
+      detach(currentEngineWindow, syncEngine);
     },
   };
 }

@@ -3,12 +3,13 @@ import { getPlayer } from '@dcl/sdk/players';
 
 import { bus } from './bus';
 import { getBevyApi } from './bevy-api';
+import { setAvatarVisible } from './avatar-visibility';
 import {
   frameTarget,
   resetCamera,
   setCameraMode,
   setCameraSceneOffset,
-  setVerticalInput,
+  setFlyInput,
   setupCamera,
   zoomCamera,
 } from './camera';
@@ -133,11 +134,16 @@ export function main(): void {
       void resetScene();
       return;
     }
-    // Vertical fly-camera keys forwarded by the host (E = up, Q = down): Q has no
-    // SDK InputAction so the engine can't read it; the host captures E/Q on the
-    // engine window and sends the held state here.
-    if (msg.kind === 'set-vertical-input') {
-      setVerticalInput(msg.up, msg.down);
+    // Fly-camera keys held on the host, which swallows them on the engine window
+    // while the free camera is active so they can't also walk the avatar.
+    if (msg.kind === 'set-fly-input') {
+      setFlyInput(msg);
+      return;
+    }
+    // Show/hide the player's avatar (hidden while editing a frozen scene with the
+    // free camera; shown on Play or in the player camera).
+    if (msg.kind === 'set-avatar-visible') {
+      setAvatarVisible(msg.visible);
       return;
     }
     // Enable/disable viewport editing (click-to-pick + gizmo grab). Disabled lets

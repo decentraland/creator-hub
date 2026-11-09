@@ -9,6 +9,7 @@ import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdOutlineEmojiPeople } from 're
 import cx from 'classnames';
 
 import { isSmart, type CustomAsset } from '../../lib/logic/catalog';
+import { ErrorBoundary } from '../ErrorBoundary';
 import CustomAssetIcon from '../Icons/CustomAsset';
 import { getBuiltInPreviewEmote } from './baseEmotes';
 import { EmoteViewer } from './EmoteViewer';
@@ -65,12 +66,22 @@ function ImageViewer({
   onDimensions?: (value: string) => void;
 }) {
   const [actualSize, setActualSize] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string>();
   const toggleSize = () => setActualSize(value => !value);
+  if (failedUrl !== undefined && failedUrl === source.url) {
+    return (
+      <ViewerUnavailable
+        kind="image"
+        reason="The browser could not decode this image"
+      />
+    );
+  }
   return (
     <div className={`ImageViewer ${actualSize ? 'actual' : ''}`}>
       <img
         src={source.url}
         alt={source.name}
+        onError={() => setFailedUrl(source.url)}
         role="button"
         tabIndex={0}
         aria-pressed={actualSize}
@@ -86,6 +97,64 @@ function ImageViewer({
           )
         }
         title={actualSize ? 'Click to fit' : 'Click for actual size'}
+      />
+    </div>
+  );
+}
+
+/** Shown when a file has no preview the editor can draw: the reason, when known, goes under it. */
+function ViewerUnavailable({ kind, reason }: { kind: PreviewKind; reason?: string }) {
+  return (
+    <div className="PreviewPane-placeholder">
+      <KindIcon kind={kind} />
+      <span>Preview unavailable</span>
+      {reason && <span className="PreviewPane-reason">{reason}</span>}
+    </div>
+  );
+}
+
+/**
+ * Audio and video play through the browser's own decoders, which reject codecs and containers
+ * they do not ship (an unsupported .wav encoding, a non-H.264 .mp4). The media element reports
+ * that as an `error` event, not an exception, so without this the pane would show a dead player.
+ */
+function MediaViewer({
+  source,
+  kind,
+  onDuration,
+}: {
+  source: PreviewSource;
+  kind: 'audio' | 'video';
+  onDuration: (seconds: number) => void;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string>();
+  if (failedUrl !== undefined && failedUrl === source.url) {
+    return (
+      <ViewerUnavailable
+        kind={kind}
+        reason="The browser cannot play this file"
+      />
+    );
+  }
+  if (kind === 'video') {
+    return (
+      <video
+        className="VideoViewer"
+        controls
+        src={source.url}
+        onLoadedMetadata={event => onDuration(event.currentTarget.duration)}
+        onError={() => setFailedUrl(source.url)}
+      />
+    );
+  }
+  return (
+    <div className="PreviewPane-placeholder">
+      <KindIcon kind="audio" />
+      <audio
+        controls
+        src={source.url}
+        onLoadedMetadata={event => onDuration(event.currentTarget.duration)}
+        onError={() => setFailedUrl(source.url)}
       />
     </div>
   );
@@ -107,10 +176,11 @@ function Viewer({
   source: PreviewSource;
   onDetails: (patch: Details) => void;
 }) {
-  const [failed, setFailed] = useState(false);
+  // Keyed by URL rather than reset in an effect: a viewer that fails while mounting reports
+  // before this component's own effects run, and a reset there would wipe that report.
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const failed = failedUrl !== undefined && failedUrl === source.url;
   const previewEmote = getBuiltInPreviewEmote(source.builtInEmote);
-
-  useEffect(() => setFailed(false), [source.url]);
 
   if (previewEmote) {
     return (
@@ -128,7 +198,7 @@ function Viewer({
         onStats={stats => onDetails({ stats })}
         onEmote={() => onDetails({ isEmote: true })}
         onDuration={duration => onDetails({ duration })}
-        onFailed={() => setFailed(true)}
+        onFailed={() => setFailedUrl(source.url)}
       />
     );
   }
@@ -143,10 +213,7 @@ function Viewer({
         </span>
       </>
     ) : (
-      <div className="PreviewPane-placeholder">
-        <KindIcon kind={source.kind} />
-        <span>Preview unavailable</span>
-      </div>
+      <ViewerUnavailable kind={source.kind} />
     );
   }
   switch (source.kind) {
@@ -174,29 +241,15 @@ function Viewer({
           <span className="PreviewPane-note">Built-in animation · animated preview</span>
         </>
       ) : (
-        <div className="PreviewPane-placeholder">
-          <KindIcon kind="emote" />
-          <span>Preview unavailable</span>
-        </div>
+        <ViewerUnavailable kind="emote" />
       );
     case 'audio':
-      return (
-        <div className="PreviewPane-placeholder">
-          <KindIcon kind="audio" />
-          <audio
-            controls
-            src={source.url}
-            onLoadedMetadata={event => onDetails({ duration: event.currentTarget.duration })}
-          />
-        </div>
-      );
     case 'video':
       return (
-        <video
-          className="VideoViewer"
-          controls
-          src={source.url}
-          onLoadedMetadata={event => onDetails({ duration: event.currentTarget.duration })}
+        <MediaViewer
+          source={source}
+          kind={source.kind}
+          onDuration={duration => onDetails({ duration })}
         />
       );
     default:
@@ -226,6 +279,16 @@ function Row({ label, value }: { label: string; value?: React.ReactNode }) {
     <div className="PreviewPane-row">
       <span>{label}</span>
       <span>{value}</span>
+    </div>
+  );
+}
+
+/** A labelled field whose value needs its own lines (prose, a list of chips). */
+function Block({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="PreviewPane-block">
+      <span>{label}</span>
+      {children}
     </div>
   );
 }
@@ -270,6 +333,9 @@ function PreviewPane() {
   const catalogAsset = selection.source === 'catalog' ? selection.asset : undefined;
   const customAsset = selection.source === 'custom' ? selection.asset : undefined;
   const assetData = catalogAsset ?? customAsset;
+  // Catalog items write a one-line `caption` far more often than a `description`.
+  const description = assetData?.description || assetData?.caption;
+  const tags = assetData?.tags ?? [];
   const source = state.status === 'ready' ? state.source : undefined;
   const { stats, dimensions, duration, isEmote } = details;
 
@@ -292,11 +358,17 @@ function PreviewPane() {
           </div>
         )}
         {source && (
-          <Viewer
-            key={`${selection.source}:${selection.id}`}
-            source={source}
-            onDetails={patch => setDetails(current => ({ ...current, ...patch }))}
-          />
+          <ErrorBoundary
+            name="asset-viewer"
+            resetKeys={[selection.source, selection.id]}
+            fallback={<ViewerUnavailable kind={source.kind} />}
+          >
+            <Viewer
+              key={`${selection.source}:${selection.id}`}
+              source={source}
+              onDetails={patch => setDetails(current => ({ ...current, ...patch }))}
+            />
+          </ErrorBoundary>
         )}
       </div>
       <div className={cx('PreviewPane-info', { collapsed: !infoOpen })}>
@@ -320,7 +392,11 @@ function PreviewPane() {
             {infoOpen ? <MdKeyboardArrowDown /> : <MdKeyboardArrowUp />}
           </button>
         </h3>
-        {infoOpen && assetData?.description && <p>{assetData.description}</p>}
+        {description && (
+          <Block label="Description">
+            <p>{description}</p>
+          </Block>
+        )}
         <Row
           label="Type"
           value={typeLabel}
@@ -377,16 +453,41 @@ function PreviewPane() {
             />
           </>
         )}
-        {assetData && assetData.tags.length > 0 && (
-          <div className="PreviewPane-tags">
-            {assetData.tags.slice(0, 8).map(tag => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
+        {tags.length > 0 && (
+          <Block label="Tags">
+            <div className="PreviewPane-tags">
+              {tags.map(tag => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+          </Block>
         )}
       </div>
     </aside>
   );
 }
 
-export default React.memo(PreviewPane);
+/**
+ * The viewer has its own boundary so a file the browser rejects still shows its name and size;
+ * this outer one covers the details themselves (a custom item with a malformed composite, say).
+ * Either way a bad file costs its preview, never the inspector.
+ */
+function GuardedPreviewPane() {
+  const { selection } = useAssetSelection();
+  return (
+    <ErrorBoundary
+      name="preview-pane"
+      resetKeys={[selection?.source, selection?.id]}
+      fallback={
+        <aside className="PreviewPane PreviewPane-empty">
+          <FaFile />
+          <p>Preview unavailable</p>
+        </aside>
+      }
+    >
+      <PreviewPane />
+    </ErrorBoundary>
+  );
+}
+
+export default React.memo(GuardedPreviewPane);
