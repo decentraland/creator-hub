@@ -54,7 +54,7 @@ cd packages/inspector && npm run test:e2e                                       
 
 **Note:** run vitest with the thread cap and one run at a time, as the commands above do. The rule, the single-spec flags and how to read the result: `docs/testing-standards.md` → "Run vitest capped".
 
-**Note:** run vitest from inside the package (`cd packages/<pkg> && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npx vitest run`). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
+**Note:** run vitest from inside the package (`cd packages/<pkg> && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npx vitest run`; Creator Hub: `VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npx vitest run -r <layer> …`, since its vitest configs live in each layer folder). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
 
 **Note:** `.spec.ts` and `.test.ts` files are not type-checked, but `.spec.tsx` files are. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a `.ts` test's own types, and a wrong cast or a stale `Partial<…>` in its fixture is caught by neither gate. The exclude does not match `.tsx`, so the renderer's component specs ARE checked: a fixture such as `mockResolvedValue(null)` against a non-null return fails `make typecheck`.
 

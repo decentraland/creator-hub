@@ -60,7 +60,7 @@ Check a busy specialist's liveness in `~/.claude/heartbeats/creator-hub.log` bef
 - A message sent while a teammate is busy or handing off is often never processed. Wait for its idle notice, then send.
 - In-process teammates never appear in the heartbeat log, so silence there isn't death. The log covers background `dcl-*` agents only.
 - Verify every push with `git ls-remote origin <branch>` against the local `git rev-parse HEAD`. A push that printed no error can still be missing.
-- Other people push to these branches too. Before you touch a branch, `git fetch` it and compare its remote head with yours, and push only as a fast-forward (`git merge-base --is-ancestor FETCH_HEAD <commit>`). After every push to a stack, check `gh pr view <n> --json mergeable,mergeStateStatus` for each PR above it: a conflicted PR runs no CI and says so only on GitHub.
+- Other people push to these branches too. Before you touch a branch, `git fetch` it and compare its remote head with yours, and push only as a fast-forward (`git merge-base --is-ancestor FETCH_HEAD <commit>`). A rebase or a gh-stack restack is the one exception: tell the user first, then push with `git push --force-with-lease=<branch>:<sha> origin <branch>`, where `<sha>` is the remote head you just fetched. After every push to a stack, check `gh pr view <n> --json mergeable,mergeStateStatus` for each PR above it: a conflicted PR runs no CI and says so only on GitHub.
 
 ## 4. Cross-layer verification
 

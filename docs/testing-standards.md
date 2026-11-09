@@ -131,7 +131,7 @@ on a loaded CI runner. A flow helper that steps through a modal finds fields wit
 test asserts that name. Raise the timeout for a single file only, and only after
 the queries are cheap.
 
-### Run vitest capped, and read the summary line
+### Run vitest capped
 
 Every vitest run takes the thread cap, and only one runs at a time on the
 machine, across checkouts and worktrees: several uncapped runs at once froze a

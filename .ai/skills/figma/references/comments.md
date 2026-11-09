@@ -9,12 +9,16 @@ Use this when the work starts from a designer's Figma comments ("the designer le
 
   ```js
   const r = await fetch('/api/file/<fileKey>/comments', { credentials: 'include' });
-  const all = (await r.json()).meta.filter(c => !c.deleted_at);
+  const json = r.ok ? await r.json() : null;
+  if (!Array.isArray(json?.meta)) throw new Error(`comments API changed: ${r.status}`);
+  const all = json.meta.filter(c => !c.deleted_at);
   window.__comments = all;
   `${r.status} n=${all.length}`;
   ```
 
   Keep the array on `window` and filter it in later synchronous snippets ([`browser-extraction.md`](browser-extraction.md) has the CDP timeout).
+
+- **This is Figma's internal web-app API, not the public one.** Its path and fields can change without notice. When the snippet throws, stop and tell the lead: a failed read is never "no comments". The public `GET https://api.figma.com/v1/files/<fileKey>/comments` (needs a personal access token in `X-Figma-Token`) is the fallback; it returns `comments` with `message` text instead of `meta` and `message_meta`.
 
 - **Fields.** `id`, `parent_id` (set on a reply), `resolved_at`, `created_at`, `user.handle`, `client_meta.node_id` (the node the pin sits on; a reply has none, so take it from its root), and `message_meta`, a list of parts: `{ t }` for text and `{ user_annotated: { handle } }` for a mention.
 - **Match on replies too.** A mention or a request often sits in a reply, not in the thread's first comment, so filtering only roots misses some. Select every comment by the author (or that mentions the user), then map each match to its root thread (`parent_id`) and dedupe. Record the total thread count and the open count before you read a single one, and give both to the lead.
@@ -23,7 +27,7 @@ Use this when the work starts from a designer's Figma comments ("the designer le
 
 ## The ledger
 
-One row per thread, in the spec's §0 ledger table ([`spec-template.md`](spec-template.md)), before any value is read. Name the author by role ("designer"), not by handle:
+One row per thread, before any spec work; fill the last column once you've read the node. Match returns the ledger in its handoff, and Spec copies it into the spec's §0 ledger table ([`spec-template.md`](spec-template.md)). Name the author by role ("designer"), not by handle:
 
 | # | Thread `id` | Node | Author (role) · date | Request (verbatim, original language) | Open / resolved | What it changes (node · property · Figma's current value) | Action |
 | --- | --- | --- | --- | --- | --- | --- | --- |
