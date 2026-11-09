@@ -21,6 +21,10 @@ import type { FlyInput } from '@dcl/inspector-bevy-protocol';
  * IA_PRIMARY. With editing OFF (the "Interact" toggle, #1458) they reach the engine
  * so the running scene can react to them.
  *
+ * Keys are matched by `KeyboardEvent.code` (the physical key), not `key`: Bevy's
+ * `KeyCode` is physical too, so the engine walks the avatar with the W-position
+ * key on AZERTY (`z`), and only `code` captures exactly that key.
+ *
  * keydown auto-repeats while a key is held, so the callback only fires when the
  * combined held state actually changes.
  */
@@ -38,16 +42,16 @@ export interface FlyInputBridgeOptions {
 }
 
 const MOVEMENT_KEYS: Record<string, keyof FlyInput> = {
-  w: 'forward',
-  s: 'backward',
-  a: 'left',
-  d: 'right',
-  ' ': 'up',
+  KeyW: 'forward',
+  KeyS: 'backward',
+  KeyA: 'left',
+  KeyD: 'right',
+  Space: 'up',
 };
 
 const VERTICAL_KEYS: Record<string, keyof FlyInput> = {
-  e: 'up',
-  q: 'down',
+  KeyE: 'up',
+  KeyQ: 'down',
 };
 
 const RELEASED: FlyInput = {
@@ -85,9 +89,9 @@ export function createFlyInputBridge(options: FlyInputBridgeOptions): () => void
   };
 
   /** Whether this bridge owns the key right now (and the engine must not see it). */
-  const owns = (key: string): boolean => {
-    if (key in VERTICAL_KEYS) return isEditingEnabled();
-    if (key in MOVEMENT_KEYS) return isFreeCamera();
+  const owns = (code: string): boolean => {
+    if (code in VERTICAL_KEYS) return isEditingEnabled();
+    if (code in MOVEMENT_KEYS) return isFreeCamera();
     return false;
   };
 
@@ -99,19 +103,19 @@ export function createFlyInputBridge(options: FlyInputBridgeOptions): () => void
   const onKeyDown = (e: KeyboardEvent) => {
     // A modifier combo (Cmd+S, Cmd+D…) is an editor shortcut, never movement.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const key = e.key.toLowerCase();
-    if (!owns(key)) return;
+    if (!owns(e.code)) return;
     swallow(e);
-    held.add(key);
+    held.add(e.code);
     publish();
   };
   const onKeyUp = (e: KeyboardEvent) => {
-    const key = e.key.toLowerCase();
-    // Always release a key we're holding, even if ownership changed mid-hold (the
-    // camera mode flipped), so no flag is left stuck true.
-    const wasHeld = held.delete(key);
-    if (!e.metaKey && !e.ctrlKey && !e.altKey && owns(key)) swallow(e);
-    if (wasHeld) publish();
+    // A keyup belongs to whoever got its keydown, whatever the camera mode is now.
+    // Release a key we're holding even if the mode flipped mid-hold, so no flag is
+    // left stuck true; and let through a keyup whose keydown reached the engine
+    // (held in Player, then switched to Free), or its InputAction stays pressed.
+    if (!held.delete(e.code)) return;
+    swallow(e);
+    publish();
   };
   // Losing focus can swallow the keyup (the engine iframe blurs mid-hold), which
   // would leave the camera drifting forever — release everything on blur.

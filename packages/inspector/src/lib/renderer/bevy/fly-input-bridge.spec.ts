@@ -30,9 +30,9 @@ describe('createFlyInputBridge', () => {
     };
   }
 
-  const keyEvent = (key: string, mods: Partial<KeyboardEvent> = {}) => {
+  const keyEvent = (code: string, mods: Partial<KeyboardEvent> = {}) => {
     const e = {
-      key,
+      code,
       metaKey: false,
       ctrlKey: false,
       altKey: false,
@@ -73,44 +73,57 @@ describe('createFlyInputBridge', () => {
   describe('with the free camera active', () => {
     it('swallows WASD and Space and reports them held', () => {
       const { win, onChange } = setup();
-      const w = keyEvent('w');
+      const w = keyEvent('KeyW');
       win.emit('keydown', w);
       expect(w.defaultPrevented).toBe(true);
       expect(w.propagationStopped).toBe(true);
       expect(onChange).toHaveBeenLastCalledWith({ ...RELEASED, forward: true });
 
-      win.emit('keydown', keyEvent(' '));
+      win.emit('keydown', keyEvent('Space'));
       expect(onChange).toHaveBeenLastCalledWith({ ...RELEASED, forward: true, up: true });
 
-      const release = keyEvent('W'); // keyup may arrive upper-cased (Shift)
+      const release = keyEvent('KeyW', { shiftKey: true });
       win.emit('keyup', release);
       expect(release.propagationStopped).toBe(true);
       expect(onChange).toHaveBeenLastCalledWith({ ...RELEASED, up: true });
     });
 
+    it('matches the physical key, so AZERTY Z (W position) is captured and W is not', () => {
+      const { win, onChange } = setup();
+      const z = keyEvent('KeyW', { key: 'z' });
+      win.emit('keydown', z);
+      expect(z.propagationStopped).toBe(true);
+      expect(onChange).toHaveBeenLastCalledWith({ ...RELEASED, forward: true });
+
+      const w = keyEvent('KeyZ', { key: 'w' });
+      win.emit('keydown', w);
+      expect(w.propagationStopped).toBe(false);
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
     it('does not re-fire on key auto-repeat', () => {
       const { win, onChange } = setup();
-      win.emit('keydown', keyEvent('a'));
-      win.emit('keydown', keyEvent('a'));
-      win.emit('keydown', keyEvent('a'));
+      win.emit('keydown', keyEvent('KeyA'));
+      win.emit('keydown', keyEvent('KeyA'));
+      win.emit('keydown', keyEvent('KeyA'));
       expect(onChange).toHaveBeenCalledTimes(1);
     });
 
     it('keeps rising while Space is held after E is released (both mean up)', () => {
       const { win, onChange } = setup();
-      win.emit('keydown', keyEvent('e'));
-      win.emit('keydown', keyEvent(' '));
-      win.emit('keyup', keyEvent('e'));
+      win.emit('keydown', keyEvent('KeyE'));
+      win.emit('keydown', keyEvent('Space'));
+      win.emit('keyup', keyEvent('KeyE'));
       expect(onChange).toHaveBeenLastCalledWith({ ...RELEASED, up: true });
-      win.emit('keyup', keyEvent(' '));
+      win.emit('keyup', keyEvent('Space'));
       expect(onChange).toHaveBeenLastCalledWith(RELEASED);
     });
 
     it('leaves modifier combos alone (editor shortcuts such as Cmd+S / Cmd+D)', () => {
       const { win, onChange } = setup();
-      const save = keyEvent('s', { metaKey: true });
+      const save = keyEvent('KeyS', { metaKey: true });
       win.emit('keydown', save);
-      const dup = keyEvent('d', { ctrlKey: true });
+      const dup = keyEvent('KeyD', { ctrlKey: true });
       win.emit('keydown', dup);
       expect(save.propagationStopped).toBe(false);
       expect(dup.propagationStopped).toBe(false);
@@ -119,7 +132,7 @@ describe('createFlyInputBridge', () => {
 
     it('ignores keys it does not own', () => {
       const { win, onChange } = setup();
-      const f = keyEvent('f');
+      const f = keyEvent('KeyF');
       win.emit('keydown', f);
       expect(f.propagationStopped).toBe(false);
       expect(onChange).not.toHaveBeenCalled();
@@ -127,8 +140,8 @@ describe('createFlyInputBridge', () => {
 
     it('releases everything on blur so the camera cannot drift', () => {
       const { win, onChange } = setup();
-      win.emit('keydown', keyEvent('w'));
-      win.emit('keydown', keyEvent('d'));
+      win.emit('keydown', keyEvent('KeyW'));
+      win.emit('keydown', keyEvent('KeyD'));
       win.emit('blur', {});
       expect(onChange).toHaveBeenLastCalledWith(RELEASED);
       win.emit('blur', {});
@@ -139,9 +152,9 @@ describe('createFlyInputBridge', () => {
   describe('with the player (avatar) camera active', () => {
     it('lets WASD and Space reach the engine so the avatar walks', () => {
       const { win, onChange } = setup({ free: () => false });
-      const w = keyEvent('w');
+      const w = keyEvent('KeyW');
       win.emit('keydown', w);
-      const space = keyEvent(' ');
+      const space = keyEvent('Space');
       win.emit('keydown', space);
       expect(w.propagationStopped).toBe(false);
       expect(space.propagationStopped).toBe(false);
@@ -150,32 +163,53 @@ describe('createFlyInputBridge', () => {
 
     it('still captures E/Q (Q has no InputAction; E would fire IA_PRIMARY)', () => {
       const { win, onChange } = setup({ free: () => false });
-      const q = keyEvent('q');
+      const q = keyEvent('KeyQ');
       win.emit('keydown', q);
       expect(q.propagationStopped).toBe(true);
       expect(onChange).toHaveBeenLastCalledWith({ ...RELEASED, down: true });
     });
 
-    it('releases a key held from before the camera switched, without swallowing the keyup', () => {
+    it('releases a key held from before the camera switched (Free → Player)', () => {
       let free = true;
       const { win, onChange } = setup({ free: () => free });
-      win.emit('keydown', keyEvent('w'));
+      win.emit('keydown', keyEvent('KeyW'));
       free = false;
-      const release = keyEvent('w');
+      const release = keyEvent('KeyW');
       win.emit('keyup', release);
-      expect(release.propagationStopped).toBe(false);
+      // The engine never saw this key go down, so it must not see it come up.
+      expect(release.propagationStopped).toBe(true);
       expect(onChange).toHaveBeenLastCalledWith(RELEASED);
+    });
+
+    it('lets the keyup reach the engine when the keydown did (Player → Free mid-hold)', () => {
+      let free = false;
+      const { win, onChange } = setup({ free: () => free });
+      const press = keyEvent('KeyW');
+      win.emit('keydown', press);
+      expect(press.propagationStopped).toBe(false);
+      free = true;
+      const release = keyEvent('KeyW');
+      win.emit('keyup', release);
+      // Swallowing it would leave IA_FORWARD pressed in the engine for good.
+      expect(release.propagationStopped).toBe(false);
+      expect(release.defaultPrevented).toBe(false);
+      expect(onChange).not.toHaveBeenCalled();
+
+      const again = keyEvent('KeyW');
+      win.emit('keydown', again);
+      expect(again.propagationStopped).toBe(true);
+      expect(onChange).toHaveBeenLastCalledWith({ ...RELEASED, forward: true });
     });
   });
 
   describe('with editing off (Interact mode, #1458)', () => {
     it('lets E/Q reach the running scene but still owns WASD for the free camera', () => {
       const { win, onChange } = setup({ editing: () => false });
-      const e = keyEvent('e');
+      const e = keyEvent('KeyE');
       win.emit('keydown', e);
       expect(e.propagationStopped).toBe(false);
       expect(onChange).not.toHaveBeenCalled();
-      const w = keyEvent('w');
+      const w = keyEvent('KeyW');
       win.emit('keydown', w);
       expect(w.propagationStopped).toBe(true);
       expect(onChange).toHaveBeenLastCalledWith({ ...RELEASED, forward: true });
