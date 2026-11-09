@@ -1,8 +1,8 @@
+import emptyWallet from '/assets/images/empty-wallet.svg';
+
 import { t } from '/@/modules/store/translation/utils';
 
-import { WalletIcon } from '../icons';
-
-import { IconBadge, LockedPanel, Title } from './PayoutsLocked.styled';
+import { Illustration, LockedPanel, Title } from './PayoutsLocked.styled';
 
 /**
  * Payout wallet setup opens on 25 November. Until then the Payouts tab shows only this notice and
@@ -11,13 +11,16 @@ import { IconBadge, LockedPanel, Title } from './PayoutsLocked.styled';
  */
 export const PAYOUT_SETUP_LOCKED = true;
 
-/** The Payouts tab before payout wallet setup opens: a wallet icon and the unlock date. */
+/** The Payouts tab before payout wallet setup opens: a wallet illustration and the unlock date. */
 export function PayoutsLocked() {
   return (
     <LockedPanel>
-      <IconBadge>
-        <WalletIcon />
-      </IconBadge>
+      <Illustration
+        src={emptyWallet}
+        alt=""
+        width={80}
+        height={80}
+      />
       <Title>{t('earn.joined.payouts.locked')}</Title>
     </LockedPanel>
   );

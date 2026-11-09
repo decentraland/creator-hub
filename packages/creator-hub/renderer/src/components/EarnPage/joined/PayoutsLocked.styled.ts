@@ -4,20 +4,15 @@ import { typeToken } from '../tokens';
 
 import { EmptyPanel } from './PayoutsTab.styled';
 
-const IconBadge = styled('span')({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 96,
-  height: 96,
-  borderRadius: 'var(--r-pill)',
-  backgroundColor: 'var(--palette-whiteTransparent-subtle)',
-  color: 'var(--palette-neutral-softWhite)',
-  '& svg': { width: 48, height: 48 },
+const Illustration = styled('img')({
+  display: 'block',
+  width: 80,
+  height: 80,
 });
 
 const Title = styled('h2')({
   ...typeToken('h2-semi'),
+  maxWidth: 524,
   margin: 0,
   color: 'var(--palette-neutral-softWhite)',
 });
@@ -25,8 +20,8 @@ const Title = styled('h2')({
 const LockedPanel = styled(EmptyPanel)({
   alignItems: 'center',
   justifyContent: 'center',
-  gap: 24,
+  gap: 30,
   textAlign: 'center',
 });
 
-export { IconBadge, LockedPanel, Title };
+export { Illustration, LockedPanel, Title };
