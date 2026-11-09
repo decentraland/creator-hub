@@ -17,21 +17,30 @@ const List = styled('div')({
 });
 
 const Entry = styled('article')({
+  position: 'relative',
   display: 'flex',
   alignItems: 'center',
   gap: 20,
   minHeight: 118,
   boxSizing: 'border-box',
   backgroundColor: 'var(--palette-whiteTransparent-faint)',
-  border: '1px solid var(--palette-whiteTransparent-subtle)',
   borderRadius: 'var(--shape-borderRadiusLarge)',
   overflow: 'hidden',
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    border: '1px solid var(--palette-whiteTransparent-faint)',
+    borderRadius: 'inherit',
+    pointerEvents: 'none',
+  },
   [STATS_BELOW]: { flexWrap: 'wrap', rowGap: 0 },
 });
 
 const Thumbnail = styled('img')({
-  width: 206,
-  height: 116,
+  width: 'auto',
+  height: 118,
+  aspectRatio: '16 / 9',
   flexShrink: 0,
   objectFit: 'cover',
   borderRadius: 'var(--shape-borderRadiusLarge)',
@@ -82,18 +91,20 @@ const WhereText = styled('span')({
 });
 
 const Stats = styled('div')({
-  flex: '0 1 798px',
-  padding: 9,
-  [STATS_BELOW]: { flexBasis: '100%', padding: '10px 9px 9px' },
+  flex: '0 1 800px',
+  padding: 10,
+  [STATS_BELOW]: { flexBasis: '100%', padding: 10 },
 });
 
 const StatsList = styled('dl')({
   display: 'flex',
   gap: 40,
+  boxSizing: 'border-box',
+  height: 98,
   margin: 0,
   padding: 19,
   backgroundColor: 'var(--palette-blackTransparent-blurry)',
-  border: '1px solid var(--palette-whiteTransparent-subtle)',
+  border: '1px solid var(--palette-whiteTransparent-faint)',
   borderRadius: 'var(--ui-radius)',
 });
 
