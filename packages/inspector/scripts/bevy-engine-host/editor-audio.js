@@ -4,10 +4,14 @@
 //  - Web Audio (bevy_kira_audio → cpal → AudioContext): scene AudioSource clips and
 //    the avatar's own sounds (footsteps). `AudioNode.connect` to a context's
 //    destination is rerouted through a per-context master GainNode we own.
+//    `OfflineAudioContext` renders to a buffer, not the speakers, so it is left alone.
 //  - HTML media elements (the engine's html_video_player: VideoPlayer and
 //    AudioStream): every element is forced `muted` while the editor mute is on,
-//    remembering the engine's own `muted` intent so it comes back on unmute. The
-//    engine drives their loudness through `volume`, which `muted` leaves alone.
+//    remembering the engine's own `muted` intent (or the element's `muted`
+//    attribute) so it comes back on unmute. An element is caught when it gets a
+//    source, plays, or sets `muted`, so an autoplay element that is never added to
+//    the document (LiveKit's `track.attach()`) is muted too. The engine drives
+//    their loudness through `volume`, which `muted` leaves alone.
 // The engine has no volume console command, and muting per scene component misses
 // footsteps and video — this is the one place everything can be silenced.
 //
@@ -30,6 +34,7 @@ export function installEditorAudio(win, options = {}) {
   if (AudioNodeProto && Destination) {
     const originalConnect = AudioNodeProto.connect;
     const originalDisconnect = AudioNodeProto.disconnect;
+    const Offline = win.OfflineAudioContext;
     const masterGain = context => {
       let gain = masterGains.get(context);
       if (!gain) {
@@ -37,11 +42,20 @@ export function installEditorAudio(win, options = {}) {
         gain.gain.value = editorMuted ? 0 : 1;
         originalConnect.call(gain, context.destination);
         masterGains.set(context, gain);
+        if (typeof context.addEventListener === 'function') {
+          context.addEventListener('statechange', () => {
+            if (context.state === 'closed') masterGains.delete(context);
+          });
+        }
       }
       return gain;
     };
     const reroute = (node, target) =>
-      target instanceof Destination && node.context ? masterGain(node.context) : target;
+      target instanceof Destination &&
+      node.context &&
+      !(typeof Offline === 'function' && node.context instanceof Offline)
+        ? masterGain(node.context)
+        : target;
     AudioNodeProto.connect = function connect(target, ...rest) {
       return originalConnect.call(this, reroute(this, target), ...rest);
     };
@@ -60,7 +74,8 @@ export function installEditorAudio(win, options = {}) {
   const mutedDescriptor = MediaProto && Object.getOwnPropertyDescriptor(MediaProto, 'muted');
   const applyMedia = element => {
     if (!mutedDescriptor) return;
-    mutedDescriptor.set.call(element, editorMuted || (intended.get(element) ?? false));
+    const own = intended.has(element) ? intended.get(element) : Boolean(element.defaultMuted);
+    mutedDescriptor.set.call(element, editorMuted || own);
   };
   const track = element => {
     media.add(typeof WeakRef === 'function' ? new WeakRef(element) : element);
@@ -87,6 +102,18 @@ export function installEditorAudio(win, options = {}) {
       applyMedia(this);
       return originalPlay.apply(this, args);
     };
+    for (const name of ['src', 'srcObject']) {
+      const descriptor = Object.getOwnPropertyDescriptor(MediaProto, name);
+      if (!descriptor || !descriptor.set) continue;
+      Object.defineProperty(MediaProto, name, {
+        ...descriptor,
+        set(value) {
+          track(this);
+          applyMedia(this);
+          descriptor.set.call(this, value);
+        },
+      });
+    }
   }
   const eachMedia = fn => {
     for (const entry of [...media]) {
@@ -107,7 +134,10 @@ export function installEditorAudio(win, options = {}) {
     isMuted: () => editorMuted,
     setMuted: muted => {
       editorMuted = Boolean(muted);
-      for (const gain of masterGains.values()) gain.gain.value = editorMuted ? 0 : 1;
+      for (const [context, gain] of masterGains) {
+        if (context.state === 'closed') masterGains.delete(context);
+        else gain.gain.value = editorMuted ? 0 : 1;
+      }
       eachMedia(applyMedia);
     },
     // Diagnostics: how much of the engine's audio is routed through this mute.

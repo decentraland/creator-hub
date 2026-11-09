@@ -33,7 +33,16 @@ describe('installEditorAudio (engine host page)', () => {
     gain = new FakeAudioParam();
   }
   class FakeContext {
+    state = 'running';
+    private stateListeners: (() => void)[] = [];
     destination = new FakeDestination(this);
+    addEventListener(type: string, fn: () => void): void {
+      if (type === 'statechange') this.stateListeners.push(fn);
+    }
+    close(): void {
+      this.state = 'closed';
+      for (const fn of this.stateListeners) fn();
+    }
     createGain(): FakeGain {
       return new FakeGain(this);
     }
@@ -48,7 +57,15 @@ describe('installEditorAudio (engine host page)', () => {
     // is where the installer looks for it — so define it on this class directly.
     class HTMLMediaElement {
       #muted = false;
+      #srcObject: unknown = null;
+      defaultMuted = false;
       played = 0;
+      get srcObject(): unknown {
+        return this.#srcObject;
+      }
+      set srcObject(value: unknown) {
+        this.#srcObject = value;
+      }
       get muted(): boolean {
         return this.#muted;
       }
@@ -73,17 +90,19 @@ describe('installEditorAudio (engine host page)', () => {
     // Route the fake classes' prototype chain through the patched `AudioNode`.
     Object.setPrototypeOf(AudioDestinationNode.prototype, AudioNode.prototype);
     Object.setPrototypeOf(GainNode.prototype, AudioNode.prototype);
+    class OfflineAudioContext extends Context {}
     const elements: HTMLMediaElement[] = [];
     const win = {
       AudioNode,
       AudioDestinationNode,
+      OfflineAudioContext,
       HTMLMediaElement,
       document: { querySelectorAll: () => elements },
     } as unknown as EditorAudioWindow & {
       AudioNode: typeof AudioNode;
       HTMLMediaElement: typeof HTMLMediaElement;
     };
-    return { win, Context, HTMLMediaElement, AudioNode, elements };
+    return { win, Context, OfflineAudioContext, HTMLMediaElement, AudioNode, elements };
   }
 
   it('boots muted and exposes the control on the window', () => {
@@ -150,6 +169,47 @@ describe('installEditorAudio (engine host page)', () => {
     control.setMuted(false);
     expect(stream.realMuted()).toBe(true);
     expect(stream.muted).toBe(true);
+  });
+
+  it('leaves an OfflineAudioContext render alone (it never reaches the speakers)', () => {
+    const { win, OfflineAudioContext, AudioNode } = fakeWindow();
+    const control = installEditorAudio(win);
+    const ctx = new OfflineAudioContext();
+    const source = new AudioNode(ctx);
+    source.connect(ctx.destination);
+    expect(source.connections).toEqual([ctx.destination]);
+    expect(control.stats().audioContexts).toBe(0);
+  });
+
+  it('drops a closed context from the master gains', () => {
+    const { win, Context, AudioNode } = fakeWindow();
+    const control = installEditorAudio(win);
+    const ctx = new Context();
+    new AudioNode(ctx).connect(ctx.destination);
+    expect(control.stats().audioContexts).toBe(1);
+    ctx.close();
+    expect(control.stats().audioContexts).toBe(0);
+  });
+
+  it('keeps an element muted by its `muted` attribute (defaultMuted) muted on unmute', () => {
+    const { win, HTMLMediaElement } = fakeWindow();
+    const control = installEditorAudio(win);
+    const video = new HTMLMediaElement();
+    video.defaultMuted = true;
+    void video.play();
+    control.setMuted(false);
+    expect(video.realMuted()).toBe(true);
+  });
+
+  it('mutes an autoplay element that only gets a source and is never added to the document', () => {
+    const { win, HTMLMediaElement } = fakeWindow();
+    const control = installEditorAudio(win);
+    const audio = new HTMLMediaElement();
+    audio.srcObject = {};
+    expect(audio.realMuted()).toBe(true);
+    expect(control.stats().mediaElements).toBe(1);
+    control.setMuted(false);
+    expect(audio.realMuted()).toBe(false);
   });
 
   it('sweeps elements already in the document when toggled', () => {
