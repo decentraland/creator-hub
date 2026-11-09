@@ -133,6 +133,11 @@
   opacity: 0.6;
 }
 
+.PreviewPane-reason {
+  font-size: 11px;
+  color: var(--neutral-grey-4);
+}
+
 .PreviewPane-placeholder audio {
   width: 100%;
 }
