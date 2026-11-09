@@ -40,21 +40,21 @@ cd packages/asset-packs && npm run start    # Asset packs dev server (port 8001)
 ### Testing
 
 ```bash
-make test                  # Unit tests for all packages (vitest)
-make test-e2e              # E2E tests (Playwright) for inspector + creator-hub
+VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 make test                                         # Unit tests for all packages (vitest)
+make test-e2e                                                                               # E2E tests (Playwright) for inspector + creator-hub
 
 # Per-package tests
-cd packages/creator-hub && npm run test:unit      # All unit tests (main, preload, renderer, shared)
-cd packages/creator-hub && npm run test:main       # Main process tests only
-cd packages/creator-hub && npm run test:renderer   # Renderer tests only
-cd packages/creator-hub && npm run test:shared     # Shared tests only
-cd packages/inspector && npm run test              # Inspector unit tests
-cd packages/inspector && npm run test:e2e          # Inspector E2E tests
+cd packages/creator-hub && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm run test:unit      # All unit tests (main, preload, renderer, shared)
+cd packages/creator-hub && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm run test:main      # Main process tests only
+cd packages/creator-hub && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm run test:renderer  # Renderer tests only
+cd packages/creator-hub && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm run test:shared    # Shared tests only
+cd packages/inspector && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm run test             # Inspector unit tests
+cd packages/inspector && npm run test:e2e                                                   # Inspector E2E tests
 ```
 
-**Note:** run every vitest with the thread cap, one run at a time: `VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 make test` (vitest 1.6 reads both variables, and they pass through npm and make), or `--pool=threads --poolOptions.threads.maxThreads=2 --poolOptions.threads.minThreads=1` on a single spec. Each uncapped vitest takes every core but one, and several at once froze the machine. A run that prints `no tests` (a Creator Hub spec run without `-r <project>`) exits 0 without testing anything.
+**Note:** run vitest with the thread cap and one run at a time, as the commands above do. The rule, the single-spec flags and how to read the result: `docs/testing-standards.md` → "Run vitest capped".
 
-**Note:** run vitest from inside the package (`cd packages/<pkg> && npx vitest run`). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
+**Note:** run vitest from inside the package (`cd packages/<pkg> && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npx vitest run`). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
 
 **Note:** `.spec.ts` and `.test.ts` files are not type-checked, but `.spec.tsx` files are. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a `.ts` test's own types, and a wrong cast or a stale `Partial<…>` in its fixture is caught by neither gate. The exclude does not match `.tsx`, so the renderer's component specs ARE checked: a fixture such as `mockResolvedValue(null)` against a non-null return fails `make typecheck`.
 
@@ -206,6 +206,10 @@ Hard-won traps that reading the code does not reveal. Testing-specific ones live
 
 `tsconfig.lib.json` includes only `src`, so the smart-item scene sources under `packs/` sit outside every type gate — `make typecheck` and `make build-asset-packs` both pass without looking at them, and the build's `Type checking completed without errors` refers to `src` alone (`tsc --listFiles` confirms zero `packs/` files in the program). Verify an edit there by other means: a repo-wide reference count for anything removed, plus a standalone `tsc --noEmit --noResolve --jsx react --jsxFactory 'ReactEcs.createElement' <file>` parse.
 
+### A tab that loads several requests shows nothing from them until all settle
+
+Coming back to a Redux-backed tab renders the data cached from the last visit while its requests run again. If the requests start one after another, or the tab renders each part as soon as its own state exists, that stale data flashes and then disappears (the Creator Fund Payouts email and wallet cards did exactly this before the error state). Start the requests together (`Promise.all`, or dispatch every thunk at once) and gate the dependent UI on all of them settling. A spec that only covers the first load misses it, so test leaving the tab and coming back.
+
 ### Changing a value in `DEFAULT_CONFIG` does nothing for existing installs
 
 `mergeConfig(existingConfig, defaultConfig)` forwards to `deepmerge(defaults, stored)`, so **stored values win**, and `getConfigStorage` persists the *whole* default settings object on first launch. Every existing machine therefore already has a literal value on disk for every non-optional setting, and editing `DEFAULT_CONFIG` only reaches brand-new configs. To change a default for the installed base, add a one-time fix-up in `getConfigStorage` (`promoteAiAssistantSetting` is the worked example) plus a marker so it cannot re-run and silently revert the user's later choice — optional marker fields are declared on `AppSettings` but deliberately left **out** of `DEFAULT_CONFIG`, so "absent" means "not yet done" (`optimizerConsentAcknowledged`, `aiAssistantPromoted`).
@@ -280,5 +284,3 @@ Read the relevant standards doc when the task touches its domain:
 Cross-package work has a dedicated agent per layer in `.claude/agents/`. `dcl-ch-feature-architect` orchestrates a change that spans layers; start it as the session agent (`claude --agent dcl-ch-feature-architect`), since an @-mention leaves the parent session in control. The specialists — `dcl-asset-packs-specialist`, `dcl-inspector-specialist`, `dcl-creator-hub-specialist`, `dcl-sdk-toolchain-specialist`, `dcl-designer-specialist`, `dcl-creators-data-specialist` — also take single-layer work directly. The creators-data specialist owns the Analytics metrics backend, a separate repo: a metric name must be admitted there (`VALID_METRICS`) before Creator Hub's `METRIC_NAMES` can rely on it. The designer owns `docs/DESIGN.md` and the token blocks of `vars.css` and `theme.css`, and it brackets Figma-driven UI work: it writes the spec before the inspector or Creator Hub specialist implements, and it validates the render against Figma afterwards. Getting a local asset-packs/inspector build into js-sdk-toolchain and a Creator Hub-previewed scene follows one runbook, [`.ai/skills/local-package-chain/SKILL.md`](.ai/skills/local-package-chain/SKILL.md); change the procedure there, never inside an agent file. Each agent's "Traps" list is one-line reminders of gotchas documented in full above; when you change a gotcha here, update its reminder line in the agent file too.
 
 A committed `PostToolUse` hook (`.ai/hooks/heartbeat/hook.py`, wired in `.claude/settings.json`) appends one line per tool call made by a `dcl-*` agent to `~/.claude/heartbeats/creator-hub.log`, recording time, agent type, agent id, session id, tool and cwd. It rotates at 5 MiB. The hook logs only payloads that carry a `dcl-*` `agent_type`, so in-process teammates never appear and silence there doesn't mean an agent is dead.
-
-A committed `PreToolUse` hook (`.ai/hooks/bash-guard/hook.py`, tests beside it, run with `python3 -m unittest discover -s .ai/hooks/bash-guard`) blocks, for every agent in this repo, a Bash call that runs vitest without the thread cap, one that would start while another vitest is running, and `git commit` / `git commit-tree` without `-S` while `commit.gpgsign` is off. Commands that name a `js-sdk-toolchain` or `creators-data` checkout are left alone. The shell `case` in front of it in `.claude/settings.json` skips starting Python for commands that mention neither `test` nor `commit`.

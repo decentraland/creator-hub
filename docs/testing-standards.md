@@ -18,7 +18,7 @@ a test that has never been red is not evidence of anything:
 
 ```bash
 git stash push -- packages/creator-hub/renderer/src/lib/land.ts
-npm run test:renderer -- src/lib/land.spec.ts   # must fail here
+VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm run test:renderer -- src/lib/land.spec.ts   # must fail here
 git stash pop
 ```
 
@@ -133,14 +133,20 @@ the queries are cheap.
 
 ### Run vitest capped, and read the summary line
 
-Every run takes the thread cap (`VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1`, or
-`--pool=threads --poolOptions.threads.maxThreads=2 --poolOptions.threads.minThreads=1`
-on one spec), and only one runs at a time: parallel uncapped runs froze a 14-core
-machine. The bash-guard hook (`.ai/hooks/bash-guard/hook.py`) refuses an uncapped
-or second run from an agent. In `packages/creator-hub`, a spec run needs its
-project (`npx vitest run -r renderer <path>`); without it vitest prints
-`no tests` and still exits 0, so a gate reads the `Test Files … passed` line,
-never the exit code alone.
+Every vitest run takes the thread cap, and only one runs at a time on the
+machine, across checkouts and worktrees: several uncapped runs at once froze a
+14-core machine, since each takes every core but one. Prefix a script or `make`
+with `VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1` (vitest 1.6 reads both variables, and
+they pass through npm and make), and give a single spec the same cap as flags:
+`--pool=threads --poolOptions.threads.maxThreads=2 --poolOptions.threads.minThreads=1`.
+Set the minimum as well as the maximum.
+
+`-r` is vitest's `--root`. Creator Hub's `test:*` scripts set it to the layer
+folder, so a direct spec run needs the same root and a path relative to it:
+`npx vitest run -r renderer src/…/x.spec.tsx` plus the cap. Those scripts also
+pass `--passWithNoTests`, so a run whose filter matches nothing exits 0. A gate
+reads the `Test Files … passed` line, never the exit code alone, and an exit
+code read after a pipe (`| tail`) is the pipe's.
 
 ### happy-dom is not a browser for labels and visibility
 

@@ -16,6 +16,10 @@ unit: <Figma set or surface> · PR: <spoke branch, or "not opened"> · round: <N
 - Read: <date and time>, <MCP or browser>.
 - Diff against the previous read: <"first read", "unchanged", or each added, removed or renamed node id>.
 - Standing decisions the board now contradicts (re-confirm with the user): <list, or "none">.
+- Comments: <"none", or the counts: threads on the file / matching / open>, then the ledger ([`comments.md`](comments.md)):
+
+| # | Thread `id` | Node | Author (role) · date | Request | Open / resolved | What it changes (node · property · Figma's current value) | Action |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
 ## §1 Mapping
 
