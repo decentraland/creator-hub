@@ -185,4 +185,7 @@ export type Events = {
     rank: number;
     place_id: string;
   };
+  'Creator Fund Empty State Action': {
+    action: 'create_scene' | 'start_from_template' | 'open_scene';
+  };
 };
