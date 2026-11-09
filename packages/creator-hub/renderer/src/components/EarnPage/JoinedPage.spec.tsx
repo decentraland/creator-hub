@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { flatten } from 'flat';
@@ -6,6 +6,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
 import { misc } from '#preload';
+import { useDispatch } from '#store';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/creatorFund';
@@ -21,15 +22,19 @@ vi.mock('/@/lib/creatorFundApi', () => ({
   getEnrollment: vi.fn(),
   getTerms: vi.fn(),
   getCycles: vi.fn(),
+  getPayouts: vi.fn(),
+  getPayoutWallet: vi.fn(),
 }));
 vi.mock('./joined/LeaderboardTab', () => ({ LeaderboardTab: () => <p>leaderboard panel</p> }));
 vi.mock('./joined/MyPlacesTab', () => ({ MyPlacesTab: () => <p>my places panel</p> }));
-vi.mock('./joined/PayoutsTab', () => ({ PayoutsTab: () => <p>payouts panel</p> }));
-const payoutSetup = vi.hoisted(() => ({ locked: true }));
-vi.mock('./joined/PayoutsLocked', async importOriginal => ({
-  ...((await importOriginal()) as object),
-  get PAYOUT_SETUP_LOCKED() {
-    return payoutSetup.locked;
+vi.mock('./joined/PayoutsTab', () => ({
+  PayoutsTab: () => {
+    const dispatch = useDispatch();
+    useEffect(() => {
+      void dispatch(actions.fetchPayouts());
+      void dispatch(actions.fetchPayoutWallet());
+    }, [dispatch]);
+    return <p>payouts panel</p>;
   },
 }));
 vi.mock('../Modals', async importOriginal => ({
@@ -67,7 +72,7 @@ async function renderPage(
     if (awaitCycles) await cycles;
   });
   const onTabChange = vi.fn();
-  render(
+  const { container } = render(
     <Provider store={store}>
       <ThemeProvider theme={dark}>
         <StatefulJoinedPage
@@ -77,7 +82,7 @@ async function renderPage(
       </ThemeProvider>
     </Provider>,
   );
-  return { onTabChange };
+  return { container, onTabChange };
 }
 
 function pressEnter(element: HTMLElement) {
@@ -113,53 +118,51 @@ describe('JoinedPage', () => {
     vi.mocked(api.getEnrollment).mockResolvedValue({ ok: true, status: 200, data: JOINED });
     vi.mocked(api.getTerms).mockReturnValue(new Promise(() => {}));
     vi.mocked(api.getCycles).mockResolvedValue(ok(CYCLES));
+    vi.mocked(api.getPayouts).mockReturnValue(new Promise(() => {}));
+    vi.mocked(api.getPayoutWallet).mockReturnValue(new Promise(() => {}));
   });
 
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
-    payoutSetup.locked = true;
   });
 
   describe('when the Payouts flag is off', () => {
-    it('should offer only the first tab and My Places', async () => {
-      await renderPage('leaderboard', { payout: false });
+    it('should still offer all three tabs', async () => {
+      const { container } = await renderPage('leaderboard', { payout: false });
 
-      const tablist = screen.getByRole('tablist');
       expect(
-        within(tablist)
+        within(container)
           .getAllByRole('tab')
           .map(tab => tab.textContent),
-      ).toEqual(['Leaderboard', 'My Places']);
+      ).toEqual(['Leaderboard', 'My Places', 'Payouts']);
     });
 
-    it('should fall back to the first tab when Payouts is the selected tab', async () => {
-      await renderPage('payouts', { payout: false });
+    it('should show the payout wallet setup date in the Payouts tab and request no payouts', async () => {
+      const { container } = await renderPage('payouts', { payout: false });
 
-      expect(screen.getByRole('tab', { name: 'Leaderboard', selected: true })).toBeTruthy();
-      expect(within(screen.getByRole('tabpanel')).getByText('leaderboard panel')).toBeTruthy();
-      expect(screen.queryByText('payouts panel')).toBeNull();
-      expect(screen.queryByText(PAYOUTS_LOCKED)).toBeNull();
+      expect(within(container).getByRole('tab', { name: 'Payouts', selected: true })).toBeTruthy();
+      expect(
+        within(within(container).getByRole('tabpanel')).getByRole('heading', {
+          name: PAYOUTS_LOCKED,
+        }),
+      ).toBeTruthy();
+      expect(within(container).queryByText('payouts panel')).toBeNull();
+      expect(api.getPayouts).not.toHaveBeenCalled();
+      expect(api.getPayoutWallet).not.toHaveBeenCalled();
     });
   });
 
   describe('when the Payouts flag is on', () => {
-    it('should show the payout wallet setup date instead of the payouts while setup is locked', async () => {
-      await renderPage('payouts');
+    it('should show the full Payouts tab and no setup date', async () => {
+      const { container } = await renderPage('payouts');
 
-      expect(screen.getByRole('tab', { name: 'Payouts', selected: true })).toBeTruthy();
       expect(
-        within(screen.getByRole('tabpanel')).getByRole('heading', { name: PAYOUTS_LOCKED }),
+        within(within(container).getByRole('tabpanel')).getByText('payouts panel'),
       ).toBeTruthy();
-      expect(screen.queryByText('payouts panel')).toBeNull();
-    });
-
-    it('should show the payouts once payout wallet setup is unlocked', async () => {
-      payoutSetup.locked = false;
-      await renderPage('payouts');
-
-      expect(within(screen.getByRole('tabpanel')).getByText('payouts panel')).toBeTruthy();
-      expect(screen.queryByText(PAYOUTS_LOCKED)).toBeNull();
+      expect(within(container).queryByText(PAYOUTS_LOCKED)).toBeNull();
+      expect(api.getPayouts).toHaveBeenCalled();
+      expect(api.getPayoutWallet).toHaveBeenCalled();
     });
   });
 
@@ -187,7 +190,7 @@ describe('JoinedPage', () => {
 
     it.each([
       ['my_places', 'My Places', 'my places panel'],
-      ['payouts', 'Payouts', PAYOUTS_LOCKED],
+      ['payouts', 'Payouts', 'payouts panel'],
     ] as const)('should show the selected tab panel for %s', async (tab, name, panel) => {
       await renderPage(tab);
 

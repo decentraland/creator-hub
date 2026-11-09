@@ -12,7 +12,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { EarnHeader } from './joined/EarnHeader';
 import { LeaderboardTab } from './joined/LeaderboardTab';
 import { MyPlacesTab } from './joined/MyPlacesTab';
-import { PAYOUT_SETUP_LOCKED, PayoutsLocked } from './joined/PayoutsLocked';
+import { PayoutsLocked } from './joined/PayoutsLocked';
 import { PayoutsTab } from './joined/PayoutsTab';
 import { GradientDefs, Page, SectionTabs, TabPanel } from './JoinedPage.styled';
 
@@ -24,10 +24,10 @@ const TABS: { id: JoinedTab; label: TranslationPath }[] = [
   { id: 'payouts', label: 'earn.joined.tabs.payouts' },
 ];
 
-const PANELS: Record<JoinedTab, () => React.ReactNode> = {
+const PANELS: Record<JoinedTab, (payoutEnabled: boolean) => React.ReactNode> = {
   leaderboard: () => <LeaderboardTab />,
   my_places: () => <MyPlacesTab />,
-  payouts: () => (PAYOUT_SETUP_LOCKED ? <PayoutsLocked /> : <PayoutsTab />),
+  payouts: payoutEnabled => (payoutEnabled ? <PayoutsTab /> : <PayoutsLocked />),
 };
 
 /** The Creator Fund page for a joined user: the Leaderboard, My Places and Payouts tabs. */
@@ -40,14 +40,12 @@ export function JoinedPage({
 }) {
   const id = useId();
   const payoutEnabled = useFeatureFlags().isEnabled(FeatureFlag.CREATOR_FUND_PAYOUT);
-  const tabs = payoutEnabled ? TABS : TABS.filter(entry => entry.id !== 'payouts');
-  const shown = tabs.some(entry => entry.id === tab) ? tab : tabs[0].id;
   const hasClosedCycle = useSelector(state => !!selectors.getLatestClosedCycle(state));
   const fillsWindow = useSelector(state =>
-    shown === 'leaderboard'
+    tab === 'leaderboard'
       ? state.creatorFund.cycles.status === 'succeeded' && !selectors.getLatestClosedCycle(state)
-      : shown === 'payouts' &&
-        (PAYOUT_SETUP_LOCKED || state.creatorFund.payouts.data?.payouts.length === 0),
+      : tab === 'payouts' &&
+        (!payoutEnabled || state.creatorFund.payouts.data?.payouts.length === 0),
   );
   return (
     <Page bottom={fillsWindow ? 'flush' : 'padded'}>
@@ -73,7 +71,7 @@ export function JoinedPage({
       </GradientDefs>
       <EarnHeader />
       <SectionTabs
-        value={shown}
+        value={tab}
         onChange={(_, value: JoinedTab) => {
           void analytics.track('Creator Fund Tab Viewed', {
             tab: value === 'leaderboard' && !hasClosedCycle ? 'home' : value,
@@ -82,7 +80,7 @@ export function JoinedPage({
         }}
         aria-label={t('earn.joined.sections')}
       >
-        {tabs.map(({ id: tabId, label }) => (
+        {TABS.map(({ id: tabId, label }) => (
           <Tab
             key={tabId}
             value={tabId}
@@ -96,9 +94,9 @@ export function JoinedPage({
       <TabPanel
         role="tabpanel"
         id={`${id}-panel`}
-        aria-labelledby={`${id}-${shown}`}
+        aria-labelledby={`${id}-${tab}`}
       >
-        {PANELS[shown]()}
+        {PANELS[tab](payoutEnabled)}
       </TabPanel>
     </Page>
   );
