@@ -54,6 +54,7 @@ import { RenameAsset } from '../RenameAsset';
 import { CreateCustomAsset } from '../CreateCustomAsset';
 import { CleanAssets } from '../CleanAssets';
 import { AssetSelectionProvider, PreviewPane, useAssetSelection } from '../AssetBrowserPreview';
+import { ErrorBoundary } from '../ErrorBoundary';
 import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui';
@@ -506,31 +507,45 @@ function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
               className="Assets-content"
               style={{ '--tile-size': `${tileSize}px` } as React.CSSProperties}
             >
-              {tab === AssetsTab.AssetsPack &&
-                (catalogUnavailable ? (
+              {/* A file the browser cannot handle, or a malformed catalog entry, costs this
+                  panel's tab and nothing else; switching tabs mounts it again. */}
+              <ErrorBoundary
+                name="assets-panel"
+                resetKeys={[tab]}
+                fallback={
                   <div className="AssetsCatalogUnavailable">
-                    <p>Asset Packs are unavailable.</p>
-                    <p>
-                      The content server could not be reached. Check your connection and try again.
-                    </p>
+                    <p>This panel ran into a problem.</p>
+                    <p>Switch to another tab and back to reload it.</p>
                   </div>
-                ) : (
-                  <AssetsCatalog
-                    catalog={filteredCatalog}
-                    onAddToFilesystem={importCatalogAssetToFilesystem}
+                }
+              >
+                {tab === AssetsTab.AssetsPack &&
+                  (catalogUnavailable ? (
+                    <div className="AssetsCatalogUnavailable">
+                      <p>Asset Packs are unavailable.</p>
+                      <p>
+                        The content server could not be reached. Check your connection and try
+                        again.
+                      </p>
+                    </div>
+                  ) : (
+                    <AssetsCatalog
+                      catalog={filteredCatalog}
+                      onAddToFilesystem={importCatalogAssetToFilesystem}
+                    />
+                  ))}
+                {tab === AssetsTab.FileSystem && <ProjectAssetExplorer />}
+                {tab === AssetsTab.CustomAssets && (
+                  <CustomAssets onAddToFilesystem={importCustomAssetToFilesystem} />
+                )}
+                {tab === AssetsTab.RenameAsset && assetToRename && (
+                  <RenameAsset
+                    assetId={assetToRename.id}
+                    currentName={assetToRename.name}
                   />
-                ))}
-              {tab === AssetsTab.FileSystem && <ProjectAssetExplorer />}
-              {tab === AssetsTab.CustomAssets && (
-                <CustomAssets onAddToFilesystem={importCustomAssetToFilesystem} />
-              )}
-              {tab === AssetsTab.RenameAsset && assetToRename && (
-                <RenameAsset
-                  assetId={assetToRename.id}
-                  currentName={assetToRename.name}
-                />
-              )}
-              {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
+                )}
+                {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
+              </ErrorBoundary>
             </div>
             {/* Collapsing only hides the body, so a mounted pane would keep its render loop and
                 avatar frame running out of sight. The selection lives above, so it comes back. */}

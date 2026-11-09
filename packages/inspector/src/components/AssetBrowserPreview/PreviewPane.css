@@ -77,9 +77,20 @@
 }
 
 .PreviewPane-info p {
-  margin: 0 0 8px;
-  color: var(--neutral-grey-3);
+  margin: 0;
+  color: var(--white-gray);
   line-height: 1.4;
+}
+
+.PreviewPane-block {
+  padding: 4px 0 6px;
+  border-bottom: 1px solid var(--base-17);
+}
+
+.PreviewPane-block > span:first-child {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--neutral-grey-3);
 }
 
 .PreviewPane-row {
@@ -103,7 +114,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 8px;
 }
 
 .PreviewPane-tags span {
@@ -131,6 +141,11 @@
   width: 36px;
   height: 36px;
   opacity: 0.6;
+}
+
+.PreviewPane-reason {
+  font-size: 11px;
+  color: var(--neutral-grey-4);
 }
 
 .PreviewPane-placeholder audio {

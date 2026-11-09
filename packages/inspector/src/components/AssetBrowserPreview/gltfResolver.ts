@@ -7,6 +7,8 @@ import '@babylonjs/loaders/glTF';
 import { getContentsUrl } from '../../lib/logic/catalog';
 import { getDataLayerInterface } from '../../redux/data-layer';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { normalizePath } from '../../lib/utils/path-utils';
+import { isOutsideAssets } from '../ProjectAssetExplorer/file-ops';
 
 /** Serves the files a glTF refers to (textures, .bin buffers) when it is loaded in isolation. */
 export type DependencyResolver = (uri: string) => Promise<Uint8Array>;
@@ -53,23 +55,18 @@ export async function loadModelContainer(
   }
 }
 
-function normalizePath(path: string): string {
-  const segments: string[] = [];
-  for (const segment of path.split('/')) {
-    if (!segment || segment === '.') continue;
-    if (segment === '..') segments.pop();
-    else segments.push(segment);
-  }
-  return segments.join('/');
-}
-
-/** Resolves a model's dependencies against its own folder in the project. */
+/**
+ * Resolves a model's dependencies against its own folder in the project. A URI is file content, so
+ * one that climbs out of `assets/` (`../../.env`, also as `..\..\.env` or with `%5C`) is refused:
+ * Creator Hub turns backslashes into slashes before it reads, and would otherwise serve it.
+ */
 export function createLocalResolver(modelPath: string): DependencyResolver {
   const folder = modelPath.includes('/') ? modelPath.slice(0, modelPath.lastIndexOf('/')) : '';
   return async uri => {
+    const path = normalizePath(`${folder}/${decodeURIComponent(uri)}`);
+    if (isOutsideAssets(path)) throw new Error(`"${uri}" points outside the assets folder`);
     const dataLayer = getDataLayerInterface();
     if (!dataLayer) throw new Error('Data layer is not ready');
-    const path = normalizePath(`${folder}/${decodeURIComponent(uri)}`);
     const { data } = await dataLayer.getAssetData({ path: withAssetDir(path) });
     return data;
   };

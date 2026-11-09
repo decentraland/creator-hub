@@ -62,6 +62,18 @@ describe('createModifierTracker', () => {
     expect(tracker.isMultiSelect()).toBe(true);
   });
 
+  it('should report Shift only for engine-window events (not inspector fields or the tree)', () => {
+    const onShift = vi.fn();
+    tracker.onShiftChange(onShift);
+    host.fire('keydown', { shiftKey: true, ctrlKey: false, metaKey: false });
+    expect(tracker.isShift()).toBe(false);
+    expect(onShift).not.toHaveBeenCalled();
+
+    engine.fire('keydown', { shiftKey: true, ctrlKey: false, metaKey: false });
+    expect(tracker.isShift()).toBe(true);
+    expect(onShift).toHaveBeenCalledTimes(1);
+  });
+
   it('should clear on blur (a swallowed keyup must not strand multi=true)', () => {
     engine.fire('keydown', { shiftKey: true, ctrlKey: false, metaKey: false });
     expect(tracker.isMultiSelect()).toBe(true);
