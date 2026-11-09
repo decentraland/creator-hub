@@ -16,7 +16,7 @@ const IconBadge = styled('span')({
   '& svg': { width: 48, height: 48 },
 });
 
-const Legend = styled('h2')({
+const Title = styled('h2')({
   ...typeToken('h2-semi'),
   margin: 0,
   color: 'var(--palette-neutral-softWhite)',
@@ -29,4 +29,4 @@ const LockedPanel = styled(EmptyPanel)({
   textAlign: 'center',
 });
 
-export { IconBadge, Legend, LockedPanel };
+export { IconBadge, LockedPanel, Title };

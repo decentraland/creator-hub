@@ -25,6 +25,13 @@ vi.mock('/@/lib/creatorFundApi', () => ({
 vi.mock('./joined/LeaderboardTab', () => ({ LeaderboardTab: () => <p>leaderboard panel</p> }));
 vi.mock('./joined/MyPlacesTab', () => ({ MyPlacesTab: () => <p>my places panel</p> }));
 vi.mock('./joined/PayoutsTab', () => ({ PayoutsTab: () => <p>payouts panel</p> }));
+const payoutSetup = vi.hoisted(() => ({ locked: true }));
+vi.mock('./joined/PayoutsLocked', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  get PAYOUT_SETUP_LOCKED() {
+    return payoutSetup.locked;
+  },
+}));
 vi.mock('../Modals', async importOriginal => ({
   ...((await importOriginal()) as object),
   Modal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
@@ -111,6 +118,7 @@ describe('JoinedPage', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    payoutSetup.locked = true;
   });
 
   describe('when the Payouts flag is off', () => {
@@ -144,6 +152,14 @@ describe('JoinedPage', () => {
         within(screen.getByRole('tabpanel')).getByRole('heading', { name: PAYOUTS_LOCKED }),
       ).toBeTruthy();
       expect(screen.queryByText('payouts panel')).toBeNull();
+    });
+
+    it('should show the payouts once payout wallet setup is unlocked', async () => {
+      payoutSetup.locked = false;
+      await renderPage('payouts');
+
+      expect(within(screen.getByRole('tabpanel')).getByText('payouts panel')).toBeTruthy();
+      expect(screen.queryByText(PAYOUTS_LOCKED)).toBeNull();
     });
   });
 

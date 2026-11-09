@@ -2,7 +2,7 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { WalletIcon } from '../icons';
 
-import { IconBadge, Legend, LockedPanel } from './PayoutsLocked.styled';
+import { IconBadge, LockedPanel, Title } from './PayoutsLocked.styled';
 
 /**
  * Payout wallet setup opens on 25 November. Until then the Payouts tab shows only this notice and
@@ -18,7 +18,7 @@ export function PayoutsLocked() {
       <IconBadge>
         <WalletIcon />
       </IconBadge>
-      <Legend>{t('earn.joined.payouts.locked')}</Legend>
+      <Title>{t('earn.joined.payouts.locked')}</Title>
     </LockedPanel>
   );
 }
