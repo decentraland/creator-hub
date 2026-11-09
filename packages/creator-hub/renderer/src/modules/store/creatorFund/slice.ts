@@ -276,6 +276,12 @@ const getLatestClosedCycle = createSelector(
   cycles => cycles.find(cycle => cycle.status === 'closed') ?? null,
 );
 
+/** The first cycle, the one that starts earliest; `null` while none is listed. */
+const getFirstCycle = createSelector(
+  getSortedCycles,
+  (cycles): Cycle | null => cycles.at(-1) ?? null,
+);
+
 /** My Places' cycles: the running one first, then the closed ones newest first; never an upcoming one. */
 const getMyPlacesCycles = createSelector(getSortedCycles, cycles => [
   ...cycles.filter(cycle => cycle.status === 'running'),
@@ -302,6 +308,7 @@ export const selectors = {
   needsReaccept,
   getSortedCycles,
   getLatestClosedCycle,
+  getFirstCycle,
   getMyPlacesCycles,
   getDefaultPlacesCycle,
   getCycleLabel,

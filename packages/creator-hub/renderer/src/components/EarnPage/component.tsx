@@ -13,6 +13,7 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
 
+import { JoinedPage, type JoinedTab } from './JoinedPage';
 import { IneligibleModal, JoinFlow, type JoinOutcome } from './JoinFlow';
 import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing';
 import { Spinner } from './Spinner';
@@ -47,6 +48,7 @@ function EarnContent() {
   const [joining, setJoining] = useState(false);
   const [reacceptFailed, setReacceptFailed] = useState(false);
   const [reaccepting, setReaccepting] = useState(false);
+  const [tab, setTab] = useState<JoinedTab>('leaderboard');
   const joinAfterSignIn = (location.state as EarnLocationState)?.joinAfterSignIn === true;
   const settled = checked && (enrollmentStatus === 'succeeded' || enrollmentFailed);
 
@@ -96,6 +98,7 @@ function EarnContent() {
 
   const handleExit = useCallback((outcome: JoinOutcome) => {
     setJoining(false);
+    if (outcome === 'joined') setTab('my_places');
     if (outcome === 'conflict') setAttempt(value => value + 1);
   }, []);
 
@@ -110,6 +113,7 @@ function EarnContent() {
       );
       if (actions.saveEnrollment.fulfilled.match(result)) {
         setReaccepting(false);
+        setTab('my_places');
         return;
       }
       const failure = result.payload;
@@ -182,7 +186,12 @@ function EarnContent() {
         error={reacceptFailed ? t('earn.errors.generic') : undefined}
         status={reaccepting ? 'submitting' : 'idle'}
       />
-    ) : null;
+    ) : (
+      <JoinedPage
+        tab={tab}
+        onTabChange={setTab}
+      />
+    );
   }
 
   return (

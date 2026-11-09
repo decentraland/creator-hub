@@ -174,4 +174,7 @@ export type Events = {
   'Creator Fund Read Terms': {
     source: 'landing' | 'snackbar' | 'menu';
   };
+  'Creator Fund Tab Viewed': {
+    tab: 'home' | 'leaderboard' | 'my_places' | 'payouts';
+  };
 };

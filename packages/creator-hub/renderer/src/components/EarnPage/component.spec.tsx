@@ -295,7 +295,7 @@ describe('EarnPage', () => {
       expect(within(alert).getByRole('button', { name: 'Retry' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
       expect(screen.queryByRole('button', { name: 'Read Terms' })).toBeNull();
-      expect(screen.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
+      expect(screen.queryByRole('tab', { name: 'Home' })).toBeNull();
     });
 
     it('should load the status again from RETRY', async () => {
@@ -361,7 +361,7 @@ describe('EarnPage', () => {
         expect(within(snackbar).getByText(copy)).toBeTruthy();
         expect(view.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
         expect(view.queryByRole('button', { name: 'More options' })).toBeNull();
-        expect(view.queryByRole('tab', { name: 'Leaderboard' })).toBeNull();
+        expect(view.queryByRole('tab', { name: 'Home' })).toBeNull();
       });
 
       it('should open the terms read-only from the snackbar', async () => {
@@ -384,6 +384,21 @@ describe('EarnPage', () => {
       });
     },
   );
+
+  describe('when joined on the current terms', () => {
+    beforeEach(() => {
+      auth.isSignedIn = true;
+      vi.mocked(api.getEnrollment).mockResolvedValue(ok(enrollment(2)));
+    });
+
+    it('should show the joined page instead of the landing', async () => {
+      page();
+
+      expect(await screen.findByRole('tab', { name: 'Home' })).toBeTruthy();
+      expect(screen.getByRole('tab', { name: 'My Places' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Join Creators Fund' })).toBeNull();
+    });
+  });
 
   describe('when joined on an older terms version', () => {
     beforeEach(() => {
@@ -410,13 +425,12 @@ describe('EarnPage', () => {
       expect(view.getByText('home page')).toBeTruthy();
     });
 
-    it('should accept the current version and close the modal', async () => {
+    it('should accept the current version and open the joined page on My Places', async () => {
       const view = within(page().container);
       await acceptUpdatedTerms(view);
 
-      await waitFor(() =>
-        expect(view.queryByRole('heading', { name: 'Program Terms updated' })).toBeNull(),
-      );
+      const myPlaces = await view.findByRole('tab', { name: 'My Places' });
+      expect(myPlaces.getAttribute('aria-selected')).toBe('true');
       expect(api.putEnrollment).toHaveBeenCalledWith({
         first_name: 'Jane',
         last_name: 'Doe',
@@ -473,9 +487,7 @@ describe('EarnPage', () => {
       fireEvent.click(reloaded);
       fireEvent.click(view.getByRole('button', { name: 'Accept' }));
 
-      await waitFor(() =>
-        expect(view.queryByRole('heading', { name: 'Program Terms updated' })).toBeNull(),
-      );
+      expect(await view.findByRole('tab', { name: 'Home' })).toBeTruthy();
       expect(vi.mocked(api.putEnrollment).mock.calls.map(([body]) => body.terms_version)).toEqual([
         2, 3,
       ]);
