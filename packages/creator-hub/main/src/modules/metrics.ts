@@ -37,6 +37,10 @@ export function resolveUrl({ baseUrl, path }: MetricsRequest): URL {
 /**
  * Performs an analytics API request from the main process, where CORS does not
  * apply. Never throws for HTTP or network failures — the caller renders them.
+ *
+ * A failure's `error` is the body's `message`, else its `error`, else the raw
+ * body; a JSON error body is also returned whole as `body`. An empty success
+ * body (204) resolves to `data: null`.
  */
 export async function request(req: MetricsRequest): Promise<MetricsResponse> {
   let url: URL;
@@ -46,44 +50,39 @@ export async function request(req: MetricsRequest): Promise<MetricsResponse> {
     return { ok: false, status: 0, error: error.message };
   }
 
+  const method = req.method ?? 'POST';
   try {
     const response = await fetch(url, {
-      method: 'POST',
+      method,
       headers: {
         ...Object.fromEntries(
           Object.entries(req.headers ?? {}).filter(([name]) => FORWARDED_HEADER.test(name)),
         ),
         accept: 'application/json',
-        'content-type': 'application/json',
+        ...(method !== 'GET' ? { 'content-type': 'application/json' } : {}),
       },
-      body: JSON.stringify(req.body),
+      body: method !== 'GET' ? (req.rawBody ?? JSON.stringify(req.body)) : undefined,
       // The allowlist only sees the first URL, so a 3xx to an internal address
       // would otherwise be followed unchecked.
       redirect: 'error',
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
-    const body = await response.text();
+    const text = await response.text();
     if (!response.ok) {
-      /*
-       * The service answers `{ error, message }` where `error` is the generic
-       * status ("Bad request") and `message` carries the only useful detail
-       * ("locations[0]: \"Not A Name\" is not a valid ENS name"), so `message`
-       * wins. A non-JSON body is kept verbatim rather than replaced with a bare
-       * status.
-       */
-      let message = body || `Request failed with status ${response.status}`;
+      let message = text || `Request failed with status ${response.status}`;
+      let body: unknown;
       try {
-        const parsed = JSON.parse(body);
-        message = parsed.message ?? parsed.error ?? message;
+        body = JSON.parse(text);
+        message = (body as any).message ?? (body as any).error ?? message;
       } catch {
-        // Not JSON — the raw body is the message.
+        body = undefined;
       }
       log.warn(`[metrics] ${url.pathname} status=${response.status} error=${message}`);
-      return { ok: false, status: response.status, error: message };
+      return { ok: false, status: response.status, error: message, body };
     }
 
-    return { ok: true, status: response.status, data: JSON.parse(body) };
+    return { ok: true, status: response.status, data: text ? JSON.parse(text) : null };
   } catch (error: any) {
     const message = error.name === 'TimeoutError' ? 'The analytics API timed out' : error.message;
     log.error(`[metrics] ${url.pathname} error=${message}`);
