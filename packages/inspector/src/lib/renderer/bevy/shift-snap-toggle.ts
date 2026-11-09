@@ -13,7 +13,8 @@
  */
 
 export interface ShiftSnapToggleOptions {
-  /** True while Shift is held (the modifier tracker). */
+  /** True while Shift is held in the viewport (the modifier tracker; Shift typed
+   * in an inspector field must not flip the global Snap setting). */
   isShift(): boolean;
   /** Fires on every Shift press/release transition. Returns an unsubscribe. */
   onShiftChange(cb: () => void): () => void;
