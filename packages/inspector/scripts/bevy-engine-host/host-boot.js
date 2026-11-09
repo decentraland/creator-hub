@@ -4,6 +4,12 @@
 // strict `script-src 'self' …` with no `'unsafe-inline'` — an injected inline
 // script then can't execute in this privileged, editor-bridged frame. Copied
 // into `public/bevy-engine/` alongside engine.html by scripts/copy-bevy-engine.ts.
+import { installEditorAudio } from './editor-audio.js';
+
+// The editor's master mute (`window.__editorAudio`) must wrap the audio APIs
+// BEFORE the engine opens them, so install it first. The frame boots muted.
+installEditorAudio(window, { muted: true });
+
 const params = new URLSearchParams(window.location.search);
 const realm = params.get('realm') ?? undefined;
 const position = params.get('position') ?? undefined;

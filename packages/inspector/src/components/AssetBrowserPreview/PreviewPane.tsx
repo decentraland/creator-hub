@@ -283,6 +283,16 @@ function Row({ label, value }: { label: string; value?: React.ReactNode }) {
   );
 }
 
+/** A labelled field whose value needs its own lines (prose, a list of chips). */
+function Block({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="PreviewPane-block">
+      <span>{label}</span>
+      {children}
+    </div>
+  );
+}
+
 function countEntities(asset: CustomAsset): number {
   const ids = new Set<string>();
   asset.composite.components.forEach(component =>
@@ -323,6 +333,9 @@ function PreviewPane() {
   const catalogAsset = selection.source === 'catalog' ? selection.asset : undefined;
   const customAsset = selection.source === 'custom' ? selection.asset : undefined;
   const assetData = catalogAsset ?? customAsset;
+  // Catalog items write a one-line `caption` far more often than a `description`.
+  const description = assetData?.description || assetData?.caption;
+  const tags = assetData?.tags ?? [];
   const source = state.status === 'ready' ? state.source : undefined;
   const { stats, dimensions, duration, isEmote } = details;
 
@@ -379,7 +392,11 @@ function PreviewPane() {
             {infoOpen ? <MdKeyboardArrowDown /> : <MdKeyboardArrowUp />}
           </button>
         </h3>
-        {infoOpen && assetData?.description && <p>{assetData.description}</p>}
+        {description && (
+          <Block label="Description">
+            <p>{description}</p>
+          </Block>
+        )}
         <Row
           label="Type"
           value={typeLabel}
@@ -436,12 +453,14 @@ function PreviewPane() {
             />
           </>
         )}
-        {assetData && assetData.tags.length > 0 && (
-          <div className="PreviewPane-tags">
-            {assetData.tags.slice(0, 8).map(tag => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
+        {tags.length > 0 && (
+          <Block label="Tags">
+            <div className="PreviewPane-tags">
+              {tags.map(tag => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+          </Block>
         )}
       </div>
     </aside>
