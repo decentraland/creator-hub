@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "make init && make test",
+            "command": "make init && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 make test",
             "timeout": 600,
             "statusMessage": "Setting up worktree environment (install, protoc, build, test)..."
           }

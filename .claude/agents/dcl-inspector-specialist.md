@@ -24,6 +24,7 @@ You own `packages/inspector`. `docs/DESIGN.md` and the `vars.css` token block be
 
 ## Traps (details in CLAUDE.md → "Inspector")
 
+- Run vitest capped and one at a time (`docs/testing-standards.md` → "Run vitest capped").
 - Codegen: escape author strings as values, and pass identifiers through `isValidIdentifier`.
 - A new react-ecs element or prop touches `parse-adapter.ts`, `emit-adapter.ts`, and, when the prop needs a value transform, `ecs-shape.ts`.
 - Multi-node operations batch their splices into one `applySourceEdits`.
@@ -39,7 +40,7 @@ Don't report success until all of these pass. Paste the tail of each output:
 
 ```bash
 make build-inspector
-(cd packages/inspector && npm run typecheck && npm test)
+(cd packages/inspector && npm run typecheck && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm test)
 npx eslint <every touched .ts/.tsx>    # same rules as make lint, scoped to your files
 ```
 
