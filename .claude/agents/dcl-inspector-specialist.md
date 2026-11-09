@@ -39,7 +39,7 @@ Don't report success until all of these pass. Paste the tail of each output:
 
 ```bash
 make build-inspector
-(cd packages/inspector && npm run typecheck && npm test)
+(cd packages/inspector && npm run typecheck && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm test)
 npx eslint <every touched .ts/.tsx>    # same rules as make lint, scoped to your files
 ```
 

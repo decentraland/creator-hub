@@ -34,7 +34,7 @@ When generated output is wrong, the fix belongs in `src/` or `packs/`.
 Don't report success until all of these pass. Paste the tail of each output:
 
 ```bash
-(cd packages/asset-packs && npm run typecheck && npm test && npm run validate)
+(cd packages/asset-packs && npm run typecheck && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm test && npm run validate)
 make build-asset-packs
 ```
 

@@ -1,12 +1,23 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "p=$(cat); case \"$p\" in *test*|*commit*) printf '%s' \"$p\" | python3 \"$CLAUDE_PROJECT_DIR/.ai/hooks/bash-guard/hook.py\" ;; esac"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "EnterWorktree",
         "hooks": [
           {
             "type": "command",
-            "command": "make init && make test",
+            "command": "make init && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 make test",
             "timeout": 600,
             "statusMessage": "Setting up worktree environment (install, protoc, build, test)..."
           }

@@ -56,15 +56,25 @@ One row per variant × state: default, hover, press, active or selected, focus, 
 - Accessible names: <control → name>.
 - Hit targets: <control → size, ≥ 24px or ✱>.
 
-## §7 Strings
+## §7 Strings and options
 
-| String   | Where     | New / recased / existing |
-| -------- | --------- | ------------------------ |
-| "<text>" | <control> | <kind>                   |
+Every string, option, list entry and state the code renders. "Not drawn" is a Match question, never a silent addition (a dropdown option Figma doesn't show included).
+
+| String or option | Where     | New / recased / existing | Drawn (node id / not drawn → answer) |
+| ---------------- | --------- | ------------------------ | ------------------------------------ |
+| "<text>"         | <control> | <kind>                   | `<id>` / not drawn → <user decision> |
 
 ## §8 Screenshot checklist
 
 | # | State | Renderer | Fixture | Figma variant |
 | --- | --- | --- | --- | --- |
 | 1 | <state> | standalone inspector (Babylon) / Creator Hub (Bevy) | <fixture, and the reset step before the shot> | `<id>` |
+
+## §9 Data states
+
+One row per surface that loads data. Each cell is the drawn node id, or the user's answer when Figma draws none. "Back to the tab" is the state most often missed: data from the last visit is cached while the new requests run, so nothing that depends on them may show until they settle.
+
+| Surface | Requests | First load | Back to the tab | Empty | Error | One request of several fails |
+| --- | --- | --- | --- | --- | --- | --- |
+| <tab / panel> | <endpoints> | <spinner / skeleton, node> | <what shows while refetching> | <node or answer> | <node or answer> | <node or answer> |
 ```

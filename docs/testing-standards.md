@@ -120,6 +120,28 @@ Under happy-dom the whole subtree reports "There are no accessible roles", and
 `querySelector('[role="…"]')` — see `FlowField.spec.tsx`, `CallbackField.spec.tsx`.
 `getByRole` is fine on a bare control (`Pill.spec.tsx`).
 
+### Named `getByRole` queries are slow inside MUI modals
+
+`getByRole(role, { name })` computes the accessible name of every candidate in
+the tree on each call, and a ui2 `Modal` puts a lot of tree under one query. The
+Creator Fund join-flow specs took about 2.5 s each alone and hit the 5 s timeout
+on a loaded CI runner. A flow helper that steps through a modal finds fields with
+`getByLabelText` and buttons with `getByText`, which brought each test under
+0.5 s (`EarnPage/JoinFlow.spec.tsx`); keep one `getByRole` with a name where the
+test asserts that name. Raise the timeout for a single file only, and only after
+the queries are cheap.
+
+### Run vitest capped, and read the summary line
+
+Every run takes the thread cap (`VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1`, or
+`--pool=threads --poolOptions.threads.maxThreads=2 --poolOptions.threads.minThreads=1`
+on one spec), and only one runs at a time: parallel uncapped runs froze a 14-core
+machine. The bash-guard hook (`.ai/hooks/bash-guard/hook.py`) refuses an uncapped
+or second run from an agent. In `packages/creator-hub`, a spec run needs its
+project (`npx vitest run -r renderer <path>`); without it vitest prints
+`no tests` and still exits 0, so a gate reads the `Test Files … passed` line,
+never the exit code alone.
+
 ### happy-dom is not a browser for labels and visibility
 
 - happy-dom 14 activates a `<label>` during the bubble phase and ignores
