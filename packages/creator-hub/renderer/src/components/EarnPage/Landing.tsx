@@ -34,6 +34,7 @@ import {
   Highlight,
   Information,
   Intro,
+  KnowMore,
   Tagline,
   Title,
   TitleBlock,
@@ -41,6 +42,8 @@ import {
 } from './Landing.styled';
 import { SnackbarAction, StatusSnackbar } from './StatusSnackbar';
 import { TermsModal } from './TermsModal';
+
+const CREATOR_FUND_PAGE_URL = 'https://decentraland.org/creator-fund';
 
 const FEATURES: {
   key: string;
@@ -122,7 +125,16 @@ export function Landing({
                   <Highlight key={String(chunks)}>{chunks}</Highlight>
                 ),
               },
-            )}
+            )}{' '}
+            <KnowMore
+              href={CREATOR_FUND_PAGE_URL}
+              onClick={event => {
+                event.preventDefault();
+                void misc.openExternal(CREATOR_FUND_PAGE_URL);
+              }}
+            >
+              {t('earn.landing.know_more')}
+            </KnowMore>
           </Description>
         </Intro>
         <Features>

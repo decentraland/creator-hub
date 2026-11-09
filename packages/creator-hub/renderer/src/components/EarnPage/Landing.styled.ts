@@ -90,6 +90,16 @@ const Highlight = styled('span')({
   color: 'var(--palette-neutral-softWhite)',
 });
 
+const KnowMore = styled('a')({
+  fontWeight: 'var(--fw-bold)',
+  color: 'var(--palette-neutral-softWhite)',
+  textDecoration: 'underline',
+  whiteSpace: 'nowrap',
+  borderRadius: 'var(--shape-borderRadiusMedium)',
+  cursor: 'pointer',
+  ...focusRing,
+});
+
 const Features = styled('ul')({
   listStyle: 'none',
   margin: 0,
@@ -123,16 +133,17 @@ const CtaArea = styled('div')({
   position: 'relative',
   zIndex: 1,
   marginTop: 30,
+  marginLeft: 'var(--m)',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
+  alignItems: 'flex-start',
   gap: 10,
 });
 
 const CtaRow = styled('div')({
   display: 'flex',
   flexWrap: 'wrap',
-  justifyContent: 'center',
+  justifyContent: 'flex-start',
   gap: 20,
   maxWidth: '100%',
   '&& .MuiButton-root + .MuiButton-root': { marginLeft: 0 },
@@ -191,6 +202,7 @@ export {
   Highlight,
   Information,
   Intro,
+  KnowMore,
   StatusLine,
   Tagline,
   Title,

@@ -1607,22 +1607,23 @@
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "Create experiences. Bring players together. Earn USDC.",
       "tagline_signed_out": "Create experiences. Bring players together. Earn money.",
-      "description": "The <hl>Decentraland Creator Fund</hl> <hl>rewards LAND and World owners</hl> for bringing in new players, building activity, and keeping players coming back.",
+      "description": "<hl>30,000 USDC</hl> split over <hl>3 cycles</hl>, Cycle 1 Starts <hl>November 15th</hl>.",
+      "know_more": "Know More",
       "features": {
         "enrolment": {
           "title": "Automatic enrollment",
-          "body": "All eligible scenes you own are included when you join. New eligible scenes are added automatically."
+          "body": "Eligible scenes you own start participating when you join."
         },
         "cycles": {
           "title": "Rewards every 15 days",
-          "body": "Each month has two reward cycles: 1st–15th and 16th–end of month."
+          "body": "Each month has two reward cycles."
         },
         "activity": {
-          "title": "Rewards based on player activity",
-          "body": "Earn based on the players your scenes attract and bring back."
+          "title": "Rewards based on Activity",
+          "body": "New Players you bring, Playtime and Day 3 Retention drive rewards."
         },
         "payout": {
-          "title": "Get paid directly in USDC",
+          "title": "Payouts in USDC",
           "body": "Payouts are sent to your selected wallet within 14 days after each cycle ends."
         }
       },
@@ -1692,6 +1693,7 @@
       "tabs": {
         "my_places": "My Places",
         "leaderboard": "Leaderboard",
+        "payouts": "Payouts",
         "home": "Home"
       },
       "title_prefix": "Earn",
@@ -1793,6 +1795,75 @@
         "create_scene": "Create a scene",
         "error": "Something went wrong while loading your places.",
         "replaced_tooltip": "This place was republished as a new one. Its earlier numbers are kept."
+      },
+      "payouts": {
+        "wallet": {
+          "title": "Payout Wallet",
+          "info_label": "About payout wallets",
+          "info": "A digital wallet is where you store and manage your digital assets. You can use it to send, receive, and keep track of your funds securely, including your Creator Fund USDC rewards.",
+          "learn_more": "Learn More",
+          "copy": "Copy wallet address",
+          "edit": "Edit",
+          "add": "Add wallet"
+        },
+        "contact": {
+          "title": "Contact Information",
+          "full_name": "Full Name",
+          "email": "Email",
+          "unverified": "Unverified",
+          "verify": "Verify email"
+        },
+        "table": {
+          "label": "Payouts",
+          "cycle": "Cycle",
+          "status": "Status",
+          "paid_places": "Paid Places",
+          "amount": "Amount",
+          "transaction": "Transaction",
+          "pending": "Pending",
+          "paid": "Paid",
+          "usdc": "{amount} USDC",
+          "view_transaction": "View transaction on Etherscan"
+        },
+        "locked": "Payout Wallet setup unlocks November 25th",
+        "empty": {
+          "title": "Your rewards journey starts here!",
+          "first_payout": "Your first payout is coming after the {cycle} cycle ends.",
+          "body": "Keep building, bring players together, and create experiences they'll want to revisit!"
+        },
+        "add": {
+          "title": "Add payout wallet",
+          "body": "We’ll send your Creator Fund payouts here in USDC.",
+          "submit": "Add wallet"
+        },
+        "change": {
+          "title": "Change payout wallet",
+          "body": "Upcoming payouts go to this wallet as soon as you save.",
+          "submit": "Save"
+        },
+        "wallet_field": {
+          "label": "Wallet address",
+          "placeholder": "0x…",
+          "invalid": "Invalid wallet address. It should start with 0x and be 42 characters long."
+        },
+        "erc20": "Make sure this wallet can receive USDC on Ethereum (ERC-20). Funds sent to a wallet that doesn't support it can't be recovered.",
+        "verify": {
+          "title": "Verify your email",
+          "body_sent": "6-digit code sent to <b>{email}</b>.",
+          "body_instruction": "Please enter the code below to complete verification.",
+          "digit": "Digit {n} of 6",
+          "resend": "Resend Code",
+          "incorrect": "Incorrect Code. Check the email and try again.",
+          "expired": "This code has expired. Resend a new one.",
+          "submit": "Verify"
+        },
+        "snackbar": {
+          "wallet_added": "Payout wallet added",
+          "wallet_updated": "Payout wallet updated",
+          "email_verified": "Email verified"
+        },
+        "cancel": "Cancel",
+        "error": "Something went wrong while loading your payouts."
       }
     },
     "errors": {

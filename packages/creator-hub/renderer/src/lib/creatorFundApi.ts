@@ -3,13 +3,18 @@ import type {
   CreatorFundCycles,
   CreatorFundErrorBody,
   CreatorFundNews,
+  CreatorFundPayouts,
   CreatorFundTerms,
   Eligibility,
+  EmailVerification,
+  EmailVerificationRequest,
   Enrollment,
   EnrollmentRequest,
   Leaderboard,
   LeaderboardCycle,
   MyPlaces,
+  PayoutWallet,
+  PayoutWalletRequest,
 } from '/shared/types/creator-fund';
 
 import { metrics } from '#preload';
@@ -26,7 +31,7 @@ export type CreatorFundResponse<T> =
   | { ok: true; status: number; data: T }
   | { ok: false; status: number; error: string; body?: CreatorFundErrorBody };
 
-type Method = 'GET' | 'PUT';
+type Method = 'GET' | 'POST' | 'PUT';
 
 async function sha256Hex(text: string) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -46,7 +51,7 @@ async function send<T>(
       headers = buildSignedHeaders(
         CREATOR_FUND_API_URL,
         path,
-        method.toLowerCase() as 'get' | 'put',
+        method.toLowerCase() as Lowercase<Method>,
         rawBody === undefined ? {} : { hashPayload: await sha256Hex(rawBody) },
       );
     } catch (error: any) {
@@ -95,3 +100,21 @@ export const getLeaderboard = (cycle: LeaderboardCycle) =>
 
 /** `GET /v3/creator-fund/banner` (public; hidden in v0). `data` is `null` on its 204. */
 export const getBanner = () => send<CreatorFundBanner>('GET', '/banner');
+
+/** `GET /v3/creator-fund/payouts` (signed; mock only), newest cycle first. */
+export const getPayouts = () => send<CreatorFundPayouts>('GET', '/payouts', { signed: true });
+
+/** `GET /v3/creator-fund/payout-wallet` (signed; mock only); a 404 means none is set. */
+export const getPayoutWallet = () => send<PayoutWallet>('GET', '/payout-wallet', { signed: true });
+
+/** `PUT /v3/creator-fund/payout-wallet` (signed; mock only): 201 sets it, 200 changes it. */
+export const putPayoutWallet = (wallet: PayoutWalletRequest) =>
+  send<PayoutWallet>('PUT', '/payout-wallet', { signed: true, body: wallet });
+
+/** `POST /v3/creator-fund/enrollment/email-verification` (signed; mock only): sends a code. */
+export const postEmailVerification = () =>
+  send<EmailVerification>('POST', '/enrollment/email-verification', { signed: true });
+
+/** `PUT /v3/creator-fund/enrollment/email-verification` (signed; mock only): confirms a code. */
+export const putEmailVerification = (verification: EmailVerificationRequest) =>
+  send<Enrollment>('PUT', '/enrollment/email-verification', { signed: true, body: verification });
