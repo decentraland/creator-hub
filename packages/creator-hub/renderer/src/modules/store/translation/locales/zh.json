@@ -1606,11 +1606,12 @@
       "title_prefix": "赚取",
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "创造体验。汇聚玩家。赚取 USDC。",
+      "tagline_signed_out": "创造体验。汇聚玩家。赚取收益。",
       "description": "<hl>Decentraland Creator Fund</hl> <hl>奖励 LAND 和 World 所有者</hl>，表彰他们吸引新玩家、带动活跃度并让玩家持续回访。",
       "features": {
         "enrolment": {
           "title": "自动加入",
-          "body": "加入后，你拥有或运营的所有符合条件的场景都会被纳入。新的符合条件的场景会自动添加。"
+          "body": "加入后，你拥有的所有符合条件的场景都会被纳入。新的符合条件的场景会自动添加。"
         },
         "cycles": {
           "title": "每 15 天发放奖励",
@@ -1622,10 +1623,11 @@
         },
         "payout": {
           "title": "直接以 USDC 支付",
-          "body": "每个周期结束后 30 天内，款项会发送到你选择的钱包。"
+          "body": "每个周期结束后 14 天内，付款会发送到你选择的钱包。"
         }
       },
       "join": "加入 Creators Fund",
+      "sign_in_to_join": "登录以加入 Creators Fund",
       "read_terms": "阅读条款",
       "status": {
         "suspended": "你在 Creator Fund 的参与已被暂停。"
@@ -1685,9 +1687,13 @@
       "body": "准备好你的场景，吸引玩家，开始赚取 USDC 奖励。",
       "lets_go": "开始吧"
     },
+    "joined": {
+      "read_terms": "阅读条款",
+      "contact_support": "联系支持"
+    },
     "errors": {
       "generic": "出了点问题，请重试。",
-      "load_status": "无法加载 Creator Fund。",
+      "load_status": "加载 Creator Fund 时出了点问题。",
       "retry": "重试"
     }
   },

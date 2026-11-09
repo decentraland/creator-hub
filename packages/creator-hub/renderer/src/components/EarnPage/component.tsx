@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
+import type { Events } from '/shared/types/analytics';
+
+import { analytics } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
@@ -15,12 +18,27 @@ import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing
 import { Spinner } from './Spinner';
 import { TermsModal } from './TermsModal';
 
+type EarnLocationState = { joinAfterSignIn?: boolean } | null;
+
+type VisitState = Events['Creator Fund Viewed']['state'];
+
+function useTrackVisit(state: VisitState | null) {
+  const sent = useRef(false);
+  useEffect(() => {
+    if (!state || sent.current) return;
+    sent.current = true;
+    void analytics.track('Creator Fund Viewed', { state });
+  }, [state]);
+}
+
 function EarnContent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isSignedIn } = useAuth();
+  const location = useLocation();
+  const { isSignedIn, isSigningIn, signIn } = useAuth();
   const enrollment = useSelector(state => state.creatorFund.enrollment.data);
-  const enrollmentFailed = useSelector(state => state.creatorFund.enrollment.status === 'failed');
+  const enrollmentStatus = useSelector(state => state.creatorFund.enrollment.status);
+  const enrollmentFailed = enrollmentStatus === 'failed';
   const needsReaccept = useSelector(selectors.needsReaccept);
   const termsVersion = useSelector(state => state.creatorFund.terms.data?.version);
   const [refusedReasons, setRefusedReasons] = useState<string[] | null>(null);
@@ -29,6 +47,16 @@ function EarnContent() {
   const [joining, setJoining] = useState(false);
   const [reacceptFailed, setReacceptFailed] = useState(false);
   const [reaccepting, setReaccepting] = useState(false);
+  const joinAfterSignIn = (location.state as EarnLocationState)?.joinAfterSignIn === true;
+  const settled = checked && (enrollmentStatus === 'succeeded' || enrollmentFailed);
+
+  let visit: VisitState | null = null;
+  if (!isSignedIn) visit = isSigningIn ? null : 'signed_out';
+  else if (settled && !enrollmentFailed) {
+    if (!enrollment) visit = 'not_joined';
+    else visit = enrollment.status === 'active' ? 'joined' : 'suspended';
+  }
+  useTrackVisit(visit);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -43,6 +71,28 @@ function EarnContent() {
   }, [isSignedIn, attempt, dispatch]);
 
   const startJoin = useCallback(() => setJoining(true), []);
+
+  useEffect(() => {
+    if (!joinAfterSignIn || isSigningIn || (isSignedIn && !settled)) return;
+    navigate(location, { replace: true, state: null });
+    if (isSignedIn && !enrollmentFailed && !enrollment) startJoin();
+  }, [
+    joinAfterSignIn,
+    isSigningIn,
+    isSignedIn,
+    settled,
+    enrollment,
+    enrollmentFailed,
+    navigate,
+    location,
+    startJoin,
+  ]);
+
+  const signInToJoin = useCallback(() => {
+    void analytics.track('Creator Fund Join Clicked', { signed_in: false });
+    navigate(location, { replace: true, state: { joinAfterSignIn: true } });
+    void signIn();
+  }, [navigate, location, signIn]);
 
   const handleExit = useCallback((outcome: JoinOutcome) => {
     setJoining(false);
@@ -84,9 +134,18 @@ function EarnContent() {
     [dispatch, enrollment],
   );
 
-  if (!isSignedIn) return null;
+  if (!isSignedIn) {
+    return (
+      <Landing audience="signed_out">
+        <LandingCtas
+          audience="signed_out"
+          onJoin={signInToJoin}
+        />
+      </Landing>
+    );
+  }
 
-  if (!checked) return <Spinner label={t('earn.loading')} />;
+  if (!settled) return <Spinner label={t('earn.loading')} />;
 
   if (enrollmentFailed) {
     return (
@@ -131,7 +190,10 @@ function EarnContent() {
       <Landing audience="signed_in">
         <LandingCtas
           audience="signed_in"
-          onJoin={startJoin}
+          onJoin={() => {
+            void analytics.track('Creator Fund Join Clicked', { signed_in: true });
+            startJoin();
+          }}
         />
       </Landing>
       {joining && <JoinFlow onExit={handleExit} />}

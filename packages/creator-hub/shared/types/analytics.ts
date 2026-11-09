@@ -168,4 +168,10 @@ export type Events = {
   'Creator Fund Contact Support': {
     source: 'check_failed' | 'snackbar' | 'menu';
   };
+  'Creator Fund Viewed': {
+    state: 'signed_out' | 'not_joined' | 'joined' | 'suspended';
+  };
+  'Creator Fund Read Terms': {
+    source: 'landing' | 'snackbar' | 'menu';
+  };
 };
