@@ -1623,7 +1623,7 @@
           "body": "New Players you bring, Playtime and Day 3 Retention drive rewards."
         },
         "payout": {
-          "title": "Payouts in USD",
+          "title": "Payouts in USDC",
           "body": "Payouts are sent to your selected wallet within 14 days after each cycle ends."
         }
       },

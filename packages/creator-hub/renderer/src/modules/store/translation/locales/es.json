@@ -1623,7 +1623,7 @@
           "body": "Los nuevos jugadores que atraes, el tiempo de juego y la retención del día 3 determinan las recompensas."
         },
         "payout": {
-          "title": "Pagos en USD",
+          "title": "Pagos en USDC",
           "body": "Los pagos se envían a la billetera que elijas dentro de los 14 días posteriores al cierre de cada ciclo."
         }
       },
