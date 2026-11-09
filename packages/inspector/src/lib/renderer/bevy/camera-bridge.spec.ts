@@ -40,6 +40,25 @@ describe('createCameraBridge', () => {
       ]);
       bridge.disconnect();
     });
+
+    it('should post the held fly keys and the avatar visibility to the scene', () => {
+      const bridge = createCameraBridge({ channel });
+      const input = {
+        forward: true,
+        backward: false,
+        left: false,
+        right: true,
+        up: false,
+        down: false,
+      };
+      bridge.setFlyInput(input);
+      bridge.setAvatarVisible(false);
+      expect(posted).toEqual([
+        { to: 'scene', msg: { kind: 'set-fly-input', ...input } },
+        { to: 'scene', msg: { kind: 'set-avatar-visible', visible: false } },
+      ]);
+      bridge.disconnect();
+    });
   });
 
   describe('the camera-pose stream', () => {

@@ -374,10 +374,12 @@ export interface RendererInteraction {
  * keeps playing while you edit). Such a renderer can silence all scene audio with
  * an editor-side mute, independent of the run/freeze state. Babylon doesn't play
  * scene audio, so it omits this; the Bevy renderer runs the real scene and exposes
- * a mute toggle (default: unmuted).
+ * a mute toggle. A scene opens MUTED: sound is opt-in while editing, and the mute
+ * covers everything the renderer plays (scene audio, video, the avatar's own
+ * sounds), running or frozen.
  */
 export interface RendererAudio {
-  /** True when scene audio is silenced by the editor; false (default) when it plays. */
+  /** True (the default) when the editor silences all audio; false when it plays. */
   isMuted(): boolean;
   setMuted(muted: boolean): void;
   /** Notify on change (so a toolbar toggle reflects the state). */

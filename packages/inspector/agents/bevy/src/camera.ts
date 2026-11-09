@@ -11,7 +11,7 @@ import {
 } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
-import type { CameraMode } from '@dcl/inspector-bevy-protocol';
+import type { CameraMode, FlyInput } from '@dcl/inspector-bevy-protocol';
 
 import { bus } from './bus';
 
@@ -36,6 +36,10 @@ const RAD_TO_DEG = 180 / Math.PI;
 const MIN_FRAME_DIST = 0.5;
 const MAX_FRAME_DIST = 12; // keep a framed entity comfortably in view
 const TWEEN_DURATION = 0.3; // seconds
+// The fly camera never goes below the ground plane. Players can't fall under Y=0
+// and the universal ground plane sits there, so a view from underneath only
+// disorients. The small margin keeps the near plane from clipping the plane itself.
+const MIN_CAMERA_Y = 0.1;
 
 let camEntity: Entity | null = null;
 let mode: CameraMode = 'avatar';
@@ -44,12 +48,19 @@ let pitch = 0;
 // Whether the avatar's WASD walk input is currently enabled (engine default:
 // enabled). Toggled to match the camera mode by reconcileAvatarInput.
 let avatarWalkEnabled = true;
-// Vertical fly held state from the host (E = up, Q = down). Q has no SDK
-// InputAction, so the engine can't read it; the inspector captures E/Q and
-// forwards the held state over the bus (see setVerticalInput). Added to the
-// per-frame fly move alongside the engine-read IA_JUMP (Space) = up.
-let verticalUp = false;
-let verticalDown = false;
+// Fly movement keys held on the HOST (see setFlyInput). While the fly camera is
+// active the inspector swallows WASD/Space/E/Q on the engine window — so the keys
+// can't also walk the avatar — and forwards their held state over the bus. The
+// engine-read InputActions are still OR'd in for any input that bypasses the host
+// (a gamepad).
+let flyInput: FlyInput = {
+  forward: false,
+  backward: false,
+  left: false,
+  right: false,
+  up: false,
+  down: false,
+};
 // Scene-local → engine-world offset (base parcel × 16m). The inspector sends
 // world positions in SCENE-LOCAL coords (it renders every scene at the origin),
 // but the engine loads the scene at its real parcel — so we add this offset to
@@ -61,10 +72,16 @@ export function setCameraSceneOffset(baseParcelX: number, baseParcelY: number): 
   sceneOffset = Vector3.create(baseParcelX * 16, 0, baseParcelY * 16);
 }
 
-/** Set the vertical fly-camera held state forwarded by the host (E = up, Q = down). */
-export function setVerticalInput(up: boolean, down: boolean): void {
-  verticalUp = up;
-  verticalDown = down;
+/** Set the fly-camera movement keys the host reports as held. */
+export function setFlyInput(input: FlyInput): void {
+  flyInput = { ...input };
+}
+
+/** Keep a camera position on or above the ground plane (see MIN_CAMERA_Y). */
+function clampAboveGround(position: Vector3): Vector3 {
+  return position.y < MIN_CAMERA_Y
+    ? Vector3.create(position.x, MIN_CAMERA_Y, position.z)
+    : position;
 }
 
 // An eased move to a framing pose (focus-on-entity); cancelled by any manual input.
@@ -105,7 +122,7 @@ function startTween(toPos: Vector3, lookDir: Vector3): void {
   const dYaw = Math.atan2(Math.sin(rawYaw - yaw), Math.cos(rawYaw - yaw));
   tween = {
     fromPos: { ...Transform.get(camEntity).position },
-    toPos: { ...toPos },
+    toPos: clampAboveGround({ ...toPos }),
     fromYaw: yaw,
     toYaw: yaw + dYaw,
     fromPitch: pitch,
@@ -171,7 +188,7 @@ export function zoomCamera(delta: number): void {
   tween = null;
   const t = Transform.getMutable(camEntity);
   const forward = Vector3.rotate(Vector3.Forward(), t.rotation as Quaternion);
-  t.position = Vector3.add(t.position, Vector3.scale(forward, ZOOM_STEP * delta));
+  t.position = clampAboveGround(Vector3.add(t.position, Vector3.scale(forward, ZOOM_STEP * delta)));
 }
 
 /** Install the fly-camera system + VirtualCamera. Call once on boot. */
@@ -193,7 +210,7 @@ export function setCameraMode(next: CameraMode): void {
     const camT = Transform.getOrNull(engine.CameraEntity);
     const vt = Transform.getMutable(camEntity);
     if (camT !== null) {
-      vt.position = { ...camT.position };
+      vt.position = clampAboveGround({ ...camT.position });
       aimAlong(Vector3.rotate(Vector3.Forward(), camT.rotation as Quaternion));
     }
     vt.rotation = lookRotation();
@@ -272,13 +289,14 @@ function cameraSystemInner(dt: number): void {
   const lookDx = locked ? (ptr?.screenDelta?.x ?? 0) : 0;
   const lookDy = locked ? (ptr?.screenDelta?.y ?? 0) : 0;
 
-  const forwardKey = inputSystem.isPressed(InputAction.IA_FORWARD);
-  const backKey = inputSystem.isPressed(InputAction.IA_BACKWARD);
-  const rightKey = inputSystem.isPressed(InputAction.IA_RIGHT);
-  const leftKey = inputSystem.isPressed(InputAction.IA_LEFT);
-  // Up = Space (engine InputAction) OR E (host-forwarded); down = Q (host-forwarded).
-  const upKey = inputSystem.isPressed(InputAction.IA_JUMP) || verticalUp;
-  const downKey = verticalDown;
+  // Host-forwarded held keys OR the engine's own InputActions (gamepad; or a host
+  // that doesn't swallow the keys).
+  const forwardKey = flyInput.forward || inputSystem.isPressed(InputAction.IA_FORWARD);
+  const backKey = flyInput.backward || inputSystem.isPressed(InputAction.IA_BACKWARD);
+  const rightKey = flyInput.right || inputSystem.isPressed(InputAction.IA_RIGHT);
+  const leftKey = flyInput.left || inputSystem.isPressed(InputAction.IA_LEFT);
+  const upKey = flyInput.up || inputSystem.isPressed(InputAction.IA_JUMP);
+  const downKey = flyInput.down;
   const anyMove = forwardKey || backKey || rightKey || leftKey || upKey || downKey;
 
   // A focus tween eases to the framing pose; any manual input cancels it.
@@ -292,9 +310,8 @@ function cameraSystemInner(dt: number): void {
       yaw = tween.fromYaw + (tween.toYaw - tween.fromYaw) * e;
       pitch = tween.fromPitch + (tween.toPitch - tween.fromPitch) * e;
       const tw = Transform.getMutable(camEntity);
-      tw.position = Vector3.add(
-        tween.fromPos,
-        Vector3.scale(Vector3.subtract(tween.toPos, tween.fromPos), e),
+      tw.position = clampAboveGround(
+        Vector3.add(tween.fromPos, Vector3.scale(Vector3.subtract(tween.toPos, tween.fromPos), e)),
       );
       tw.rotation = lookRotation();
       if (u >= 1) tween = null;
@@ -314,14 +331,15 @@ function cameraSystemInner(dt: number): void {
   if (rightKey) move = Vector3.add(move, right);
   if (leftKey) move = Vector3.subtract(move, right);
   // Vertical: E / Space = up, Q = down (world up, not camera-relative — matches
-  // Unity/Unreal fly verticals). E/Q arrive from the host (no SDK InputAction);
-  // Space is the engine-read IA_JUMP folded into upKey above.
+  // Unity/Unreal fly verticals).
   if (upKey) move = Vector3.add(move, Vector3.Up());
   if (downKey) move = Vector3.subtract(move, Vector3.Up());
 
   const t = Transform.getMutable(camEntity);
   if (Vector3.lengthSquared(move) > 1e-6) {
-    t.position = Vector3.add(t.position, Vector3.scale(Vector3.normalize(move), FLY_SPEED * dt));
+    t.position = clampAboveGround(
+      Vector3.add(t.position, Vector3.scale(Vector3.normalize(move), FLY_SPEED * dt)),
+    );
   }
   t.rotation = rotation;
 }
