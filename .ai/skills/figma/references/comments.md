@@ -1,6 +1,6 @@
 # Figma comments: harvest, ledger, mapping
 
-Use this when the work starts from a designer's Figma comments ("Romina left comments, focus on the ones that tag me") instead of from a frame. A comment is a change request about a node; it is not a value. The pass is done when every matching thread is in the ledger, so the next pass is a diff, not a fresh hunt.
+Use this when the work starts from a designer's Figma comments ("the designer left comments, focus on the ones that tag me") instead of from a frame. A comment is a change request about a node; it is not a value. The pass is done when every matching thread is in the ledger, so the next pass is a diff, not a fresh hunt.
 
 ## Harvest every thread, replies included
 
