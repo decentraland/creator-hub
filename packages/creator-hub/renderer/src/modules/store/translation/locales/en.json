@@ -1599,6 +1599,98 @@
       "REQUEST_TIMEOUT": "Request timed out. Please check your connection and try again."
     }
   },
+  "earn": {
+    "close": "Close",
+    "loading": "Loading",
+    "landing": {
+      "title_prefix": "Earn",
+      "title": "Decentraland Creator Fund",
+      "tagline_signed_in": "Create experiences. Bring players together. Earn USDC.",
+      "description": "The <hl>Decentraland Creator Fund</hl> <hl>rewards LAND and World owners</hl> for bringing in new players, building activity, and keeping players coming back.",
+      "features": {
+        "enrolment": {
+          "title": "Automatic enrolment",
+          "body": "All eligible scenes you own or operate are included when you join. New eligible scenes are added automatically."
+        },
+        "cycles": {
+          "title": "Rewards every 15 days",
+          "body": "Each month has two reward cycles: 1st–15th and 16th–end of month."
+        },
+        "activity": {
+          "title": "Rewards based on player activity",
+          "body": "Earn based on the players your scenes attract and bring back."
+        },
+        "payout": {
+          "title": "Get paid directly in USDC",
+          "body": "Payments are sent to your selected wallet within 30 days after each cycle ends."
+        }
+      },
+      "join": "Join Creators Fund",
+      "read_terms": "Read Terms",
+      "status": {
+        "suspended": "Your Creator Fund participation is suspended."
+      }
+    },
+    "terms": {
+      "updated_line": "Last updated: {date} · Version {version}",
+      "region": "Program Terms",
+      "hint": "Scroll to the bottom to review the full terms.",
+      "accept_checkbox": "I have read and accept the Creator Fund Program Terms",
+      "gate_open": "You can now accept the terms",
+      "not_now": "Not now",
+      "accept_and_join": "Accept & Join",
+      "close": "Close",
+      "load_error": "Couldn't load the terms."
+    },
+    "reaccept": {
+      "title": "Program Terms updated",
+      "subtitle": "Review the updated terms to keep earning.",
+      "accept": "Accept"
+    },
+    "checking": {
+      "title": "Decentraland Creator Fund",
+      "body_1": "We are checking your account with the Creator Fund.",
+      "body_2": "This may take a few seconds.",
+      "progress_label": "Checking eligibility"
+    },
+    "check_failed": {
+      "title": "Something went wrong while checking your account",
+      "body": "If the issue persists, contact our support team at {email}"
+    },
+    "not_eligible": {
+      "title": "You can't join yet",
+      "got_it": "Got it",
+      "reasons": {
+        "internal": "Foundation and Regenesis Labs accounts can't join the Creator Fund.",
+        "suspended": "Your account is suspended from the Creator Fund.",
+        "excluded": "Your account isn't eligible for the Creator Fund.",
+        "unknown": "Your account can't join the Creator Fund right now."
+      }
+    },
+    "contact": {
+      "title": "Contact Information",
+      "body": "We need these details to identify you as the program beneficiary and contact you about your Creator Fund participation and payouts. Note that this information can't be changed later.",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "first_name_placeholder": "First Name",
+      "last_name_placeholder": "Last Name",
+      "email_placeholder": "name@email.com",
+      "invalid_email": "Invalid email",
+      "cancel": "Cancel",
+      "submit": "Submit"
+    },
+    "welcome": {
+      "title": "Welcome to the Creator Fund",
+      "body": "Get your scenes ready, bring players in, and start earning USDC rewards.",
+      "lets_go": "Let's go"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "load_status": "Couldn't load the Creator Fund.",
+      "retry": "Retry"
+    }
+  },
   "world_atlas": {
     "world_size": "World size: {size}"
   },
