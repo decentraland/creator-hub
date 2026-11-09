@@ -35,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os == 'macos-latest' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["creator-fund/pr6-payouts","creator-fund/pr7-fixture"]'), github.head_ref) && fromJSON('["self-hosted","macOS","ARM64"]') || matrix.os }}
+    runs-on: ${{ matrix.os }}
     env:
       # Dependabot runs (and re-runs of them) and fork PRs get no repository secrets and a
       # read-only token, so the S3 test build upload and its PR comment can't run there.
