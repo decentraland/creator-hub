@@ -177,4 +177,12 @@ export type Events = {
   'Creator Fund Tab Viewed': {
     tab: 'home' | 'leaderboard' | 'my_places' | 'payouts';
   };
+  'Creator Fund Cycle Changed': {
+    tab: 'leaderboard' | 'my_places';
+    cycle_id: number | 'all';
+  };
+  'Creator Fund Jump In': {
+    rank: number;
+    place_id: string;
+  };
 };
