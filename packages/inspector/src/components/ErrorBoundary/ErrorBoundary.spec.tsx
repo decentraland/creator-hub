@@ -77,7 +77,69 @@ describe('ErrorBoundary', () => {
       expect(screen.getByText('content')).not.toBeNull();
     });
 
-    it('should keep the fallback while the keys are unchanged', () => {
+    it('should show the fallback again when the children still throw', () => {
+      const { rerender } = render(
+        <ErrorBoundary
+          name="test"
+          resetKeys={['a']}
+          fallback={<span>fallback</span>}
+        >
+          <Explodes when />
+        </ErrorBoundary>,
+      );
+      rerender(
+        <ErrorBoundary
+          name="test"
+          resetKeys={['b']}
+          fallback={<span>fallback</span>}
+        >
+          <Explodes when />
+        </ErrorBoundary>,
+      );
+      expect(screen.getByText('fallback')).not.toBeNull();
+    });
+  });
+
+  describe('when a reset key changes in the same update as a throw', () => {
+    function failingRendersOnUpdate(nextKey: string) {
+      const renders = vi.fn();
+      function Counted({ when }: { when: boolean }) {
+        renders(when);
+        return <Explodes when={when} />;
+      }
+      const { rerender, unmount } = render(
+        <ErrorBoundary
+          name="test"
+          resetKeys={['a']}
+          fallback={<span>fallback</span>}
+        >
+          <Counted when={false} />
+        </ErrorBoundary>,
+      );
+      rerender(
+        <ErrorBoundary
+          name="test"
+          resetKeys={[nextKey]}
+          fallback={<span>fallback</span>}
+        >
+          <Counted when />
+        </ErrorBoundary>,
+      );
+      const showsFallback = screen.queryByText('fallback') !== null;
+      unmount();
+      return { showsFallback, count: renders.mock.calls.filter(([when]) => when).length };
+    }
+
+    it('should show the fallback without rendering the failing children an extra time', () => {
+      const withoutKeyChange = failingRendersOnUpdate('a');
+      const withKeyChange = failingRendersOnUpdate('b');
+      expect(withKeyChange.showsFallback).toBe(true);
+      expect(withKeyChange.count).toBe(withoutKeyChange.count);
+    });
+  });
+
+  describe('when the keys are unchanged after an error', () => {
+    it('should keep the fallback', () => {
       const { rerender } = render(
         <ErrorBoundary
           name="test"

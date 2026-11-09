@@ -18,6 +18,9 @@ type State = {
  * entire inspector goes blank while the engine bridges underneath it keep running against nothing.
  * Wrap every subtree that renders user-provided files (asset previews, thumbnails) so a file the
  * browser cannot handle costs its own preview and nothing else.
+ *
+ * Twin of Creator Hub's `renderer/src/components/ErrorBoundary` (the package dependency direction
+ * rules out sharing one): port fixes across.
  */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };

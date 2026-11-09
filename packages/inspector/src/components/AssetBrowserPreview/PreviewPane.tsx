@@ -213,10 +213,7 @@ function Viewer({
         </span>
       </>
     ) : (
-      <div className="PreviewPane-placeholder">
-        <KindIcon kind={source.kind} />
-        <span>Preview unavailable</span>
-      </div>
+      <ViewerUnavailable kind={source.kind} />
     );
   }
   switch (source.kind) {
@@ -244,10 +241,7 @@ function Viewer({
           <span className="PreviewPane-note">Built-in animation · animated preview</span>
         </>
       ) : (
-        <div className="PreviewPane-placeholder">
-          <KindIcon kind="emote" />
-          <span>Preview unavailable</span>
-        </div>
+        <ViewerUnavailable kind="emote" />
       );
     case 'audio':
     case 'video':

@@ -22,13 +22,35 @@ const SIZE = 300;
 const JOB_TIMEOUT_MS = 20_000;
 
 /** Renders models one at a time into a canvas and hands back each one as a PNG data URL. */
-export type ThumbnailRenderer = {
+type ThumbnailRenderer = {
   render: (path: string) => Promise<string | undefined>;
   dispose: () => void;
 };
 
+type Job = {
+  /** Set when the caller stopped waiting; the job must not touch the scene after that. */
+  abandoned: boolean;
+  /** Takes the job's model out of the shared scene, while it is in there. */
+  detach?: () => void;
+};
+
 function extensionOf(path: string) {
   return path.split('.').pop()?.toLowerCase() ?? 'glb';
+}
+
+function detach(job: Job) {
+  job.detach?.();
+  job.detach = undefined;
+}
+
+function withTimeout<T>(work: Promise<T>, onTimeout: () => void): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      onTimeout();
+      reject(new Error(`no thumbnail after ${JOB_TIMEOUT_MS}ms`));
+    }, JOB_TIMEOUT_MS);
+    work.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
 }
 
 /**
@@ -40,7 +62,7 @@ function extensionOf(path: string) {
  * loader validates them, and a single long-lived engine also keeps the thumbnails off the browser's
  * WebGL context cap, which one short-lived preview frame per model kept pushing against.
  */
-export function createThumbnailRenderer(canvas: HTMLCanvasElement): ThumbnailRenderer {
+function createThumbnailRenderer(canvas: HTMLCanvasElement): ThumbnailRenderer {
   const engine = new Engine(canvas, true, {
     preserveDrawingBuffer: true,
     stencil: false,
@@ -48,61 +70,70 @@ export function createThumbnailRenderer(canvas: HTMLCanvasElement): ThumbnailRen
   });
   const { scene, camera } = createPreviewScene(engine);
   let chain: Promise<unknown> = Promise.resolve();
+  const running = new Set<Promise<unknown>>();
   let disposed = false;
 
-  const draw = async (path: string): Promise<string | undefined> => {
+  // A timed-out job keeps running in the background, and the next job may already own the scene by
+  // the time it resumes: every await is followed by a staleness check before the scene is touched.
+  const draw = async (path: string, job: Job): Promise<string | undefined> => {
+    const isStale = () => job.abandoned || disposed;
+    if (isStale()) return undefined;
     const dataLayer = getDataLayerInterface();
     if (!dataLayer) throw new Error('Data layer is not available');
     const { data } = await dataLayer.getAssetData({ path: withAssetDir(path) });
+    if (isStale()) return undefined;
     const container = await loadModelContainer(
       scene,
-      data as BlobPart,
+      new Blob([data]),
       extensionOf(path),
       createLocalResolver(path),
     );
     try {
-      if (disposed || isEmoteContainer(container)) return undefined;
+      if (isStale() || isEmoteContainer(container)) return undefined;
       container.meshes.filter(isColliderMesh).forEach(mesh => (mesh.isVisible = false));
       if (!container.meshes.some(mesh => mesh.isVisible && mesh.getTotalVertices() > 0)) {
         return undefined;
       }
       container.addAllToScene();
+      job.detach = () => container.removeAllFromScene();
       container.animationGroups.forEach(group => group.stop());
       frameCamera(scene, camera);
       await scene.whenReadyAsync();
+      if (isStale()) return undefined;
       scene.render();
       return canvas.toDataURL('image/png');
     } finally {
-      container.removeAllFromScene();
+      detach(job);
       container.dispose();
     }
   };
 
-  const withTimeout = (path: string) =>
-    new Promise<string | undefined>((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error(`no thumbnail after ${JOB_TIMEOUT_MS}ms`)),
-        JOB_TIMEOUT_MS,
-      );
-      draw(path)
-        .then(resolve, reject)
-        .finally(() => clearTimeout(timer));
-    });
-
   return {
     // Jobs share one scene, so they must never overlap: a job that is no longer wanted still runs
-    // to completion (and cleans up after itself) before the next one starts.
+    // to completion before the next one starts. A timeout is the one exception: it takes the stuck
+    // job's model out of the scene and marks the job abandoned, so it leaves the scene alone.
     render: path => {
-      const result = chain.then(() => withTimeout(path));
+      const job: Job = { abandoned: false };
+      const result = chain.then(() => {
+        const drawing = draw(path, job);
+        running.add(drawing);
+        void drawing.catch(() => {}).finally(() => running.delete(drawing));
+        return withTimeout(drawing, () => {
+          job.abandoned = true;
+          detach(job);
+        });
+      });
       chain = result.catch(() => {});
       return result;
     },
     dispose: () => {
       disposed = true;
-      void chain.finally(() => {
-        scene.dispose();
-        engine.dispose();
-      });
+      void chain
+        .then(() => Promise.allSettled(running))
+        .finally(() => {
+          scene.dispose();
+          engine.dispose();
+        });
     },
   };
 }
@@ -150,7 +181,7 @@ export function ThumbnailGenerator({ queue, onProcessed }: Props) {
     let cancelled = false;
     renderer.render(current).then(
       thumbnail => {
-        if (cancelled) return;
+        // Saved even when the queue has moved on: the thumbnail is keyed by path and still valid.
         if (thumbnail) {
           dispatch(
             saveThumbnail({
@@ -159,6 +190,7 @@ export function ThumbnailGenerator({ queue, onProcessed }: Props) {
             }),
           );
         }
+        if (cancelled) return;
         onProcessedRef.current(current, !!thumbnail);
       },
       error => {
@@ -178,7 +210,6 @@ export function ThumbnailGenerator({ queue, onProcessed }: Props) {
       width={SIZE}
       height={SIZE}
       aria-hidden
-      data-testid="thumbnail-generator"
       style={{
         position: 'fixed',
         left: -10000,

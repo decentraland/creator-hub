@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ThumbnailGenerator } from './ThumbnailGenerator';
@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   isEmoteContainer: vi.fn(),
   getAssetData: vi.fn(),
   dispatch: vi.fn(),
+  scene: {
+    whenReadyAsync: vi.fn(),
+    render: vi.fn(),
+    dispose: vi.fn(),
+  },
 }));
 
 vi.mock('@babylonjs/core/Engines/engine', () => ({
@@ -26,10 +31,7 @@ vi.mock('../AssetBrowserPreview/gltfResolver', () => ({
   createLocalResolver: (path: string) => `resolver for ${path}`,
 }));
 vi.mock('../AssetBrowserPreview/modelScene', () => ({
-  createPreviewScene: () => ({
-    scene: { whenReadyAsync: () => Promise.resolve(), render: vi.fn(), dispose: vi.fn() },
-    camera: {},
-  }),
+  createPreviewScene: () => ({ scene: mocks.scene, camera: {} }),
   frameCamera: vi.fn(),
   isColliderMesh: (mesh: { name: string }) => mesh.name.includes('collider'),
 }));
@@ -65,6 +67,9 @@ describe('ThumbnailGenerator', () => {
     mocks.isEmoteContainer.mockReset().mockReturnValue(false);
     mocks.getAssetData.mockReset().mockResolvedValue({ data: new Uint8Array([1, 2, 3]) });
     mocks.dispatch.mockReset();
+    mocks.scene.whenReadyAsync.mockReset().mockResolvedValue(undefined);
+    mocks.scene.render.mockReset();
+    mocks.scene.dispose.mockReset();
     onProcessed = vi.fn();
   });
 
@@ -92,7 +97,7 @@ describe('ThumbnailGenerator', () => {
       expect(mocks.getAssetData).toHaveBeenCalledWith({ path: 'assets/Models/tree.glb' });
       expect(mocks.loadModelContainer).toHaveBeenCalledWith(
         expect.anything(),
-        expect.any(Uint8Array),
+        expect.any(Blob),
         'glb',
         'resolver for Models/tree.glb',
       );
@@ -180,6 +185,119 @@ describe('ThumbnailGenerator', () => {
       finishFirst(fakeContainer());
       await waitFor(() => expect(onProcessed).toHaveBeenCalledWith('Models/second.glb', true));
       expect(onProcessed).not.toHaveBeenCalledWith('Models/first.glb', expect.anything());
+    });
+
+    it('should still save the thumbnail it rendered', async () => {
+      let finishFirst: (container: unknown) => void = () => {};
+      mocks.loadModelContainer
+        .mockImplementationOnce(() => new Promise(resolve => (finishFirst = resolve)))
+        .mockResolvedValue(fakeContainer());
+      const { rerender } = renderQueue(['Models/first.glb', 'Models/second.glb']);
+      await waitFor(() => expect(mocks.loadModelContainer).toHaveBeenCalledTimes(1));
+      rerender(
+        <ThumbnailGenerator
+          queue={['Models/second.glb']}
+          onProcessed={onProcessed}
+        />,
+      );
+
+      finishFirst(fakeContainer());
+      await waitFor(() => expect(onProcessed).toHaveBeenCalledWith('Models/second.glb', true));
+      expect(mocks.dispatch).toHaveBeenCalledWith({
+        type: 'saveThumbnail',
+        payload: { path: 'Models/first.glb', content: expect.any(Uint8Array) },
+      });
+    });
+  });
+
+  describe('when a model takes longer than the timeout', () => {
+    const flush = () => act(() => vi.advanceTimersByTimeAsync(0));
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should move on, and the late model should never reach the scene or the canvas', async () => {
+      let finishFirst: (container: unknown) => void = () => {};
+      const late = fakeContainer();
+      mocks.loadModelContainer
+        .mockImplementationOnce(() => new Promise(resolve => (finishFirst = resolve)))
+        .mockResolvedValue(fakeContainer());
+      const { rerender } = renderQueue(['Models/slow.glb', 'Models/next.glb']);
+
+      await act(() => vi.advanceTimersByTimeAsync(20_000));
+      expect(onProcessed).toHaveBeenCalledWith('Models/slow.glb', false);
+      rerender(
+        <ThumbnailGenerator
+          queue={['Models/next.glb']}
+          onProcessed={onProcessed}
+        />,
+      );
+      await flush();
+      expect(onProcessed).toHaveBeenCalledWith('Models/next.glb', true);
+
+      finishFirst(late);
+      await flush();
+      expect(late.addAllToScene).not.toHaveBeenCalled();
+      expect(late.dispose).toHaveBeenCalled();
+      expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledTimes(1);
+      expect(mocks.dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should take a model stuck on its textures out of the scene before the next one starts', async () => {
+      let texturesReady: () => void = () => {};
+      const stuck = fakeContainer();
+      mocks.loadModelContainer.mockResolvedValueOnce(stuck).mockResolvedValue(fakeContainer());
+      mocks.scene.whenReadyAsync.mockImplementationOnce(
+        () => new Promise<void>(resolve => (texturesReady = resolve)),
+      );
+      const { rerender } = renderQueue(['Models/stuck.glb', 'Models/next.glb']);
+      await flush();
+      expect(stuck.addAllToScene).toHaveBeenCalled();
+
+      await act(() => vi.advanceTimersByTimeAsync(20_000));
+      expect(stuck.removeAllFromScene).toHaveBeenCalledTimes(1);
+      rerender(
+        <ThumbnailGenerator
+          queue={['Models/next.glb']}
+          onProcessed={onProcessed}
+        />,
+      );
+      await flush();
+      expect(onProcessed).toHaveBeenCalledWith('Models/next.glb', true);
+
+      texturesReady();
+      await flush();
+      expect(mocks.scene.render).toHaveBeenCalledTimes(1);
+      expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledTimes(1);
+      expect(stuck.removeAllFromScene).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the generator unmounts while a model is loading', () => {
+    it('should tear the scene down only after that load ends, and save nothing for it', async () => {
+      let finish: (container: unknown) => void = () => {};
+      const container = fakeContainer();
+      mocks.loadModelContainer.mockImplementationOnce(
+        () => new Promise(resolve => (finish = resolve)),
+      );
+      const { unmount } = renderQueue(['Models/tree.glb']);
+      await waitFor(() => expect(mocks.loadModelContainer).toHaveBeenCalledTimes(1));
+
+      unmount();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(mocks.scene.dispose).not.toHaveBeenCalled();
+
+      finish(container);
+      await waitFor(() => expect(mocks.scene.dispose).toHaveBeenCalled());
+      expect(container.addAllToScene).not.toHaveBeenCalled();
+      expect(container.dispose).toHaveBeenCalled();
+      expect(mocks.dispatch).not.toHaveBeenCalled();
+      expect(onProcessed).not.toHaveBeenCalled();
     });
   });
 
