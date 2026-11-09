@@ -175,61 +175,6 @@ describe('createForwardEditBridge', () => {
     });
   });
 
-  describe('setAudioMuted (#1569)', () => {
-    it('forwards AudioSource with volume 0 when muted and the authored volume when unmuted', async () => {
-      const AudioSource = components.AudioSource(ctx.engine);
-      const entity = ctx.engine.addEntity();
-      AudioSource.create(entity, {
-        audioClipUrl: 'sound.mp3',
-        playing: true,
-        volume: 0.8,
-        loop: true,
-      });
-      ctx.Name.create(entity, { value: 'Speaker' });
-      await ctx.engine.update(1);
-      await new Promise(r => setTimeout(r, 0));
-      sent.length = 0;
-
-      bridge.setAudioMuted(true);
-      await new Promise(r => setTimeout(r, 0));
-      const muted = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioSource');
-      expect(muted).toBeDefined();
-      const mutedValue = JSON.parse(muted!.args[2]);
-      expect(mutedValue.volume).toBe(0);
-      // Mute only overrides volume — the authored non-volume fields are preserved.
-      expect(mutedValue.audioClipUrl).toBe('sound.mp3');
-      expect(mutedValue.loop).toBe(true);
-
-      sent.length = 0;
-      bridge.setAudioMuted(false);
-      await new Promise(r => setTimeout(r, 0));
-      const unmuted = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioSource');
-      expect(unmuted).toBeDefined();
-      expect(JSON.parse(unmuted!.args[2]).volume).toBe(0.8);
-    });
-
-    it('re-silences a live AudioSource edit while muted (does not un-mute)', async () => {
-      const AudioSource = components.AudioSource(ctx.engine);
-      const entity = ctx.engine.addEntity();
-      AudioSource.create(entity, { audioClipUrl: 'a.mp3', playing: true, volume: 0.5, loop: true });
-      ctx.Name.create(entity, { value: 'Speaker' });
-      await ctx.engine.update(1);
-      await new Promise(r => setTimeout(r, 0));
-      bridge.setAudioMuted(true);
-      await new Promise(r => setTimeout(r, 0));
-      sent.length = 0;
-
-      // A user tweaks the clip volume while muted — it must stay silenced.
-      AudioSource.getMutable(entity).volume = 0.9;
-      await ctx.engine.update(1);
-      await new Promise(r => setTimeout(r, 0));
-
-      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'AudioSource');
-      expect(write).toBeDefined();
-      expect(JSON.parse(write!.args[2]).volume).toBe(0);
-    });
-  });
-
   describe('when an unsupported (custom/schema) component changes', () => {
     it('should not send anything (deferred, not mis-addressed)', async () => {
       // PlayerIdentityData etc. aren't in the engine-name map; use a component

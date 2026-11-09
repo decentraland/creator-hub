@@ -42,6 +42,8 @@ export type AssetData = {
   tags: string[];
   composite: AssetComposite;
   description?: string;
+  // The one-line summary most catalog items carry instead of a `description`.
+  caption?: string;
   author?: string;
   // A built-in avatar animation every scene can already play by this name (e.g. 'wave'). The
   // asset ships only its thumbnails: there is nothing to add to a scene.

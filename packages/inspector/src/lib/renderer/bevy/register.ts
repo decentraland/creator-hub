@@ -25,9 +25,11 @@ import { createForwardEditBridge } from './forward-edits';
 import { createBuildReloadBridge } from './build-reload-bridge';
 import { createInputFocusBridge } from './input-focus-bridge';
 import { createLayoutReloadBridge } from './layout-reload-bridge';
-import { createVerticalInputBridge } from './vertical-input-bridge';
+import { createFlyInputBridge } from './fly-input-bridge';
 import { createWheelZoomBridge } from './wheel-zoom-bridge';
 import { createModifierTracker } from './modifier-tracker';
+import { createShiftSnapToggle } from './shift-snap-toggle';
+import { setEngineAudioMuted } from './engine-audio';
 import { createPickBridge } from './pick-bridge';
 import type { HoverHint } from './hover-hint-bridge';
 import { createHoverHintBridge } from './hover-hint-bridge';
@@ -208,7 +210,7 @@ export function registerBevyRenderer(): void {
       let forwardBridge: ReturnType<typeof createForwardEditBridge> | null = null;
       let disconnectPreview = () => {};
       let disconnectInputFocus = () => {};
-      let disconnectVertical = () => {};
+      let disconnectFlyInput = () => {};
       let disconnectWheelZoom = () => {};
 
       // #1468: publish the running engine's highest live entity id (authored + the
@@ -233,10 +235,13 @@ export function registerBevyRenderer(): void {
         forwardBridge?.disconnect();
         disconnectPreview();
         disconnectInputFocus();
-        disconnectVertical();
+        disconnectFlyInput();
         disconnectWheelZoom();
 
         liveEngineWindow = engineWindow;
+        // The engine page boots muted; re-assert the editor's current choice on
+        // every (re)boot so an unmuted session stays unmuted across a reload.
+        setEngineAudioMuted(engineWindow, bevy.audio.isMuted());
         // Refresh the entity-id floor for this (re)load: the scene's code entities
         // are (re)created here (#1468).
         void updateEntityIdFloor();
@@ -251,8 +256,6 @@ export function registerBevyRenderer(): void {
           engineWindow,
           // On arm, pause loaded Animator clips if the scene is frozen (#1382).
           isFrozen: () => !sceneRunBridge.isRunning(),
-          // Re-silence audio on arm/reload while the mute toggle is on (#1569).
-          isMuted: () => bevy.audio.isMuted(),
         });
 
         // Live gizmo preview: a drag emits `previewTransforms` every frame (merged
@@ -278,12 +281,14 @@ export function registerBevyRenderer(): void {
           isTransformInputArmed,
         });
 
-        // E/Q vertical fly movement: no SDK InputAction is bound to Q, so the
-        // engine can't read it. Capture E/Q on the engine window and forward the
-        // held state to the agent's fly camera over the camera bridge.
-        disconnectVertical = createVerticalInputBridge({
+        // Fly-camera keys: while the free camera is active the host owns WASD /
+        // Space (swallowed on the engine window so they can't also walk the avatar)
+        // and E/Q (Q has no InputAction), forwarding the held state to the agent's
+        // fly camera over the camera bridge.
+        disconnectFlyInput = createFlyInputBridge({
           engineWindow: engineWindow as unknown as Window,
-          onChange: (up, down) => cameraBridge.setVertical(up, down),
+          onChange: input => cameraBridge.setFlyInput(input),
+          isFreeCamera: () => bevy.editorCamera.getMode() === 'free',
           // In Interact mode, don't capture E/Q — the scene reads them (#1458).
           isEditingEnabled: () => bevy.interaction.isEditingEnabled(),
         });
@@ -346,33 +351,31 @@ export function registerBevyRenderer(): void {
       // the selected entity (from a viewport pick OR a tree click). The gizmos
       // handle carries the "align to world" setting; the snap handle carries the
       // Snap panel's increments (null while snapping is off).
+      // Holding Shift inverts the Snap panel for the drag (#1375): snap on → smooth,
+      // snap off → snapped. It flips the shared snapManager itself (like Babylon's
+      // `initKeyboard`) because the reverse channel re-snaps every preview/commit
+      // through it — see shift-snap-toggle.ts. The manager's change event then
+      // re-posts the selection below with the inverted snap.
+      const disconnectShiftSnap = createShiftSnapToggle({
+        isShift: () => modifiers.isShift(),
+        onShiftChange: cb => modifiers.onShiftChange(cb),
+        snap: snapManager,
+      });
       const disconnectSelection = createSelectionBridge({
         context: bevy.context,
         gizmos: bevy.gizmos,
         snap: {
-          // Holding Shift toggles snapping for the drag (#1375): the Snap panel's
-          // enabled state is the base, and Shift inverts it — snap on → smooth,
-          // snap off → snapped. Matches Babylon's `initKeyboard`.
-          getSnap: () => {
-            const snapping = snapManager.isEnabled() !== modifiers.isShift();
-            return snapping
+          getSnap: () =>
+            snapManager.isEnabled()
               ? {
                   position: snapManager.getPositionSnap(),
                   rotation: snapManager.getRotationSnap(),
                   scale: snapManager.getScaleSnap(),
                 }
-              : null;
-          },
-          // Re-post the selection both when the Snap panel changes AND when Shift
-          // is pressed/released (Shift inverts the snap live during a drag).
-          onChange: cb => {
-            const offSnap = snapManager.onChange(cb);
-            const offShift = modifiers.onShiftChange(cb);
-            return () => {
-              offSnap?.();
-              offShift();
-            };
-          },
+              : null,
+          // Re-post the selection when the Snap panel changes (incl. the Shift
+          // inversion above, which goes through the manager).
+          onChange: cb => snapManager.onChange(cb),
         },
       });
 
@@ -401,9 +404,23 @@ export function registerBevyRenderer(): void {
         // reset the camera — which engages free AND flies it to a default framing
         // of the scene (scene-local center). A bare set-camera free would seed the
         // fly pose from the avatar cam, which sits far from the scene's real parcel
-        // (the "camera really far from the scene" bug). Fires again after a reboot.
-        onReady: () => bevy.camera.reset(),
+        // (the "camera really far from the scene" bug). Fires again after a reboot —
+        // which also restarts the agent, so its avatar-visibility state is re-sent.
+        onReady: () => {
+          bevy.camera.reset();
+          syncAvatarVisibility();
+        },
       });
+      // The player's avatar is only shown while the scene RUNS or the user drives
+      // the player camera. An avatar standing at the spawn point while you edit a
+      // frozen scene reads as scene content (and the free camera's keys must never
+      // walk it — see fly-input-bridge.ts). The agent enacts it (set-avatar-visible).
+      const syncAvatarVisibility = () =>
+        cameraBridge.setAvatarVisible(
+          bevy.sceneRun.isRunning() || bevy.editorCamera.getMode() === 'avatar',
+        );
+      const offAvatarVisibilityMode = bevy.editorCamera.onModeChange(syncAvatarVisibility);
+      const offAvatarVisibilityRun = bevy.sceneRun.onRunChange(syncAvatarVisibility);
       bevy.setCameraModePoster(mode => cameraBridge.setMode(mode));
       bevy.setFocusPoster(position => cameraBridge.focus(position));
       bevy.setResetPoster(position => cameraBridge.reset(position));
@@ -411,10 +428,10 @@ export function registerBevyRenderer(): void {
       // "Interact" toggle (#1458): forward editing-enabled to the agent so it stops
       // intercepting viewport clicks for pick/gizmo — clicks reach the running scene.
       bevy.setEditingEnabledPoster(enabled => cameraBridge.setEditingEnabled(enabled));
-      // "Mute" toggle (#1569): silence/restore scene audio host-side via the forward
-      // bridge (there's no engine volume/mute console command). Persists across reload
-      // via the bridge's isMuted arm/reconcile above.
-      bevy.setMutedPoster(muted => forwardBridge?.setAudioMuted(muted));
+      // "Mute" toggle (#1569): the engine page's master mute (Web Audio + media
+      // elements — scene audio, video and footsteps alike; see engine-audio.ts).
+      // Re-asserted on every engine (re)boot in rewireEngineBindings.
+      bevy.setMutedPoster(muted => setEngineAudioMuted(liveEngineWindow, muted));
 
       // Scene run/freeze: the toolbar toggle posts the intent to the agent, which
       // runs /freeze_scene or /unfreeze_scene on the pinned scene. Default frozen
@@ -653,8 +670,11 @@ export function registerBevyRenderer(): void {
         internals,
         dispose: () => {
           disconnectWheelZoom();
-          disconnectVertical();
+          disconnectFlyInput();
           disconnectInputFocus();
+          offAvatarVisibilityMode();
+          offAvatarVisibilityRun();
+          disconnectShiftSnap();
           modifiers.disconnect();
           disconnectPreview();
           spawnGizmo.disconnect();

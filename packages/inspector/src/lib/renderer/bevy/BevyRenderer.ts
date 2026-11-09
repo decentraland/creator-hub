@@ -135,11 +135,12 @@ export class BevyRenderer implements IRenderer {
   #editingEnabled = true;
   #postEditingEnabled: ((enabled: boolean) => void) | null = null;
   #editingHandlers = new Set<(enabled: boolean) => void>();
-  // Scene audio mute (#1569). Default UNMUTED; the "Mute" toolbar toggle silences all
-  // scene audio while editing. Enacted host-side via the forward bridge (there's no
-  // engine volume/mute console command), so the poster injected by `register` calls
-  // forwardBridge.setAudioMuted rather than posting to the agent.
-  #muted = false;
+  // Editor audio mute (#1569). Default MUTED — every scene opens silent, and the
+  // "Mute" toolbar toggle opts back into sound. Enacted on the engine host page's
+  // master mute (engine-audio.ts: there's no engine volume console command, and a
+  // per-component volume override misses footsteps and video), which also boots
+  // muted; the poster injected by `register` keeps it in step.
+  #muted = true;
   #postMuted: ((muted: boolean) => void) | null = null;
   #muteHandlers = new Set<(muted: boolean) => void>();
   // True from a Stop/reset until the agent signals `reset-complete` (the reloaded
@@ -373,7 +374,7 @@ export class BevyRenderer implements IRenderer {
     this.#postEditingEnabled = post;
   }
 
-  /** Wire the mute poster (silences/restores scene audio via the forward bridge; #1569). */
+  /** Wire the mute poster (silences/restores the engine page's audio; #1569). */
   setMutedPoster(post: (muted: boolean) => void): void {
     this.#postMuted = post;
   }

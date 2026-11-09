@@ -184,8 +184,8 @@ describe('BevyRenderer audio mute (#1569)', () => {
 
   afterEach(() => renderer.dispose());
 
-  it('should default to unmuted', () => {
-    expect(renderer.audio.isMuted()).toBe(false);
+  it('should default to muted (a scene opens silent)', () => {
+    expect(renderer.audio.isMuted()).toBe(true);
   });
 
   it('should post the mute state and notify subscribers on change', () => {
@@ -194,16 +194,16 @@ describe('BevyRenderer audio mute (#1569)', () => {
     const seen: boolean[] = [];
     renderer.audio.onMuteChange(muted => seen.push(muted));
 
-    renderer.audio.setMuted(true);
-    expect(renderer.audio.isMuted()).toBe(true);
-    expect(posted).toEqual([true]);
-    expect(seen).toEqual([true]);
+    renderer.audio.setMuted(false);
+    expect(renderer.audio.isMuted()).toBe(false);
+    expect(posted).toEqual([false]);
+    expect(seen).toEqual([false]);
   });
 
   it('should ignore a no-op set to the current state', () => {
     const posted: boolean[] = [];
     renderer.setMutedPoster(muted => posted.push(muted));
-    renderer.audio.setMuted(false); // already unmuted
+    renderer.audio.setMuted(true); // already muted
     expect(posted).toEqual([]);
   });
 
@@ -211,7 +211,7 @@ describe('BevyRenderer audio mute (#1569)', () => {
     const seen: boolean[] = [];
     const off = renderer.audio.onMuteChange(muted => seen.push(muted));
     off();
-    renderer.audio.setMuted(true);
+    renderer.audio.setMuted(false);
     expect(seen).toEqual([]);
   });
 });

@@ -4,6 +4,7 @@ import type {
   BusEnvelope,
   BusVec3,
   CameraMode,
+  FlyInput,
   PageToScene,
 } from '@dcl/inspector-bevy-protocol';
 
@@ -45,11 +46,15 @@ export interface CameraBridge {
   /** Dolly the editor fly-camera in/out (delta > 0 = in, < 0 = out; magnitude = steps). */
   zoom(delta: number): void;
   /**
-   * Forward the vertical fly-camera held state (E = up, Q = down). Q has no SDK
-   * InputAction, so the engine can't read it; the host captures E/Q and pushes the
-   * held state to the agent's fly camera.
+   * Forward the fly-camera movement keys held on the host. The host swallows them
+   * on the engine window while the free camera is active (so they can't also walk
+   * the avatar) and the agent's fly camera reads this instead.
    */
-  setVertical(up: boolean, down: boolean): void;
+  setFlyInput(input: FlyInput): void;
+  /** Show or hide the player's avatar in the viewport (the agent enacts it with a
+   * HIDE_AVATARS modifier area). Hidden while editing a frozen scene with the free
+   * camera; shown on Play or in the player camera. */
+  setAvatarVisible(visible: boolean): void;
   /** Enable/disable viewport editing (pick + gizmo grab) in the agent — the
    * "Interact" toggle. Disabled lets clicks reach the running scene (#1458). */
   setEditingEnabled(enabled: boolean): void;
@@ -82,7 +87,8 @@ export function createCameraBridge(options: CameraBridgeOptions = {}): CameraBri
     focus: position => post({ kind: 'focus-camera', position }),
     reset: position => post({ kind: 'reset-camera', position }),
     zoom: (delta: number) => post({ kind: 'zoom-camera', delta }),
-    setVertical: (up: boolean, down: boolean) => post({ kind: 'set-vertical-input', up, down }),
+    setFlyInput: (input: FlyInput) => post({ kind: 'set-fly-input', ...input }),
+    setAvatarVisible: (visible: boolean) => post({ kind: 'set-avatar-visible', visible }),
     setEditingEnabled: (enabled: boolean) => post({ kind: 'set-editing-enabled', enabled }),
     disconnect: () => {
       channel.onmessage = null;
