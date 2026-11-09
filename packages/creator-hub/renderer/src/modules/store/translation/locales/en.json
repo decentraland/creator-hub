@@ -1607,7 +1607,8 @@
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "Create experiences. Bring players together. Earn USDC.",
       "tagline_signed_out": "Create experiences. Bring players together. Earn money.",
-      "description": "<hl>30,000 USDC pool</hl> split over <hl>3 cycles</hl> based on <hl>Decentraland New Players</hl>, <hl>Total Playtime</hl> and <hl>D3 Retention</hl> on your scene.",
+      "description": "<hl>30,000 USDC</hl> split over <hl>3 cycles</hl>, Cycle 1 Starts <hl>November 15</hl>.",
+      "know_more": "Know More",
       "features": {
         "enrolment": {
           "title": "Automatic enrollment",
@@ -1618,8 +1619,8 @@
           "body": "Each month has two reward cycles."
         },
         "activity": {
-          "title": "Rewards based on player activity",
-          "body": "Earn based on the players your scenes attract and bring back."
+          "title": "Rewards based on Activity",
+          "body": "New Players you bring, Playtime and Day 3 Retention drive rewards."
         },
         "payout": {
           "title": "Payouts in USD",

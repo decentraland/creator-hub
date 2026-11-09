@@ -1607,7 +1607,8 @@
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "Crea experiencias. Reúne jugadores. Gana USDC.",
       "tagline_signed_out": "Crea experiencias. Reúne jugadores. Gana dinero.",
-      "description": "<hl>Fondo de 30.000 USDC</hl> repartido en <hl>3 ciclos</hl> según los <hl>nuevos jugadores de Decentraland</hl>, el <hl>tiempo de juego total</hl> y la <hl>retención D3</hl> de tu escena.",
+      "description": "<hl>30.000 USDC</hl> repartidos en <hl>3 ciclos</hl>. El ciclo 1 empieza el <hl>15 de noviembre</hl>.",
+      "know_more": "Más información",
       "features": {
         "enrolment": {
           "title": "Inscripción automática",
@@ -1618,8 +1619,8 @@
           "body": "Cada mes tiene dos ciclos de recompensas."
         },
         "activity": {
-          "title": "Recompensas según la actividad de los jugadores",
-          "body": "Gana según los jugadores que tus escenas atraen y hacen volver."
+          "title": "Recompensas según la actividad",
+          "body": "Los nuevos jugadores que atraes, el tiempo de juego y la retención del día 3 determinan las recompensas."
         },
         "payout": {
           "title": "Pagos en USD",

@@ -90,6 +90,16 @@ const Highlight = styled('span')({
   color: 'var(--palette-neutral-softWhite)',
 });
 
+const KnowMore = styled('a')({
+  fontWeight: 'var(--fw-bold)',
+  color: 'var(--palette-neutral-softWhite)',
+  textDecoration: 'underline',
+  whiteSpace: 'nowrap',
+  borderRadius: 'var(--shape-borderRadiusMedium)',
+  cursor: 'pointer',
+  ...focusRing,
+});
+
 const Features = styled('ul')({
   listStyle: 'none',
   margin: 0,
@@ -192,6 +202,7 @@ export {
   Highlight,
   Information,
   Intro,
+  KnowMore,
   StatusLine,
   Tagline,
   Title,

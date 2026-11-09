@@ -1607,7 +1607,8 @@
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "创造体验。汇聚玩家。赚取 USDC。",
       "tagline_signed_out": "创造体验。汇聚玩家。赚取收益。",
-      "description": "<hl>30,000 USDC 奖金池</hl>分 <hl>3 个周期</hl>发放，依据你场景中的 <hl>Decentraland 新玩家</hl>、<hl>总游戏时长</hl>和 <hl>D3 留存率</hl>。",
+      "description": "<hl>30,000 USDC</hl> 分 <hl>3 个周期</hl>发放，第 1 周期于 <hl>11 月 15 日</hl>开始。",
+      "know_more": "了解更多",
       "features": {
         "enrolment": {
           "title": "自动加入",
@@ -1618,8 +1619,8 @@
           "body": "每月有两个奖励周期。"
         },
         "activity": {
-          "title": "按玩家活跃度发放奖励",
-          "body": "根据你的场景吸引并带回的玩家获得收益。"
+          "title": "按活跃度发放奖励",
+          "body": "你带来的新玩家、游戏时长和第 3 天留存率决定奖励。"
         },
         "payout": {
           "title": "以 USD 支付",

@@ -202,6 +202,12 @@ describe('EarnPage', () => {
       expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
       expect(screen.queryByRole('checkbox')).toBeNull();
     });
+
+    it('should open the Creator Fund page in the browser from Know More', () => {
+      page();
+      fireEvent.click(screen.getByRole('link', { name: 'Know More' }));
+      expect(misc.openExternal).toHaveBeenCalledWith('https://decentraland.org/creator-fund');
+    });
   });
 
   describe('when back from sign in and the status requests settle out of order', () => {
