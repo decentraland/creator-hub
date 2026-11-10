@@ -67,9 +67,7 @@ describe('CreatorFundBanner', () => {
       renderHome();
       expect(queryBanner()).not.toBeNull();
       expect(screen.getByRole('heading', { name: TITLE })).toBeDefined();
-      expect(
-        screen.getByText('Bring players in, keep them playing, get paid in USDC.'),
-      ).toBeDefined();
+      expect(screen.getByText('Bring players in, keep them playing, get paid.')).toBeDefined();
     });
 
     it('should open the Earn page from Learn more', () => {

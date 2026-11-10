@@ -15,7 +15,7 @@
     },
     "creator_fund_banner": {
       "title": "Creator Fund：在 Decentraland 赚钱",
-      "description": "吸引玩家，留住玩家，以 USDC 获得报酬。",
+      "description": "吸引玩家，留住玩家，获得报酬。",
       "cta": "了解更多",
       "close": "关闭"
     },
@@ -1732,9 +1732,7 @@
       },
       "get_ready": {
         "title": "准备好了吗！",
-        "body": "你的第一个奖励周期即将开始。以下是一些入门建议。",
-        "body_upcoming": "你的第一个奖励周期将于{date}开始。",
-        "body_started": "你的第一个奖励周期已于{date}开始。",
+        "body": "你的第一个奖励周期将于 11 月 15 日开始。",
         "build": {
           "title": "构建你的场景",
           "body": "打造吸引玩家来到 Decentraland 的精彩体验。浏览<docs>创作者文档</docs>和<refs>参考示例</refs>获取灵感。"
@@ -1746,9 +1744,7 @@
         },
         "cycle": {
           "title": "为第一个周期做好准备",
-          "body": "你的第一个奖励周期开始了！",
-          "body_upcoming": "第 1 个周期将于{date}开始。",
-          "body_started": "第 1 个周期已于{date}开始。"
+          "body": "第 1 周期于 11 月 15 日开始。"
         },
         "community": {
           "title": "加入社区",
