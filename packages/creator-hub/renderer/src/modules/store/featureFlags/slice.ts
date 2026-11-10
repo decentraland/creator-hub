@@ -3,8 +3,10 @@ import { fetchFlags } from '@dcl/feature-flags';
 import type { FeatureFlagsResult } from '@dcl/feature-flags';
 import type { Status } from '/shared/types/async';
 import { config } from '/@/config';
+import type { AppState } from '/@/modules/store';
 import { createAsyncThunk } from '../thunk';
 import { applyFlagOverrides } from './overrides';
+import { FeatureFlag } from './types';
 
 const APPLICATION_NAME = 'creatorhub';
 // The abgen pipeline flag lives in the explorer's namespace, and both apps have to read the
@@ -69,6 +71,19 @@ const slice = createSlice({
       });
   },
 });
+
+/** @returns the Creator Fund variant's `startDate` in ms, or `null` if absent or malformed. */
+export function getCreatorFundStart(state: AppState): number | null {
+  const variant = state.featureFlags.variants[FeatureFlag.CREATOR_FUND];
+  if (!variant?.enabled || !variant.payload) return null;
+  try {
+    const { startDate } = JSON.parse(variant.payload.value);
+    const start = typeof startDate === 'string' ? Date.parse(startDate) : NaN;
+    return Number.isNaN(start) ? null : start;
+  } catch {
+    return null;
+  }
+}
 
 export const actions = { ...slice.actions, fetchFeatureFlags };
 export const reducer = slice.reducer;

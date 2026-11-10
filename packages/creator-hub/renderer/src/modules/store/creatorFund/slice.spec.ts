@@ -10,6 +10,7 @@ import * as api from '../../../lib/creatorFundApi';
 import * as metricsApi from '../../../lib/metricsApi';
 import { Worlds } from '../../../lib/worlds';
 import { createTestStore } from '../../../../tests/utils/testStore';
+import { FeatureFlag, fetchFeatureFlags } from '../featureFlags';
 import { actions, selectors } from './slice';
 
 vi.mock('../../../lib/creatorFundApi', () => ({
@@ -275,6 +276,88 @@ describe('creatorFund slice', () => {
 
       expect(selectors.getMyPlacesCycles(store.getState()).map(entry => entry.id)).toEqual(options);
       expect(selectors.getDefaultPlacesCycle(store.getState())?.id ?? null).toBe(expected);
+    });
+  });
+
+  describe('when the Creator Fund flag sets a program start date', () => {
+    const TEST_CYCLE: Cycle = {
+      id: 4,
+      start_at: '2026-11-02T15:10:00.000Z',
+      end_at: '2026-11-10T15:10:00.000Z',
+      pool_usdc: 1,
+      status: 'closed',
+    };
+    const launch = (id: number, start: string, end: string): Cycle => ({
+      id,
+      start_at: `${start}T03:00:00.000Z`,
+      end_at: `${end}T03:00:00.000Z`,
+      pool_usdc: 10000,
+      status: 'upcoming',
+    });
+    const LAUNCH_CYCLES = [
+      TEST_CYCLE,
+      launch(1, '2026-11-15', '2026-12-01'),
+      launch(2, '2026-12-01', '2026-12-16'),
+      launch(3, '2026-12-16', '2027-01-01'),
+    ];
+    const variant = (value: string, enabled = true) => ({
+      name: 'launch',
+      enabled,
+      payload: { type: 'json', value },
+    });
+
+    async function loadWithVariant(flagVariant?: ReturnType<typeof variant>) {
+      store.dispatch(
+        fetchFeatureFlags.fulfilled(
+          {
+            flags: { [FeatureFlag.CREATOR_FUND]: true },
+            variants: flagVariant ? { [FeatureFlag.CREATOR_FUND]: flagVariant } : {},
+          },
+          '',
+        ),
+      );
+      vi.mocked(api.getCycles).mockResolvedValue(ok({ cycles: LAUNCH_CYCLES }));
+      await store.dispatch(actions.fetchCycles());
+    }
+
+    describe.each([
+      ['', '{"startDate":"2026-11-15T03:00:00Z"}'],
+      [' in the live payload, with its leading space', ' {"startDate":"2026-11-15T03:00:00Z"}'],
+    ])('and a cycle starts before it%s', (_name, value) => {
+      beforeEach(() => loadWithVariant({ ...variant(value), name: 'cycle_start' }));
+
+      it('should hide that cycle and keep the ones from the start date on', () => {
+        expect(selectors.getSortedCycles(store.getState()).map(entry => entry.id)).toEqual([
+          3, 2, 1,
+        ]);
+      });
+
+      it('should have no latest closed cycle, no My Places cycle, and cycle 1 as the first', () => {
+        const state = store.getState();
+        expect(selectors.getLatestClosedCycle(state)).toBeNull();
+        expect(selectors.getMyPlacesCycles(state)).toEqual([]);
+        expect(selectors.getFirstCycle(state)?.id).toBe(1);
+        expect(selectors.getFirstPayoutCycle(state)?.id).toBe(1);
+      });
+    });
+
+    describe.each([
+      ['there is no variant', undefined],
+      ['the variant is disabled', variant('{"startDate":"2026-11-15T03:00:00Z"}', false)],
+      ['the payload is not JSON', variant('2026-11-15T03:00:00Z')],
+      ['the payload is JSON null', variant('null')],
+      ['the payload has no startDate', variant('{"start":"2026-11-15T03:00:00Z"}')],
+      ['the startDate is not a date', variant('{"startDate":"soon"}')],
+      ['the startDate is not a string', variant('{"startDate":123}')],
+    ])('when %s', (_name, flagVariant) => {
+      it('should show every cycle', async () => {
+        await loadWithVariant(flagVariant);
+
+        expect(selectors.getSortedCycles(store.getState()).map(entry => entry.id)).toEqual([
+          3, 2, 1, 4,
+        ]);
+        expect(selectors.getLatestClosedCycle(store.getState())?.id).toBe(4);
+      });
     });
   });
 

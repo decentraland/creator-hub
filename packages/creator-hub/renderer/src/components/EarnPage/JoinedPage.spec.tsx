@@ -15,7 +15,7 @@ import * as api from '/@/lib/creatorFundApi';
 
 import { tracked } from '../../../tests/utils/analytics';
 import { createTestStore } from '../../../tests/utils/testStore';
-import { CYCLES, ok } from './joined/fixtures';
+import { CYCLES, LAUNCH_CYCLES, LAUNCH_VARIANT, ok } from './joined/fixtures';
 import { JoinedPage, type JoinedTab } from './JoinedPage';
 
 vi.mock('/@/lib/creatorFundApi', () => ({
@@ -57,12 +57,12 @@ const JOINED = {
 
 async function renderPage(
   tab: JoinedTab = 'leaderboard',
-  { awaitCycles = true, payout = true } = {},
+  { awaitCycles = true, payout = true, variants = {} } = {},
 ) {
   const store = createTestStore();
   store.dispatch(
     fetchFeatureFlags.fulfilled(
-      { flags: { [FeatureFlag.CREATOR_FUND_PAYOUT]: payout }, variants: {} },
+      { flags: { [FeatureFlag.CREATOR_FUND_PAYOUT]: payout }, variants },
       '',
     ),
   );
@@ -302,6 +302,26 @@ describe('JoinedPage', () => {
         expect(screen.queryByRole('menu')).toBeNull();
       },
     );
+  });
+
+  describe('when the only closed cycle starts before the program start date', () => {
+    beforeEach(() => {
+      vi.mocked(api.getCycles).mockResolvedValue(ok(LAUNCH_CYCLES));
+    });
+
+    it('should name the first tab Home', async () => {
+      await renderPage('leaderboard', {
+        variants: { [FeatureFlag.CREATOR_FUND]: LAUNCH_VARIANT },
+      });
+
+      expect(screen.getByRole('tab', { name: 'Home', selected: true })).toBeTruthy();
+    });
+
+    it('should name the first tab Leaderboard when the flag sets no start date', async () => {
+      await renderPage();
+
+      expect(screen.getByRole('tab', { name: 'Leaderboard', selected: true })).toBeTruthy();
+    });
   });
 
   describe('when no cycle has closed yet', () => {
