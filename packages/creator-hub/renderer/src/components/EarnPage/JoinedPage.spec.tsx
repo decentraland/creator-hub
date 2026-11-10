@@ -257,17 +257,37 @@ describe('JoinedPage', () => {
       expect(button.getAttribute('aria-controls')).toBe(menu.id);
     });
 
-    it('should offer Read Terms and Contact Support, and open the terms read only', async () => {
+    it('should offer Program, Program Rules, Read Terms and Contact Support', async () => {
       await renderPage();
 
       fireEvent.click(screen.getByRole('button', { name: 'More options' }));
       const items = await screen.findAllByRole('menuitem');
-      expect(items.map(item => item.textContent)).toEqual(['Read Terms', 'Contact Support']);
+      expect(items.map(item => item.textContent)).toEqual([
+        'Program',
+        'Program Rules',
+        'Read Terms',
+        'Contact Support',
+      ]);
+    });
 
-      fireEvent.click(items[0]);
+    it.each([
+      ['Program', 'https://decentraland.org/creator-fund', 'Creator Fund Program Opened'],
+      [
+        'Program Rules',
+        'https://docs.decentraland.org/creator/creator-fund/program-rules',
+        'Creator Fund Program Rules Opened',
+      ],
+      ['Read Terms', 'https://decentraland.org/creator-fund-terms', 'Creator Fund Read Terms'],
+    ] as const)('should open %s in the browser', async (name, url, event) => {
+      await renderPage();
 
-      expect(await screen.findByRole('region', { name: 'Program Terms' })).toBeTruthy();
-      expect(screen.queryByRole('checkbox')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+      fireEvent.click(await screen.findByRole('menuitem', { name }));
+
+      expect(misc.openExternal).toHaveBeenCalledWith(url);
+      expect(tracked(event)).toEqual([{ source: 'menu' }]);
+      expect(screen.queryByRole('menu')).toBeNull();
+      expect(screen.queryByRole('region', { name: 'Program Terms' })).toBeNull();
     });
 
     it.each(['leaderboard', 'my_places', 'payouts'] as const)(

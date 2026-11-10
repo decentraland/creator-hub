@@ -13,6 +13,12 @@
     "header": {
       "title": "Welcome to Creator Hub"
     },
+    "creator_fund_banner": {
+      "title": "Creator Fund: Earn in Decentraland",
+      "description": "Bring players in, keep them playing, get paid.",
+      "cta": "Learn more",
+      "close": "Close"
+    },
     "rows": {
       "my_scenes": {
         "title": "My Scenes"
@@ -1701,6 +1707,8 @@
       "beta": "Beta",
       "joined_on": "Joined on {date}",
       "more_options": "More options",
+      "program": "Program",
+      "program_rules": "Program Rules",
       "read_terms": "Read Terms",
       "contact_support": "Contact Support",
       "banner": {
@@ -1726,9 +1734,8 @@
       },
       "get_ready": {
         "title": "Get ready!",
-        "body": "Your first reward cycle is coming up. Here are a few things you can do to get started.",
-        "body_upcoming": "Your first reward cycle starts {date}.",
-        "body_started": "Your first reward cycle started {date}.",
+        "body": "Your first reward cycle starts November 15th.",
+        "body_started": "Your first reward cycle started November 15th.",
         "build": {
           "title": "Build your scenes",
           "body": "Create engaging experiences that bring players to Decentraland. Explore the <docs>Creator Docs</docs> and <refs>References</refs> for inspiration."
@@ -1740,9 +1747,8 @@
         },
         "cycle": {
           "title": "Get ready for the first cycle",
-          "body": "Your first reward cycle begins!",
-          "body_upcoming": "Cycle #1 Begins {date}.",
-          "body_started": "Cycle #1 Began {date}."
+          "body": "Cycle 1 Starts November 15th.",
+          "body_started": "Cycle 1 Started November 15th."
         },
         "community": {
           "title": "Join the community",

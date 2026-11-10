@@ -174,6 +174,12 @@ export type Events = {
   'Creator Fund Read Terms': {
     source: 'landing' | 'snackbar' | 'menu';
   };
+  'Creator Fund Program Opened': {
+    source: 'menu';
+  };
+  'Creator Fund Program Rules Opened': {
+    source: 'menu';
+  };
   'Creator Fund Tab Viewed': {
     tab: 'home' | 'leaderboard' | 'my_places' | 'payouts';
   };
@@ -197,4 +203,6 @@ export type Events = {
     ok: boolean;
   };
   'Creator Fund Transaction Viewed': undefined;
+  'Creator Fund Banner Clicked': undefined;
+  'Creator Fund Banner Dismissed': undefined;
 };

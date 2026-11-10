@@ -51,40 +51,37 @@ describe('GetReady', () => {
     vi.clearAllMocks();
   });
 
-  describe('when the first cycle has not started', () => {
-    it('should date the first cycle from its start, the earliest in the list', async () => {
-      const view = await renderGetReady([
-        cycle(2, '2026-12-01', 'upcoming'),
-        cycle(1, '2026-11-15', 'upcoming'),
-      ]);
+  describe.each([
+    ['has not started', [cycle(2, '2026-12-01', 'upcoming'), cycle(1, '2026-11-15', 'upcoming')]],
+    ['is not listed', []],
+  ])('when the first cycle %s', (_state, cycles) => {
+    it('should say Cycle 1 starts November 15th', async () => {
+      const view = await renderGetReady(cycles);
 
       expect(view.getByText('Your first reward cycle starts November 15th.')).toBeTruthy();
-      expect(view.getByText('Cycle #1 Begins November 15th.')).toBeTruthy();
+      expect(view.getByText('Cycle 1 Starts November 15th.')).toBeTruthy();
     });
   });
 
   describe('when the first cycle is running', () => {
-    it('should say it started, in the past tense', async () => {
+    it('should say Cycle 1 started November 15th, in the past tense', async () => {
       const view = await renderGetReady([
-        cycle(2, '2026-11-16', 'upcoming'),
-        cycle(1, '2026-11-01', 'running'),
+        cycle(2, '2026-12-01', 'upcoming'),
+        cycle(1, '2026-11-15', 'running'),
       ]);
 
-      expect(view.getByText('Your first reward cycle started November 1st.')).toBeTruthy();
-      expect(view.getByText('Cycle #1 Began November 1st.')).toBeTruthy();
+      expect(view.getByText('Your first reward cycle started November 15th.')).toBeTruthy();
+      expect(view.getByText('Cycle 1 Started November 15th.')).toBeTruthy();
+      expect(view.queryByText(/starts November/i)).toBeNull();
     });
   });
 
-  describe('when no cycle is listed', () => {
-    it('should keep the undated lines', async () => {
-      const view = await renderGetReady([]);
+  describe('when the backend lists another start date', () => {
+    it('should keep the program date, November 15th', async () => {
+      const view = await renderGetReady([cycle(4, '2026-11-02', 'running')]);
 
-      expect(
-        view.getByText(
-          'Your first reward cycle is coming up. Here are a few things you can do to get started.',
-        ),
-      ).toBeTruthy();
-      expect(view.getByText('Your first reward cycle begins!')).toBeTruthy();
+      expect(view.getByText('Cycle 1 Started November 15th.')).toBeTruthy();
+      expect(view.queryByText(/November 2nd/)).toBeNull();
     });
   });
 });
