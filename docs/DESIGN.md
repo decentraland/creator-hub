@@ -3054,6 +3054,7 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 | Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--secondary` `#242129`, `--modal` `#181225`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` | `#242129` is the Charcoal **✱ deviation** |
 | Text | `--text` `#ffffff`, `--palette-neutral-softWhite` `#fcfcfc` (Snow), `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` | match |
 | Charts | `--chart-reference` `#a99afe` (benchmark lines on the Analytics detail charts) | raw Figma fill, no variable |
+| Creator Fund | `--creator-fund-banner-bg` `#3d185d` (the Home banner's fill, Creator Fund file `DhBtPn56J6ZlPLrTUDufqp` node `9438:1342`) | raw Figma fill, no variable; the name stays as is rather than a ui3 colour noun (user decision) |
 | Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) | match |
 | Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` | match |
 | Lines | `--divider` `#67637033`, `--text-area-border` `#676370`, `--clear-divider` `#a09ba8` | match |
