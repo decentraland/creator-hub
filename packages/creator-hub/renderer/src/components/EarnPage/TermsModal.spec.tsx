@@ -33,7 +33,7 @@ const TERMS = {
   published_at: '2026-10-22T00:00:00Z',
   title: 'Example Program Terms (Beta)',
   content:
-    '## 1. About the Program\n\nFirst paragraph.\n\nSecond paragraph.\n\n## 2. Payouts\n\nRead [the rules](https://example.com/rules) or [this](http://example.com).',
+    '## 1. About the Program\n\nFirst paragraph.\n\nSecond paragraph.\n\n## 2. Payouts\n\nRead [the rules](https://example.com/rules) or [this](http://example.com), or [email us](mailto:fund@example.com?cc=other@example.com&attach=/etc/passwd).',
 };
 
 const renderModal = (ui: React.ReactElement) =>
@@ -117,7 +117,7 @@ describe('TermsModal', () => {
   });
 
   describe('when the terms link out', () => {
-    it('should open only https links, in the system browser', async () => {
+    it('should open only https and mailto links, through the system, dropping mailto parameters', async () => {
       renderModal(
         <TermsModal
           variant="read"
@@ -126,9 +126,11 @@ describe('TermsModal', () => {
       );
       fireEvent.click(await screen.findByRole('link', { name: 'the rules' }));
       fireEvent.click(screen.getByRole('link', { name: 'this' }));
+      fireEvent.click(screen.getByRole('link', { name: 'email us' }));
 
-      expect(misc.openExternal).toHaveBeenCalledTimes(1);
-      expect(misc.openExternal).toHaveBeenCalledWith('https://example.com/rules');
+      expect(misc.openExternal).toHaveBeenCalledTimes(2);
+      expect(misc.openExternal).toHaveBeenNthCalledWith(1, 'https://example.com/rules');
+      expect(misc.openExternal).toHaveBeenNthCalledWith(2, 'mailto:fund@example.com');
     });
   });
 
