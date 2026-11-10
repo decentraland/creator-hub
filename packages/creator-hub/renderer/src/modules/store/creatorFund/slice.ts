@@ -32,6 +32,7 @@ import { fetchMetrics, type LocationMetrics, type MetricLocation } from '/@/lib/
 import { Worlds } from '/@/lib/worlds';
 import type { AppState } from '/@/modules/store';
 import { accountChanged } from '/@/modules/store/account';
+import { getCreatorFundStart } from '/@/modules/store/featureFlags';
 import { createAsyncThunk as createAppAsyncThunk } from '/@/modules/store/thunk';
 
 import { formatCycleLabel } from './utils';
@@ -337,9 +338,11 @@ const needsReaccept = createSelector(
     enrollment.terms_version !== terms.version,
 );
 
-/** The cycles newest first; the API promises no order. */
-const getSortedCycles = createSelector(getCycles, cycles =>
-  [...(cycles?.cycles ?? [])].sort((a, b) => b.start_at.localeCompare(a.start_at)),
+/** The cycles from the program start on, newest first; the API promises no order. */
+const getSortedCycles = createSelector([getCycles, getCreatorFundStart], (cycles, start) =>
+  (cycles?.cycles ?? [])
+    .filter(cycle => start === null || Date.parse(cycle.start_at) >= start)
+    .sort((a, b) => b.start_at.localeCompare(a.start_at)),
 );
 
 /** The newest closed cycle, the leaderboard's default; `null` before any cycle closes. */

@@ -28,6 +28,37 @@ export const CYCLES: CreatorFundCycles = {
   ],
 };
 
+/** The launch cycles 1–3 behind a closed test cycle that starts before the program. */
+export const LAUNCH_CYCLES: CreatorFundCycles = {
+  cycles: [
+    {
+      id: 4,
+      start_at: '2026-11-02T15:10:00.000Z',
+      end_at: '2026-11-10T15:10:00.000Z',
+      pool_usdc: 1,
+      status: 'closed',
+    },
+    ...[
+      ['2026-11-15', '2026-12-01'],
+      ['2026-12-01', '2026-12-16'],
+      ['2026-12-16', '2027-01-01'],
+    ].map(([start, end], index) => ({
+      id: index + 1,
+      start_at: `${start}T03:00:00.000Z`,
+      end_at: `${end}T03:00:00.000Z`,
+      pool_usdc: 10000,
+      status: 'upcoming' as const,
+    })),
+  ],
+};
+
+/** The Creator Fund flag variant that starts the program with cycle 1. */
+export const LAUNCH_VARIANT = {
+  name: 'launch',
+  enabled: true,
+  payload: { type: 'json', value: '{"startDate":"2026-11-15T03:00:00Z"}' },
+};
+
 export const RUNNING = CYCLES.cycles[2];
 export const LATEST_CLOSED = CYCLES.cycles[3];
 export const OLDEST_CLOSED = CYCLES.cycles[0];
