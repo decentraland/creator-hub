@@ -7,7 +7,7 @@ import moneyMouth from '/assets/images/earn/money-mouth.webp';
 
 import type { TranslationPath } from '/@/modules/store/translation/types';
 import { getCurrentLocale, t } from '/@/modules/store/translation/utils';
-import { CONTACT_SUPPORT_URL } from '/@/modules/utils';
+import { CONTACT_SUPPORT_URL, CREATOR_FUND_URL } from '/@/modules/utils';
 
 import type { CommonProps } from '../Icons/types';
 
@@ -42,8 +42,6 @@ import {
 } from './Landing.styled';
 import { SnackbarAction, StatusSnackbar } from './StatusSnackbar';
 import { TermsModal } from './TermsModal';
-
-const CREATOR_FUND_PAGE_URL = 'https://decentraland.org/creator-fund';
 
 const FEATURES: {
   key: string;
@@ -127,10 +125,10 @@ export function Landing({
               },
             )}{' '}
             <KnowMore
-              href={CREATOR_FUND_PAGE_URL}
+              href={CREATOR_FUND_URL}
               onClick={event => {
                 event.preventDefault();
-                void misc.openExternal(CREATOR_FUND_PAGE_URL);
+                void misc.openExternal(CREATOR_FUND_URL);
               }}
             >
               {t('earn.landing.know_more')}

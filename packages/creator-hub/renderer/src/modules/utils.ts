@@ -11,6 +11,9 @@ export const FEEDBACK_URL = config.get('FEEDBACK_URL');
 export const HELP_FAQ_URL = config.get('HELP_FAQ_URL');
 export const CONTACT_SUPPORT_URL = config.get('CONTACT_SUPPORT_URL');
 export const DISCORD_URL = config.get('DISCORD_URL');
+export const CREATOR_FUND_URL = config.get('CREATOR_FUND_URL');
+export const CREATOR_FUND_TERMS_URL = config.get('CREATOR_FUND_TERMS_URL');
+export const CREATOR_FUND_RULES_URL = config.get('CREATOR_FUND_RULES_URL');
 
 /** Where every "Create Event" entry points: What's On's new-hangout page. */
 export const CREATE_EVENT_URL = config.get('CREATE_EVENT_URL');

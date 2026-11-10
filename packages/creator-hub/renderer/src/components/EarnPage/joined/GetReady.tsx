@@ -1,7 +1,6 @@
 import { misc } from '#preload';
 import { useSelector } from '#store';
 import { selectors } from '/@/modules/store/creatorFund';
-import { formatCycleStartDay } from '/@/modules/store/creatorFund/utils';
 import { DISCORD_URL } from '/@/modules/utils';
 import type { TranslationPath } from '/@/modules/store/translation/types';
 import { getCurrentLocale, t } from '/@/modules/store/translation/utils';
@@ -50,25 +49,8 @@ type Step = {
   key: string;
   Icon: (props: CommonProps) => React.ReactElement;
   title: TranslationPath;
-  body: (copy: FirstCycleCopy) => React.ReactNode;
+  body: (firstCycleStarted: boolean) => React.ReactNode;
 };
-
-type FirstCycleCopy = { body: string; cycle: string };
-
-type FirstCycleState = 'unlisted' | 'upcoming' | 'started';
-
-const FIRST_CYCLE_COPY: Record<FirstCycleState, { body: TranslationPath; cycle: TranslationPath }> =
-  {
-    unlisted: { body: 'earn.joined.get_ready.body', cycle: 'earn.joined.get_ready.cycle.body' },
-    upcoming: {
-      body: 'earn.joined.get_ready.body_upcoming',
-      cycle: 'earn.joined.get_ready.cycle.body_upcoming',
-    },
-    started: {
-      body: 'earn.joined.get_ready.body_started',
-      cycle: 'earn.joined.get_ready.cycle.body_started',
-    },
-  };
 
 const STEPS: Step[] = [
   {
@@ -115,7 +97,12 @@ const STEPS: Step[] = [
     key: 'cycle',
     Icon: CalendarIcon,
     title: 'earn.joined.get_ready.cycle.title',
-    body: copy => copy.cycle,
+    body: firstCycleStarted =>
+      t(
+        firstCycleStarted
+          ? 'earn.joined.get_ready.cycle.body_started'
+          : 'earn.joined.get_ready.cycle.body',
+      ),
   },
   {
     key: 'community',
@@ -134,22 +121,18 @@ const STEPS: Step[] = [
   },
 ];
 
-function useFirstCycleCopy(): FirstCycleCopy {
+/**
+ * Whether the first listed cycle has begun. The date stays the program's November 15th, but this
+ * tab shows until a cycle closes, so its tense follows the backend's status.
+ */
+function useFirstCycleStarted() {
   const firstCycle = useSelector(selectors.getFirstCycle);
-  const locale = useSelector(state => state.translation.locale);
-  const state: FirstCycleState = !firstCycle
-    ? 'unlisted'
-    : firstCycle.status === 'upcoming'
-      ? 'upcoming'
-      : 'started';
-  const date = firstCycle ? formatCycleStartDay(firstCycle, locale) : undefined;
-  const copy = FIRST_CYCLE_COPY[state];
-  return { body: t(copy.body, { date }), cycle: t(copy.cycle, { date }) };
+  return !!firstCycle && firstCycle.status !== 'upcoming';
 }
 
 /** The Leaderboard tab before any cycle has closed: what to do while the first one runs. */
 export function GetReady() {
-  const copy = useFirstCycleCopy();
+  const firstCycleStarted = useFirstCycleStarted();
   return (
     <Area>
       <Scenery>
@@ -167,7 +150,13 @@ export function GetReady() {
       <Column>
         <Intro>
           <Title as="h2">{t('earn.joined.get_ready.title')}</Title>
-          <Body>{copy.body}</Body>
+          <Body>
+            {t(
+              firstCycleStarted
+                ? 'earn.joined.get_ready.body_started'
+                : 'earn.joined.get_ready.body',
+            )}
+          </Body>
         </Intro>
         <Features as="ol">
           {STEPS.map(({ key, Icon, title, body }) => (
@@ -176,7 +165,7 @@ export function GetReady() {
                 <Icon />
                 {t(title)}
               </FeatureTitle>
-              <FeatureBody>{body(copy)}</FeatureBody>
+              <FeatureBody>{body(firstCycleStarted)}</FeatureBody>
             </Feature>
           ))}
         </Features>
