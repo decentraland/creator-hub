@@ -116,7 +116,7 @@ const Scroller = styled('div')({
 });
 
 const HEADING = ':is(h1, h2, h3, h4, h5, h6)';
-const BODY_BLOCK = ':is(p, ul, ol)';
+const BODY_BLOCK = ':is(p, ul, ol, blockquote, pre, hr, table)';
 
 const TermsText = styled('div')({
   overflowWrap: 'anywhere',

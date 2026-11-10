@@ -1,12 +1,11 @@
 import { misc } from '#preload';
 
-const OPENABLE_PROTOCOLS = new Set(['https:', 'mailto:']);
-
-/** Opens a clicked Markdown link through the system when it is https or mailto; other links do nothing. */
+/** Opens a clicked https link, or a mailto link's address without its parameters; ignores others. */
 export function openMarkdownLink(event: React.MouseEvent) {
   const link = (event.target as HTMLElement).closest('a');
   if (!link) return;
   event.preventDefault();
-  if (OPENABLE_PROTOCOLS.has(new URL(link.href, 'https://invalid').protocol))
-    void misc.openExternal(link.href);
+  const url = new URL(link.href, 'https://invalid');
+  if (url.protocol === 'https:') void misc.openExternal(link.href);
+  if (url.protocol === 'mailto:') void misc.openExternal(`mailto:${url.pathname}`);
 }
