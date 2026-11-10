@@ -1,4 +1,6 @@
 import { misc } from '#preload';
+import { useSelector } from '#store';
+import { selectors } from '/@/modules/store/creatorFund';
 import { DISCORD_URL } from '/@/modules/utils';
 import type { TranslationPath } from '/@/modules/store/translation/types';
 import { getCurrentLocale, t } from '/@/modules/store/translation/utils';
@@ -47,7 +49,7 @@ type Step = {
   key: string;
   Icon: (props: CommonProps) => React.ReactElement;
   title: TranslationPath;
-  body: () => React.ReactNode;
+  body: (firstCycleStarted: boolean) => React.ReactNode;
 };
 
 const STEPS: Step[] = [
@@ -95,7 +97,12 @@ const STEPS: Step[] = [
     key: 'cycle',
     Icon: CalendarIcon,
     title: 'earn.joined.get_ready.cycle.title',
-    body: () => t('earn.joined.get_ready.cycle.body'),
+    body: firstCycleStarted =>
+      t(
+        firstCycleStarted
+          ? 'earn.joined.get_ready.cycle.body_started'
+          : 'earn.joined.get_ready.cycle.body',
+      ),
   },
   {
     key: 'community',
@@ -114,8 +121,18 @@ const STEPS: Step[] = [
   },
 ];
 
+/**
+ * Whether the first listed cycle has begun. The date stays the program's November 15th, but this
+ * tab shows until a cycle closes, so its tense follows the backend's status.
+ */
+function useFirstCycleStarted() {
+  const firstCycle = useSelector(selectors.getFirstCycle);
+  return !!firstCycle && firstCycle.status !== 'upcoming';
+}
+
 /** The Leaderboard tab before any cycle has closed: what to do while the first one runs. */
 export function GetReady() {
+  const firstCycleStarted = useFirstCycleStarted();
   return (
     <Area>
       <Scenery>
@@ -133,7 +150,13 @@ export function GetReady() {
       <Column>
         <Intro>
           <Title as="h2">{t('earn.joined.get_ready.title')}</Title>
-          <Body>{t('earn.joined.get_ready.body')}</Body>
+          <Body>
+            {t(
+              firstCycleStarted
+                ? 'earn.joined.get_ready.body_started'
+                : 'earn.joined.get_ready.body',
+            )}
+          </Body>
         </Intro>
         <Features as="ol">
           {STEPS.map(({ key, Icon, title, body }) => (
@@ -142,7 +165,7 @@ export function GetReady() {
                 <Icon />
                 {t(title)}
               </FeatureTitle>
-              <FeatureBody>{body()}</FeatureBody>
+              <FeatureBody>{body(firstCycleStarted)}</FeatureBody>
             </Feature>
           ))}
         </Features>

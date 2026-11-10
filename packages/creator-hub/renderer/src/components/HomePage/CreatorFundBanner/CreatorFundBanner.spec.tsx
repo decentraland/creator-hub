@@ -103,23 +103,24 @@ describe('CreatorFundBanner', () => {
   });
 
   describe('when storage is unavailable', () => {
-    beforeEach(() => {
-      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-        throw new Error('denied');
-      });
-      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-        throw new Error('denied');
-      });
-    });
+    const denied = () => {
+      throw new Error('denied');
+    };
 
     afterEach(() => {
       vi.restoreAllMocks();
     });
 
     it('should still show, and still close', () => {
+      const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(denied);
+      const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(denied);
+
       renderHome();
+      expect(getItem).toHaveBeenCalledWith(BANNER_DISMISSED_KEY);
       expect(queryBanner()).not.toBeNull();
+
       fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      expect(setItem).toHaveBeenCalledWith(BANNER_DISMISSED_KEY, 'true');
       expect(queryBanner()).toBeNull();
     });
   });

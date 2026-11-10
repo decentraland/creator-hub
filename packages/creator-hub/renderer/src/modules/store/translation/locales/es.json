@@ -1735,6 +1735,7 @@
       "get_ready": {
         "title": "¡Prepárate!",
         "body": "Tu primer ciclo de recompensas comienza el 15 de noviembre.",
+        "body_started": "Tu primer ciclo de recompensas comenzó el 15 de noviembre.",
         "build": {
           "title": "Crea tus escenas",
           "body": "Crea experiencias atractivas que traigan jugadores a Decentraland. Explora la <docs>documentación para creadores</docs> y las <refs>referencias</refs> para inspirarte."
@@ -1746,7 +1747,8 @@
         },
         "cycle": {
           "title": "Prepárate para el primer ciclo",
-          "body": "El ciclo 1 empieza el 15 de noviembre."
+          "body": "El ciclo 1 empieza el 15 de noviembre.",
+          "body_started": "El ciclo 1 empezó el 15 de noviembre."
         },
         "community": {
           "title": "Únete a la comunidad",
