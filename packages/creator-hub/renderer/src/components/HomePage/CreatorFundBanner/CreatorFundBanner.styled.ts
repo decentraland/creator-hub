@@ -106,6 +106,8 @@ const Artwork = styled('img')({
   objectFit: 'cover',
   objectPosition: '85% bottom',
   borderRadius: 'var(--r-card) 0 0 var(--r-card)',
+  maskImage: 'linear-gradient(to right, transparent -0.85%, black 48.4%)',
+  WebkitMaskImage: 'linear-gradient(to right, transparent -0.85%, black 48.4%)',
   pointerEvents: 'none',
 });
 
