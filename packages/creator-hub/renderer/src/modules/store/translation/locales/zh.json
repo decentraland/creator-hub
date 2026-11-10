@@ -1707,6 +1707,8 @@
       "beta": "测试版",
       "joined_on": "加入于 {date}",
       "more_options": "更多选项",
+      "program": "计划",
+      "program_rules": "计划规则",
       "read_terms": "阅读条款",
       "contact_support": "联系支持",
       "banner": {

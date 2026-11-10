@@ -1707,6 +1707,8 @@
       "beta": "Beta",
       "joined_on": "Joined on {date}",
       "more_options": "More options",
+      "program": "Program",
+      "program_rules": "Program Rules",
       "read_terms": "Read Terms",
       "contact_support": "Contact Support",
       "banner": {
