@@ -13,6 +13,12 @@
     "header": {
       "title": "欢迎来到阿尔法编辑器"
     },
+    "creator_fund_banner": {
+      "title": "Creator Fund：在 Decentraland 赚钱",
+      "description": "吸引玩家，留住玩家，以 USDC 获得报酬。",
+      "cta": "了解更多",
+      "close": "关闭"
+    },
     "cards": {
       "sign_in": {
         "title": "登入以發布您的現場",

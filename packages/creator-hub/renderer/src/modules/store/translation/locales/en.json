@@ -13,6 +13,12 @@
     "header": {
       "title": "Welcome to Creator Hub"
     },
+    "creator_fund_banner": {
+      "title": "Creator Fund: Earn in Decentraland",
+      "description": "Bring players in, keep them playing, get paid in USDC.",
+      "cta": "Learn more",
+      "close": "Close"
+    },
     "rows": {
       "my_scenes": {
         "title": "My Scenes"

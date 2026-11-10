@@ -13,6 +13,12 @@
     "header": {
       "title": "Bienvenido a Decentraland Creator Hub"
     },
+    "creator_fund_banner": {
+      "title": "Creator Fund: Gana en Decentraland",
+      "description": "Atrae jugadores, haz que sigan jugando y cobra en USDC.",
+      "cta": "Más información",
+      "close": "Cerrar"
+    },
     "cards": {
       "sign_in": {
         "title": "Inicia sesión para publicar tus escenas",

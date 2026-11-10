@@ -197,4 +197,6 @@ export type Events = {
     ok: boolean;
   };
   'Creator Fund Transaction Viewed': undefined;
+  'Creator Fund Banner Clicked': undefined;
+  'Creator Fund Banner Dismissed': undefined;
 };
