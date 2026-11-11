@@ -1029,7 +1029,13 @@ export function signInRequiredMessage(
 /** `text` with anything that looks like an API key or bearer token masked, for the log. */
 export function redactSecrets(text: string): string {
   return text
-    .replace(/\b(sk-|AIza)[\w-]{8,}/g, '$1<redacted>')
+    .replace(
+      /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----|$)/g,
+      '<redacted private key>',
+    )
+    .replace(/\b(sk-|AIza|gh[opsu]_|github_pat_|xox[abpr]-|AKIA)[\w-]{8,}/g, '$1<redacted>')
+    .replace(/\beyJ[\w-]+\.[\w-]+\.[\w-]+/g, '<redacted jwt>')
+    .replace(/\b0x[0-9a-fA-F]{64}\b/g, '0x<redacted>')
     .replace(/(Bearer\s+)[\w.~+/=-]+/gi, '$1<redacted>');
 }
 

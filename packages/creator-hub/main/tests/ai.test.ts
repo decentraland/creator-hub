@@ -988,6 +988,30 @@ describe('when writing CLI error output to the log', () => {
     expect(out).not.toMatch(/sk-example1234567890|AIzaExample1234567890abcdef|example\.token-123/);
     expect(out).toContain('bad key');
   });
+
+  it('should hide other token formats, private keys and JWTs', () => {
+    const secrets = [
+      'ghp_example1234567890abcdef',
+      'github_pat_example1234567890',
+      'xoxb-example1234567890',
+      'AKIAEXAMPLE12345678',
+      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJleGFtcGxlIn0.c2lnbmF0dXJlLWV4YW1wbGU',
+      `0x${'ab'.repeat(32)}`,
+      '-----BEGIN PRIVATE KEY-----\nMIIexample\n-----END PRIVATE KEY-----',
+    ];
+    const out = redactSecrets(`failed: ${secrets.join(' ')} done`);
+
+    for (const secret of secrets) expect(out).not.toContain(secret);
+    expect(out).toContain('failed:');
+    expect(out).toContain('done');
+  });
+
+  it('should keep wallet addresses and content hashes, which are not secrets', () => {
+    const address = `0x${'ab'.repeat(20)}`;
+    const out = redactSecrets(`deploying for ${address}`);
+
+    expect(out).toContain(address);
+  });
 });
 
 describe('when a turn ends', () => {

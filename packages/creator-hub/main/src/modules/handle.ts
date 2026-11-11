@@ -8,15 +8,35 @@ import { StreamError } from './bin';
 const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret/i;
 
 /**
+ * `ai.*` channels carry what the user typed (prompts, `ask_user` answers, the
+ * sign-in code), the whole conversation (`ai.mirrorPush`) and screenshots. The
+ * electron log is attached to bug reports, so for these only the shape is logged.
+ */
+const CONTENT_CHANNEL = /^ai\./;
+
+const MAX_SHAPE_DEPTH = 3;
+
+function describeShape(value: unknown, depth = 0): unknown {
+  if (typeof value === 'string') return `<${value.length} chars>`;
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return `<${value.length} items>`;
+  if (depth >= MAX_SHAPE_DEPTH) return '<object>';
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [key, describeShape(entry, depth + 1)]),
+  );
+}
+
+/**
  * Renders IPC arguments for the log. Credential-shaped values are masked because
  * these lines land in the electron log on disk — `metrics.request` alone carries
  * a signed ADR-44 auth chain on every call.
  */
-export function formatArgs(args: unknown[]): string {
+export function formatArgs(args: unknown[], channel?: string): string {
+  const shapeOnly = channel !== undefined && CONTENT_CHANNEL.test(channel);
   return args
     .map(
       (arg, idx) =>
-        `args[${idx}]=${JSON.stringify(arg, (key, value) =>
+        `args[${idx}]=${JSON.stringify(shapeOnly ? describeShape(arg) : arg, (key, value) =>
           SENSITIVE_KEY.test(key) ? '[redacted]' : value,
         )}`,
     )
@@ -30,7 +50,7 @@ export async function handle<T extends keyof Ipc>(
 ) {
   ipcMain.handle(channel, async (event, ...args) => {
     try {
-      log.info(`[IPC] channel=${channel} ${formatArgs(args)}`.trim());
+      log.info(`[IPC] channel=${channel} ${formatArgs(args, channel)}`.trim());
       const value = await handler(event, ...(args as Parameters<Ipc[T]>));
       const result: IpcResult<typeof value> = {
         success: true,
@@ -67,7 +87,7 @@ export function handleSync<T extends keyof Ipc>(
 ) {
   ipcMain.on(channel, (event, ...args) => {
     try {
-      log.info(`[IPC-SYNC] channel=${channel} ${formatArgs(args)}`.trim());
+      log.info(`[IPC-SYNC] channel=${channel} ${formatArgs(args, channel)}`.trim());
       const result = handler(event, ...(args as Parameters<Ipc[T]>));
       event.returnValue = result;
       return result;

@@ -53,6 +53,42 @@ describe('formatArgs', () => {
     });
   });
 
+  describe('when the channel carries AI content', () => {
+    const params = {
+      provider: 'claude',
+      text: 'my seed is example words and my email is jane.doe@example.com',
+      context: 'selected entity "Secret Door"',
+      attachments: [{ name: 'shot.png', dataUrl: 'data:image/png;base64,AAAA' }],
+      apiKeyFromEnv: false,
+    };
+
+    it('should log the shape of the prompt but not its text', () => {
+      const line = formatArgs(['/Users/jane/scenes/mine', params], 'ai.send');
+
+      expect(line).not.toContain('seed');
+      expect(line).not.toContain('jane');
+      expect(line).not.toContain('Secret Door');
+      expect(line).not.toContain('base64');
+      expect(line).toContain('"text":"<61 chars>"');
+      expect(line).toContain('"attachments":"<1 items>"');
+      expect(line).toContain('"apiKeyFromEnv":false');
+    });
+
+    it('should hide plain string arguments such as the sign-in code', () => {
+      expect(formatArgs(['ABCD-1234'], 'ai.submitSignInCode')).toBe('args[0]="<9 chars>"');
+    });
+
+    it('should stop descending into deeply nested objects', () => {
+      const line = formatArgs([{ a: { b: { c: { d: 'deep' } } } }], 'ai.mirrorPush');
+
+      expect(line).toBe('args[0]={"a":{"b":{"c":"<object>"}}}');
+    });
+
+    it('should leave other channels logged in full', () => {
+      expect(formatArgs(['scene-1'], 'workspace.getProject')).toBe('args[0]="scene-1"');
+    });
+  });
+
   describe('when arguments carry nothing sensitive', () => {
     it('should format them positionally', () => {
       expect(formatArgs(['scene-1', { open: true }])).toBe(
