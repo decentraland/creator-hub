@@ -15,6 +15,7 @@ import { selectAssetCatalog } from '../../../redux/app';
 import { retry } from '../../../lib/utils/retry';
 import { isMissingScriptFile } from '../../../lib/utils/script-files';
 import { analytics, Event } from '../../../lib/logic/analytics';
+import { getScriptParams, mergeLayout, parseLayout } from '../../../lib/sdk/script-params';
 import { Container } from '../../Container';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { InfoTooltip, FileUploadField } from '../../ui';
@@ -29,16 +30,13 @@ import { CreateScriptModal } from './CreateScriptModal';
 import { getScriptTemplateClass } from './templates';
 import {
   isValidPath,
-  parseLayout,
   isScriptNode,
   isScriptNameAvailable,
   buildScriptPath,
   readScript,
-  mergeLayout,
   isScriptAlreadyAdded,
   isScriptFile,
 } from './utils';
-import { getScriptParams } from './parser';
 import type { Props, ScriptLayout, ScriptParamUnion, ChangeEvt, ScriptItem } from './types';
 
 import './ScriptInspector.css';

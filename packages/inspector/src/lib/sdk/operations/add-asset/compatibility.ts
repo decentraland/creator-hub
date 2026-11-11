@@ -1,9 +1,10 @@
 import type { IEngine } from '@dcl/ecs';
 import type { AssetData } from '@dcl/asset-packs';
+import { findUnsupportedParams, parseLayout } from '../../script-params';
 
 export type IncompatibleComponent = {
   name: string;
-  reason: 'missing' | 'outdated-definition';
+  reason: 'missing' | 'outdated-definition' | 'unsupported-script-param';
 };
 
 export type CompatibilityResult =
@@ -54,7 +55,39 @@ export function checkAssetCompatibility(
     }
   }
 
+  incompatible.push(...findUnsupportedScriptParams(composite));
+
   return incompatible.length === 0
     ? { compatible: true }
     : { compatible: false, incompatibleComponents: incompatible };
+}
+
+const SCRIPT_COMPONENT = /^asset-packs::Script(-v\d+)?$/;
+
+/** Script params in the composite whose type this editor can't render. */
+function findUnsupportedScriptParams(composite: AssetData['composite']): IncompatibleComponent[] {
+  const result: IncompatibleComponent[] = [];
+  try {
+    for (const component of composite?.components ?? []) {
+      if (!SCRIPT_COMPONENT.test(component.name)) continue;
+      for (const entry of Object.values(component.data ?? {})) {
+        const scripts = entry?.json?.value;
+        for (const script of Array.isArray(scripts) ? scripts : []) {
+          const layout =
+            typeof script?.layout === 'string' ? parseLayout(script.layout) : undefined;
+          if (!layout) continue;
+          const file = String(script.path ?? '')
+            .split('/')
+            .pop();
+          for (const param of findUnsupportedParams(layout)) {
+            result.push({ name: `${file}: ${param}`, reason: 'unsupported-script-param' });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to read the script params of an asset:', error);
+    return [];
+  }
+  return result;
 }
