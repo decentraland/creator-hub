@@ -1,12 +1,9 @@
 import type { IEngine } from '@dcl/ecs';
 import type { AssetData } from '@dcl/asset-packs';
-import { findUnsupportedParams } from '../../../../components/EntityInspector/ScriptInspector/params';
-import type { ScriptLayout } from '../../../../components/EntityInspector/ScriptInspector/types';
+import { findUnsupportedParams, parseLayout } from '../../script-params';
 
 export type IncompatibleComponent = {
   name: string;
-  // 'unsupported-script-param': a Script in the composite declares a param type this editor
-  // can't render (the catalog is shared by every Creator Hub version, #1765).
   reason: 'missing' | 'outdated-definition' | 'unsupported-script-param';
 };
 
@@ -67,34 +64,30 @@ export function checkAssetCompatibility(
 
 const SCRIPT_COMPONENT = /^asset-packs::Script(-v\d+)?$/;
 
-function parseLayout(layout: unknown): ScriptLayout | undefined {
-  if (typeof layout !== 'string') return undefined;
-  try {
-    return JSON.parse(layout);
-  } catch {
-    return undefined;
-  }
-}
-
-// The Script component itself is registered in every editor, so the check above passes; what an
-// older editor can lack is a param TYPE inside a script's layout (Creator Hub 0.52 had no object
-// or list fields and showed Admin Tools' settings as "[object Object]", #1765).
+/** Script params in the composite whose type this editor can't render. */
 function findUnsupportedScriptParams(composite: AssetData['composite']): IncompatibleComponent[] {
   const result: IncompatibleComponent[] = [];
-  for (const component of composite?.components ?? []) {
-    if (!SCRIPT_COMPONENT.test(component.name)) continue;
-    for (const { json } of Object.values(component.data ?? {})) {
-      for (const script of Array.isArray(json?.value) ? json.value : []) {
-        const layout = parseLayout(script?.layout);
-        if (!layout) continue;
-        const file = String(script.path ?? '')
-          .split('/')
-          .pop();
-        for (const param of findUnsupportedParams(layout)) {
-          result.push({ name: `${file}: ${param}`, reason: 'unsupported-script-param' });
+  try {
+    for (const component of composite?.components ?? []) {
+      if (!SCRIPT_COMPONENT.test(component.name)) continue;
+      for (const entry of Object.values(component.data ?? {})) {
+        const scripts = entry?.json?.value;
+        for (const script of Array.isArray(scripts) ? scripts : []) {
+          const layout =
+            typeof script?.layout === 'string' ? parseLayout(script.layout) : undefined;
+          if (!layout) continue;
+          const file = String(script.path ?? '')
+            .split('/')
+            .pop();
+          for (const param of findUnsupportedParams(layout)) {
+            result.push({ name: `${file}: ${param}`, reason: 'unsupported-script-param' });
+          }
         }
       }
     }
+  } catch (error) {
+    console.warn('Failed to read the script params of an asset:', error);
+    return [];
   }
   return result;
 }

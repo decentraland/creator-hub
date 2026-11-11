@@ -61,4 +61,14 @@ describe('checkAssetCompatibility', () => {
     composite.components[0].data['0'].json.value[0].layout = '{not json';
     expect(checkAssetCompatibility(composite, engine)).toEqual({ compatible: true });
   });
+
+  it('treats a malformed Script entry as having no unsupported params instead of throwing', () => {
+    const composite = scriptComposite({});
+    (composite.components[0].data as Record<string, unknown>)['1'] = null;
+    composite.components[0].data['0'].json.value[0].layout = JSON.stringify({
+      params: {},
+      actions: { not: 'an array' },
+    });
+    expect(checkAssetCompatibility(composite, engine)).toEqual({ compatible: true });
+  });
 });

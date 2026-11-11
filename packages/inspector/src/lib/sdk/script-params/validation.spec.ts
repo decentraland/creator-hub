@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { findUnsupportedParams, hasMalformedParams } from './params';
+import { findUnsupportedParams, hasMalformedParams } from './validation';
 import type { ScriptLayout } from './types';
 
 const layout = (params: Record<string, unknown>, actions?: unknown): ScriptLayout =>
@@ -70,5 +70,27 @@ describe('hasMalformedParams', () => {
 
   it('is false for no layout', () => {
     expect(hasMalformedParams(undefined)).toBe(false);
+  });
+});
+
+describe('own keys only', () => {
+  it('does not treat an object field named "constructor" as stored when it is absent', () => {
+    const ok = {
+      params: {
+        cfg: {
+          type: 'object',
+          value: {},
+          fields: { constructor: { type: 'object', value: {}, fields: {} } },
+        },
+      },
+    } as unknown as ScriptLayout;
+    expect(hasMalformedParams(ok)).toBe(false);
+  });
+
+  it('ignores actions and params that are not the expected shape', () => {
+    const odd = { params: null, actions: { not: 'an array' } } as unknown as ScriptLayout;
+    expect(findUnsupportedParams(odd)).toEqual([]);
+    const nullAction = { params: {}, actions: [null] } as unknown as ScriptLayout;
+    expect(findUnsupportedParams(nullAction)).toEqual([]);
   });
 });

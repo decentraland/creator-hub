@@ -135,9 +135,7 @@ export function ScriptParamField({ name, param, siblings, getError, onUpdate }: 
         />
       );
 
-    // A type from a newer editor (a layout placed from the catalog or saved by a newer Creator
-    // Hub). A text box here would print "[object Object]" for a structured value and save
-    // whatever is typed over it (#1765), so show the field as not editable instead.
+    // A type from a newer editor: a text box would show "[object Object]" and overwrite it.
     default:
       return (
         <Message

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { mergeLayout, rebuildLayout } from './utils';
+import { mergeLayout, repairMalformedParams } from './layout';
 import type { ScriptLayout } from './types';
 
 describe('mergeLayout', () => {
@@ -146,9 +146,9 @@ describe('mergeLayout', () => {
   });
 });
 
-// Creator Hub 0.52 had no object/list editors: it showed these params as text boxes and saved
-// whatever was typed over them, keeping `type: 'object'` (#1765).
-describe('when the stored container value was overwritten with text', () => {
+// Creator Hub 0.52 rendered object and list params as text boxes and saved what was typed over
+// them, keeping `type: 'object'` (#1765).
+describe('repairMalformedParams', () => {
   const adminSource = `
     import type { Entity } from '@dcl/sdk/ecs';
     export class AdminTools {
@@ -200,11 +200,12 @@ describe('when the stored container value was overwritten with text', () => {
           },
         },
       },
+      removedFromSource: { type: 'string', value: 'kept' },
     },
   };
 
   it('restores the declared defaults and keeps every well-formed value', () => {
-    const layout = rebuildLayout(adminSource, corrupted);
+    const layout = repairMalformedParams(corrupted, adminSource);
     expect(layout?.params.adminPermissions.value).toBe('PRIVATE');
     expect(layout?.params.authorizedAdminUsers.value).toEqual({
       me: true,
@@ -214,24 +215,74 @@ describe('when the stored container value was overwritten with text', () => {
     expect(layout?.params.smartItemsControl.value).toEqual({ isEnabled: false, smartItems: [] });
   });
 
+  it('touches only the malformed params', () => {
+    const layout = repairMalformedParams(corrupted, adminSource);
+    expect(layout?.params.adminPermissions).toBe(corrupted.params.adminPermissions);
+    expect(layout?.params.removedFromSource).toEqual({ type: 'string', value: 'kept' });
+  });
+
+  it('returns undefined when nothing is malformed', () => {
+    const healthy = repairMalformedParams(corrupted, adminSource)!;
+    expect(repairMalformedParams(healthy, adminSource)).toBeUndefined();
+  });
+
+  it('returns undefined when the script no longer parses', () => {
+    expect(repairMalformedParams(corrupted, 'export class Broken {')).toBeUndefined();
+  });
+});
+
+describe('mergeLayout with object params', () => {
   it('fills a missing key from the declared default, not the type default', () => {
-    const layout = rebuildLayout(adminSource, {
+    const source: ScriptLayout = {
       params: {
-        authorizedAdminUsers: {
+        cfg: {
+          type: 'object',
+          value: { me: true, sceneOwners: true },
+          fields: {
+            me: { type: 'boolean', value: false },
+            sceneOwners: { type: 'boolean', value: false },
+          },
+        },
+      },
+    };
+    const target: ScriptLayout = {
+      params: {
+        cfg: {
           type: 'object',
           value: { me: false },
           fields: { me: { type: 'boolean', value: false } },
         },
       },
-    });
-    expect(layout?.params.authorizedAdminUsers.value).toEqual({
-      me: false,
-      sceneOwners: true,
-      adminAllowList: [],
-    });
+    };
+    expect(mergeLayout(source, target).params.cfg.value).toEqual({ me: false, sceneOwners: true });
   });
 
-  it('leaves the layout alone when the script no longer parses', () => {
-    expect(rebuildLayout('export class Broken {', corrupted)).toBeUndefined();
+  it('treats only own keys as stored, so a field named like an Object method keeps its value', () => {
+    const source: ScriptLayout = {
+      params: {
+        cfg: {
+          type: 'object',
+          value: { constructor: 'declared', toString: 'declared' },
+          fields: {
+            constructor: { type: 'string', value: '' },
+            toString: { type: 'string', value: '' },
+          },
+        },
+      },
+    };
+    const target: ScriptLayout = {
+      params: {
+        cfg: {
+          type: 'object',
+          value: { toString: 'edited' },
+          fields: source.params.cfg.type === 'object' ? source.params.cfg.fields : {},
+        },
+      },
+    };
+    const merged = mergeLayout(source, target).params.cfg.value;
+    expect(JSON.parse(JSON.stringify(merged))).toEqual({
+      constructor: 'declared',
+      toString: 'edited',
+    });
   });
 });
