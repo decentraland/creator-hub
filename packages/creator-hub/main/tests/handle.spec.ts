@@ -53,6 +53,23 @@ describe('formatArgs', () => {
     });
   });
 
+  describe('when an argument is an issue report', () => {
+    const report = {
+      message: 'Publishing failed twice',
+      email: 'jane.doe@example.com',
+      includeLogs: true,
+      source: 'logo-menu',
+    };
+
+    it('should mask the contact email', () => {
+      expect(formatArgs([report])).not.toContain('jane.doe@example.com');
+    });
+
+    it('should keep the description readable', () => {
+      expect(formatArgs([report])).toContain('"message":"Publishing failed twice"');
+    });
+  });
+
   describe('when arguments carry nothing sensitive', () => {
     it('should format them positionally', () => {
       expect(formatArgs(['scene-1', { open: true }])).toBe(

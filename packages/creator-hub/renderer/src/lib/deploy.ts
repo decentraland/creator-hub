@@ -81,6 +81,9 @@ export type ErrorName =
   | 'DEPLOY_REQUEST_TIMEOUT';
 
 export class DeploymentError extends ErrorBase<ErrorName> {
+  /** The Sentry event that reported this failure, linked from the user's issue report. */
+  eventId?: string;
+
   constructor(
     public name: ErrorName,
     public status: DeploymentComponentsStatus,

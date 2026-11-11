@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { EnrollmentRequest } from '/shared/types/creator-fund';
 
 import { t } from '/@/modules/store/translation/utils';
+import { EMAIL_MAX_LENGTH, isEmail } from '/@/modules/utils';
 
 import {
   FieldError,
@@ -18,15 +19,11 @@ import {
 import { Actions, ErrorLine, ModalCta, ModalTitle } from './EarnModal.styled';
 
 const NAME_MAX_LENGTH = 100;
-const EMAIL_MAX_LENGTH = 254;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type ContactValues = Pick<EnrollmentRequest, 'first_name' | 'last_name' | 'email'>;
 type ContactField = keyof ContactValues;
 
 const EMPTY: ContactValues = { first_name: '', last_name: '', email: '' };
-
-const isEmail = (value: string) => value.length <= EMAIL_MAX_LENGTH && EMAIL_PATTERN.test(value);
 
 type FieldProps = {
   name: ContactField;

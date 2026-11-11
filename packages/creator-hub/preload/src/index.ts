@@ -42,6 +42,7 @@ export * as metrics from './modules/metrics';
 export * as misc from './modules/misc';
 export * as env from './modules/env';
 export * as analytics from './modules/analytics';
+export * as feedback from './modules/feedback';
 export * as npm from './services/npm';
 export * as pkg from './services/pkg';
 export * as skills from './services/skills';

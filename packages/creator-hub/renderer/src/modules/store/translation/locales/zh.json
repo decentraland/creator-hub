@@ -752,7 +752,28 @@
       "app_name": "Decentraland Creator Hub",
       "action": "确定"
     },
-    "close": "关闭"
+    "close": "关闭",
+    "report_issue": {
+      "title": "告诉我们出了什么问题",
+      "description": {
+        "label": "发生了什么？",
+        "placeholder": "描述你当时在做什么以及出了什么问题。"
+      },
+      "email": {
+        "label": "联系邮箱（可选）",
+        "placeholder": "name@email.com",
+        "invalid": "请输入有效的电子邮件地址。"
+      },
+      "logs": {
+        "label": "附带应用日志",
+        "hint": "日志包含你的钱包地址和场景名称。"
+      },
+      "help_center": "访问帮助中心",
+      "send": "发送",
+      "retry": "重试",
+      "sent": "谢谢！我们已收到你的报告，会尽快处理。",
+      "failed": "无法发送你的报告。请检查网络连接后重试。"
+    }
   },
   "popup": {
     "copied_to_clipboard": "已复制！"

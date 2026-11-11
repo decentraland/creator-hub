@@ -5,12 +5,11 @@ import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 import { captureException } from '@sentry/electron/main';
 import { StreamError } from './bin';
 
-const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret/i;
+const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret|email/i;
 
 /**
- * Renders IPC arguments for the log. Credential-shaped values are masked because
- * these lines land in the electron log on disk — `metrics.request` alone carries
- * a signed ADR-44 auth chain on every call.
+ * Renders IPC arguments for the log. Credential-shaped values and email addresses are
+ * masked because these lines land in the electron log on disk, which issue reports attach.
  */
 export function formatArgs(args: unknown[]): string {
   return args

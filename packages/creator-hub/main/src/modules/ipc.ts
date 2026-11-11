@@ -10,6 +10,7 @@ import * as cli from './cli';
 import * as bin from './bin';
 import * as code from './code';
 import * as analytics from './analytics';
+import * as feedback from './feedback';
 import * as npm from './npm';
 import * as skills from './skills';
 import * as config from './config';
@@ -141,6 +142,8 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('analytics.identify', (_event, userId, traits) => analytics.identify(userId, traits));
   handle('analytics.getAnonymousId', () => analytics.getAnonymousId());
   handle('analytics.getProjectId', (_event, path) => analytics.getProjectId(path));
+
+  handle('feedback.send', (_event, report) => feedback.send(report));
 
   // npm
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));

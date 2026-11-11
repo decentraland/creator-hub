@@ -752,7 +752,28 @@
       "app_name": "Decentraland Creator Hub",
       "action": "Aceptar"
     },
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "report_issue": {
+      "title": "Cuéntanos qué salió mal",
+      "description": {
+        "label": "¿Qué pasó?",
+        "placeholder": "Describe qué estabas haciendo y qué salió mal."
+      },
+      "email": {
+        "label": "Correo de contacto (opcional)",
+        "placeholder": "name@email.com",
+        "invalid": "Introduce un correo electrónico válido."
+      },
+      "logs": {
+        "label": "Incluir los registros de la app",
+        "hint": "Los registros incluyen tu dirección de billetera y los nombres de tus escenas."
+      },
+      "help_center": "Visitar el Centro de Ayuda",
+      "send": "Enviar",
+      "retry": "Reintentar",
+      "sent": "¡Gracias! Recibimos tu reporte y lo revisaremos.",
+      "failed": "No pudimos enviar tu reporte. Revisa tu conexión e inténtalo de nuevo."
+    }
   },
   "popup": {
     "copied_to_clipboard": "¡Copiado!"

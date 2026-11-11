@@ -752,7 +752,28 @@
       "app_name": "Decentraland Creator Hub",
       "action": "OK"
     },
-    "close": "Close"
+    "close": "Close",
+    "report_issue": {
+      "title": "Tell us what went wrong",
+      "description": {
+        "label": "What happened?",
+        "placeholder": "Describe what you were doing and what went wrong."
+      },
+      "email": {
+        "label": "Contact email (optional)",
+        "placeholder": "name@email.com",
+        "invalid": "Enter a valid email address."
+      },
+      "logs": {
+        "label": "Include app logs",
+        "hint": "Logs include your wallet address and scene names."
+      },
+      "help_center": "Visit the Help Center",
+      "send": "Send",
+      "retry": "Try again",
+      "sent": "Thanks! We got your report and will look into it.",
+      "failed": "We couldn't send your report. Check your connection and try again."
+    }
   },
   "popup": {
     "copied_to_clipboard": "Copied!"
