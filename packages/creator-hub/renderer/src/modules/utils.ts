@@ -1,5 +1,6 @@
 import { ChainId } from '@dcl/schemas/dist/dapps/chain-id';
 import { env } from '#preload';
+import type { FeedbackContact } from '/shared/types/feedback';
 import { config } from '/@/config';
 
 export function isDev(chainId: ChainId): boolean {
@@ -20,6 +21,25 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const isEmail = (value: string) =>
   value.length <= EMAIL_MAX_LENGTH && EMAIL_PATTERN.test(value);
+
+const DISCORD_USERNAME_PATTERN = /^(?!.*\.\.)[a-z0-9_.]{2,32}$/;
+
+/** Strips a leading `@` and lowercases, as Discord stores usernames. */
+export const normalizeDiscordUsername = (value: string) => value.replace(/^@/, '').toLowerCase();
+
+export const isDiscordUsername = (value: string) => DISCORD_USERNAME_PATTERN.test(value);
+
+/** Reads a typed contact as an email when it holds `@` past its first character, otherwise as a Discord username. */
+export function parseContact(input: string): FeedbackContact | undefined {
+  const value = input.trim();
+  if (!value) return undefined;
+  return value.indexOf('@') > 0
+    ? { method: 'email', value }
+    : { method: 'discord', value: normalizeDiscordUsername(value) };
+}
+
+export const isValidContact = ({ method, value }: FeedbackContact) =>
+  method === 'email' ? isEmail(value) : isDiscordUsername(value);
 
 /** Where every "Create Event" entry points: What's On's new-hangout page. */
 export const CREATE_EVENT_URL = config.get('CREATE_EVENT_URL');

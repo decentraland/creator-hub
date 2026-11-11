@@ -5,10 +5,10 @@ import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 import { captureException } from '@sentry/electron/main';
 import { StreamError } from './bin';
 
-const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret|email/i;
+const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret|email|contact/i;
 
 /**
- * Renders IPC arguments for the log. Credential-shaped values and email addresses are
+ * Renders IPC arguments for the log. Credential-shaped values and contact details are
  * masked because these lines land in the electron log on disk, which issue reports attach.
  */
 export function formatArgs(args: unknown[]): string {

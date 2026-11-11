@@ -1,11 +1,12 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
-import { captureFeedback } from '@sentry/electron/main';
+import { captureFeedback, getClient } from '@sentry/electron/main';
 import log from 'electron-log/main';
 
-import type { FeedbackReport } from '/shared/types/feedback';
+import type { FeedbackDelivery, FeedbackReport } from '/shared/types/feedback';
 
 const LOG_TAIL_BYTES = 1024 * 1024;
+const DELIVERY_TIMEOUT_MS = 30_000;
 
 async function readLogTail(path: string) {
   const file = await fs.open(path, 'r');
@@ -24,17 +25,46 @@ function redactHome(text: string) {
   return text.replaceAll(home, '~').replaceAll(home.replaceAll('\\', '/'), '~');
 }
 
-/** Sends a user report to Sentry User Feedback, with the app log's tail when asked. Resolves to whether it was queued. */
+function captureAndAwaitDelivery(capture: () => string): Promise<FeedbackDelivery> {
+  const client = getClient();
+  if (!client) return Promise.reject(new Error('Sentry is not initialized'));
+  return new Promise((resolve, reject) => {
+    let eventId: string | undefined;
+    const stop = client.on('afterSendEvent', (event, { statusCode }) => {
+      if (event.event_id !== eventId) return;
+      if (statusCode === undefined) settle(() => resolve('queued'));
+      else if (statusCode >= 200 && statusCode < 300) settle(() => resolve('sent'));
+      else settle(() => reject(new Error(`Sentry responded with status ${statusCode}`)));
+    });
+    const timeout = setTimeout(() => settle(() => resolve('queued')), DELIVERY_TIMEOUT_MS);
+    function settle(outcome: () => void) {
+      clearTimeout(timeout);
+      stop();
+      outcome();
+    }
+    try {
+      eventId = capture();
+    } catch (error) {
+      settle(() => reject(error));
+    }
+  });
+}
+
+/**
+ * Sends a user report to Sentry User Feedback, with the app log's tail when asked.
+ * @returns `sent` when Sentry answers 2xx; `queued` when the transport stores it or 30 s pass.
+ * @throws when capture fails or Sentry answers with an error status.
+ */
 export async function send({
   message,
-  email,
+  contact,
   includeLogs,
   associatedEventId,
   source,
-}: FeedbackReport) {
+}: FeedbackReport): Promise<FeedbackDelivery> {
   if (!import.meta.env.PROD) {
     log.info('[Feedback] dev build, not sent', { message, includeLogs, associatedEventId, source });
-    return false;
+    return 'sent';
   }
   const attachments = includeLogs
     ? [
@@ -44,6 +74,13 @@ export async function send({
         },
       ]
     : undefined;
-  captureFeedback({ message, email, associatedEventId, tags: { source } }, { attachments });
-  return true;
+  const email = contact?.method === 'email' ? contact.value : undefined;
+  const tags = {
+    source,
+    ...(contact && { contact_method: contact.method }),
+    ...(contact?.method === 'discord' && { discord: contact.value }),
+  };
+  return captureAndAwaitDelivery(() =>
+    captureFeedback({ message, email, associatedEventId, tags }, { attachments }),
+  );
 }

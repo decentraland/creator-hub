@@ -35,7 +35,7 @@ describe('LogoMenu', () => {
     });
 
     it('should send the report tagged as coming from the logo menu', async () => {
-      vi.mocked(feedback.send).mockResolvedValue(true);
+      vi.mocked(feedback.send).mockResolvedValue('sent');
       fireEvent.change(screen.getByRole('textbox', { name: 'What happened?' }), {
         target: { value: 'The app froze' },
       });

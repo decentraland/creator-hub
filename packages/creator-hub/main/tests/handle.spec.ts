@@ -53,16 +53,19 @@ describe('formatArgs', () => {
     });
   });
 
-  describe('when an argument is an issue report', () => {
+  describe.each([
+    ['an email', { method: 'email', value: 'jane.doe@example.com' }],
+    ['a Discord username', { method: 'discord', value: 'fixture_user' }],
+  ])('when an argument is an issue report with %s contact', (_, contact) => {
     const report = {
       message: 'Publishing failed twice',
-      email: 'jane.doe@example.com',
+      contact,
       includeLogs: true,
       source: 'logo-menu',
     };
 
-    it('should mask the contact email', () => {
-      expect(formatArgs([report])).not.toContain('jane.doe@example.com');
+    it('should mask the contact', () => {
+      expect(formatArgs([report])).not.toContain(contact.value);
     });
 
     it('should keep the description readable', () => {

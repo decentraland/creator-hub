@@ -2,7 +2,7 @@ import type { OpenDialogOptions, SaveDialogOptions } from 'electron';
 
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
-import type { FeedbackReport } from '/shared/types/feedback';
+import type { FeedbackDelivery, FeedbackReport } from '/shared/types/feedback';
 import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 import type { SceneExportResult, SceneSource } from '/shared/types/scene-export';
 import type { EmptySceneDeploy, EmptySceneDraft } from '/shared/types/land-unpublish';
@@ -240,7 +240,7 @@ export interface Ipc {
   'analytics.identify': (userId: string, traits?: Record<string, any>) => void;
   'analytics.getAnonymousId': () => Promise<string>;
   'analytics.getProjectId': (path: string) => Promise<string>;
-  'feedback.send': (report: FeedbackReport) => Promise<boolean>;
+  'feedback.send': (report: FeedbackReport) => Promise<FeedbackDelivery>;
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;

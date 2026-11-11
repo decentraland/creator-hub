@@ -5,11 +5,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FeedbackReport } from '/shared/types/feedback';
 
-const mocks = vi.hoisted(() => ({
-  home: '/Users/jane',
-  logPath: '',
-  captureFeedback: vi.fn(() => 'feedback-event-id'),
-}));
+type SendResponse = { statusCode?: number };
+type AfterSendEvent = (event: { event_id?: string }, response: SendResponse) => void;
+
+const mocks = vi.hoisted(() => {
+  const hooks = new Set<AfterSendEvent>();
+  return {
+    home: '/Users/jane',
+    logPath: '',
+    response: { statusCode: 200 } as SendResponse | undefined,
+    hooks,
+    captureFeedback: vi.fn(),
+    client: {
+      on: vi.fn((_hook: 'afterSendEvent', callback: AfterSendEvent) => {
+        hooks.add(callback);
+        return () => hooks.delete(callback);
+      }),
+    } as { on: unknown } | undefined,
+  };
+});
+
+function emitAfterSend(eventId: string, response: SendResponse) {
+  for (const hook of [...mocks.hooks]) hook({ event_id: eventId }, response);
+}
 
 vi.mock('os', async importOriginal => {
   const real = await importOriginal<typeof os>();
@@ -24,7 +42,10 @@ vi.mock('electron-log/main', () => ({
   },
 }));
 
-vi.mock('@sentry/electron/main', () => ({ captureFeedback: mocks.captureFeedback }));
+vi.mock('@sentry/electron/main', () => ({
+  captureFeedback: mocks.captureFeedback,
+  getClient: () => mocks.client,
+}));
 
 import { send } from '../src/modules/feedback';
 
@@ -32,7 +53,7 @@ const MB = 1024 * 1024;
 
 const report: FeedbackReport = {
   message: 'Publishing failed twice',
-  email: 'jane.doe@example.com',
+  contact: { method: 'email', value: 'jane.doe@example.com' },
   includeLogs: true,
   associatedEventId: 'deploy-event-id',
   source: 'publish-failure',
@@ -52,13 +73,25 @@ describe('send', () => {
     dir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'feedback-'));
     mocks.logPath = path.join(dir, 'main.log');
     mocks.home = '/Users/jane';
+    mocks.response = { statusCode: 200 };
+    mocks.captureFeedback.mockImplementation(() => {
+      const response = mocks.response;
+      if (response)
+        queueMicrotask(() => {
+          emitAfterSend('another-event-id', { statusCode: 500 });
+          emitAfterSend('feedback-event-id', response);
+        });
+      return 'feedback-event-id';
+    });
     vi.stubEnv('PROD', true);
   });
 
   afterEach(() => {
     fs.rmSync(dir, { recursive: true, force: true });
-    mocks.captureFeedback.mockClear();
+    mocks.captureFeedback.mockReset();
+    mocks.hooks.clear();
     vi.unstubAllEnvs();
+    vi.useRealTimers();
   });
 
   describe('when the report includes the logs', () => {
@@ -117,21 +150,122 @@ describe('send', () => {
       fs.writeFileSync(mocks.logPath, 'some log');
     });
 
-    it('should pass the message, email, event id and source to Sentry', async () => {
-      await send(report);
-      expect(mocks.captureFeedback).toHaveBeenCalledWith(
-        {
-          message: 'Publishing failed twice',
-          email: 'jane.doe@example.com',
-          associatedEventId: 'deploy-event-id',
-          tags: { source: 'publish-failure' },
-        },
-        expect.anything(),
-      );
+    describe('and the contact is an email', () => {
+      it('should pass the message, email, event id, source and contact method to Sentry', async () => {
+        await send(report);
+        expect(mocks.captureFeedback).toHaveBeenCalledWith(
+          {
+            message: 'Publishing failed twice',
+            email: 'jane.doe@example.com',
+            associatedEventId: 'deploy-event-id',
+            tags: { source: 'publish-failure', contact_method: 'email' },
+          },
+          expect.anything(),
+        );
+      });
     });
 
-    it('should resolve to true', async () => {
-      await expect(send(report)).resolves.toBe(true);
+    describe('and the contact is a Discord username', () => {
+      it('should tag the username and send no email', async () => {
+        await send({ ...report, contact: { method: 'discord', value: 'fixture_user' } });
+        expect(mocks.captureFeedback).toHaveBeenCalledWith(
+          {
+            message: 'Publishing failed twice',
+            associatedEventId: 'deploy-event-id',
+            tags: { source: 'publish-failure', contact_method: 'discord', discord: 'fixture_user' },
+          },
+          expect.anything(),
+        );
+      });
+    });
+
+    describe('and there is no contact', () => {
+      it('should tag only the source', async () => {
+        await send({ ...report, contact: undefined });
+        expect(mocks.captureFeedback).toHaveBeenCalledWith(
+          {
+            message: 'Publishing failed twice',
+            associatedEventId: 'deploy-event-id',
+            tags: { source: 'publish-failure' },
+          },
+          expect.anything(),
+        );
+      });
+    });
+  });
+
+  describe('when Sentry confirms delivery with a 2xx', () => {
+    beforeEach(() => {
+      mocks.response = { statusCode: 200 };
+    });
+
+    it('should resolve to sent', async () => {
+      await expect(send({ ...report, includeLogs: false })).resolves.toBe('sent');
+    });
+
+    it('should stop listening for deliveries', async () => {
+      await send({ ...report, includeLogs: false });
+      expect(mocks.hooks.size).toBe(0);
+    });
+  });
+
+  describe('when the transport stores the report to send later', () => {
+    beforeEach(() => {
+      mocks.response = {};
+    });
+
+    it('should resolve to queued', async () => {
+      await expect(send({ ...report, includeLogs: false })).resolves.toBe('queued');
+      expect(mocks.hooks.size).toBe(0);
+    });
+  });
+
+  describe.each([400, 500])('when Sentry answers with a %i', statusCode => {
+    beforeEach(() => {
+      mocks.response = { statusCode };
+    });
+
+    it('should reject, since nothing was stored to retry', async () => {
+      await expect(send({ ...report, includeLogs: false })).rejects.toThrow(String(statusCode));
+      expect(mocks.hooks.size).toBe(0);
+    });
+  });
+
+  describe('when Sentry does not answer within 30 seconds', () => {
+    beforeEach(() => {
+      mocks.response = undefined;
+      vi.useFakeTimers();
+    });
+
+    it('should resolve to queued and stop listening', async () => {
+      const outcome = send({ ...report, includeLogs: false });
+      let settled = false;
+      void outcome.then(() => (settled = true));
+
+      await vi.advanceTimersByTimeAsync(29_999);
+      expect(settled).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await expect(outcome).resolves.toBe('queued');
+      expect(mocks.hooks.size).toBe(0);
+    });
+  });
+
+  describe('when Sentry is not initialized', () => {
+    let client: typeof mocks.client;
+
+    beforeEach(() => {
+      client = mocks.client;
+      mocks.client = undefined;
+    });
+
+    afterEach(() => {
+      mocks.client = client;
+    });
+
+    it('should reject without sending', async () => {
+      await expect(send({ ...report, includeLogs: false })).rejects.toThrow();
+      expect(mocks.captureFeedback).not.toHaveBeenCalled();
     });
   });
 
@@ -143,8 +277,9 @@ describe('send', () => {
       });
     });
 
-    it('should reject', async () => {
+    it('should reject and stop listening for deliveries', async () => {
       await expect(send(report)).rejects.toThrow('transport down');
+      expect(mocks.hooks.size).toBe(0);
     });
   });
 
@@ -153,8 +288,8 @@ describe('send', () => {
       vi.stubEnv('PROD', false);
     });
 
-    it('should not send anything and resolve to false', async () => {
-      await expect(send(report)).resolves.toBe(false);
+    it('should not send anything and resolve to sent', async () => {
+      await expect(send(report)).resolves.toBe('sent');
       expect(mocks.captureFeedback).not.toHaveBeenCalled();
     });
   });

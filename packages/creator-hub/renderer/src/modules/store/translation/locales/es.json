@@ -759,10 +759,12 @@
         "label": "¿Qué pasó?",
         "placeholder": "Describe qué estabas haciendo y qué salió mal."
       },
-      "email": {
-        "label": "Correo de contacto (opcional)",
-        "placeholder": "name@email.com",
-        "invalid": "Introduce un correo electrónico válido."
+      "contact": {
+        "label": "¿Cómo podemos contactarte? (opcional)",
+        "hint": "Deja tu usuario de Discord o tu correo si quieres que te respondamos.",
+        "placeholder": "Usuario de Discord o correo",
+        "discord_invalid": "Introduce un usuario de Discord válido.",
+        "email_invalid": "Introduce un correo electrónico válido."
       },
       "logs": {
         "label": "Incluir los registros de la app",
@@ -772,6 +774,7 @@
       "send": "Enviar",
       "retry": "Reintentar",
       "sent": "¡Gracias! Recibimos tu reporte y lo revisaremos.",
+      "queued": "Guardamos tu reporte y lo enviaremos en cuanto vuelvas a tener conexión.",
       "failed": "No pudimos enviar tu reporte. Revisa tu conexión e inténtalo de nuevo."
     }
   },

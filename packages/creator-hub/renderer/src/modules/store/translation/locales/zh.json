@@ -759,10 +759,12 @@
         "label": "发生了什么？",
         "placeholder": "描述你当时在做什么以及出了什么问题。"
       },
-      "email": {
-        "label": "联系邮箱（可选）",
-        "placeholder": "name@email.com",
-        "invalid": "请输入有效的电子邮件地址。"
+      "contact": {
+        "label": "我们如何联系你？（可选）",
+        "hint": "如果希望我们跟进，请留下你的 Discord 用户名或电子邮件。",
+        "placeholder": "Discord 用户名或电子邮件",
+        "discord_invalid": "请输入有效的 Discord 用户名。",
+        "email_invalid": "请输入有效的电子邮件地址。"
       },
       "logs": {
         "label": "附带应用日志",
@@ -772,6 +774,7 @@
       "send": "发送",
       "retry": "重试",
       "sent": "谢谢！我们已收到你的报告，会尽快处理。",
+      "queued": "我们已保存你的报告，会在你恢复联网后立即发送。",
       "failed": "无法发送你的报告。请检查网络连接后重试。"
     }
   },

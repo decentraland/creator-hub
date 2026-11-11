@@ -759,10 +759,12 @@
         "label": "What happened?",
         "placeholder": "Describe what you were doing and what went wrong."
       },
-      "email": {
-        "label": "Contact email (optional)",
-        "placeholder": "name@email.com",
-        "invalid": "Enter a valid email address."
+      "contact": {
+        "label": "How can we reach you? (optional)",
+        "hint": "Leave your Discord username or email if you'd like us to follow up.",
+        "placeholder": "Discord username or email",
+        "discord_invalid": "Enter a valid Discord username.",
+        "email_invalid": "Enter a valid email address."
       },
       "logs": {
         "label": "Include app logs",
@@ -772,6 +774,7 @@
       "send": "Send",
       "retry": "Try again",
       "sent": "Thanks! We got your report and will look into it.",
+      "queued": "We saved your report and will send it as soon as you're back online.",
       "failed": "We couldn't send your report. Check your connection and try again."
     }
   },

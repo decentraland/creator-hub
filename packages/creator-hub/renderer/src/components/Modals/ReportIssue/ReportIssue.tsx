@@ -1,9 +1,9 @@
 import { useId, useState } from 'react';
 
 import { feedback } from '#preload';
-import type { FeedbackSource } from '/shared/types/feedback';
+import type { FeedbackDelivery, FeedbackSource } from '/shared/types/feedback';
 import { t } from '/@/modules/store/translation/utils';
-import { EMAIL_MAX_LENGTH, HELP_FAQ_URL, isEmail } from '/@/modules/utils';
+import { EMAIL_MAX_LENGTH, HELP_FAQ_URL, isValidContact, parseContact } from '/@/modules/utils';
 
 import { SelectCheckbox } from '../../LandDetailPage/SelectCheckbox';
 import {
@@ -17,7 +17,7 @@ import { CheckRow } from '../../WorldDetailPage/SettingsTab/SettingsTab.styled';
 import { DefaultModal } from '../DefaultModal';
 import { Form, HelpLink, Hint, LogsOption } from './ReportIssue.styled';
 
-type Status = 'editing' | 'sending' | 'sent' | 'failed';
+type Status = 'editing' | 'sending' | FeedbackDelivery | 'failed';
 
 type Props = {
   open: boolean;
@@ -29,26 +29,28 @@ type Props = {
 /** Collects a problem report and sends it, with the app log when allowed, to Sentry User Feedback. */
 export function ReportIssue({ open, source, associatedEventId, onClose }: Props) {
   const descriptionId = useId();
-  const emailId = useId();
-  const emailErrorId = useId();
+  const contactId = useId();
+  const contactHintId = useId();
+  const contactErrorId = useId();
   const logsHintId = useId();
   const [message, setMessage] = useState('');
-  const [email, setEmail] = useState('');
-  const [emailBlurred, setEmailBlurred] = useState(false);
+  const [contactValue, setContactValue] = useState('');
+  const [contactBlurred, setContactBlurred] = useState(false);
   const [includeLogs, setIncludeLogs] = useState(true);
   const [status, setStatus] = useState<Status>('editing');
 
-  const contact = email.trim();
-  const emailInvalid = !!contact && !isEmail(contact);
-  const showEmailError = emailBlurred && emailInvalid;
+  const contact = parseContact(contactValue);
+  const contactInvalid = !!contact && !isValidContact(contact);
+  const showContactError = contactBlurred && contactInvalid;
   const sending = status === 'sending';
+  const delivered = status === 'sent' || status === 'queued';
 
   const close = () => {
     if (sending) return;
-    if (status === 'sent') {
+    if (delivered) {
       setMessage('');
-      setEmail('');
-      setEmailBlurred(false);
+      setContactValue('');
+      setContactBlurred(false);
       setIncludeLogs(true);
     }
     setStatus('editing');
@@ -58,25 +60,25 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
   const send = async () => {
     setStatus('sending');
     try {
-      await feedback.send({
+      const delivery = await feedback.send({
         message: message.trim(),
-        email: contact || undefined,
+        ...(contact && { contact }),
         includeLogs,
         associatedEventId,
         source,
       });
-      setStatus('sent');
+      setStatus(delivery);
     } catch {
       setStatus('failed');
     }
   };
 
-  if (status === 'sent')
+  if (delivered)
     return (
       <DefaultModal
         open={open}
         title={t('modal.report_issue.title')}
-        body={t('modal.report_issue.sent')}
+        body={t(`modal.report_issue.${status}`)}
         onClose={close}
         primary={{ label: t('modal.close'), state: 'idle', onClick: close }}
       />
@@ -92,7 +94,7 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
       secondary={{ label: t('modal.cancel'), onClick: close }}
       primary={{
         label: t(status === 'failed' ? 'modal.report_issue.retry' : 'modal.report_issue.send'),
-        state: sending ? 'busy' : message.trim() && !emailInvalid ? 'idle' : 'blocked',
+        state: sending ? 'busy' : message.trim() && !contactInvalid ? 'idle' : 'blocked',
         onClick: () => void send(),
       }}
     >
@@ -113,25 +115,30 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
           />
         </Field>
         <Field>
-          <FieldTitle htmlFor={emailId}>{t('modal.report_issue.email.label')}</FieldTitle>
+          <FieldTitle htmlFor={contactId}>{t('modal.report_issue.contact.label')}</FieldTitle>
           <FormTextInput
-            id={emailId}
-            type="email"
+            id={contactId}
+            type="text"
             disabled={sending}
-            value={email}
-            error={showEmailError}
-            placeholder={t('modal.report_issue.email.placeholder')}
-            onChange={event => setEmail(event.target.value)}
-            onBlur={() => setEmailBlurred(true)}
+            value={contactValue}
+            error={showContactError}
+            placeholder={t('modal.report_issue.contact.placeholder')}
+            onChange={event => setContactValue(event.target.value)}
+            onBlur={() => setContactBlurred(true)}
             inputProps={{
               maxLength: EMAIL_MAX_LENGTH,
-              'aria-invalid': showEmailError,
-              'aria-describedby': showEmailError ? emailErrorId : undefined,
+              'aria-invalid': showContactError,
+              'aria-describedby': showContactError
+                ? `${contactErrorId} ${contactHintId}`
+                : contactHintId,
             }}
           />
-          {showEmailError && (
-            <ErrorText id={emailErrorId}>{t('modal.report_issue.email.invalid')}</ErrorText>
+          {contact && showContactError && (
+            <ErrorText id={contactErrorId}>
+              {t(`modal.report_issue.contact.${contact.method}_invalid`)}
+            </ErrorText>
           )}
+          <Hint id={contactHintId}>{t('modal.report_issue.contact.hint')}</Hint>
         </Field>
         <LogsOption>
           <CheckRow>

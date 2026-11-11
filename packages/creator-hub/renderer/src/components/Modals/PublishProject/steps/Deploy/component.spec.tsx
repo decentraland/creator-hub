@@ -424,7 +424,7 @@ describe('Deploy step', () => {
 
     describe('and the user reports it', () => {
       beforeEach(async () => {
-        vi.mocked(feedback.send).mockResolvedValue(true);
+        vi.mocked(feedback.send).mockResolvedValue('sent');
         fireEvent.click(
           screen.getByRole('button', {
             name: 'modal.publish_project.deploy.deploying.actions.report_issue',
