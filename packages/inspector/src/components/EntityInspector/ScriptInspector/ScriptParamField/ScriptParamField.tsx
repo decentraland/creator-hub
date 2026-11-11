@@ -4,13 +4,14 @@ import type { ActionRef } from '@dcl/asset-packs';
 import { TextField, CheckboxField, RangeField } from '../../../ui';
 import { Dropdown } from '../../../ui/Dropdown';
 import { WalletField } from '../../../ui/WalletField';
+import { Message, MessageType } from '../../../ui/Message';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
 import ActionField from './ActionField';
 import { ObjectField } from './ObjectField';
 import { ArrayField } from './ArrayField';
 import { EntityParamField } from './EntityParamField';
 import { ActionNameField } from './ActionNameField';
-import { labelWithTooltip } from './labels';
+import { formatLabel, labelWithTooltip } from './labels';
 
 import type { Props } from './types';
 
@@ -102,8 +103,7 @@ export function ScriptParamField({ name, param, siblings, getError, onUpdate }: 
       );
 
     case 'string':
-    default:
-      if (param.type === 'string' && param.actionsOf) {
+      if (param.actionsOf) {
         return (
           <ActionNameField
             label={labelWithTooltip(name, param.tooltip)}
@@ -113,7 +113,7 @@ export function ScriptParamField({ name, param, siblings, getError, onUpdate }: 
           />
         );
       }
-      if (param.type === 'string' && param.format === 'wallet') {
+      if (param.format === 'wallet') {
         return (
           <WalletField
             // WalletField keeps its own text, so remount it when the stored address changes
@@ -132,6 +132,15 @@ export function ScriptParamField({ name, param, siblings, getError, onUpdate }: 
           onChange={e => onUpdate(e.target.value)}
           debounceTime={300}
           error={getError?.(param)}
+        />
+      );
+
+    // A type from a newer editor: a text box would show "[object Object]" and overwrite it.
+    default:
+      return (
+        <Message
+          text={`${formatLabel(name)}: this setting needs a newer version of Creator Hub to edit.`}
+          type={MessageType.WARNING}
         />
       );
   }

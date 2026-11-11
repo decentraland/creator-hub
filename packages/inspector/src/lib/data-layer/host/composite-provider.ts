@@ -25,6 +25,7 @@ import {
   OperationType,
 } from './state-manager';
 import { createTagsComponent } from './utils/migrations/create-tags-components';
+import { repairScriptParams } from './utils/migrations/repair-script-params';
 
 enum DirtyState {
   Clean = 'clean',
@@ -84,6 +85,11 @@ export class CompositeProvider implements StateProvider {
     await this.loadComposite();
     this.runMigrations();
     await this.initializeComponents();
+    // No edit follows a load-time repair, so save it here (or leave it dirty for the next flush).
+    if (await repairScriptParams(this.engine, this.fs)) {
+      this.dirtyState = DirtyState.DirtyAndNeedsDump;
+      if (this.getInspectorPreferences().autosaveEnabled) await this.saveComposite(true);
+    }
     await this.overrideWithSceneJson();
   }
 

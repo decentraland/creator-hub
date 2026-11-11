@@ -6,6 +6,14 @@ import type { IncompatibleComponent } from '../../lib/sdk/operations/add-asset/c
 
 import './IncompatibleAssetModal.css';
 
+const REASON_LABEL: Record<IncompatibleComponent['reason'], string> = {
+  missing: ' — not available',
+  'outdated-definition': ' — outdated definition',
+  'unsupported-script-param': ' — needs a newer Creator Hub',
+};
+
+const isScriptParam = ({ reason }: IncompatibleComponent) => reason === 'unsupported-script-param';
+
 interface Props {
   assetName: string;
   incompatibleComponents: IncompatibleComponent[];
@@ -17,6 +25,8 @@ const IncompatibleAssetModal: React.FC<Props> = ({
   incompatibleComponents,
   onClose,
 }) => {
+  const needsEditorUpdate = incompatibleComponents.some(isScriptParam);
+  const needsSdkUpdate = incompatibleComponents.some(c => !isScriptParam(c));
   return (
     <Modal
       isOpen
@@ -34,17 +44,23 @@ const IncompatibleAssetModal: React.FC<Props> = ({
       </header>
 
       <div className="IncompatibleAssetModalBody">
-        <p>
-          <strong>"{assetName}"</strong> requires components that are not compatible with your
-          current SDK version. Update your dependencies to use this asset.
-        </p>
+        {needsSdkUpdate && (
+          <p>
+            <strong>"{assetName}"</strong> requires components that are not compatible with your
+            current SDK version. Update your dependencies to use this asset.
+          </p>
+        )}
+        {needsEditorUpdate && (
+          <p>
+            <strong>"{assetName}"</strong> has settings this version of Creator Hub can't edit.
+            Update Creator Hub to use this asset.
+          </p>
+        )}
         <ul className="IncompatibleComponentList">
           {incompatibleComponents.map(({ name, reason }) => (
             <li key={name}>
               <code>{name}</code>
-              <span className="IncompatibleReason">
-                {reason === 'outdated-definition' ? ' — outdated definition' : ' — not available'}
-              </span>
+              <span className="IncompatibleReason">{REASON_LABEL[reason]}</span>
             </li>
           ))}
         </ul>

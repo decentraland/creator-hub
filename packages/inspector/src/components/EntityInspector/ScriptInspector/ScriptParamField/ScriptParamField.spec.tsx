@@ -201,3 +201,19 @@ describe('when a string nested in an object list names a missing file', () => {
     expect(screen.getAllByText(/is missing/)).toHaveLength(1);
   });
 });
+
+// A layout written by a newer editor can carry a type this one doesn't know (#1765).
+describe('a param type this editor does not know', () => {
+  it('shows a notice instead of an editable text box', () => {
+    const { container } = render(
+      <ScriptParamField
+        name="tintColor"
+        param={{ type: 'color', value: { r: 1 } } as unknown as ScriptParamObject}
+        onUpdate={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Tint Color: this setting needs a newer version/)).toBeTruthy();
+    expect(container.querySelector('input')).toBeNull();
+    expect(container.textContent).not.toContain('[object Object]');
+  });
+});
