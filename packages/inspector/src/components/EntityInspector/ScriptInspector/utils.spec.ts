@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { mergeLayout } from './utils';
+import { mergeLayout, rebuildLayout } from './utils';
 import type { ScriptLayout } from './types';
 
 describe('mergeLayout', () => {
@@ -143,5 +143,95 @@ describe('mergeLayout', () => {
         ],
       });
     });
+  });
+});
+
+// Creator Hub 0.52 had no object/list editors: it showed these params as text boxes and saved
+// whatever was typed over them, keeping `type: 'object'` (#1765).
+describe('when the stored container value was overwritten with text', () => {
+  const adminSource = `
+    import type { Entity } from '@dcl/sdk/ecs';
+    export class AdminTools {
+      constructor(
+        public src: string,
+        public entity: Entity,
+        public adminPermissions: 'PUBLIC' | 'PRIVATE' = 'PUBLIC',
+        public authorizedAdminUsers: {
+          me: boolean;
+          sceneOwners: boolean;
+          adminAllowList: string[];
+        } = { me: true, sceneOwners: true, adminAllowList: [] },
+        public smartItemsControl: {
+          isEnabled: boolean;
+          smartItems: Array<{ entity: Entity; customName: string }>;
+        } = { isEnabled: true, smartItems: [] },
+      ) {}
+    }
+  `;
+
+  const corrupted: ScriptLayout = {
+    params: {
+      adminPermissions: { type: 'enum', value: 'PRIVATE', options: ['PUBLIC', 'PRIVATE'] },
+      authorizedAdminUsers: {
+        type: 'object',
+        value: '[object Object]' as unknown as Record<string, unknown>,
+        fields: {
+          me: { type: 'boolean', value: false },
+          sceneOwners: { type: 'boolean', value: false },
+          adminAllowList: { type: 'array', value: [], item: { type: 'string', value: '' } },
+        },
+      },
+      smartItemsControl: {
+        type: 'object',
+        value: { isEnabled: false, smartItems: 'oops' },
+        fields: {
+          isEnabled: { type: 'boolean', value: false },
+          smartItems: {
+            type: 'array',
+            value: [],
+            item: {
+              type: 'object',
+              value: { entity: 0, customName: '' },
+              fields: {
+                entity: { type: 'entity', value: 0 },
+                customName: { type: 'string', value: '' },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  it('restores the declared defaults and keeps every well-formed value', () => {
+    const layout = rebuildLayout(adminSource, corrupted);
+    expect(layout?.params.adminPermissions.value).toBe('PRIVATE');
+    expect(layout?.params.authorizedAdminUsers.value).toEqual({
+      me: true,
+      sceneOwners: true,
+      adminAllowList: [],
+    });
+    expect(layout?.params.smartItemsControl.value).toEqual({ isEnabled: false, smartItems: [] });
+  });
+
+  it('fills a missing key from the declared default, not the type default', () => {
+    const layout = rebuildLayout(adminSource, {
+      params: {
+        authorizedAdminUsers: {
+          type: 'object',
+          value: { me: false },
+          fields: { me: { type: 'boolean', value: false } },
+        },
+      },
+    });
+    expect(layout?.params.authorizedAdminUsers.value).toEqual({
+      me: false,
+      sceneOwners: true,
+      adminAllowList: [],
+    });
+  });
+
+  it('leaves the layout alone when the script no longer parses', () => {
+    expect(rebuildLayout('export class Broken {', corrupted)).toBeUndefined();
   });
 });

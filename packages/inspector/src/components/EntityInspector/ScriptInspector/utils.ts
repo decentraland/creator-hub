@@ -5,6 +5,8 @@ import { determineAssetType } from '../../ImportAsset/utils';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
+import { getScriptParams } from './parser';
+import { isPlainObject } from './params';
 import type { ScriptItem, ScriptLayout, ScriptParamUnion } from './types';
 
 export function fromNumber(value: number): string {
@@ -70,16 +72,20 @@ export async function readScript(
 // edits). For containers it recurses — keeping stored keys/elements that still exist,
 // dropping removed keys, adding new keys with the source default. Leaf values are kept if
 // present, with enum/slider validated against the fresh options/range.
+//
+// A stored container of the wrong shape (e.g. the text "[object Object]" that Creator Hub
+// 0.52 saved into object params, #1765) is replaced by the source default. A missing key takes
+// the container's declared default (`{ me: true, … }`) before the field's own, which is only
+// the type's zero value (`false`).
 function reconcileValue(sourceParam: ScriptParamUnion, storedValue: unknown): unknown {
   switch (sourceParam.type) {
     case 'object': {
-      const stored =
-        storedValue && typeof storedValue === 'object' && !Array.isArray(storedValue)
-          ? (storedValue as Record<string, unknown>)
-          : {};
+      if (!isPlainObject(storedValue)) return sourceParam.value;
+      const defaults = isPlainObject(sourceParam.value) ? sourceParam.value : {};
       const result: Record<string, unknown> = {};
       for (const [key, fieldParam] of Object.entries(sourceParam.fields)) {
-        result[key] = key in stored ? reconcileValue(fieldParam, stored[key]) : fieldParam.value;
+        if (key in storedValue) result[key] = reconcileValue(fieldParam, storedValue[key]);
+        else result[key] = key in defaults ? defaults[key] : fieldParam.value;
       }
       return result;
     }
@@ -142,4 +148,13 @@ export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptL
   layout.error = source.error;
 
   return layout;
+}
+
+// Rebuilds a stored layout from the script's current source, keeping the stored values (see
+// `reconcileValue`). Undefined when the source doesn't parse, so a broken file never wipes the
+// params it would otherwise replace.
+export function rebuildLayout(content: string, stored: ScriptLayout): ScriptLayout | undefined {
+  const source = getScriptParams(content);
+  if (source.error) return undefined;
+  return mergeLayout(source, stored);
 }

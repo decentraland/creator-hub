@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { VscFolderOpened as FileUploadIcon } from 'react-icons/vsc';
 import { MdOutlineDriveFileRenameOutline as EditIcon } from 'react-icons/md';
@@ -37,7 +37,9 @@ import {
   mergeLayout,
   isScriptAlreadyAdded,
   isScriptFile,
+  rebuildLayout,
 } from './utils';
+import { hasMalformedParams } from './params';
 import { getScriptParams } from './parser';
 import type { Props, ScriptLayout, ScriptParamUnion, ChangeEvt, ScriptItem } from './types';
 
@@ -121,6 +123,43 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const parsedLayouts = useMemo(() => {
     return scripts.map(script => parseLayout(script.layout));
   }, [scripts]);
+
+  // Creator Hub 0.52 showed object and list params as text boxes and saved whatever was typed
+  // into them, leaving e.g. Admin Tools with "[object Object]" as a setting (#1765). Rebuild such
+  // a layout from the script source once, keeping every value that is still well-formed.
+  const repairAttempts = useRef(new Set<string>());
+  useEffect(() => {
+    const keyOf = (script: ScriptItem) => `${entityId}\n${script.path}\n${script.layout ?? ''}`;
+    const broken = scripts.filter(
+      (script, index) =>
+        hasMalformedParams(parsedLayouts[index]) && !repairAttempts.current.has(keyOf(script)),
+    );
+    const dataLayer = getDataLayerInterface();
+    if (broken.length === 0 || !dataLayer) return;
+    for (const script of broken) repairAttempts.current.add(keyOf(script));
+
+    void (async () => {
+      const repaired = new Map<string, string>();
+      for (const script of broken) {
+        try {
+          const content = await readScript(dataLayer, script.path);
+          const layout = rebuildLayout(content, parseLayout(script.layout) ?? { params: {} });
+          if (layout) repaired.set(keyOf(script), JSON.stringify(layout));
+        } catch (error) {
+          console.warn(`Failed to repair the params of '${script.path}':`, error);
+        }
+      }
+      if (repaired.size === 0) return;
+      // Only replace layouts that are still exactly what was repaired: an edit made while the
+      // file was being read wins.
+      setComponentValue(prev => ({
+        value: (prev?.value ?? []).map(script => {
+          const layout = repaired.get(keyOf(script));
+          return layout ? { ...script, layout } : script;
+        }),
+      }));
+    })();
+  }, [entityId, scripts, parsedLayouts, setComponentValue]);
 
   const allScriptsInScene = useMemo(() => {
     return files?.assets.filter($ => isScriptFile($.path)) ?? [];
