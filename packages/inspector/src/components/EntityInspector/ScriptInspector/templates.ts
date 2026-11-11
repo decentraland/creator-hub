@@ -21,8 +21,10 @@ export class ${className} {
    * Constructor / Inputs
    * Parameters declared here appear in the Script component UI in Creator Hub.
    * Supported types: Entity, String, Number, Boolean, ActionCallback,
-   * and Slider for a number edited with a slider,
-   * e.g. \`public speed: Slider<0, 10, 0.5> = 1\` (min 0, max 10, step 0.5).
+   * Slider for a number edited with a slider,
+   * e.g. \`public speed: Slider<0, 10, 0.5> = 1\` (min 0, max 10, step 0.5),
+   * and Color3 or Color4 (from '@dcl/sdk/math') for a colour edited with a colour picker,
+   * e.g. \`public tint: Color3 = Color3.fromHexString('#FF8800')\`.
    *
    * Note: After editing this file, click the refresh icon in the Script component UI
    * to see updated inputs.

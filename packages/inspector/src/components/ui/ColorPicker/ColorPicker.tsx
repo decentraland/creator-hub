@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cx from 'classnames';
 
 import { TextField } from '../TextField';
@@ -9,6 +9,7 @@ import './ColorPicker.css';
 
 const ColorPicker: React.FC<Props> = ({
   className,
+  label,
   disabled,
   value = '#FFFFFF',
   error,
@@ -16,6 +17,11 @@ const ColorPicker: React.FC<Props> = ({
 }) => {
   const [color, setColor] = useState<string>(value.toString());
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // the value can change from outside (undo, another entity selected), not only through this picker
+  useEffect(() => {
+    setColor(value.toString());
+  }, [value]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,6 +50,7 @@ const ColorPicker: React.FC<Props> = ({
     <div className={cx('ColorPickerContainer', className, { error, disabled })}>
       <TextField
         className="ColorPickerTextField"
+        label={label}
         placeholder="Pick a Color"
         onClick={handleClick}
         value={color}

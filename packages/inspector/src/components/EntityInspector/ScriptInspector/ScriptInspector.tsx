@@ -427,6 +427,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       if (!layout) return null;
       const paramsEntries = Object.entries(layout.params);
       if (paramsEntries.length === 0) return null;
+      const values = Object.fromEntries(paramsEntries.map(([name, param]) => [name, param.value]));
 
       return (
         <Container
@@ -440,6 +441,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 key={name}
                 name={name}
                 param={param}
+                siblings={values}
                 getError={leaf => getMissingFileError(scripts[index].path, leaf)}
                 onUpdate={update => handleUpdateDynamicField(index, name, update)}
               />

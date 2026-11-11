@@ -60,6 +60,74 @@ describe('mergeLayout', () => {
       };
       expect(mergeLayout(source, target).params.title).toMatchObject({ value: 'hello' });
     });
+
+    it('should take the @enabledIf tag from the fresh parse, dropping a removed one', () => {
+      const source: ScriptLayout = {
+        params: {
+          height: { type: 'number', value: 45, enabledIf: 'fixSun' },
+          label: { type: 'string', value: '' },
+        },
+      };
+      const target: ScriptLayout = {
+        params: {
+          height: { type: 'number', value: 60 },
+          label: { type: 'string', value: 'sun', enabledIf: 'fixSun' },
+        },
+      };
+      const merged = mergeLayout(source, target);
+      expect(merged.params.height).toEqual({ type: 'number', value: 60, enabledIf: 'fixSun' });
+      expect(merged.params.label).toEqual({ type: 'string', value: 'sun' });
+    });
+  });
+
+  describe('when merging colour params', () => {
+    it('should keep the stored colour', () => {
+      const source: ScriptLayout = {
+        params: { tint: { type: 'color', value: { r: 1, g: 1, b: 1 } } },
+      };
+      const target: ScriptLayout = {
+        params: { tint: { type: 'color', value: { r: 0.2, g: 0.4, b: 0.6 } } },
+      };
+      expect(mergeLayout(source, target).params.tint).toEqual({
+        type: 'color',
+        value: { r: 0.2, g: 0.4, b: 0.6 },
+      });
+    });
+
+    it('should give the stored colour an opaque alpha when the param becomes a Color4', () => {
+      const source: ScriptLayout = {
+        params: { tint: { type: 'color', value: { r: 1, g: 1, b: 1, a: 0.5 } } },
+      };
+      const target: ScriptLayout = {
+        params: { tint: { type: 'color', value: { r: 0.2, g: 0.4, b: 0.6 } } },
+      };
+      expect(mergeLayout(source, target).params.tint.value).toEqual({
+        r: 0.2,
+        g: 0.4,
+        b: 0.6,
+        a: 1,
+      });
+    });
+
+    it('should drop the stored alpha when the param becomes a Color3', () => {
+      const source: ScriptLayout = {
+        params: { tint: { type: 'color', value: { r: 1, g: 1, b: 1 } } },
+      };
+      const target: ScriptLayout = {
+        params: { tint: { type: 'color', value: { r: 0.2, g: 0.4, b: 0.6, a: 0.5 } } },
+      };
+      expect(mergeLayout(source, target).params.tint.value).toEqual({ r: 0.2, g: 0.4, b: 0.6 });
+    });
+
+    it('should fall back to the fresh default when the stored value is not a colour', () => {
+      const source: ScriptLayout = {
+        params: { tint: { type: 'color', value: { r: 1, g: 0, b: 0 } } },
+      };
+      const target: ScriptLayout = {
+        params: { tint: { type: 'color', value: 'red' as never } },
+      };
+      expect(mergeLayout(source, target).params.tint.value).toEqual({ r: 1, g: 0, b: 0 });
+    });
   });
 
   describe('when merging object params', () => {

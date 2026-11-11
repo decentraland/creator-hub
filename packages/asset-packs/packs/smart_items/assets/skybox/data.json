@@ -1,0 +1,21 @@
+{
+  "id": "97bdb208-b9b9-47ba-ac23-f60a18ec928d",
+  "name": "Skybox",
+  "category": "utils",
+  "tags": [
+    "skybox",
+    "sky",
+    "clouds",
+    "stars",
+    "sun",
+    "sunlight",
+    "ambient light",
+    "lighting",
+    "fog",
+    "weather",
+    "atmosphere",
+    "environment"
+  ],
+  "description": "Sets the colours of the sky and the ambient light, the clouds and stars, the sunlight and the fog of the whole scene.",
+  "author": "Decentraland Foundation"
+}

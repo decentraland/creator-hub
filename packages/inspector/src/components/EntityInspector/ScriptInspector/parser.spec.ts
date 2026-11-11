@@ -285,6 +285,90 @@ export function start(src: string, entity: Entity, speed: Slider<0, 10> = 5) {}
       });
     });
   });
+
+  describe('when parsing a Color3 param', () => {
+    it('should default to white when there is no default value', () => {
+      const { params } = getScriptParams(classScript('public tint: Color3,'));
+      expect(params.tint).toEqual({ type: 'color', value: { r: 1, g: 1, b: 1 }, optional: false });
+    });
+
+    it('should evaluate a Color3.create default', () => {
+      const { params } = getScriptParams(
+        classScript('public tint: Color3 = Color3.create(1, 0.5, 0),'),
+      );
+      expect(params.tint).toMatchObject({ type: 'color', value: { r: 1, g: 0.5, b: 0 } });
+    });
+
+    it('should evaluate a Color3.fromHexString default', () => {
+      const { params } = getScriptParams(
+        classScript("public tint: Color3 = Color3.fromHexString('#FF0000'),"),
+      );
+      expect(params.tint).toMatchObject({ type: 'color', value: { r: 1, g: 0, b: 0 } });
+    });
+
+    it('should evaluate a named colour default', () => {
+      const { params } = getScriptParams(classScript('public tint: Color3 = Color3.Black(),'));
+      expect(params.tint).toMatchObject({ type: 'color', value: { r: 0, g: 0, b: 0 } });
+    });
+
+    it('should take an object literal default', () => {
+      const { params } = getScriptParams(
+        classScript('public tint: Color3 = { r: 0.2, g: 0.4, b: 0.6 },'),
+      );
+      expect(params.tint).toMatchObject({ type: 'color', value: { r: 0.2, g: 0.4, b: 0.6 } });
+    });
+
+    it('should recognise a namespace type such as Color3.Mutable', () => {
+      const { params } = getScriptParams(classScript('public tint: Color3.Mutable,'));
+      expect(params.tint).toMatchObject({ type: 'color' });
+    });
+
+    it('should fall back to white when the default is not statically evaluable', () => {
+      const { params } = getScriptParams(classScript('public tint: Color3 = makeColor(),'));
+      expect(params.tint).toMatchObject({ type: 'color', value: { r: 1, g: 1, b: 1 } });
+    });
+
+    it('should not run Color3 helpers outside the allowed factories', () => {
+      const { params } = getScriptParams(classScript('public tint: Color3 = Color3.Random(),'));
+      expect(params.tint).toMatchObject({ type: 'color', value: { r: 1, g: 1, b: 1 } });
+    });
+
+    it('should drop the alpha of a Color4 default given to a Color3', () => {
+      const { params } = getScriptParams(
+        classScript('public tint: Color3 = Color4.create(1, 0, 0, 0.5),'),
+      );
+      expect(params.tint).toMatchObject({ value: { r: 1, g: 0, b: 0 } });
+      expect(params.tint.value).not.toHaveProperty('a');
+    });
+  });
+
+  describe('when parsing a Color4 param', () => {
+    it('should default to opaque white', () => {
+      const { params } = getScriptParams(classScript('public tint: Color4,'));
+      expect(params.tint).toMatchObject({ type: 'color', value: { r: 1, g: 1, b: 1, a: 1 } });
+    });
+
+    it('should keep the alpha of its default', () => {
+      const { params } = getScriptParams(
+        classScript('public tint: Color4 = Color4.create(0, 0, 1, 0.25),'),
+      );
+      expect(params.tint).toMatchObject({ value: { r: 0, g: 0, b: 1, a: 0.25 } });
+    });
+  });
+
+  describe('when an action method takes a colour', () => {
+    it('should parse the action param as a colour', () => {
+      const { actions } = getScriptParams(`
+import { Entity } from '@dcl/sdk/ecs'
+export class TestScript {
+  constructor(public src: string, public entity: Entity) {}
+  /** @action */
+  paint(color: Color3 = Color3.Red()) {}
+}
+`);
+      expect(actions[0].params.color).toMatchObject({ type: 'color', value: { r: 1, g: 0, b: 0 } });
+    });
+  });
 });
 
 describe('when a script tags its params with editor hints', () => {
@@ -335,10 +419,36 @@ describe('when a script tags its params with editor hints', () => {
     });
   });
 
+  it('should tie a param to the sibling named by @enabledIf', () => {
+    const { params } = getScriptParams(
+      classScript(`
+        public fixSunPosition: boolean = false,
+        /** @enabledIf fixSunPosition */
+        public sunHeight: number = 45,
+        /** @enabledIf !fixSunPosition */
+        public followTime: boolean = true,`),
+    );
+    expect(params.sunHeight).toMatchObject({ type: 'number', enabledIf: 'fixSunPosition' });
+    expect(params.followTime).toMatchObject({ type: 'boolean', enabledIf: '!fixSunPosition' });
+    expect(params.fixSunPosition).not.toHaveProperty('enabledIf');
+  });
+
+  it('should lock a whole list with @enabledIf rather than each element', () => {
+    const { params } = getScriptParams(
+      classScript(`
+        public useList: boolean = false,
+        /** @enabledIf useList */
+        public names: string[] = [],`),
+    );
+    expect(params.names).toMatchObject({ type: 'array', enabledIf: 'useList' });
+    expect(params.names.type === 'array' && params.names.item).not.toHaveProperty('enabledIf');
+  });
+
   it('should leave untagged params as they were', () => {
     const { params } = getScriptParams(classScript('public target: Entity, public label: string,'));
     expect(params.target).not.toHaveProperty('components');
     expect(params.label).not.toHaveProperty('actionsOf');
     expect(params.label).not.toHaveProperty('format');
+    expect(params.label).not.toHaveProperty('enabledIf');
   });
 });

@@ -35,6 +35,7 @@ export type ScriptParamUnion =
   | ScriptParamBoolean
   | ScriptParamString
   | ScriptParamEnum
+  | ScriptParamColor
   | ScriptParamEntity
   | ScriptParamAction
   | ScriptParamObject
@@ -43,6 +44,9 @@ export type ScriptParamUnion =
 export type ScriptParam = {
   optional?: boolean;
   tooltip?: string;
+  // `@enabledIf <key>` / `@enabledIf !<key>`: the field is greyed out and locked unless the
+  // sibling field `<key>` is on (or off, with `!`). The script still receives its value.
+  enabledIf?: string;
 };
 
 export type ScriptParamNumber = ScriptParam & {
@@ -79,6 +83,16 @@ export type ScriptParamEnum = ScriptParam & {
   type: 'enum';
   value: string;
   options: string[];
+};
+
+export type ScriptColor = { r: number; g: number; b: number; a?: number };
+
+// A `Color3` or `Color4` param, edited with the same picker as the Material colours. `value` is
+// the plain `{ r, g, b }` (plus `a` for a Color4) the constructor receives, so it already is a
+// Color3/Color4 at runtime. The picker is RGB-only: a Color4 keeps the alpha it was declared with.
+export type ScriptParamColor = ScriptParam & {
+  type: 'color';
+  value: ScriptColor;
 };
 
 export type ScriptParamEntity = ScriptParam & {

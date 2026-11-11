@@ -10,8 +10,13 @@ import { type Props } from './types';
 
 import './RangeField.css';
 
-function isFloat(value: any) {
-  return Number.isFinite(value) && !Number.isInteger(value);
+// Never fewer than 2 decimals, so a fine step (0.0001) survives the rounding instead of snapping to 0.
+function decimalsFor(step: number | string) {
+  const value = Number(step);
+  if (!Number.isFinite(value) || Number.isInteger(value)) return 0;
+  const [, fraction = ''] = value.toString().split('.');
+  const exponent = value.toString().match(/e-(\d+)$/);
+  return Math.max(2, exponent ? Number(exponent[1]) : fraction.length);
 }
 
 const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
@@ -84,8 +89,7 @@ const RangeField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
       if (Number.isInteger(Number(value))) {
         return Number(value.toString());
       }
-      const decimals = isFloat(step) ? 2 : 0;
-      return parseFloat(value.toString()).toFixed(decimals);
+      return parseFloat(value.toString()).toFixed(decimalsFor(step));
     },
     [step],
   );

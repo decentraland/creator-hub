@@ -5,7 +5,14 @@ import { determineAssetType } from '../../ImportAsset/utils';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
-import type { ScriptItem, ScriptLayout, ScriptParamUnion } from './types';
+import { toColorOfKind } from './parser';
+import type {
+  ScriptColor,
+  ScriptItem,
+  ScriptLayout,
+  ScriptParamColor,
+  ScriptParamUnion,
+} from './types';
 
 export function fromNumber(value: number): string {
   return value.toString();
@@ -65,6 +72,21 @@ export async function readScript(
   return content;
 }
 
+// Keeps a stored colour if it still is one, reshaped to the declared kind (a script that changes
+// a param from Color3 to Color4 keeps the creator's channels and gains an opaque alpha).
+function reconcileColor(sourceParam: ScriptParamColor, storedValue: unknown): ScriptColor {
+  const stored = storedValue as Partial<ScriptColor> | undefined;
+  const isColor =
+    !!stored &&
+    typeof stored.r === 'number' &&
+    typeof stored.g === 'number' &&
+    typeof stored.b === 'number';
+  return toColorOfKind(
+    isColor ? (stored as ScriptColor) : sourceParam.value,
+    sourceParam.value.a !== undefined,
+  );
+}
+
 // Reconciles a stored value against a freshly-parsed param shape: the structure/defaults
 // come from `sourceParam` (current script source), the data from `storedValue` (the user's
 // edits). For containers it recurses — keeping stored keys/elements that still exist,
@@ -94,6 +116,8 @@ function reconcileValue(sourceParam: ScriptParamUnion, storedValue: unknown): un
       const n = typeof storedValue === 'number' ? storedValue : sourceParam.value;
       return Math.min(Math.max(n, sourceParam.min), sourceParam.max);
     }
+    case 'color':
+      return reconcileColor(sourceParam, storedValue);
     default:
       return storedValue !== undefined ? storedValue : sourceParam.value;
   }
@@ -132,8 +156,12 @@ export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptL
           ? targetParam.value
           : value.value;
       layout.params[name] = { ...value, value: storedValue };
+    } else if (value.type === 'color' && targetParam.type === 'color') {
+      layout.params[name] = { ...value, value: reconcileColor(value, targetParam.value) };
     } else {
-      layout.params[name] = { ...value, ...targetParam };
+      // editor metadata (tooltip, @enabledIf, @components…) comes from the fresh parse too, so
+      // removing a tag from the script takes effect on refresh
+      layout.params[name] = { ...value, value: targetParam.value } as ScriptParamUnion;
     }
   }
 

@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/skybox.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Skybox"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/skybox-controller.ts",
+                "priority": 0,
+                "layout": "{\"params\": {\"startEnabled\": {\"type\": \"boolean\", \"value\": true, \"optional\": true, \"tooltip\": \"Apply these settings as soon as the scene loads. Turn it off to apply them later with the Enable action\"}, \"sunIntensity\": {\"type\": \"slider\", \"value\": 1, \"min\": 0, \"max\": 5, \"step\": 0.05, \"optional\": true, \"tooltip\": \"Strength of the sunlight and moonlight, as a multiplier: 1 is the normal strength, 0 turns it off\"}, \"ambientBrightness\": {\"type\": \"slider\", \"value\": 1, \"min\": 0, \"max\": 1, \"step\": 0.01, \"optional\": true, \"tooltip\": \"Darkens the light that comes from the sky, along with the sky, the clouds and the fog. 0 makes them all black. Below 1 it also darkens the regular sky and fog colours, as they look at midday, when their Custom option is off\"}, \"starBrightness\": {\"type\": \"slider\", \"value\": 4.62, \"min\": 0, \"max\": 20, \"step\": 0.01, \"optional\": true, \"tooltip\": \"Brightness of the stars, which only show at night. 0 hides them (default: 4.62)\"}, \"showSun\": {\"type\": \"boolean\", \"value\": true, \"optional\": true, \"tooltip\": \"Show the sun and moon discs in the sky. Hiding them does not turn off their light\"}, \"customFog\": {\"type\": \"boolean\", \"value\": true, \"optional\": true, \"tooltip\": \"Replace the thickness and colour of the fog\"}, \"fogDensity\": {\"type\": \"slider\", \"value\": 0.0005, \"min\": 0, \"max\": 1, \"step\": 0.0001, \"enabledIf\": \"customFog\", \"optional\": true, \"tooltip\": \"How thick the fog is. Higher values hide distant objects sooner: 0.0005 is a light haze, 0.01 hides things beyond about 300 m, 1 hides everything beyond 3 m (default: 0.0005)\"}, \"fogColor\": {\"type\": \"color\", \"value\": {\"r\": 0.3137254901960784, \"g\": 0.5568627450980392, \"b\": 0.7058823529411765}, \"enabledIf\": \"customFog\", \"optional\": true, \"tooltip\": \"Colour of the fog\"}, \"fixSunPosition\": {\"type\": \"boolean\", \"value\": false, \"optional\": true, \"tooltip\": \"Keep the sun in one place instead of following the time of day\"}, \"sunHeight\": {\"type\": \"slider\", \"value\": 45, \"min\": 0, \"max\": 90, \"step\": 1, \"enabledIf\": \"fixSunPosition\", \"optional\": true, \"tooltip\": \"How high the sun is, in degrees: 0 is on the horizon, 90 is straight above\"}, \"sunDirection\": {\"type\": \"slider\", \"value\": 135, \"min\": 0, \"max\": 360, \"step\": 1, \"enabledIf\": \"fixSunPosition\", \"optional\": true, \"tooltip\": \"Compass direction the sun shines from, in degrees: 0 is north (+Z), 90 is east (+X)\"}, \"customSunColor\": {\"type\": \"boolean\", \"value\": false, \"optional\": true, \"tooltip\": \"Replace the colour of the sunlight and moonlight. It also tints the sun disc, which then looks less bright than the regular one\"}, \"sunColor\": {\"type\": \"color\", \"value\": {\"r\": 1, \"g\": 0.9254901960784314, \"b\": 0.6862745098039216}, \"enabledIf\": \"customSunColor\", \"optional\": true, \"tooltip\": \"Colour of the sunlight and of the sun disc\"}, \"cloudOpacity\": {\"type\": \"slider\", \"value\": 1, \"min\": 0, \"max\": 1, \"step\": 0.05, \"optional\": true, \"tooltip\": \"How visible the clouds are: 0 hides them, 1 is fully opaque (default: 1)\"}, \"cloudSpeed\": {\"type\": \"slider\", \"value\": 0.01, \"min\": 0, \"max\": 0.1, \"step\": 0.005, \"optional\": true, \"tooltip\": \"How fast the clouds turn around the sky. 0 keeps them still (default: 0.01)\"}, \"cloudColor\": {\"type\": \"color\", \"value\": {\"r\": 0.7098039215686275, \"g\": 0.8980392156862745, \"b\": 1}, \"enabledIf\": \"customSkyColors\", \"optional\": true, \"tooltip\": \"Colour of the clouds. They are drawn twice as bright as the colour picked here, as the regular clouds are\"}, \"customSkyColors\": {\"type\": \"boolean\", \"value\": true, \"optional\": true, \"tooltip\": \"Replace the colours of the sky. They are also the colour of the ambient light of the whole scene\"}, \"zenithColor\": {\"type\": \"color\", \"value\": {\"r\": 0.18823529411764706, \"g\": 0.6, \"b\": 0.9333333333333333}, \"enabledIf\": \"customSkyColors\", \"optional\": true, \"tooltip\": \"Colour of the sky straight above\"}, \"horizonColor\": {\"type\": \"color\", \"value\": {\"r\": 0.6745098039215687, \"g\": 0.8274509803921568, \"b\": 0.9568627450980393}, \"enabledIf\": \"customSkyColors\", \"optional\": true, \"tooltip\": \"Colour of the broad band of sky around the horizon\"}, \"horizonGlowColor\": {\"type\": \"color\", \"value\": {\"r\": 0.4549019607843137, \"g\": 0.7568627450980392, \"b\": 0.6078431372549019}, \"enabledIf\": \"customSkyColors\", \"optional\": true, \"tooltip\": \"Colour of the narrow glow right on the horizon line, like a sunset glow\"}, \"groundColor\": {\"type\": \"color\", \"value\": {\"r\": 0.27450980392156865, \"g\": 0.792156862745098, \"b\": 0.8470588235294118}, \"enabledIf\": \"customSkyColors\", \"optional\": true, \"tooltip\": \"Colour of the sky below the horizon, visible where no terrain covers it\"}}, \"actions\": [{\"methodName\": \"enable\", \"description\": \"Apply this item's sky, sun light and fog settings\", \"params\": {}}, {\"methodName\": \"disable\", \"description\": \"Remove this item's settings and go back to the default sky, sun light and fog\", \"params\": {}}, {\"methodName\": \"toggle\", \"description\": \"Disable the settings if they are applied, or enable them if they are not\", \"params\": {}}, {\"methodName\": \"hideClouds\", \"description\": \"Hide the clouds\", \"params\": {}}, {\"methodName\": \"showClouds\", \"description\": \"Show the clouds again after Hide Clouds\", \"params\": {}}, {\"methodName\": \"clearFog\", \"description\": \"Remove the fog completely\", \"params\": {}}, {\"methodName\": \"restoreFog\", \"description\": \"Bring the fog back after Clear Fog\", \"params\": {}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "call_script_method",
+                "name": "Enable",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/skybox-controller.ts\",\"methodName\":\"enable\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Disable",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/skybox-controller.ts\",\"methodName\":\"disable\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Toggle",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/skybox-controller.ts\",\"methodName\":\"toggle\",\"params\":{}}",
+                "default": true
+              },
+              {
+                "type": "call_script_method",
+                "name": "Hide Clouds",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/skybox-controller.ts\",\"methodName\":\"hideClouds\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Show Clouds",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/skybox-controller.ts\",\"methodName\":\"showClouds\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Clear Fog",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/skybox-controller.ts\",\"methodName\":\"clearFog\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Restore Fog",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/skybox-controller.ts\",\"methodName\":\"restoreFog\",\"params\":{}}"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
