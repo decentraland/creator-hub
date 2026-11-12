@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
-import { misc } from '#preload';
+import { feedback, misc } from '#preload';
 
 import type { Project } from '/shared/types/projects';
 import {
@@ -13,6 +13,7 @@ import {
   type Deployment,
 } from '/@/modules/store/deployment/slice';
 import type { Props } from '/@/components/Modals/PublishProject/types';
+import { HELP_FAQ_URL } from '/@/modules/utils';
 
 import { Deploy } from './component';
 
@@ -407,6 +408,52 @@ describe('Deploy step', () => {
       });
     });
   });
+  describe('when the deployment failed', () => {
+    beforeEach(() => {
+      hooks.deployment = createDeployment({
+        status: 'failed',
+        error: { name: 'DEPLOYMENT_FAILED', message: 'Failed', eventId: 'deploy-event-id' },
+      });
+      mount();
+    });
+
+    it('should link to the Help Center', () => {
+      fireEvent.click(screen.getByRole('link', { name: 'modal.report_issue.help_center' }));
+      expect(misc.openExternal).toHaveBeenCalledWith(HELP_FAQ_URL);
+    });
+
+    describe('and the user reports it', () => {
+      beforeEach(async () => {
+        vi.mocked(feedback.send).mockResolvedValue('sent');
+        fireEvent.click(
+          screen.getByRole('button', {
+            name: 'modal.publish_project.deploy.deploying.actions.report_issue',
+          }),
+        );
+        fireEvent.change(
+          screen.getByRole('textbox', { name: 'modal.report_issue.description.label' }),
+          { target: { value: 'Publishing failed' } },
+        );
+        await act(async () =>
+          fireEvent.click(screen.getByRole('button', { name: 'modal.report_issue.send' })),
+        );
+      });
+
+      it('should send the report linked to the failure', () => {
+        expect(feedback.send).toHaveBeenCalledWith({
+          message: 'Publishing failed',
+          includeLogs: true,
+          associatedEventId: 'deploy-event-id',
+          source: 'publish-failure',
+        });
+      });
+
+      it('should not open the Typeform', () => {
+        expect(misc.openExternal).not.toHaveBeenCalled();
+      });
+    });
+  });
+
   describe('when the publish server cannot be read, as when the connection drops on Review', () => {
     beforeEach(() => {
       const arg = {

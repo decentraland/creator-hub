@@ -5,32 +5,50 @@ import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 import { captureException } from '@sentry/electron/main';
 import { StreamError } from './bin';
 
-const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret/i;
+const SENSITIVE_KEY =
+  /^x-identity-|auth-?chain|auth_chain|authorization|password|token|secret|email|contact/i;
+
+const CONTENT_CHANNELS = new Set<keyof Ipc>([
+  'ai.submitSignInCode',
+  'ai.send',
+  'ai.screenshotResult',
+  'ai.askResult',
+  'ai.mirrorPush',
+  'ai.remoteCommand',
+]);
+
+function shortenDataUrl(value: unknown) {
+  if (typeof value !== 'string' || !value.startsWith('data:')) return value;
+  return `[data:${value.slice(5, value.search(/[;,]|$/))}, ${value.length} bytes]`;
+}
 
 /**
- * Renders IPC arguments for the log. Credential-shaped values are masked because
- * these lines land in the electron log on disk — `metrics.request` alone carries
- * a signed ADR-44 auth chain on every call.
+ * Renders IPC arguments for the log. Credential-shaped values and contact details are
+ * masked and data URLs shortened, because these lines land in the electron log on disk,
+ * which issue reports attach.
  */
 export function formatArgs(args: unknown[]): string {
   return args
     .map(
       (arg, idx) =>
         `args[${idx}]=${JSON.stringify(arg, (key, value) =>
-          SENSITIVE_KEY.test(key) ? '[redacted]' : value,
+          SENSITIVE_KEY.test(key) ? '[redacted]' : shortenDataUrl(value),
         )}`,
     )
     .join(' ');
 }
 
-// wrapper for ipcMain.handle with types
+function logArgs(channel: keyof Ipc, args: unknown[]) {
+  return CONTENT_CHANNELS.has(channel) ? '[redacted]' : formatArgs(args);
+}
+
 export async function handle<T extends keyof Ipc>(
   channel: T,
   handler: (event: Electron.IpcMainInvokeEvent, ...args: Parameters<Ipc[T]>) => ReturnType<Ipc[T]>,
 ) {
   ipcMain.handle(channel, async (event, ...args) => {
     try {
-      log.info(`[IPC] channel=${channel} ${formatArgs(args)}`.trim());
+      log.info(`[IPC] channel=${channel} ${logArgs(channel, args)}`.trim());
       const value = await handler(event, ...(args as Parameters<Ipc[T]>));
       const result: IpcResult<typeof value> = {
         success: true,
@@ -46,7 +64,7 @@ export async function handle<T extends keyof Ipc>(
         extra.stderr = error.stderr.toString('utf8');
       }
 
-      if (name !== 'AbortError') {
+      if (name !== 'AbortError' && channel !== 'feedback.send') {
         captureException(error, { tags: { source: 'ipc-handle' }, extra });
       }
       const result: IpcError = {
@@ -67,7 +85,7 @@ export function handleSync<T extends keyof Ipc>(
 ) {
   ipcMain.on(channel, (event, ...args) => {
     try {
-      log.info(`[IPC-SYNC] channel=${channel} ${formatArgs(args)}`.trim());
+      log.info(`[IPC-SYNC] channel=${channel} ${logArgs(channel, args)}`.trim());
       const result = handler(event, ...(args as Parameters<Ipc[T]>));
       event.returnValue = result;
       return result;

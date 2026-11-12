@@ -321,7 +321,6 @@
     },
     "earn_not_joined": "EARN，尚未加入",
     "feedback": "给我们反馈",
-    "report_an_issue": "报告问题",
     "user_menu": {
       "sign_in": "登录",
       "sign_out": "登出",
@@ -338,7 +337,7 @@
       "about": "关于 Creator Hub",
       "check_for_updates": "检查更新",
       "settings": "设置",
-      "report_bug": "报告错误",
+      "report_bug": "报告问题",
       "help": {
         "label": "帮助与支持",
         "faq": "常见问题",
@@ -752,7 +751,37 @@
       "app_name": "Decentraland Creator Hub",
       "action": "确定"
     },
-    "close": "关闭"
+    "close": "关闭",
+    "report_issue": {
+      "title": "报告问题",
+      "description": {
+        "label": "出了什么问题？",
+        "placeholder": "描述你当时在做什么以及出了什么问题。",
+        "counter": "{count}/{max}"
+      },
+      "contact": {
+        "label": "我们如何联系你？（可选）",
+        "hint": "如果希望我们跟进，请留下你的 Discord 用户名或电子邮件。",
+        "placeholder": "Discord 用户名或电子邮件",
+        "discord_invalid": "请输入有效的 Discord 用户名。",
+        "email_invalid": "请输入有效的电子邮件地址。"
+      },
+      "logs": {
+        "label": "附带应用日志",
+        "hint": "日志包含你的钱包地址和场景名称。"
+      },
+      "help_center": "访问帮助中心",
+      "send": "发送",
+      "retry": "重试",
+      "sent_title": "问题报告已提交",
+      "sent": "感谢你帮助我们改进 Creator Hub！我们已收到你的报告，团队会调查该问题并着手修复。",
+      "queued_title": "问题报告已保存",
+      "queued": "我们已保存你的报告，会在你恢复联网后立即发送。",
+      "unknown_title": "无法确认你的报告",
+      "unknown": "我们已发送你的报告，但无法确认是否送达。如果问题仍然存在，请再次报告。",
+      "failed_title": "出了点问题",
+      "failed": "无法发送你的报告。请检查网络连接后重试。"
+    }
   },
   "popup": {
     "copied_to_clipboard": "已复制！"

@@ -28,7 +28,7 @@ import {
 } from '/@/modules/store/management/slice';
 
 import { t } from '/@/modules/store/translation/utils';
-import { REPORT_ISSUES_URL, getSceneJumpInDeeplink, getSceneJumpInUrl } from '/@/modules/utils';
+import { HELP_FAQ_URL, getSceneJumpInDeeplink, getSceneJumpInUrl } from '/@/modules/utils';
 import { formatSize } from '/@/modules/file';
 
 import { PublishModal } from '/@/components/Modals/PublishProject/PublishModal';
@@ -36,13 +36,14 @@ import { ConnectedSteps } from '/@/components/Step';
 import { Button } from '/@/components/Button';
 import { Loader } from '/@/components/Loader';
 import { ExpandMore } from '/@/components/ExpandMore';
+import { ReportIssue } from '/@/components/Modals/ReportIssue';
 
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
 import { parseCoords } from '/@/components/Modals/PublishProject/utils';
 
-import { SettingsLink } from './Deploy.styled';
+import { HelpCenterLink, SettingsLink } from './Deploy.styled';
 import { DeployProgress, type DeployCancel } from './DeployProgress';
 
 import './styles.css';
@@ -70,6 +71,7 @@ export function Deploy(props: Props) {
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
+  const [reportOpen, setReportOpen] = useState(false);
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
   const worldName = project.worldConfiguration?.name;
@@ -196,9 +198,7 @@ export function Deploy(props: Props) {
     void misc.openExternal(getSceneJumpInDeeplink(jumpInLocation));
   }, [jumpInLocation]);
 
-  const handleReportIssue = useCallback(() => {
-    void misc.openExternal(REPORT_ISSUES_URL);
-  }, []);
+  const handleReportIssue = useCallback(() => setReportOpen(true), []);
 
   const handleDeployRetry = useCallback(() => {
     onBack && onBack();
@@ -406,6 +406,12 @@ export function Deploy(props: Props) {
           </ProjectStepWrapper>
         )}
       </div>
+      <ReportIssue
+        open={reportOpen}
+        source="publish-failure"
+        associatedEventId={deployment?.error?.eventId}
+        onClose={() => setReportOpen(false)}
+      />
     </PublishModal>
   );
 }
@@ -578,6 +584,7 @@ function Error({
       )}
       {errorType !== 'code_error' && <ConnectedSteps steps={steps} />}
       <div className="actions">
+        <HelpCenterLink href={HELP_FAQ_URL}>{t('modal.report_issue.help_center')}</HelpCenterLink>
         <Button
           size="large"
           variant="outlined"

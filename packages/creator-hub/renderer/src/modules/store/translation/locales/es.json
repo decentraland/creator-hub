@@ -321,7 +321,6 @@
     },
     "earn_not_joined": "EARN, aún no te uniste",
     "feedback": "Darnos feedback",
-    "report_an_issue": "Informar un problema",
     "user_menu": {
       "sign_in": "Iniciar Sesión",
       "sign_out": "Cerrar Sesión",
@@ -338,7 +337,7 @@
       "about": "Acerca de Creator Hub",
       "check_for_updates": "Buscar Actualizaciones",
       "settings": "Configuración",
-      "report_bug": "Reportar Error",
+      "report_bug": "Informar un problema",
       "help": {
         "label": "Ayuda y Soporte",
         "faq": "Preguntas Frecuentes",
@@ -752,7 +751,37 @@
       "app_name": "Decentraland Creator Hub",
       "action": "Aceptar"
     },
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "report_issue": {
+      "title": "Informar un problema",
+      "description": {
+        "label": "¿Qué salió mal?",
+        "placeholder": "Describe qué estabas haciendo y qué salió mal.",
+        "counter": "{count}/{max}"
+      },
+      "contact": {
+        "label": "¿Cómo podemos contactarte? (opcional)",
+        "hint": "Deja tu usuario de Discord o tu correo si quieres que te respondamos.",
+        "placeholder": "Usuario de Discord o correo",
+        "discord_invalid": "Introduce un usuario de Discord válido.",
+        "email_invalid": "Introduce un correo electrónico válido."
+      },
+      "logs": {
+        "label": "Incluir los registros de la app",
+        "hint": "Los registros incluyen tu dirección de billetera y los nombres de tus escenas."
+      },
+      "help_center": "Visitar el Centro de Ayuda",
+      "send": "Enviar",
+      "retry": "Reintentar",
+      "sent_title": "Reporte de problema enviado",
+      "sent": "¡Gracias por ayudarnos a mejorar Creator Hub! Recibimos tu reporte y nuestro equipo investigará el problema y trabajará en una solución.",
+      "queued_title": "Reporte de problema guardado",
+      "queued": "Guardamos tu reporte y lo enviaremos en cuanto vuelvas a tener conexión.",
+      "unknown_title": "No pudimos confirmar tu reporte",
+      "unknown": "Enviamos tu reporte, pero no pudimos confirmar que llegó. Si el problema continúa, vuelve a reportarlo.",
+      "failed_title": "Algo salió mal",
+      "failed": "No pudimos enviar tu reporte. Revisa tu conexión e inténtalo de nuevo."
+    }
   },
   "popup": {
     "copied_to_clipboard": "¡Copiado!"

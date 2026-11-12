@@ -321,7 +321,6 @@
     },
     "earn_not_joined": "EARN, not joined yet",
     "feedback": "Submit feedback",
-    "report_an_issue": "Report an Issue",
     "user_menu": {
       "sign_in": "Sign In",
       "sign_out": "Sign Out",
@@ -338,7 +337,7 @@
       "about": "About Creator Hub",
       "check_for_updates": "Check for Updates",
       "settings": "Settings",
-      "report_bug": "Report Bug",
+      "report_bug": "Report an issue",
       "help": {
         "label": "Help & Support",
         "faq": "FAQ",
@@ -752,7 +751,37 @@
       "app_name": "Decentraland Creator Hub",
       "action": "OK"
     },
-    "close": "Close"
+    "close": "Close",
+    "report_issue": {
+      "title": "Report an issue",
+      "description": {
+        "label": "What went wrong?",
+        "placeholder": "Describe what you were doing and what went wrong.",
+        "counter": "{count}/{max}"
+      },
+      "contact": {
+        "label": "How can we reach you? (optional)",
+        "hint": "Leave your Discord username or email if you'd like us to follow up.",
+        "placeholder": "Discord username or email",
+        "discord_invalid": "Enter a valid Discord username.",
+        "email_invalid": "Enter a valid email address."
+      },
+      "logs": {
+        "label": "Include app logs",
+        "hint": "Logs include your wallet address and scene names."
+      },
+      "help_center": "Visit the Help Center",
+      "send": "Send",
+      "retry": "Try again",
+      "sent_title": "Issue Report Submitted",
+      "sent": "Thanks for helping us improve the Creator Hub! We've received your report and our team will investigate the issue and work on a fix.",
+      "queued_title": "Issue Report Saved",
+      "queued": "We saved your report and will send it as soon as you're back online.",
+      "unknown_title": "Couldn't Confirm Your Report",
+      "unknown": "We sent your report but couldn't confirm it arrived. If the problem continues, report it again.",
+      "failed_title": "Something went wrong",
+      "failed": "We couldn't send your report. Check your connection and try again."
+    }
   },
   "popup": {
     "copied_to_clipboard": "Copied!"

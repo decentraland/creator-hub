@@ -5,12 +5,9 @@ import { Menu, MenuItem, Tooltip } from 'decentraland-ui2';
 import { misc } from '#preload';
 import logo from '/assets/images/logo-editor.png';
 import { t } from '/@/modules/store/translation/utils';
-import {
-  CONTACT_SUPPORT_URL,
-  DISCORD_URL,
-  HELP_FAQ_URL,
-  REPORT_ISSUES_URL,
-} from '/@/modules/utils';
+import { CONTACT_SUPPORT_URL, DISCORD_URL, HELP_FAQ_URL } from '/@/modules/utils';
+
+import { ReportIssue } from '../../Modals/ReportIssue';
 
 import type { Props } from './types';
 
@@ -21,6 +18,7 @@ export function LogoMenu({ onClickAbout, onClickSettings, onClickCheckForUpdates
   const helpRef = useRef<HTMLLIElement>(null);
   const [open, setOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const close = useCallback(() => {
     setHelpOpen(false);
@@ -41,6 +39,11 @@ export function LogoMenu({ onClickAbout, onClickSettings, onClickCheckForUpdates
     close();
     onClickSettings();
   }, [close, onClickSettings]);
+
+  const handleClickReport = useCallback(() => {
+    close();
+    setReportOpen(true);
+  }, [close]);
 
   const handleClickExternal = useCallback(
     (url: string) => () => {
@@ -99,7 +102,7 @@ export function LogoMenu({ onClickAbout, onClickSettings, onClickCheckForUpdates
         </MenuItem>
         <MenuItem
           data-testid="logo-menu-report-bug"
-          onClick={handleClickExternal(REPORT_ISSUES_URL)}
+          onClick={handleClickReport}
         >
           {t('navbar.logo_menu.report_bug')}
         </MenuItem>
@@ -132,6 +135,11 @@ export function LogoMenu({ onClickAbout, onClickSettings, onClickCheckForUpdates
           {t('navbar.logo_menu.help.discord')}
         </MenuItem>
       </Menu>
+      <ReportIssue
+        open={reportOpen}
+        source="logo-menu"
+        onClose={() => setReportOpen(false)}
+      />
     </>
   );
 }

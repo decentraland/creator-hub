@@ -18,7 +18,30 @@ let current: Record<string, string> = CONFIGS.dev;
 
 vi.mock('/@/config', () => ({ config: { get: (key: string) => current[key] ?? '' } }));
 
-const { getJumpInUrl, getSceneJumpInDeeplink, getSceneJumpInUrl } = await import('./utils');
+const { getJumpInUrl, getSceneJumpInDeeplink, getSceneJumpInUrl, isValidContact, parseContact } =
+  await import('./utils');
+
+describe('parseContact', () => {
+  describe.each([
+    ['fixture_user', { method: 'discord', value: 'fixture_user' }, true],
+    ['@Fixture_User', { method: 'discord', value: 'fixture_user' }, true],
+    ['fixture..user', { method: 'discord', value: 'fixture..user' }, false],
+    [' jane.doe@example.com ', { method: 'email', value: 'jane.doe@example.com' }, true],
+    ['jane.doe@', { method: 'email', value: 'jane.doe@' }, false],
+  ])('when the input is "%s"', (input, contact, valid) => {
+    it(`should read it as a ${valid ? 'valid' : 'invalid'} ${contact.method} contact`, () => {
+      const parsed = parseContact(input);
+      expect(parsed).toEqual(contact);
+      expect(isValidContact(parsed!)).toBe(valid);
+    });
+  });
+
+  describe('when the input is blank', () => {
+    it('should return no contact', () => {
+      expect(parseContact('   ')).toBeUndefined();
+    });
+  });
+});
 
 describe('jump-in web URLs', () => {
   describe('when the config is dev', () => {

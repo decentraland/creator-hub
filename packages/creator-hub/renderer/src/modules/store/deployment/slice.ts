@@ -1,4 +1,9 @@
-import { createSlice, type PayloadAction, isRejectedWithValue } from '@reduxjs/toolkit';
+import {
+  createSlice,
+  type PayloadAction,
+  isRejectedWithValue,
+  miniSerializeError,
+} from '@reduxjs/toolkit';
 import { captureException } from '@sentry/electron/renderer';
 import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import type { ChainId } from '@dcl/schemas';
@@ -53,6 +58,7 @@ function buildError(action: any): Deployment['error'] {
     name: error?.name || 'UNKNOWN_ERROR',
     message: translateError(error),
     cause: error?.message,
+    eventId: error?.eventId,
   };
 }
 
@@ -65,7 +71,7 @@ export interface Deployment {
   wallet: string;
   chainId: ChainId;
   status: DeploymentStatus;
-  error?: { name: ErrorName; message: string; cause?: string };
+  error?: { name: ErrorName; message: string; cause?: string; eventId?: string };
   componentsStatus: DeploymentComponentsStatus;
   /** Whether the CLI serving `url` reports progress (`/api/deploy` resource). */
   supportsDeployResource: boolean;
@@ -333,7 +339,7 @@ export const executeDeployment = createAsyncThunk(
     if (!hasValidIdentity || !identity) {
       AuthServerProvider.deactivate();
       const error = new DeploymentError('INVALID_IDENTITY', getInitialDeploymentStatus());
-      captureException(error, {
+      error.eventId = captureException(error, {
         tags: { source: 'deployment', event: 'INVALID_IDENTITY', errorType: 'INVALID_IDENTITY' },
         fingerprint: ['deployment-error', 'INVALID_IDENTITY'],
       });
@@ -374,7 +380,7 @@ export const executeDeployment = createAsyncThunk(
       const finalStatus = deriveOverallStatus(componentsStatus);
       if (finalStatus === 'failed') {
         const error = new DeploymentError('DEPLOYMENT_FAILED', componentsStatus);
-        captureException(error, {
+        error.eventId = captureException(error, {
           tags: {
             source: 'deployment',
             event: 'DEPLOYMENT_FAILED',
@@ -391,7 +397,7 @@ export const executeDeployment = createAsyncThunk(
     } catch (error: any) {
       if (isDeploymentError(error, '*')) {
         if (error.name !== 'DEPLOYMENT_CANCELLED') {
-          captureException(error.error || error, {
+          error.eventId = captureException(error.error || error, {
             tags: {
               source: 'deployment',
               event: error.name,
@@ -410,6 +416,12 @@ export const executeDeployment = createAsyncThunk(
       }
       throw error;
     }
+  },
+  {
+    serializeError: error => ({
+      ...miniSerializeError(error),
+      eventId: (error as DeploymentError).eventId,
+    }),
   },
 );
 

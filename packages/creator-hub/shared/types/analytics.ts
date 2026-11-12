@@ -1,3 +1,5 @@
+import type { FeedbackDelivery, FeedbackSource } from './feedback';
+
 export type Events = {
   'Open Editor': {
     version: string;
@@ -205,4 +207,14 @@ export type Events = {
   'Creator Fund Transaction Viewed': undefined;
   'Creator Fund Banner Clicked': undefined;
   'Creator Fund Banner Dismissed': undefined;
+  'Report Issue Opened': {
+    source: FeedbackSource;
+  };
+  'Report Issue Submitted': {
+    source: FeedbackSource;
+    result: FeedbackDelivery | 'failed';
+  };
+  'Report Issue Help Center Clicked': {
+    source: FeedbackSource;
+  };
 };
