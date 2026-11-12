@@ -6,13 +6,30 @@ import type { AiProvider } from './ai';
  */
 export const AI_SHARING_CONSENT_VERSION = 1;
 
-/** Persisted under `AppSettings.aiDataSharing`. Absent means the user was never asked. */
+/** One wallet's decision. Absent means that wallet was never asked. */
 export interface AiSharingConsent {
   consent: 'granted' | 'denied';
   version: number;
   decidedAt: string;
   // The sharing service has this decision. Until it does, the next sync sends it.
   delivered?: boolean;
+}
+
+/**
+ * `AppSettings.aiDataSharing`: decisions per wallet (lowercase address). Consent belongs to the
+ * account, as the sharing service keeps it, not to the machine: a second wallet signing in on
+ * the same machine has not agreed to anything.
+ */
+export type AiSharingConsentByWallet = Record<string, AiSharingConsent>;
+
+export function consentFor(
+  byWallet: AiSharingConsentByWallet | undefined,
+  address: string | null | undefined,
+): AiSharingConsent | undefined {
+  if (!address || byWallet === undefined || byWallet === null || typeof byWallet !== 'object') {
+    return undefined;
+  }
+  return byWallet[address.toLowerCase()];
 }
 
 /** True only for a yes to the current consent text. */
@@ -23,6 +40,7 @@ export function hasSharingConsent(consent: AiSharingConsent | undefined): boolea
 export const AI_SHARING_LIMITS = {
   promptChars: 16_000,
   responseChars: 32_000,
+  toolNameChars: 120,
   toolDetailChars: 500,
   maxTools: 200,
   recordBytes: 128_000,
@@ -87,6 +105,7 @@ export interface AiTurnRecord {
 /** What Settings shows for a queued record: enough to recognise it, nothing more. */
 export interface AiSharingQueuedItem {
   recordId: string;
+  address: string;
   startedAt: string;
   provider: AiProvider;
   promptPreview: string;

@@ -174,11 +174,11 @@
       },
       "sharing": {
         "card_title": "帮助改进 AI 助手",
-        "card_body": "与 Decentraland 分享你的对话，帮助我们了解创作者如何使用助手并加以改进。发送前，密钥、助记词、邮箱和其他个人信息会在你的电脑上被移除。",
+        "card_body": "与 Decentraland 分享你的对话，帮助我们了解创作者如何使用助手并加以改进。发送前，你的电脑会移除密钥、助记词、邮箱和其他常见个人信息。",
         "signin_body": "登录后即可分享对话，帮助改进助手。",
         "details_toggle": "会分享什么、不会分享什么",
-        "details_shared": "会分享：你输入的内容、助手的回复、它使用的工具、代理和模型，以及每次回复所用的时间。",
-        "details_not_shared": "绝不分享：图片、文件内容、文件路径、场景名称，以及你标记为不分享的对话。",
+        "details_shared": "会分享：你输入的内容、助手的回复、它使用的工具及其文件名和命令、代理和模型，以及每次回复所用的时间。",
+        "details_not_shared": "不会分享：图片、文件内容、你的场景名称，以及你标记为不分享的对话。",
         "details_control": "你可以随时在设置中停止分享或删除所有已分享的内容。已分享的对话最多保留 180 天。",
         "accept": "分享以帮助改进",
         "decline": "不用了",
@@ -187,7 +187,8 @@
         "chip_excluded": "此对话不分享",
         "menu_exclude": "不分享此对话",
         "menu_include": "分享此对话",
-        "menu_stop": "停止分享所有对话"
+        "menu_stop": "停止分享所有对话",
+        "chip_menu": "分享选项"
       }
     },
     "publish": {
@@ -683,14 +684,23 @@
         },
         "ai_sharing": {
           "label": "分享对话以改进 Creator Hub",
-          "description": "将你向助手提出的问题及其回复发送给 Decentraland，发送前会先在你的电脑上移除密钥和个人信息。最多保留 180 天。",
+          "description": "将你向助手提出的问题及其回复发送给 Decentraland，发送前会先在你的电脑上移除密钥和常见个人信息。最多保留 180 天。",
           "signin": "登录后即可分享对话。",
           "queued_title": "等待上传（{count}）",
           "queued_empty": "没有等待上传的内容。",
           "delete": "删除我分享的所有内容",
           "deleting": "正在删除…",
-          "deleted": "已删除 {count} 条分享的对话。分享已关闭。",
-          "delete_failed": "无法删除你分享的对话。请检查网络后重试。"
+          "deleted": "已删除 {count} 条分享的对话轮次。分享已关闭。",
+          "delete_failed": "无法删除你分享的对话。请检查网络后重试。",
+          "viewer_show": "查看我分享的内容",
+          "viewer_hide": "隐藏我分享的内容",
+          "viewer_empty": "还没有分享任何内容。",
+          "viewer_failed": "无法加载你分享的内容。请检查网络后重试。",
+          "viewer_delete": "删除这一轮",
+          "viewer_more": "显示更多",
+          "delete_confirm": "删除你分享的所有内容并停止分享？此操作无法撤销。",
+          "delete_confirm_yes": "全部删除",
+          "delete_cancel": "取消"
         }
       },
       "actions": {

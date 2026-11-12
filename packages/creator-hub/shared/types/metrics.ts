@@ -15,8 +15,8 @@ export type MetricsRequest = {
   path: string;
   /** ADR-44 signed-fetch headers built by the renderer. */
   headers?: Record<string, string>;
-  /** Defaults to `POST`. A `GET` sends no body; the others send one as JSON when given. */
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  /** Defaults to `POST`. A `GET` sends no body; `POST` and `PUT` send it as JSON. */
+  method?: 'GET' | 'POST' | 'PUT';
   /** Serialized as JSON. Outside the signature — the payload covers the pathname only. */
   body?: unknown;
   /** An already-serialized JSON body, sent byte for byte; wins over `body`. For a body whose hash is signed. */
@@ -29,4 +29,11 @@ export type MetricsResponse<T = unknown> =
    * Failures come back as values rather than thrown errors: an unauthorized or
    * not-yet-deployed endpoint is an expected state the UI renders, not a crash.
    */
-  | { ok: false; status: number; error: string; body?: unknown };
+  | {
+      ok: false;
+      status: number;
+      error: string;
+      body?: unknown;
+      /** The response's `Retry-After`, in seconds, when it sent one. */
+      retryAfterSeconds?: number;
+    };

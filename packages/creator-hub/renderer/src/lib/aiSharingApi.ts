@@ -4,6 +4,7 @@ import type { MetricsResponse } from '/shared/types/metrics';
 import { metrics } from '#preload';
 import { config } from '/@/config';
 
+import { AuthServerProvider } from './auth';
 import { buildSignedHeaders } from './metricsApi';
 
 /**
@@ -31,6 +32,14 @@ export type AiSharingConsentState = {
   decidedAt: string | null;
 };
 
+/** A shared turn as the service returns it to its own wallet. */
+export type AiSharingStoredTurn = Pick<
+  AiTurnRecord,
+  'recordId' | 'startedAt' | 'agent' | 'prompt' | 'response' | 'outcome'
+>;
+
+export type AiSharingTurnPage = { records: AiSharingStoredTurn[]; next: string | null };
+
 export type AiSharingUploadResult = {
   accepted: number;
   rejected: { recordId: string; reason: string }[];
@@ -41,7 +50,7 @@ async function sha256Hex(text: string) {
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT';
 
 /**
  * The signed metadata the service requires on a write: a fresh `nonce`, which it refuses to
@@ -58,16 +67,28 @@ export async function signedMetadata(
   return metadata;
 }
 
-/** Every call is ADR-44 signed, and requested through main (see `metrics.request`). */
-async function send<T>(method: Method, path: string, body?: unknown): Promise<MetricsResponse<T>> {
+/**
+ * Every call is ADR-44 signed, and requested through main (see `metrics.request`). A call made
+ * for one wallet must not go out signed by another that signed in meanwhile: `wallet` is checked
+ * against the signing account right before signing.
+ */
+async function send<T>(
+  wallet: string,
+  method: Method,
+  path: string,
+  body?: unknown,
+): Promise<MetricsResponse<T>> {
   if (!isConfigured()) return { ok: false, status: 0, error: 'Sharing service not configured' };
+  if (AuthServerProvider.getAccount()?.toLowerCase() !== wallet.toLowerCase()) {
+    return { ok: false, status: 0, error: 'The signed-in account changed' };
+  }
   const rawBody = body === undefined ? undefined : JSON.stringify(body);
   let headers: Record<string, string>;
   try {
     headers = buildSignedHeaders(
       apiUrl(),
       path,
-      method.toLowerCase() as 'get' | 'post' | 'put' | 'delete',
+      method.toLowerCase() as 'get' | 'post' | 'put',
       await signedMetadata(method, rawBody),
     );
   } catch (error: any) {
@@ -76,14 +97,29 @@ async function send<T>(method: Method, path: string, body?: unknown): Promise<Me
   return metrics.request<T>({ baseUrl: apiUrl(), path, method, headers, rawBody });
 }
 
-export const getConsent = () => send<AiSharingConsentState>('GET', '/consent');
+export const getConsent = (wallet: string) =>
+  send<AiSharingConsentState>(wallet, 'GET', '/consent');
 
-export const putConsent = (decision: AiSharingDecision) =>
-  send<AiSharingConsentState>('PUT', '/consent', decision);
+export const putConsent = (wallet: string, decision: AiSharingDecision) =>
+  send<AiSharingConsentState>(wallet, 'PUT', '/consent', decision);
 
-export const uploadTurns = (records: AiTurnRecord[]) =>
-  send<AiSharingUploadResult>('POST', '/turns', { records });
+export const uploadTurns = (wallet: string, records: AiTurnRecord[]) =>
+  send<AiSharingUploadResult>(wallet, 'POST', '/turns', { records });
 
-/** Erases every shared turn of the signer and records the withdrawal, dated `decidedAt`. */
-export const erase = (decidedAt: string) =>
-  send<{ deleted: number }>('POST', '/erase', { decidedAt });
+/** The wallet's own shared turns, newest first. */
+export const listTurns = (wallet: string, cursor: string | null, limit = 10) => {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (cursor !== null) query.set('cursor', cursor);
+  return send<AiSharingTurnPage>(wallet, 'GET', `/turns?${query}`);
+};
+
+/** Erases every shared turn of the wallet and records the withdrawal, dated `decidedAt`. */
+export const eraseAll = (wallet: string, decidedAt: string) =>
+  send<{ deleted: number }>(wallet, 'POST', '/erase', { decidedAt });
+
+/** Erases one shared turn; sharing stays as it is. */
+export const eraseTurn = (wallet: string, recordId: string) =>
+  send<{ deleted: number }>(wallet, 'POST', '/erase', {
+    decidedAt: new Date().toISOString(),
+    recordId,
+  });

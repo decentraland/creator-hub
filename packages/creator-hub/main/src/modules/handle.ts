@@ -5,14 +5,15 @@ import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 import { captureException } from '@sentry/electron/main';
 import { StreamError } from './bin';
 
-const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret/i;
+// `rawBody`/`body` carry request payloads; the AI sharing upload's are conversation records.
+const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret|^(raw)?body$/i;
 
 /**
- * `ai.*` channels carry what the user typed (prompts, `ask_user` answers, the
+ * `ai.*` and `aiSharing.*` channels carry what the user typed (prompts, `ask_user` answers, the
  * sign-in code), the whole conversation (`ai.mirrorPush`) and screenshots. The
  * electron log is attached to bug reports, so for these only the shape is logged.
  */
-const CONTENT_CHANNEL = /^ai\./;
+const CONTENT_CHANNEL = /^ai[.A-Z]/;
 
 const MAX_SHAPE_DEPTH = 3;
 

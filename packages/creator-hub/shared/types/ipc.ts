@@ -216,7 +216,10 @@ export interface Ipc {
   'aiSharing.peek': (address: string, limit: number) => Promise<AiTurnRecord[]>;
   'aiSharing.ack': (recordIds: string[]) => Promise<void>;
   'aiSharing.list': () => Promise<AiSharingQueuedItem[]>;
-  'aiSharing.purge': () => Promise<void>;
+  'aiSharing.purge': (address?: string) => Promise<void>;
+  // The chip's per-conversation switch: an excluded conversation's queued and in-flight turns
+  // are dropped.
+  'aiSharing.setConversationShared': (conversationId: string, shared: boolean) => Promise<void>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (
     path: string,

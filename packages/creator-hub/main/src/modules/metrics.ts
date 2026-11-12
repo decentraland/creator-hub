@@ -17,6 +17,14 @@ const REQUEST_TIMEOUT_MS = 15_000;
  */
 const FORWARDED_HEADER = /^x-identity-(auth-chain-\d+|timestamp|metadata)$/i;
 
+/** `Retry-After` as seconds from now: either form the header allows, or null. */
+export function parseRetryAfter(value: string | null, now = Date.now()): number | null {
+  if (value === null || value.trim() === '') return null;
+  if (/^\d+$/.test(value.trim())) return Number(value.trim());
+  const at = Date.parse(value);
+  return Number.isNaN(at) ? null : Math.max(0, Math.ceil((at - now) / 1000));
+}
+
 /**
  * Main is not a general-purpose fetch proxy for the renderer: it only reaches
  * Decentraland hosts, plus localhost so the service can be run locally.
@@ -79,7 +87,14 @@ export async function request(req: MetricsRequest): Promise<MetricsResponse> {
         body = undefined;
       }
       log.warn(`[metrics] ${url.pathname} status=${response.status} error=${message}`);
-      return { ok: false, status: response.status, error: message, body };
+      const retryAfterSeconds = parseRetryAfter(response.headers?.get('retry-after') ?? null);
+      return {
+        ok: false,
+        status: response.status,
+        error: message,
+        body,
+        ...(retryAfterSeconds !== null ? { retryAfterSeconds } : {}),
+      };
     }
 
     return { ok: true, status: response.status, data: text ? JSON.parse(text) : null };

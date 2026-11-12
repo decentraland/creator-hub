@@ -3,11 +3,13 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { AiSharingView } from '/shared/types/ai';
 import {
   AI_SHARING_CONSENT_VERSION,
+  consentFor,
   hasSharingConsent,
   type AiSharingConsent,
   type AiSharingQueuedItem,
   type AiTurnRecord,
 } from '/shared/types/ai-sharing';
+import type { MetricsResponse } from '/shared/types/metrics';
 
 import { aiSharing } from '#preload';
 import { AuthServerProvider } from '/@/lib/auth';
@@ -21,7 +23,14 @@ import type { AppDispatch, AppState } from '/@/modules/store';
 const MIN_BACKOFF_MS = 60_000;
 const MAX_BACKOFF_MS = 60 * 60_000;
 
-export type DeleteStatus = 'idle' | 'deleting' | 'deleted' | 'failed';
+export type DeleteStatus = 'idle' | 'confirming' | 'deleting' | 'deleted' | 'failed';
+
+export interface SharedTurnsState {
+  status: 'idle' | 'loading' | 'loaded' | 'failed';
+  turns: api.AiSharingStoredTurn[];
+  next: string | null;
+  erasing: string[];
+}
 
 export interface AiSharingState {
   /** The consent card's "Not now", for this app run only. */
@@ -29,12 +38,17 @@ export interface AiSharingState {
   queued: AiSharingQueuedItem[];
   deleteStatus: DeleteStatus;
   deletedCount: number | null;
-  /** The server agreed with our consent this run, so uploads may start. */
-  serverConsentSynced: boolean;
+  /** The wallet whose consent this run has settled with the service, so uploads may start. */
+  syncedWallet: string | null;
   failures: number;
   nextUploadAt: number;
-  /** The service has a newer consent text than this app shows; sharing is off until an update. */
-  outdated: boolean;
+  /**
+   * The service's consent version differs from the text this app shows (newer, or not yet
+   * rolled out). No grant from this app can be accepted, so it stops offering sharing.
+   */
+  versionMismatch: boolean;
+  /** What the signed-in wallet has shared, as the service holds it (Settings). */
+  shared: SharedTurnsState;
 }
 
 const initialState: AiSharingState = {
@@ -42,25 +56,42 @@ const initialState: AiSharingState = {
   queued: [],
   deleteStatus: 'idle',
   deletedCount: null,
-  serverConsentSynced: false,
+  syncedWallet: null,
   failures: 0,
   nextUploadAt: 0,
-  outdated: false,
+  versionMismatch: false,
+  shared: { status: 'idle', turns: [], next: null, erasing: [] },
 };
 
+/** The signed-in wallet, lowercase, or null when signed out. */
+export const currentWallet = (): string | null =>
+  AuthServerProvider.getAccount()?.toLowerCase() ?? null;
+
+/** Sharing can be offered and turns uploaded: the flag is on, the service exists and agrees. */
 export const isSharingFeatureOn = (state: AppState): boolean =>
   state.featureFlags.flags[FeatureFlag.AI_PROMPT_SHARING] === true &&
   api.isConfigured() &&
-  !state.aiSharing.outdated;
+  !state.aiSharing.versionMismatch;
 
-export const selectSharingConsent = (state: AppState): AiSharingConsent | undefined =>
-  state.workspace.settings?.aiDataSharing;
+/** The decision of `wallet` (the signed-in one by default). Consent belongs to the account. */
+export const selectSharingConsent = (
+  state: AppState,
+  wallet: string | null = currentWallet(),
+): AiSharingConsent | undefined => consentFor(state.workspace.settings?.aiDataSharing, wallet);
+
+/**
+ * Whether Settings shows the sharing controls: wherever sharing is offered, and wherever this
+ * wallet has a decision stored, so withdrawing and erasing stay possible after the flag is
+ * turned off or the consent text moves on.
+ */
+export const canManageSharing = (state: AppState, wallet: string | null): boolean =>
+  isSharingFeatureOn(state) ||
+  (api.isConfigured() && selectSharingConsent(state, wallet) !== undefined);
 
 /** Whether a turn sent now should be shared: feature on, consent current, signed in, not excluded. */
 export function shouldShareTurn(state: AppState): boolean {
   if (!isSharingFeatureOn(state)) return false;
   if (!hasSharingConsent(selectSharingConsent(state))) return false;
-  if (!AuthServerProvider.getAccount()) return false;
   const session = state.ai.sessions.find(s => s.id === state.ai.currentSessionId);
   return session?.shareExcluded !== true;
 }
@@ -70,20 +101,20 @@ export function shouldShareTurn(state: AppState): boolean {
  * happened gets reflexive "no"s), and comes back after a consent version bump only for those
  * who had said yes.
  */
-export function selectSharingView(state: AppState, isSignedIn: boolean): AiSharingView {
+export function selectSharingView(state: AppState, wallet: string | null): AiSharingView {
   const session = state.ai.sessions.find(s => s.id === state.ai.currentSessionId);
   const conversationExcluded = session?.shareExcluded === true;
   if (!isSharingFeatureOn(state)) return { status: 'hidden', conversationExcluded };
-  const consent = selectSharingConsent(state);
+  const consent = selectSharingConsent(state, wallet);
   if (hasSharingConsent(consent)) return { status: 'on', conversationExcluded };
-  const neverAsked =
+  const notAskedYet =
     consent === undefined ||
     (consent.consent === 'granted' && consent.version < AI_SHARING_CONSENT_VERSION);
   const hasReply = state.ai.messages.some(m => m.role === 'assistant' && m.done && !m.error);
-  if (!neverAsked || state.aiSharing.notNow || !hasReply) {
+  if (!notAskedYet || state.aiSharing.notNow || !hasReply) {
     return { status: 'hidden', conversationExcluded };
   }
-  return { status: isSignedIn ? 'ask' : 'signin', conversationExcluded };
+  return { status: wallet !== null ? 'ask' : 'signin', conversationExcluded };
 }
 
 export const refreshQueue = createAsyncThunk('aiSharing/refreshQueue', () => aiSharing.list());
@@ -91,10 +122,16 @@ export const refreshQueue = createAsyncThunk('aiSharing/refreshQueue', () => aiS
 async function saveConsent(
   getState: () => AppState,
   dispatch: AppDispatch,
+  wallet: string,
   consent: AiSharingConsent,
 ): Promise<void> {
   const settings = getState().workspace.settings;
-  await dispatch(workspaceActions.updateSettings({ ...settings, aiDataSharing: consent }));
+  await dispatch(
+    workspaceActions.updateSettings({
+      ...settings,
+      aiDataSharing: { ...settings.aiDataSharing, [wallet]: consent },
+    }),
+  );
 }
 
 const toServerDecision = (consent: AiSharingConsent): api.AiSharingDecision => ({
@@ -103,41 +140,37 @@ const toServerDecision = (consent: AiSharingConsent): api.AiSharingDecision => (
   decidedAt: consent.decidedAt,
 });
 
-/** The service's `currentVersion` from a 403/409 body, when it sent one. */
-function serverVersion(response: { ok: false; body?: unknown }): number | null {
-  const version = (response.body as { currentVersion?: unknown } | undefined)?.currentVersion;
-  return typeof version === 'number' ? version : null;
-}
-
 /**
- * The service has a newer consent text than this Creator Hub can show: stop offering sharing
- * and stop uploading, since no grant this version makes can be accepted. Returns whether it is.
+ * The service names a consent version other than this app's in a 403 or 409: newer than the text
+ * this app can show, or one it hasn't rolled out yet. Either way no grant from here can be
+ * accepted, so stop offering sharing. Returns whether that is the case.
  */
-function checkOutdated(dispatch: AppDispatch, response: { ok: false; body?: unknown }): boolean {
-  const version = serverVersion(response);
-  if (version === null || version <= AI_SHARING_CONSENT_VERSION) return false;
-  dispatch(actions.setOutdated());
+function checkVersionMismatch(dispatch: AppDispatch, response: { body?: unknown }): boolean {
+  const version = (response.body as { currentVersion?: unknown } | undefined)?.currentVersion;
+  if (typeof version !== 'number' || version === AI_SHARING_CONSENT_VERSION) return false;
+  dispatch(actions.setVersionMismatch());
   return true;
 }
 
-/** Takes the service's latest decision as this machine's, emptying the queue on a "no". */
+/** Takes the service's latest decision as this wallet's, emptying its queue on a "no". */
 async function adoptRemote(
   getState: () => AppState,
   dispatch: AppDispatch,
+  wallet: string,
   remote: api.AiSharingConsentState,
 ): Promise<void> {
   if (remote.decidedAt === null || remote.version === null) return;
-  await saveConsent(getState, dispatch, {
+  await saveConsent(getState, dispatch, wallet, {
     consent: remote.granted ? 'granted' : 'denied',
     version: remote.version,
     decidedAt: remote.decidedAt,
     delivered: true,
   });
-  if (!remote.granted) await aiSharing.purge();
+  if (!remote.granted) await aiSharing.purge(wallet);
 }
 
 /**
- * Sends this machine's decision. The service orders decisions by when it receives them, so the
+ * Sends this wallet's decision. The service orders decisions by when it receives them, so the
  * creator's latest click wins; it refuses (409) a grant older than a withdrawal it already holds,
  * which is an offline machine delivering a stale "yes" after the creator said no elsewhere. Then
  * the withdrawal stands here too. Returns whether the service now holds a decision for us.
@@ -145,71 +178,105 @@ async function adoptRemote(
 async function deliver(
   getState: () => AppState,
   dispatch: AppDispatch,
+  wallet: string,
   consent: AiSharingConsent,
 ): Promise<boolean> {
-  const response = await api.putConsent(toServerDecision(consent));
+  const response = await api.putConsent(wallet, toServerDecision(consent));
   if (response.ok) {
-    await saveConsent(getState, dispatch, { ...consent, delivered: true });
+    await saveConsent(getState, dispatch, wallet, { ...consent, delivered: true });
     return true;
   }
   if (response.status === 409) {
-    if (checkOutdated(dispatch, response)) return false;
-    const remote = await api.getConsent();
+    if (checkVersionMismatch(dispatch, response)) return false;
+    const remote = await api.getConsent(wallet);
     if (!remote.ok) return false;
-    await adoptRemote(getState, dispatch, remote.data);
+    await adoptRemote(getState, dispatch, wallet, remote.data);
     return true;
   }
   return false;
 }
 
-/** The user's answer on the card or the Settings switch. A "no" also empties the local queue. */
+/** The answer on the card or the Settings switch, for the signed-in wallet. */
 export const decide = createAsyncThunk(
   'aiSharing/decide',
   async (granted: boolean, { getState, dispatch }) => {
+    const wallet = currentWallet();
+    if (wallet === null) return;
     const consent: AiSharingConsent = {
       consent: granted ? 'granted' : 'denied',
       version: AI_SHARING_CONSENT_VERSION,
       decidedAt: new Date().toISOString(),
       delivered: false,
     };
-    await saveConsent(getState, dispatch, consent);
-    if (!granted) await aiSharing.purge();
+    // Saved before anything else: main reads it when a running turn ends.
+    await saveConsent(getState, dispatch, wallet, consent);
+    if (!granted) await aiSharing.purge(wallet);
     // If this fails, the decision stays undelivered and the uploader's sync sends it.
-    if (AuthServerProvider.getAccount()) {
-      dispatch(actions.setServerConsentSynced(await deliver(getState, dispatch, consent)));
-    }
+    const delivered = await deliver(getState, dispatch, wallet, consent);
+    dispatch(actions.setSyncedWallet(delivered ? wallet : null));
     await dispatch(refreshQueue());
   },
 );
 
 /**
- * "Delete everything I've shared": the service erases the records and records the withdrawal in
- * one request, dated by this machine's clock like every other decision; then the local queue.
+ * "Delete everything I've shared": sharing stops first (main reads the saved "no" when a running
+ * turn ends), then the local queue goes, then the service erases the records and records the
+ * withdrawal in one request, dated by this machine's clock like every other decision.
  */
 export const deleteEverything = createAsyncThunk(
   'aiSharing/deleteEverything',
   async (_: void, { getState, dispatch, rejectWithValue }) => {
-    const decidedAt = new Date().toISOString();
-    const response = await api.erase(decidedAt);
-    if (!response.ok) return rejectWithValue(response.error);
-    await aiSharing.purge();
-    await saveConsent(getState, dispatch, {
+    const wallet = currentWallet();
+    if (wallet === null) return rejectWithValue('Signed out');
+    const withdrawal: AiSharingConsent = {
       consent: 'denied',
       version: AI_SHARING_CONSENT_VERSION,
-      decidedAt,
-      delivered: true,
-    });
-    dispatch(actions.setServerConsentSynced(true));
+      decidedAt: new Date().toISOString(),
+      delivered: false,
+    };
+    await saveConsent(getState, dispatch, wallet, withdrawal);
+    await aiSharing.purge(wallet);
     await dispatch(refreshQueue());
+    const response = await api.eraseAll(wallet, withdrawal.decidedAt);
+    if (!response.ok) return rejectWithValue(response.error);
+    await saveConsent(getState, dispatch, wallet, { ...withdrawal, delivered: true });
+    dispatch(actions.setSyncedWallet(wallet));
+    dispatch(actions.clearSharedTurns());
     return response.data.deleted;
+  },
+);
+
+/** The next page of what the signed-in wallet has shared, or the first with `reset`. */
+export const loadSharedTurns = createAsyncThunk(
+  'aiSharing/loadSharedTurns',
+  async ({ reset }: { reset: boolean }, { getState, rejectWithValue }) => {
+    const wallet = currentWallet();
+    if (wallet === null) return rejectWithValue('Signed out');
+    const cursor = reset ? null : getState().aiSharing.shared.next;
+    const response = await api.listTurns(wallet, cursor);
+    if (!response.ok) return rejectWithValue(response.error);
+    return { ...response.data, reset };
+  },
+);
+
+/** Erases one shared turn; sharing stays on. */
+export const eraseSharedTurn = createAsyncThunk(
+  'aiSharing/eraseSharedTurn',
+  async (recordId: string, { rejectWithValue }) => {
+    const wallet = currentWallet();
+    if (wallet === null) return rejectWithValue('Signed out');
+    const response = await api.eraseTurn(wallet, recordId);
+    if (!response.ok) return rejectWithValue(response.error);
+    return recordId;
   },
 );
 
 let flushing = false;
 
 /**
- * Uploads what main queued for the signed-in account, a batch at a time. Records for another
- * account stay queued until it signs in again (main drops them after 7 days).
+ * Settles consent with the service and uploads what main queued for the signed-in wallet, a
+ * batch at a time. Records for another wallet stay queued until it signs in again (main drops
+ * them after 7 days).
  */
 export const flush = createAsyncThunk(
   'aiSharing/flush',
@@ -226,15 +293,19 @@ export const flush = createAsyncThunk(
 );
 
 /**
- * Makes this machine and the service agree, once per run and account. A decision made here that
- * never reached the service is sent, keeping its original time. Otherwise the service's latest
- * decision is the creator's latest anywhere (another machine's withdrawal, say) and is adopted.
- * Returns whether they now agree.
+ * Makes this machine and the service agree on the wallet's decision, once per run and wallet. A
+ * decision made here that never reached the service is sent, keeping its original time; so is
+ * one the service has lost (a restore). Otherwise the service's latest decision is the creator's
+ * latest anywhere (another machine's withdrawal, say) and is adopted. Returns whether they agree.
  */
-async function syncConsent(getState: () => AppState, dispatch: AppDispatch): Promise<boolean> {
-  const local = selectSharingConsent(getState());
+async function syncConsent(
+  getState: () => AppState,
+  dispatch: AppDispatch,
+  wallet: string,
+): Promise<boolean> {
+  const local = selectSharingConsent(getState(), wallet);
   if (local === undefined) return false;
-  const remote = await api.getConsent();
+  const remote = await api.getConsent(wallet);
   if (!remote.ok) return false;
 
   const sameAsRemote =
@@ -243,16 +314,15 @@ async function syncConsent(getState: () => AppState, dispatch: AppDispatch): Pro
     remote.data.version === local.version;
   let agreed = true;
   if (sameAsRemote) {
-    if (local.delivered !== true)
-      await saveConsent(getState, dispatch, { ...local, delivered: true });
+    if (local.delivered !== true) {
+      await saveConsent(getState, dispatch, wallet, { ...local, delivered: true });
+    }
   } else if (local.delivered !== true || remote.data.decidedAt === null) {
-    // Ours never arrived, or the service has none (a restore lost it): ours is still the
-    // creator's latest decision.
-    agreed = await deliver(getState, dispatch, local);
+    agreed = await deliver(getState, dispatch, wallet, local);
   } else {
-    await adoptRemote(getState, dispatch, remote.data);
+    await adoptRemote(getState, dispatch, wallet, remote.data);
   }
-  if (agreed) dispatch(actions.setServerConsentSynced(true));
+  if (agreed) dispatch(actions.setSyncedWallet(wallet));
   return agreed;
 }
 
@@ -271,46 +341,70 @@ function nextBatch(records: AiTurnRecord[], maxRecords: number): AiTurnRecord[] 
 
 const UPLOAD_ENVELOPE_BYTES = '{"records":[]}'.length;
 
-async function flushQueue(getState: () => AppState, dispatch: AppDispatch): Promise<void> {
-  const state = getState();
-  const address = AuthServerProvider.getAccount();
-  if (!isSharingFeatureOn(state) || !address) return;
-  if (selectSharingConsent(state) === undefined) return;
-  if (Date.now() < state.aiSharing.nextUploadAt) return;
+// Rejections that say nothing about the record itself: keep it and try again later.
+const RETRYABLE_REJECTIONS = new Set(['address_mismatch']);
 
-  // Runs for a "no" too, so a withdrawal that failed to reach the server gets there.
-  if (!state.aiSharing.serverConsentSynced && !(await syncConsent(getState, dispatch))) {
-    if (!getState().aiSharing.serverConsentSynced) dispatch(actions.uploadFailed());
-    await dispatch(refreshQueue());
-    return;
+/** Whether uploading for `wallet` may continue: still signed in as it, still sharing. */
+function mayUpload(state: AppState, wallet: string): boolean {
+  return (
+    currentWallet() === wallet &&
+    isSharingFeatureOn(state) &&
+    hasSharingConsent(selectSharingConsent(state, wallet))
+  );
+}
+
+function backOff(dispatch: AppDispatch, response?: MetricsResponse<unknown>): void {
+  const retryAfterSeconds =
+    response !== undefined && !response.ok ? response.retryAfterSeconds : undefined;
+  dispatch(actions.uploadFailed({ retryAfterSeconds }));
+}
+
+async function flushQueue(getState: () => AppState, dispatch: AppDispatch): Promise<void> {
+  const wallet = currentWallet();
+  if (!api.isConfigured() || wallet === null) return;
+  const consent = selectSharingConsent(getState(), wallet);
+  if (consent === undefined) return;
+  if (Date.now() < getState().aiSharing.nextUploadAt) return;
+  // A grant the service can't accept (consent text mismatch) isn't sent; a withdrawal always is.
+  if (getState().aiSharing.versionMismatch && consent.consent === 'granted') return;
+
+  if (getState().aiSharing.syncedWallet !== wallet) {
+    if (!(await syncConsent(getState, dispatch, wallet))) {
+      if (!getState().aiSharing.versionMismatch) backOff(dispatch);
+      await dispatch(refreshQueue());
+      return;
+    }
   }
-  if (!hasSharingConsent(selectSharingConsent(getState()))) return;
 
   // Lowered when the service still finds a batch too large (a proxy in front of it with a
   // smaller cap, say), so the next try sends fewer records.
   let maxRecords: number = api.MAX_RECORDS_PER_UPLOAD;
-  for (;;) {
-    const queued = await aiSharing.peek(address, api.MAX_RECORDS_PER_UPLOAD);
+  // Checked before every batch: consent, the account or the flag can change mid-upload.
+  while (mayUpload(getState(), wallet)) {
+    const queued = await aiSharing.peek(wallet, api.MAX_RECORDS_PER_UPLOAD);
     if (queued.length === 0) break;
     const batch = nextBatch(queued, maxRecords);
-    const ids = batch.map(r => r.recordId);
-    const response = await api.uploadTurns(batch);
+    const response = await api.uploadTurns(wallet, batch);
 
     if (response.ok) {
-      // Rejected records failed validation and would fail again, so they leave the queue too.
+      const kept = new Set(
+        response.data.rejected.filter(r => RETRYABLE_REJECTIONS.has(r.reason)).map(r => r.recordId),
+      );
       if (response.data.rejected.length > 0) {
+        // Ids and reason codes only, never content.
         console.warn('[AI sharing] the service rejected records', response.data.rejected);
       }
-      await aiSharing.ack(ids);
+      await aiSharing.ack(batch.map(r => r.recordId).filter(id => !kept.has(id)));
       dispatch(actions.uploadSucceeded());
+      if (kept.size > 0) break;
       continue;
     }
+    if (response.status === 0 && currentWallet() !== wallet) break;
     if (response.status === 403) {
-      // The server holds no current consent for this account: decided otherwise elsewhere, or
-      // the consent text changed. Stop, and let the next sync settle whose decision stands.
-      if (checkOutdated(dispatch, response)) break;
-      dispatch(actions.setServerConsentSynced(false));
-      dispatch(actions.uploadFailed());
+      // No current consent for this wallet on the service: the consent text moved, or a
+      // decision was made elsewhere. Stop, and let the next sync settle which decision stands.
+      if (!checkVersionMismatch(dispatch, response)) dispatch(actions.setSyncedWallet(null));
+      backOff(dispatch, response);
       break;
     }
     if (response.status === 413) {
@@ -318,20 +412,17 @@ async function flushQueue(getState: () => AppState, dispatch: AppDispatch): Prom
         maxRecords = Math.ceil(batch.length / 2);
         continue;
       }
-      console.warn('[AI sharing] dropped a record larger than the service accepts', ids);
-      await aiSharing.ack(ids);
+      // Can't happen within the 128 KB record cap; if it does, the record can never upload.
+      console.warn('[AI sharing] dropped a record larger than the service accepts', [
+        batch[0].recordId,
+      ]);
+      await aiSharing.ack([batch[0].recordId]);
       continue;
     }
-    if (response.status === 400) {
-      // The request itself is malformed; sending it again can't help, and it would block the
-      // queue. Ids only, never content.
-      console.warn('[AI sharing] dropped records the service could not read', ids);
-      await aiSharing.ack(ids);
-      continue;
-    }
-    // Network errors, 401 (clock skew, expired identity), 429, 503 (writes off) and 5xx are
-    // passing conditions: keep the records and try later.
-    dispatch(actions.uploadFailed());
+    // 400 (a malformed request: a client or signing bug, not the records), 401 (clock skew,
+    // expired identity), 429, 503 (writes off), 5xx and network errors keep the records: they
+    // are retried later and, at worst, expire from the queue after 7 days.
+    backOff(dispatch, response);
     break;
   }
   await dispatch(refreshQueue());
@@ -344,24 +435,31 @@ const slice = createSlice({
     notNow: state => {
       state.notNow = true;
     },
-    setOutdated: state => {
-      state.outdated = true;
+    setVersionMismatch: state => {
+      state.versionMismatch = true;
     },
-    setServerConsentSynced: (state, { payload }: PayloadAction<boolean>) => {
-      state.serverConsentSynced = payload;
+    setSyncedWallet: (state, { payload }: PayloadAction<string | null>) => {
+      state.syncedWallet = payload;
     },
     uploadSucceeded: state => {
       state.failures = 0;
       state.nextUploadAt = 0;
     },
-    uploadFailed: state => {
+    uploadFailed: (state, { payload }: PayloadAction<{ retryAfterSeconds?: number }>) => {
       state.failures += 1;
-      const wait = Math.min(MIN_BACKOFF_MS * 2 ** (state.failures - 1), MAX_BACKOFF_MS);
-      state.nextUploadAt = Date.now() + wait;
+      const backoff = Math.min(MIN_BACKOFF_MS * 2 ** (state.failures - 1), MAX_BACKOFF_MS);
+      const asked = (payload.retryAfterSeconds ?? 0) * 1000;
+      state.nextUploadAt = Date.now() + Math.max(backoff, asked);
+    },
+    askDeleteConfirmation: state => {
+      state.deleteStatus = 'confirming';
     },
     resetDelete: state => {
       state.deleteStatus = 'idle';
       state.deletedCount = null;
+    },
+    clearSharedTurns: state => {
+      state.shared = initialState.shared;
     },
   },
   extraReducers: builder => {
@@ -379,6 +477,29 @@ const slice = createSlice({
       })
       .addCase(deleteEverything.rejected, state => {
         state.deleteStatus = 'failed';
+      })
+      .addCase(loadSharedTurns.pending, state => {
+        state.shared.status = 'loading';
+      })
+      .addCase(loadSharedTurns.fulfilled, (state, { payload }) => {
+        state.shared.turns = payload.reset
+          ? payload.records
+          : [...state.shared.turns, ...payload.records];
+        state.shared.next = payload.next;
+        state.shared.status = 'loaded';
+      })
+      .addCase(loadSharedTurns.rejected, state => {
+        state.shared.status = 'failed';
+      })
+      .addCase(eraseSharedTurn.pending, (state, { meta }) => {
+        state.shared.erasing.push(meta.arg);
+      })
+      .addCase(eraseSharedTurn.fulfilled, (state, { payload }) => {
+        state.shared.turns = state.shared.turns.filter(t => t.recordId !== payload);
+        state.shared.erasing = state.shared.erasing.filter(id => id !== payload);
+      })
+      .addCase(eraseSharedTurn.rejected, (state, { meta }) => {
+        state.shared.erasing = state.shared.erasing.filter(id => id !== meta.arg);
       });
   },
 });
@@ -388,6 +509,8 @@ export const actions = {
   refreshQueue,
   decide,
   deleteEverything,
+  loadSharedTurns,
+  eraseSharedTurn,
   flush,
 };
 export const reducer = slice.reducer;

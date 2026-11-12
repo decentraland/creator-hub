@@ -15,6 +15,8 @@ export const OUTBOX_LIMITS = {
 } as const;
 
 const RECORD_FILE = /^[0-9a-f-]{36}\.json$/;
+// Long enough that a write in progress is never taken for a leftover.
+const TEMP_FILE_GRACE_MS = 60_000;
 
 export class Outbox {
   constructor(private readonly dir: string) {}
@@ -55,6 +57,7 @@ export class Outbox {
       return [
         {
           recordId: record.recordId,
+          address: record.address,
           startedAt: record.startedAt,
           provider: record.agent.provider,
           promptPreview: Array.from(record.prompt.text).slice(0, 140).join(''),
@@ -67,12 +70,30 @@ export class Outbox {
     return this.entries().length;
   }
 
-  purge(): void {
-    fs.rmSync(this.dir, { recursive: true, force: true });
+  /** Drops the queued records of one conversation (the creator stopped sharing it). */
+  purgeConversation(conversationId: string): void {
+    for (const entry of this.entries()) {
+      if (this.read(entry.file)?.conversationId === conversationId) {
+        fs.rmSync(entry.file, { force: true });
+      }
+    }
+  }
+
+  /** Drops everything queued, or only one wallet's records when `address` is given. */
+  purge(address?: string): void {
+    if (address === undefined) {
+      fs.rmSync(this.dir, { recursive: true, force: true });
+      return;
+    }
+    const wanted = address.toLowerCase();
+    for (const entry of this.entries()) {
+      if (this.read(entry.file)?.address === wanted) fs.rmSync(entry.file, { force: true });
+    }
   }
 
   /** Drops records past the age limit, then the oldest until the count and size limits hold. */
   prune(now = Date.now()): void {
+    this.removeStaleTempFiles(now);
     let entries = this.entries();
     for (const entry of entries) {
       if (now - entry.mtimeMs > OUTBOX_LIMITS.maxAgeMs) fs.rmSync(entry.file, { force: true });
@@ -86,6 +107,25 @@ export class Outbox {
       const oldest = entries.shift()!;
       fs.rmSync(oldest.file, { force: true });
       total -= oldest.size;
+    }
+  }
+
+  // A crash between write and rename leaves a `.tmp` that no listing sees; it is never renamed.
+  private removeStaleTempFiles(now: number): void {
+    let names: string[];
+    try {
+      names = fs.readdirSync(this.dir);
+    } catch {
+      return;
+    }
+    for (const name of names) {
+      if (!name.endsWith('.json.tmp')) continue;
+      const file = path.join(this.dir, name);
+      try {
+        if (now - fs.statSync(file).mtimeMs > TEMP_FILE_GRACE_MS) fs.rmSync(file, { force: true });
+      } catch {
+        // Gone already.
+      }
     }
   }
 

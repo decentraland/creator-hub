@@ -173,7 +173,10 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   );
   handle('aiSharing.ack', async (_event, ids) => aiSharing.getOutbox().ack(ids));
   handle('aiSharing.list', async () => aiSharing.getOutbox().list());
-  handle('aiSharing.purge', async () => aiSharing.getOutbox().purge());
+  handle('aiSharing.purge', async (_event, address) => aiSharing.getOutbox().purge(address));
+  handle('aiSharing.setConversationShared', async (_event, conversationId, shared) =>
+    aiSharing.setConversationShared(conversationId, shared),
+  );
   handle('ai.reset', async (_event, path) => ai.aiReset(path));
   handle('ai.deleteSession', async (_event, path, sessionId) =>
     ai.aiDeleteSession(path, sessionId),

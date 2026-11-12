@@ -84,8 +84,42 @@ describe('formatArgs', () => {
       expect(line).toBe('args[0]={"a":{"b":{"c":"<object>"}}}');
     });
 
+    it('should hide the arguments of the sharing queue channels too', () => {
+      const line = formatArgs(['0x1234567890abcdef1234567890abcdef12345678', 20], 'aiSharing.peek');
+
+      expect(line).not.toContain('0x1234');
+      expect(line).toContain('"<42 chars>"');
+    });
+
     it('should leave other channels logged in full', () => {
       expect(formatArgs(['scene-1'], 'workspace.getProject')).toBe('args[0]="scene-1"');
+    });
+  });
+
+  describe('when a request carries a body', () => {
+    it('should keep a sharing upload body out of the log', () => {
+      const line = formatArgs(
+        [
+          {
+            baseUrl: 'https://ai-sharing.example.com',
+            path: '/turns',
+            rawBody: '{"records":[{"prompt":{"text":"my private prompt"}}]}',
+          },
+        ],
+        'metrics.request',
+      );
+
+      expect(line).not.toContain('my private prompt');
+      expect(line).toContain('/turns');
+    });
+
+    it('should keep a structured body out of the log', () => {
+      const line = formatArgs(
+        [{ path: '/metrics', body: { secret: 'x', note: 'hello' } }],
+        'metrics.request',
+      );
+
+      expect(line).not.toContain('hello');
     });
   });
 

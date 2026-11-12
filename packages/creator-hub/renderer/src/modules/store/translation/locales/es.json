@@ -174,11 +174,11 @@
       },
       "sharing": {
         "card_title": "Ayúdanos a mejorar el asistente de IA",
-        "card_body": "Comparte tus conversaciones con Decentraland para que podamos entender cómo usan el asistente los creadores y mejorarlo. Las claves, frases semilla, correos y otros datos personales se eliminan en tu computadora antes de enviar nada.",
+        "card_body": "Comparte tus conversaciones con Decentraland para que podamos entender cómo usan el asistente los creadores y mejorarlo. Antes de enviar nada, tu computadora quita claves, frases semilla, correos y otros datos personales comunes.",
         "signin_body": "Inicia sesión para compartir tus conversaciones y ayudar a mejorar el asistente.",
         "details_toggle": "Qué se comparte y qué no",
-        "details_shared": "Se comparte: lo que escribes, las respuestas del asistente, las herramientas que usó, el agente y el modelo, y cuánto tardó cada respuesta.",
-        "details_not_shared": "Nunca se comparte: imágenes, contenido de archivos, rutas de archivos, nombres de escenas ni las conversaciones que marques como no compartidas.",
+        "details_shared": "Se comparte: lo que escribes, las respuestas del asistente, las herramientas que usó con sus nombres de archivo y comandos, el agente y el modelo, y cuánto tardó cada respuesta.",
+        "details_not_shared": "No se comparte: imágenes, contenido de archivos, el nombre de tu escena ni las conversaciones que marques como no compartidas.",
         "details_control": "Puedes dejar de compartir o borrar todo lo compartido en cualquier momento desde Configuración. Las conversaciones compartidas se guardan hasta 180 días.",
         "accept": "Compartir para ayudar",
         "decline": "No, gracias",
@@ -187,7 +187,8 @@
         "chip_excluded": "Este chat no se comparte",
         "menu_exclude": "No compartir esta conversación",
         "menu_include": "Compartir esta conversación",
-        "menu_stop": "Dejar de compartir todas las conversaciones"
+        "menu_stop": "Dejar de compartir todas las conversaciones",
+        "chip_menu": "opciones para compartir"
       }
     },
     "publish": {
@@ -683,14 +684,23 @@
         },
         "ai_sharing": {
           "label": "Compartir conversaciones para mejorar Creator Hub",
-          "description": "Envía a Decentraland lo que le pides al asistente y sus respuestas, después de quitar claves y datos personales en tu computadora. Se guardan hasta 180 días.",
+          "description": "Envía a Decentraland lo que le pides al asistente y sus respuestas, después de quitar claves y datos personales comunes en tu computadora. Se guardan hasta 180 días.",
           "signin": "Inicia sesión para compartir conversaciones.",
           "queued_title": "Pendientes de enviar ({count})",
           "queued_empty": "No hay nada pendiente de enviar.",
           "delete": "Borrar todo lo que compartí",
           "deleting": "Borrando…",
-          "deleted": "Se borraron {count} conversaciones compartidas. Ya no se comparte.",
-          "delete_failed": "No se pudieron borrar tus conversaciones compartidas. Revisa tu conexión e inténtalo de nuevo."
+          "deleted": "Se borraron {count} turnos compartidos. Ya no se comparte.",
+          "delete_failed": "No se pudieron borrar tus conversaciones compartidas. Revisa tu conexión e inténtalo de nuevo.",
+          "viewer_show": "Ver lo que compartí",
+          "viewer_hide": "Ocultar lo que compartí",
+          "viewer_empty": "Todavía no compartiste nada.",
+          "viewer_failed": "No se pudo cargar lo que compartiste. Revisa tu conexión e inténtalo de nuevo.",
+          "viewer_delete": "Borrar este turno",
+          "viewer_more": "Ver más",
+          "delete_confirm": "¿Borrar todo lo que compartiste y dejar de compartir? No se puede deshacer.",
+          "delete_confirm_yes": "Borrar todo",
+          "delete_cancel": "Cancelar"
         }
       },
       "actions": {

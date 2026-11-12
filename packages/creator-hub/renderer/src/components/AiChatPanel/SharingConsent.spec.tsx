@@ -82,7 +82,7 @@ describe('when the creator has not been asked yet', () => {
   it('should not show the sharing chip', () => {
     renderBoth(view);
 
-    expect(screen.queryByRole('button', { name: copy.chip })).toBeNull();
+    expect(screen.queryByRole('button', { name: `${copy.chip}: ${copy.chip_menu}` })).toBeNull();
   });
 });
 
@@ -99,13 +99,13 @@ describe('when sharing is on', () => {
   it('should show the chip and no card', () => {
     renderBoth({ status: 'on', conversationExcluded: false });
 
-    expect(screen.getByRole('button', { name: copy.chip })).toBeTruthy();
+    expect(screen.getByRole('button', { name: `${copy.chip}: ${copy.chip_menu}` })).toBeTruthy();
     expect(screen.queryByRole('button', { name: copy.accept })).toBeNull();
   });
 
   it('should let the creator stop sharing this conversation', () => {
     const { onSetConversationShared } = renderBoth({ status: 'on', conversationExcluded: false });
-    fireEvent.click(screen.getByRole('button', { name: copy.chip }));
+    fireEvent.click(screen.getByRole('button', { name: `${copy.chip}: ${copy.chip_menu}` }));
     fireEvent.click(screen.getByRole('menuitem', { name: copy.menu_exclude }));
 
     expect(onSetConversationShared).toHaveBeenCalledWith(false);
@@ -113,7 +113,9 @@ describe('when sharing is on', () => {
 
   it('should let the creator share an excluded conversation again', () => {
     const { onSetConversationShared } = renderBoth({ status: 'on', conversationExcluded: true });
-    fireEvent.click(screen.getByRole('button', { name: copy.chip_excluded }));
+    fireEvent.click(
+      screen.getByRole('button', { name: `${copy.chip_excluded}: ${copy.chip_menu}` }),
+    );
     fireEvent.click(screen.getByRole('menuitem', { name: copy.menu_include }));
 
     expect(onSetConversationShared).toHaveBeenCalledWith(true);
@@ -121,7 +123,7 @@ describe('when sharing is on', () => {
 
   it('should let the creator stop sharing altogether', () => {
     const { onShareDecision } = renderBoth({ status: 'on', conversationExcluded: false });
-    fireEvent.click(screen.getByRole('button', { name: copy.chip }));
+    fireEvent.click(screen.getByRole('button', { name: `${copy.chip}: ${copy.chip_menu}` }));
     fireEvent.click(screen.getByRole('menuitem', { name: copy.menu_stop }));
 
     expect(onShareDecision).toHaveBeenCalledWith(false);

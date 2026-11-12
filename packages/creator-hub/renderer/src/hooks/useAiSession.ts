@@ -31,8 +31,11 @@ export function useAiSession(
   const aiState = useSelector(state => state.ai);
   const projectTitle = useSelector(state => state.editor.project?.title);
   const locale = useSelector(state => state.translation.locale);
-  const { isSignedIn } = useAuth();
-  const sharing = useSelector(state => selectSharingView(state, isSignedIn), shallowEqual);
+  const { wallet } = useAuth();
+  const sharing = useSelector(
+    state => selectSharingView(state, wallet?.toLowerCase() ?? null),
+    shallowEqual,
+  );
   const [detachedOpen, setDetachedOpen] = useState(false);
   // Latest snapshot + clear callback, read by the (stable) remote-command listener so it
   // doesn't need to re-subscribe on every streamed token / callback identity change.

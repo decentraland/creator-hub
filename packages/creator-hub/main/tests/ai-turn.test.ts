@@ -47,6 +47,7 @@ import log from 'electron-log/main';
 import type { AiEvent, AiSendParams } from '/shared/types/ai';
 import { AI_SHARING_CONSENT_VERSION, type AiTurnRecord } from '/shared/types/ai-sharing';
 import { track } from '../src/modules/analytics';
+import { setConversationShared } from '../src/modules/ai-sharing';
 import { aiBusy, aiSend, aiStop } from '../src/modules/ai';
 
 type FakeChild = EventEmitter & {
@@ -405,6 +406,8 @@ describe('when running AI turns', () => {
 
   describe('and sharing is involved', () => {
     const ADDRESS = '0x1234567890abcdef1234567890abcdef12345678';
+    const grant = { consent: 'granted', version: AI_SHARING_CONSENT_VERSION, decidedAt: 'x' };
+    const settle = () => new Promise(r => setTimeout(r, 0));
     const shared: AiSendParams = {
       provider: 'claude',
       text: 'add a door, key sk-ant-api03-exampleexampleexample00',
@@ -437,9 +440,7 @@ describe('when running AI turns', () => {
 
     beforeEach(() => {
       mocks.userId = ADDRESS;
-      mocks.settings = {
-        aiDataSharing: { consent: 'granted', version: AI_SHARING_CONSENT_VERSION, decidedAt: 'x' },
-      };
+      mocks.settings = { aiDataSharing: { [ADDRESS]: grant } };
     });
 
     afterEach(() => {
@@ -477,13 +478,47 @@ describe('when running AI turns', () => {
 
     it('should record nothing for consent given to an older version of the text', async () => {
       mocks.settings = {
-        aiDataSharing: {
-          consent: 'granted',
-          version: AI_SHARING_CONSENT_VERSION - 1,
-          decidedAt: 'x',
-        },
+        aiDataSharing: { [ADDRESS]: { ...grant, version: AI_SHARING_CONSENT_VERSION - 1 } },
       };
       await runTurn(shared);
+
+      expect(queued()).toEqual([]);
+    });
+
+    it('should record nothing for a wallet that never agreed, though another did here', async () => {
+      mocks.userId = '0x000000000000000000000000000000000000beef';
+      await runTurn(shared);
+
+      expect(queued()).toEqual([]);
+    });
+
+    it('should record nothing when the creator withdraws while the turn runs', async () => {
+      await aiSend(shared, projectDir, () => {});
+      mocks.settings = { aiDataSharing: { [ADDRESS]: { ...grant, consent: 'denied' } } };
+      writeLines(child, assistantText('Added it.'));
+      exitAndClose(child, 0);
+      await settle();
+
+      expect(queued()).toEqual([]);
+    });
+
+    it('should record nothing when the wallet changes while the turn runs', async () => {
+      await aiSend(shared, projectDir, () => {});
+      mocks.userId = '0x000000000000000000000000000000000000beef';
+      writeLines(child, assistantText('Added it.'));
+      exitAndClose(child, 0);
+      await settle();
+
+      expect(queued()).toEqual([]);
+    });
+
+    it('should record nothing when the conversation is excluded while the turn runs', async () => {
+      await aiSend(shared, projectDir, () => {});
+      setConversationShared('s1', false);
+      writeLines(child, assistantText('Added it.'));
+      exitAndClose(child, 0);
+      await settle();
+      setConversationShared('s1', true);
 
       expect(queued()).toEqual([]);
     });
@@ -499,6 +534,7 @@ describe('when running AI turns', () => {
       const events: AiEvent[] = [];
       await aiSend(shared, projectDir, e => events.push(e));
       aiStop();
+      await settle();
 
       expect(events).toContainEqual(expect.objectContaining({ kind: 'done', cancelled: true }));
 

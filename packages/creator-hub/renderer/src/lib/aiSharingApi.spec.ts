@@ -22,10 +22,6 @@ describe('when signing a request for the sharing service', () => {
     expect(second.nonce).not.toBe(first.nonce);
   });
 
-  it('should sign a body-less delete with a nonce and no hash', async () => {
-    expect(Object.keys(await signedMetadata('DELETE', undefined))).toEqual(['nonce']);
-  });
-
   it('should add nothing to a read', async () => {
     expect(await signedMetadata('GET', undefined)).toEqual({});
   });

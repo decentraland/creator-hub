@@ -14,6 +14,13 @@ export async function list(): Promise<AiSharingQueuedItem[]> {
   return invoke('aiSharing.list');
 }
 
-export async function purge(): Promise<void> {
-  return invoke('aiSharing.purge');
+export async function purge(address?: string): Promise<void> {
+  return invoke('aiSharing.purge', address);
+}
+
+export async function setConversationShared(
+  conversationId: string,
+  shared: boolean,
+): Promise<void> {
+  return invoke('aiSharing.setConversationShared', conversationId, shared);
 }

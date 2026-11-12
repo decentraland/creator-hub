@@ -1,10 +1,18 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn() } }));
+vi.mock('../src/modules/electron', () => ({
+  getUserDataPath: () => os.tmpdir(),
+  getAppVersion: async () => '1.0.0',
+}));
+vi.mock('../src/modules/analytics', () => ({ getUserId: () => null }));
 
 import { AI_SHARING_LIMITS, type AiTurnRecord } from '/shared/types/ai-sharing';
 import { Outbox, OUTBOX_LIMITS } from '../src/modules/ai-sharing/outbox';
+import { setConversationShared, TurnRecorder } from '../src/modules/ai-sharing';
 import {
   buildTurnRecord,
   readTurnInfo,
@@ -269,5 +277,102 @@ describe('when queuing records on disk', () => {
 
     expect(outbox.peek(ADDRESS, 10)).toHaveLength(1);
     expect(outbox.count()).toBe(1);
+  });
+});
+
+describe('when dropping queued records', () => {
+  let dir: string;
+  let outbox: Outbox;
+  const OTHER = '0x000000000000000000000000000000000000beef';
+  const make = (overrides: Partial<TurnCapture> = {}) => buildTurnRecord(capture(overrides), end)!;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-outbox-'));
+    outbox = new Outbox(path.join(dir, 'outbox'));
+  });
+
+  afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  it("should drop only one wallet's records", () => {
+    outbox.enqueue(make());
+    outbox.enqueue(make({ address: OTHER }));
+    outbox.purge(OTHER);
+
+    expect(outbox.list().map(item => item.address)).toEqual([ADDRESS]);
+  });
+
+  it("should drop only one conversation's records", () => {
+    outbox.enqueue(make({ conversationId: 'keep' }));
+    outbox.enqueue(make({ conversationId: 'drop' }));
+    outbox.purgeConversation('drop');
+
+    expect(outbox.count()).toBe(1);
+    expect(outbox.peek(ADDRESS, 10)[0].conversationId).toBe('keep');
+  });
+
+  it('should clean up a temp file a crash left behind, but not one being written', () => {
+    outbox.enqueue(make());
+    const stale = path.join(dir, 'outbox', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.json.tmp');
+    const fresh = path.join(dir, 'outbox', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.json.tmp');
+    fs.writeFileSync(stale, '{');
+    fs.writeFileSync(fresh, '{');
+    const old = new Date(Date.now() - 10 * 60_000);
+    fs.utimesSync(stale, old, old);
+
+    outbox.prune();
+
+    expect(fs.existsSync(stale)).toBe(false);
+    expect(fs.existsSync(fresh)).toBe(true);
+  });
+});
+
+describe('when a turn ends', () => {
+  const start = () =>
+    new TurnRecorder(
+      {
+        address: ADDRESS,
+        conversationId: 'c-end',
+        turnId: 't-end',
+        share: { turnIndex: 0, selectedEntityCount: 0, mentionedAssetCount: 0 },
+        startedAt: Date.now(),
+        provider: 'claude',
+        requestedModel: 'default',
+        systemPrompt: 'rules',
+        prompt: 'hello',
+        attachments: [],
+        projectId: null,
+      },
+      '1.0.0',
+    );
+
+  it('should queue the record while the turn is still shared', async () => {
+    const queue = vi.fn();
+    await start().finish(end, {}, async () => true, queue);
+
+    expect(queue).toHaveBeenCalledTimes(1);
+  });
+
+  it('should queue nothing once sharing stopped during the turn', async () => {
+    const queue = vi.fn();
+    await start().finish(end, {}, async () => false, queue);
+
+    expect(queue).not.toHaveBeenCalled();
+  });
+
+  it('should queue nothing for a conversation excluded during the turn', async () => {
+    const queue = vi.fn();
+    const recorder = start();
+    setConversationShared('c-end', false);
+    await recorder.finish(end, {}, async () => true, queue);
+    setConversationShared('c-end', true);
+
+    expect(queue).not.toHaveBeenCalled();
+  });
+
+  it('should keep a tool name whole when cutting it', () => {
+    const record = buildTurnRecord(capture({ tools: [['😀'.repeat(130), 'x']] }), end)!;
+
+    expect(Array.from(record.tools[0].name)).toHaveLength(120);
+    expect(record.tools[0].name).not.toMatch(/[\uD800-\uDBFF]$/);
   });
 });

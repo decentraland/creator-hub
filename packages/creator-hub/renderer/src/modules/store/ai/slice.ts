@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { ai } from '#preload';
+import { ai, aiSharing } from '#preload';
 import type {
   AiAssetMention,
   AiAttachment,
@@ -312,6 +312,8 @@ export const setConversationShared = createAsyncThunk<void, boolean>(
     if (path !== undefined && path !== '') {
       writeSessionIndex(path, { current, sessions: savedSessions(sessions) });
     }
+    // Main drops the conversation's queued turns and any turn still running in it.
+    void aiSharing.setConversationShared(current, shared);
   },
 );
 

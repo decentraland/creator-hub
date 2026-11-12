@@ -1552,7 +1552,7 @@ export async function aiSend(
     if (message !== undefined) emit({ kind: 'error', turnId, message });
     emit({ kind: 'done', turnId, ok, mutations, ...(cancelled ? { cancelled } : {}) });
     if (current === turn) current = null;
-    recorder?.finish(
+    void recorder?.finish(
       {
         outcome: ok ? 'ok' : cancelled ? 'cancelled' : 'error',
         errorKind: ok || cancelled ? null : (errorKind ?? 'exit_code'),
@@ -1560,6 +1560,7 @@ export async function aiSend(
         endedAt: Date.now(),
       },
       info,
+      async () => (await sharingAddress(params).catch(() => null)) === shareAddress,
     );
     void projectIdPromise.then(project_id =>
       track('AI Turn Completed', {

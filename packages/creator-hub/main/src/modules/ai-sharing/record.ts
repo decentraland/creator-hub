@@ -119,7 +119,7 @@ const byteLength = (record: AiTurnRecord): number =>
  */
 export function buildTurnRecord(capture: TurnCapture, end: TurnEnd): AiTurnRecord | null {
   const tools = capture.tools.slice(0, AI_SHARING_LIMITS.maxTools).map(([name, detail]) => ({
-    name: name.slice(0, 120),
+    name: Array.from(name).slice(0, AI_SHARING_LIMITS.toolNameChars).join(''),
     detail: redactForSharing(detail, AI_SHARING_LIMITS.toolDetailChars),
   }));
   const record: AiTurnRecord = {

@@ -5,7 +5,7 @@ import { hasSharingConsent } from '/shared/types/ai-sharing';
 import { useDispatch, useSelector } from '#store';
 import {
   actions as aiSharingActions,
-  isSharingFeatureOn,
+  canManageSharing,
   selectSharingConsent,
 } from '/@/modules/store/aiSharing';
 import { useAuth } from './useAuth';
@@ -19,26 +19,22 @@ const UPLOAD_INTERVAL_MS = 60_000;
  */
 export function useAiSharingUploader() {
   const dispatch = useDispatch();
-  const { isSignedIn, wallet } = useAuth();
-  const featureOn = useSelector(isSharingFeatureOn);
-  const consent = useSelector(selectSharingConsent);
-  // A "no" still syncs once, so a withdrawal that failed to reach the server gets there; the
+  const { wallet } = useAuth();
+  const address = wallet?.toLowerCase() ?? null;
+  const configured = useSelector(state => canManageSharing(state, address));
+  const consent = useSelector(state => selectSharingConsent(state, address));
+  // A "no" still syncs once, so a withdrawal that failed to reach the service gets there; the
   // timer only keeps running while there is something to upload.
   const consented = hasSharingConsent(consent);
   const decided = consent !== undefined;
 
-  // Another account has its own consent on the server; confirm it before uploading for it.
   useEffect(() => {
-    dispatch(aiSharingActions.setServerConsentSynced(false));
-  }, [wallet, dispatch]);
-
-  useEffect(() => {
-    if (!featureOn || !isSignedIn || !decided) return;
+    if (!configured || address === null || !decided) return;
     void dispatch(aiSharingActions.flush());
     if (!consented) return;
     const timer = setInterval(() => void dispatch(aiSharingActions.flush()), UPLOAD_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [featureOn, isSignedIn, decided, consented, wallet, dispatch]);
+  }, [configured, address, decided, consented, dispatch]);
 }
 
 export function AiSharingUploader() {

@@ -73,8 +73,11 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     [dispatch],
   );
   const onDraftConsumed = useCallback(() => dispatch(aiActions.consumeDraftPrompt()), [dispatch]);
-  const { isSignedIn } = useAuth();
-  const sharing = useSelector(state => selectSharingView(state, isSignedIn), shallowEqual);
+  const { wallet } = useAuth();
+  const sharing = useSelector(
+    state => selectSharingView(state, wallet?.toLowerCase() ?? null),
+    shallowEqual,
+  );
   const onShareDecision = useCallback(
     (granted: boolean) => dispatch(aiSharingActions.decide(granted)),
     [dispatch],

@@ -42,6 +42,25 @@ describe('when text holds a secret', () => {
     ['a seed phrase', `my wallet words are ${SEED} thanks`, 'seed_phrase'],
     ['a seed phrase with punctuation', `"${SEED.split(' ').join(', ')}".`, 'seed_phrase'],
     ['an unrecognised random token', 'token Zx9Q2mL7vK4pR8tW1nB6yH3jF5cD0sA2eG', 'secret'],
+    ['a raw private key, as wallets export it', `key ${'ab'.repeat(32)} here`, 'private_key'],
+    ['a seed phrase as a JSON array', JSON.stringify(SEED.split(' ')), 'seed_phrase'],
+    ['a seed phrase joined by commas', SEED.split(' ').join(','), 'seed_phrase'],
+    [
+      'a seed phrase as a numbered list',
+      SEED.split(' ')
+        .map((w, i) => `${i + 1}. ${w}`)
+        .join(' '),
+      'seed_phrase',
+    ],
+    [
+      'a seed phrase one word per line',
+      SEED.split(' ')
+        .map((w, i) => `${i + 1}) ${w}`)
+        .join('\n'),
+      'seed_phrase',
+    ],
+    ['a base64 secret with slashes', 'secret wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', 'secret'],
+    ['an escaped Windows home folder', '"C:\\\\Users\\\\jane\\\\scenes"', 'home_path'],
   ];
 
   it.each(cases)('should redact %s', (_name, input, kind) => {
@@ -87,6 +106,12 @@ describe('when text holds nothing secret', () => {
     'commit 4c4b4efe8a1b2c3d4e5f60718293a4b5c6d7e8f9',
     'localhost at 127.0.0.1:8000',
     'const createEntityWithTransformAndPointerEvents = () => {}',
+    'images/button@2x.png and icons/close@3x.webp',
+    'position 10.123.4567',
+    'requires @dcl/sdk@7.10.2.1 or v7.10.2.1',
+    '"src": "{assetPath}/DocksModuleStairs_01/DocksModuleStairs_01.glb"',
+    'https://cdn.example.com/ccea595a-b910-4de6-b160-092819db021d/playlist.m3u8',
+    'eleven bip words: abandon ability able about above absent absorb abstract absurd abuse access',
   ];
 
   it.each(keep)('should leave "%s" unchanged', input => {

@@ -57,12 +57,13 @@ export function SharingConsentCard({ sharing, onShareDecision, onShareNotNow }: 
           <DetailsToggle
             type="button"
             aria-expanded={showDetails}
+            aria-controls="ai-sharing-details"
             onClick={() => setShowDetails(open => !open)}
           >
             {t('editor.ai.sharing.details_toggle')}
           </DetailsToggle>
           {showDetails && (
-            <DetailsList>
+            <DetailsList id="ai-sharing-details">
               <li>{t('editor.ai.sharing.details_shared')}</li>
               <li>{t('editor.ai.sharing.details_not_shared')}</li>
               <li>{t('editor.ai.sharing.details_control')}</li>
@@ -106,6 +107,7 @@ export function SharingStatusChip({
       <SharingChip
         type="button"
         excluded={excluded}
+        aria-label={`${excluded ? t('editor.ai.sharing.chip_excluded') : t('editor.ai.sharing.chip')}: ${t('editor.ai.sharing.chip_menu')}`}
         aria-haspopup="menu"
         aria-expanded={anchor !== null}
         onClick={event => setAnchor(event.currentTarget)}
