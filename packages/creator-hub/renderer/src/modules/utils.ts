@@ -11,6 +11,9 @@ export const FEEDBACK_URL = config.get('FEEDBACK_URL');
 export const HELP_FAQ_URL = config.get('HELP_FAQ_URL');
 export const CONTACT_SUPPORT_URL = config.get('CONTACT_SUPPORT_URL');
 export const DISCORD_URL = config.get('DISCORD_URL');
+export const CREATOR_FUND_URL = config.get('CREATOR_FUND_URL');
+export const CREATOR_FUND_TERMS_URL = config.get('CREATOR_FUND_TERMS_URL');
+export const CREATOR_FUND_RULES_URL = config.get('CREATOR_FUND_RULES_URL');
 
 /** Where every "Create Event" entry points: What's On's new-hangout page. */
 export const CREATE_EVENT_URL = config.get('CREATE_EVENT_URL');
@@ -48,9 +51,14 @@ export const getSceneJumpInUrl = (location: { world?: string; x: number; y: numb
   return `${config.get('JUMP_URL')}?position=${location.x},${location.y}`;
 };
 
-export const getSceneJumpInDeeplink = (location: { world?: string; x: number; y: number }) => {
+export const getSceneJumpInDeeplink = (
+  location: { world?: string; x: number; y: number },
+  { position = false }: { position?: boolean } = {},
+) => {
   const dclEnv = env.getEnv() === 'dev' ? 'zone' : 'org';
-  return location.world
-    ? getJumpInDeeplink(location.world)
-    : `decentraland://?position=${location.x},${location.y}&dclenv=${dclEnv}`;
+  if (!location.world)
+    return `decentraland://?position=${location.x},${location.y}&dclenv=${dclEnv}`;
+  return position
+    ? `decentraland://?realm=${location.world}&position=${location.x},${location.y}&dclenv=${dclEnv}`
+    : getJumpInDeeplink(location.world);
 };

@@ -18,7 +18,7 @@ a test that has never been red is not evidence of anything:
 
 ```bash
 git stash push -- packages/creator-hub/renderer/src/lib/land.ts
-npm run test:renderer -- src/lib/land.spec.ts   # must fail here
+VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm run test:renderer -- src/lib/land.spec.ts   # must fail here
 git stash pop
 ```
 
@@ -120,6 +120,34 @@ Under happy-dom the whole subtree reports "There are no accessible roles", and
 `querySelector('[role="…"]')` — see `FlowField.spec.tsx`, `CallbackField.spec.tsx`.
 `getByRole` is fine on a bare control (`Pill.spec.tsx`).
 
+### Named `getByRole` queries are slow inside MUI modals
+
+`getByRole(role, { name })` computes the accessible name of every candidate in
+the tree on each call, and a ui2 `Modal` puts a lot of tree under one query. The
+Creator Fund join-flow specs took about 2.5 s each alone and hit the 5 s timeout
+on a loaded CI runner. A flow helper that steps through a modal finds fields with
+`getByLabelText` and buttons with `getByText`, which brought each test under
+0.5 s (`EarnPage/JoinFlow.spec.tsx`); keep one `getByRole` with a name where the
+test asserts that name. Raise the timeout for a single file only, and only after
+the queries are cheap.
+
+### Run vitest capped
+
+Every vitest run takes the thread cap, and only one runs at a time on the
+machine, across checkouts and worktrees: several uncapped runs at once froze a
+14-core machine, since each takes every core but one. Prefix a script or `make`
+with `VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1` (vitest 1.6 reads both variables, and
+they pass through npm and make), and give a single spec the same cap as flags:
+`--pool=threads --poolOptions.threads.maxThreads=2 --poolOptions.threads.minThreads=1`.
+Set the minimum as well as the maximum.
+
+`-r` is vitest's `--root`. Creator Hub's `test:*` scripts set it to the layer
+folder, so a direct spec run needs the same root and a path relative to it:
+`npx vitest run -r renderer src/…/x.spec.tsx` plus the cap. Those scripts also
+pass `--passWithNoTests`, so a run whose filter matches nothing exits 0. A gate
+reads the `Test Files … passed` line, never the exit code alone, and an exit
+code read after a pipe (`| tail`) is the pipe's.
+
 ### happy-dom is not a browser for labels and visibility
 
 - happy-dom 14 activates a `<label>` during the bubble phase and ignores
@@ -135,6 +163,18 @@ Under happy-dom the whole subtree reports "There are no accessible roles", and
   the name in a browser (`CreateScriptModal.spec.tsx`; lands with #1707).
 - jest-dom isn't installed. Assert accessible names and descriptions through
   `getByRole(role, { name })` and `{ description }`.
+
+### Assert "never rendered" with a MutationObserver, not a final query
+
+`queryBy… === null` only proves an element is gone now. To prove a flash never
+happened (cards that appear and then give way to an error block), record DOM
+mutations for the whole test and check every node in each record's
+`removedNodes` as well as its `addedNodes`. Observer callbacks run after React
+has already committed the next render, so querying an added container then no
+longer finds a child that was already removed; a checker that only looks at
+additions passes falsely. Drain `observer.takeRecords()` before reading the
+result. `watchFor` in `components/EarnPage/joined/PayoutsTab.spec.tsx` is the
+helper.
 
 ### Mocking `@dcl/sdk/ecs` with the real `@dcl/ecs`
 

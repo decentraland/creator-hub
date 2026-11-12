@@ -30,7 +30,7 @@ import { Button } from '../../Button';
 import { InfoTooltip } from '../../ui/InfoTooltip';
 
 import type { ScriptAction } from '../ScriptInspector/types';
-import { parseLayout } from '../ScriptInspector/utils';
+import { parseLayout } from '../../../lib/sdk/script-params';
 import { ScriptParamField } from '../ScriptInspector/ScriptParamField/ScriptParamField';
 import { resolveParamUpdate, type ParamUpdate } from '../ScriptInspector/ScriptParamField/update';
 import { truncateMiddle } from '../../ImportAsset/utils';

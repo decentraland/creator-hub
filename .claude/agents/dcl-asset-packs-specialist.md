@@ -24,6 +24,7 @@ When generated output is wrong, the fix belongs in `src/` or `packs/`.
 
 ## Traps (details in CLAUDE.md)
 
+- Run vitest capped and one at a time (`docs/testing-standards.md` → "Run vitest capped").
 - Composite placeholders: `{assetPath}/…`, `{self}`, `{self:Component}`, `{N:Component}`, and `SyncComponents.componentIds` as component **names**. Each must be resolved before the engine serializes it. An unresolved name throws `Cannot convert <name> to a BigInt` every tick. If you add a placeholder-bearing field, resolve it in the runtime path you own (`src/add-child.ts`, beside `remapSyncComponentIds`), and tell the architect that the inspector's ingest path (`lib/sdk/operations/add-asset/`) needs it too. See CLAUDE.md → "Asset-pack composite placeholders must resolve before the engine serializes".
 - Helpers that mutate in place, such as `deepReplaceAssetPath` and `substituteAssetPathInComposite`, throw or silently no-op on frozen Redux state. Their docs must say that callers pass a `structuredClone`. See CLAUDE.md → "Redux state freeze".
 - `make build-asset-packs` can run an npm install (`sdk-commands build` reifies the tree when it looks incomplete). In a worktree it must have its own `npm ci`: through symlinked `node_modules` it moves the main checkout's packages. See CLAUDE.md → Asset Packs.
@@ -34,7 +35,7 @@ When generated output is wrong, the fix belongs in `src/` or `packs/`.
 Don't report success until all of these pass. Paste the tail of each output:
 
 ```bash
-(cd packages/asset-packs && npm run typecheck && npm test && npm run validate)
+(cd packages/asset-packs && npm run typecheck && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm test && npm run validate)
 make build-asset-packs
 ```
 

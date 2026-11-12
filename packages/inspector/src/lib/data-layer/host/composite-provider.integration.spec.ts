@@ -1,4 +1,5 @@
 import type { OnChangeFunction } from '@dcl/ecs';
+import { ComponentName } from '@dcl/asset-packs';
 import * as ecsComponents from '@dcl/ecs/dist/components';
 import { feededFileSystem } from '../client/feeded-local-fs';
 import { initRpcMethods } from './rpc-methods';
@@ -83,6 +84,63 @@ describe('CompositeProvider', () => {
   });
   afterAll(() => {
     console.error = originalError;
+  });
+
+  describe('when a Script param was saved as text by Creator Hub 0.52 (#1765)', () => {
+    it('should repair it on load and write the repair to disk', async () => {
+      const mocked = await mockedRpcInit();
+      const path = 'assets/Scripts/admin-tools.ts';
+      await mocked.fs.writeFile(
+        path,
+        Buffer.from(
+          `import type { Entity } from '@dcl/sdk/ecs';
+          export class AdminTools {
+            constructor(
+              public src: string,
+              public entity: Entity,
+              public authorizedAdminUsers: { me: boolean; sceneOwners: boolean } = {
+                me: true,
+                sceneOwners: true,
+              },
+            ) {}
+          }`,
+          'utf-8',
+        ),
+      );
+      const composite = await readComposite(mocked.fs);
+      const scripts = composite.components.find((c: any) => c.name === ComponentName.SCRIPT);
+      const [entity] = Object.keys(scripts.data);
+      scripts.data[entity].json.value = [
+        {
+          path,
+          priority: 0,
+          layout: JSON.stringify({
+            params: {
+              authorizedAdminUsers: {
+                type: 'object',
+                value: '[object Object]',
+                fields: {
+                  me: { type: 'boolean', value: false },
+                  sceneOwners: { type: 'boolean', value: false },
+                },
+              },
+            },
+          }),
+        },
+      ];
+      await mocked.fs.writeFile(
+        getCurrentCompositePath(),
+        Buffer.from(JSON.stringify(composite), 'utf-8'),
+      );
+
+      await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+
+      const saved = (await readComposite(mocked.fs)).components.find(
+        (c: any) => c.name === ComponentName.SCRIPT,
+      );
+      const layout = JSON.parse(saved.data[entity].json.value[0].layout);
+      expect(layout.params.authorizedAdminUsers.value).toEqual({ me: true, sceneOwners: true });
+    });
   });
 
   describe('when two edits land inside the autosave throttle window', () => {

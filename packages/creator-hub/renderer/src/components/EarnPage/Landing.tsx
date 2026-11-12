@@ -7,7 +7,7 @@ import moneyMouth from '/assets/images/earn/money-mouth.webp';
 
 import type { TranslationPath } from '/@/modules/store/translation/types';
 import { getCurrentLocale, t } from '/@/modules/store/translation/utils';
-import { CONTACT_SUPPORT_URL } from '/@/modules/utils';
+import { CONTACT_SUPPORT_URL, CREATOR_FUND_URL } from '/@/modules/utils';
 
 import type { CommonProps } from '../Icons/types';
 
@@ -34,6 +34,7 @@ import {
   Highlight,
   Information,
   Intro,
+  KnowMore,
   Tagline,
   Title,
   TitleBlock,
@@ -122,7 +123,16 @@ export function Landing({
                   <Highlight key={String(chunks)}>{chunks}</Highlight>
                 ),
               },
-            )}
+            )}{' '}
+            <KnowMore
+              href={CREATOR_FUND_URL}
+              onClick={event => {
+                event.preventDefault();
+                void misc.openExternal(CREATOR_FUND_URL);
+              }}
+            >
+              {t('earn.landing.know_more')}
+            </KnowMore>
           </Description>
         </Intro>
         <Features>

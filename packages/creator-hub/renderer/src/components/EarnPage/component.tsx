@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { GlobalStyles } from 'decentraland-ui2';
 
 import type { Events } from '/shared/types/analytics';
 
@@ -13,10 +14,14 @@ import { t } from '/@/modules/store/translation/utils';
 
 import { Navbar, NavbarItem } from '../Navbar';
 
+import { JoinedPage, type JoinedTab } from './JoinedPage';
 import { IneligibleModal, JoinFlow, type JoinOutcome } from './JoinFlow';
 import { Landing, LandingCtas, LandingLoadError, LandingStatus } from './Landing';
+import { StickyNavbar } from './component.styled';
 import { Spinner } from './Spinner';
 import { TermsModal } from './TermsModal';
+
+const STICKY_NAVBAR_HEIGHT = 130;
 
 type EarnLocationState = { joinAfterSignIn?: boolean } | null;
 
@@ -47,6 +52,7 @@ function EarnContent() {
   const [joining, setJoining] = useState(false);
   const [reacceptFailed, setReacceptFailed] = useState(false);
   const [reaccepting, setReaccepting] = useState(false);
+  const [tab, setTab] = useState<JoinedTab>('leaderboard');
   const joinAfterSignIn = (location.state as EarnLocationState)?.joinAfterSignIn === true;
   const settled = checked && (enrollmentStatus === 'succeeded' || enrollmentFailed);
 
@@ -96,6 +102,7 @@ function EarnContent() {
 
   const handleExit = useCallback((outcome: JoinOutcome) => {
     setJoining(false);
+    if (outcome === 'joined') setTab('my_places');
     if (outcome === 'conflict') setAttempt(value => value + 1);
   }, []);
 
@@ -110,6 +117,7 @@ function EarnContent() {
       );
       if (actions.saveEnrollment.fulfilled.match(result)) {
         setReaccepting(false);
+        setTab('my_places');
         return;
       }
       const failure = result.payload;
@@ -182,7 +190,12 @@ function EarnContent() {
         error={reacceptFailed ? t('earn.errors.generic') : undefined}
         status={reaccepting ? 'submitting' : 'idle'}
       />
-    ) : null;
+    ) : (
+      <JoinedPage
+        tab={tab}
+        onTabChange={setTab}
+      />
+    );
   }
 
   return (
@@ -214,7 +227,16 @@ export function EarnPage() {
   }
   return (
     <div className="EarnPage">
-      <Navbar active={NavbarItem.EARN} />
+      <GlobalStyles
+        styles={{
+          html: {
+            scrollPaddingTop: `calc(${STICKY_NAVBAR_HEIGHT}px + var(--cf-sticky-extra, 0px))`,
+          },
+        }}
+      />
+      <StickyNavbar>
+        <Navbar active={NavbarItem.EARN} />
+      </StickyNavbar>
       <EarnContent />
     </div>
   );

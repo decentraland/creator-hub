@@ -115,26 +115,35 @@ const Scroller = styled('div')({
   },
 });
 
+const HEADING = ':is(h1, h2, h3, h4, h5, h6)';
+const BODY_BLOCK = ':is(p, ul, ol, blockquote, pre, hr, table)';
+
 const TermsText = styled('div')({
   overflowWrap: 'anywhere',
   '& .MarkdownRenderer': {
     ...typeToken('h7-regular'),
+    lineHeight: 1.7,
     overflow: 'visible',
     padding: 0,
     color: 'var(--palette-neutral-softWhite)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
   },
-  '& .MarkdownRenderer :is(h1, h2, h3, h4, h5, h6)': {
-    ...typeToken('h6-semi'),
-    margin: '20px 0 0',
+  [`& .MarkdownRenderer ${HEADING}`]: {
+    ...typeToken('h5-semi'),
+    lineHeight: 1.4,
+    margin: 0,
   },
-  '& .MarkdownRenderer :is(h1, h2, h3, h4, h5, h6):first-child': { marginTop: 0 },
-  '& .MarkdownRenderer :is(p, ul, ol)': { margin: 0 },
+  '& .MarkdownRenderer h1': { ...typeToken('h4-semi'), lineHeight: 1.4 },
+  [`& .MarkdownRenderer ${BODY_BLOCK}`]: { margin: 0 },
+  '& .MarkdownRenderer :is(ul, ol)': { paddingLeft: 24 },
+  '& .MarkdownRenderer li': { marginTop: 0 },
+  '& .MarkdownRenderer li + li': { marginTop: 8 },
+  [`& .MarkdownRenderer ${BODY_BLOCK} + ${BODY_BLOCK}`]: { marginTop: 20 },
+  [`& .MarkdownRenderer ${BODY_BLOCK} + ${HEADING}`]: { marginTop: 40 },
+  [`& .MarkdownRenderer ${HEADING} + *`]: { marginTop: 10 },
   '& .MarkdownRenderer a': {
-    color: 'var(--palette-neutral-softWhite)',
-    textDecoration: 'underline',
+    color: 'var(--primary)',
+    textDecoration: 'none',
+    '&:hover': { textDecoration: 'underline' },
     ...focusRing,
   },
 });

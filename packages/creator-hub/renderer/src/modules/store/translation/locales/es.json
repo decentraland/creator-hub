@@ -13,6 +13,12 @@
     "header": {
       "title": "Bienvenido a Decentraland Creator Hub"
     },
+    "creator_fund_banner": {
+      "title": "Creator Fund: Gana en Decentraland",
+      "description": "Atrae jugadores, haz que sigan jugando y cobra.",
+      "cta": "Más información",
+      "close": "Cerrar"
+    },
     "cards": {
       "sign_in": {
         "title": "Inicia sesión para publicar tus escenas",
@@ -1645,22 +1651,23 @@
       "title": "Decentraland Creator Fund",
       "tagline_signed_in": "Crea experiencias. Reúne jugadores. Gana USDC.",
       "tagline_signed_out": "Crea experiencias. Reúne jugadores. Gana dinero.",
-      "description": "El <hl>Decentraland Creator Fund</hl> <hl>recompensa a los propietarios de LAND y Worlds</hl> por atraer nuevos jugadores, generar actividad y hacer que los jugadores vuelvan.",
+      "description": "<hl>30.000 USDC</hl> repartidos en <hl>3 ciclos</hl>. El ciclo 1 empieza el <hl>15 de noviembre</hl>.",
+      "know_more": "Más información",
       "features": {
         "enrolment": {
           "title": "Inscripción automática",
-          "body": "Todas las escenas elegibles que tienes se incluyen al unirte. Las nuevas escenas elegibles se añaden automáticamente."
+          "body": "Las escenas elegibles que tienes empiezan a participar cuando te unes."
         },
         "cycles": {
           "title": "Recompensas cada 15 días",
-          "body": "Cada mes tiene dos ciclos de recompensas: del 1 al 15 y del 16 a fin de mes."
+          "body": "Cada mes tiene dos ciclos de recompensas."
         },
         "activity": {
-          "title": "Recompensas según la actividad de los jugadores",
-          "body": "Gana según los jugadores que tus escenas atraen y hacen volver."
+          "title": "Recompensas según la actividad",
+          "body": "Los nuevos jugadores que atraes, el tiempo de juego y la retención del día 3 determinan las recompensas."
         },
         "payout": {
-          "title": "Cobra directamente en USDC",
+          "title": "Pagos en USDC",
           "body": "Los pagos se envían a la billetera que elijas dentro de los 14 días posteriores al cierre de cada ciclo."
         }
       },
@@ -1726,8 +1733,182 @@
       "lets_go": "Vamos"
     },
     "joined": {
+      "sections": "Secciones del Creator Fund",
+      "tabs": {
+        "my_places": "Mis lugares",
+        "leaderboard": "Clasificación",
+        "payouts": "Pagos",
+        "home": "Inicio"
+      },
+      "title_prefix": "Ganar",
+      "title": "Creator Fund",
+      "beta": "Beta",
+      "joined_on": "Te uniste el {date}",
+      "more_options": "Más opciones",
+      "program": "Programa",
+      "program_rules": "Reglas del programa",
       "read_terms": "Leer términos",
-      "contact_support": "Contactar con soporte"
+      "contact_support": "Contactar con soporte",
+      "banner": {
+        "region": "Anuncio"
+      },
+      "filter": {
+        "cycle": "Ciclo",
+        "all_cycles": "Todos los ciclos",
+        "current_cycle": "Ciclo actual"
+      },
+      "leaderboard": {
+        "sentence": "Los 20 lugares con los pagos más altos de este ciclo",
+        "sentence_all": "Los 20 lugares con mayores pagos en todos los ciclos",
+        "rank": "Puesto",
+        "place": "Lugar",
+        "earned": "Ganado",
+        "amount": "{amount} USDC",
+        "rank_label": "Puesto {rank}",
+        "jump_in": "Entrar",
+        "jump_in_label": "Entrar en {place}",
+        "empty": "Todavía no hay pagos en este ciclo.",
+        "error": "Algo salió mal al cargar la clasificación."
+      },
+      "get_ready": {
+        "title": "¡Prepárate!",
+        "body": "Tu primer ciclo de recompensas comienza el 15 de noviembre.",
+        "body_started": "Tu primer ciclo de recompensas comenzó el 15 de noviembre.",
+        "build": {
+          "title": "Crea tus escenas",
+          "body": "Crea experiencias atractivas que traigan jugadores a Decentraland. Explora la <docs>documentación para creadores</docs> y las <refs>referencias</refs> para inspirarte."
+        },
+        "name": {
+          "title": "Consigue un NAME y publica tus escenas",
+          "body": "Haz tus Worlds accesibles y prepara tus experiencias para los jugadores.",
+          "link": "Consigue un NAME"
+        },
+        "cycle": {
+          "title": "Prepárate para el primer ciclo",
+          "body": "El ciclo 1 empieza el 15 de noviembre.",
+          "body_started": "El ciclo 1 empezó el 15 de noviembre."
+        },
+        "community": {
+          "title": "Únete a la comunidad",
+          "body": "Conecta con otros creadores, comparte tu trabajo y recibe comentarios.",
+          "link": "Únete a Discord"
+        }
+      },
+      "news": {
+        "title": "Novedades"
+      },
+      "my_places": {
+        "sentence": "Rendimiento de tus lugares en el programa",
+        "last_update": "Última actualización {time}",
+        "status": {
+          "in_program": "En el programa",
+          "not_eligible": "No elegible",
+          "replaced": "Reemplazado"
+        },
+        "reasons": {
+          "content_policy": "Esta escena no cumple la Política de contenido.",
+          "excluded": "Esta escena está excluida del Creator Fund.",
+          "not_owner": "Solo el propietario gana con este lugar. Eres colaborador.",
+          "creator_not_eligible": "Tu cuenta no es elegible, así que este lugar no puede participar.",
+          "terms_outdated": "Acepta los Términos del Programa actualizados para participar.",
+          "unknown": "Esta escena no puede participar por ahora."
+        },
+        "metrics": {
+          "new_players": "Nuevos jugadores atribuibles",
+          "new_players_info": "Wallets nuevas en Decentraland cuyo primer día transcurrió mayormente en tu lugar, en los últimos 30 días.",
+          "new_players_info_label": "Acerca de los nuevos jugadores atribuibles",
+          "d3_retention": "Retención D3",
+          "d3_retention_info_label": "Acerca de la retención D3",
+          "playtime": "Tiempo de juego total",
+          "playtime_info": "Tiempo promedio que cada jugador pasó en tu lugar en los últimos 30 días.",
+          "playtime_info_label": "Acerca del tiempo de juego total",
+          "minutes": "{value} min",
+          "no_data": "Sin datos"
+        },
+        "empty_body": "Cuando publiques una escena, aparecerá aquí con su rendimiento en el ciclo actual.",
+        "empty_closed_cycle": "No hubo lugares en este ciclo.",
+        "no_scenes": {
+          "title": "Crea tu primera escena para empezar a ganar"
+        },
+        "unpublished": {
+          "title": "Publica una escena para empezar a ganar",
+          "heading": "Tus escenas sin publicar",
+          "parcels": "{parcels, plural, one {# parcela} other {# parcelas}}"
+        },
+        "start_from_template": "Empezar desde una plantilla",
+        "create_scene": "Crear una escena",
+        "error": "Algo salió mal al cargar tus lugares.",
+        "replaced_tooltip": "Este lugar se volvió a publicar como uno nuevo. Se conservan sus cifras anteriores."
+      },
+      "payouts": {
+        "wallet": {
+          "title": "Billetera de pagos",
+          "info_label": "Acerca de las billeteras de pagos",
+          "info": "Una billetera digital es donde guardas y gestionas tus activos digitales. Puedes usarla para enviar, recibir y seguir tus fondos de forma segura, incluidas tus recompensas en USDC del Creator Fund.",
+          "learn_more": "Más información",
+          "copy": "Copiar la dirección de la billetera",
+          "edit": "Editar",
+          "add": "Agregar billetera"
+        },
+        "contact": {
+          "title": "Información de contacto",
+          "full_name": "Nombre completo",
+          "email": "Correo electrónico",
+          "unverified": "Sin verificar",
+          "verify": "Verificar correo"
+        },
+        "table": {
+          "label": "Pagos",
+          "cycle": "Ciclo",
+          "status": "Estado",
+          "paid_places": "Lugares pagados",
+          "amount": "Monto",
+          "transaction": "Transacción",
+          "pending": "Pendiente",
+          "paid": "Pagado",
+          "usdc": "{amount} USDC",
+          "view_transaction": "Ver la transacción en Etherscan"
+        },
+        "locked": "La configuración de la billetera de pagos se habilita el 25 de noviembre",
+        "empty": {
+          "title": "¡Tu camino de recompensas empieza aquí!",
+          "first_payout": "Tu primer pago llegará cuando termine el ciclo {cycle}.",
+          "body": "¡Sigue construyendo, reúne a los jugadores y crea experiencias a las que quieran volver!"
+        },
+        "add": {
+          "title": "Agregar billetera de pagos",
+          "body": "Te enviaremos aquí los pagos del Creator Fund en USDC.",
+          "submit": "Agregar billetera"
+        },
+        "change": {
+          "title": "Cambiar billetera de pagos",
+          "body": "Los próximos pagos irán a esta billetera en cuanto guardes.",
+          "submit": "Guardar"
+        },
+        "wallet_field": {
+          "label": "Dirección de la billetera",
+          "placeholder": "0x…",
+          "invalid": "Dirección de billetera no válida. Debe empezar con 0x y tener 42 caracteres."
+        },
+        "erc20": "Asegúrate de que esta billetera pueda recibir USDC en Ethereum (ERC-20). Los fondos enviados a una billetera que no lo admite no se pueden recuperar.",
+        "verify": {
+          "title": "Verifica tu correo",
+          "body_sent": "Enviamos un código de 6 dígitos a <b>{email}</b>.",
+          "body_instruction": "Introduce el código a continuación para completar la verificación.",
+          "digit": "Dígito {n} de 6",
+          "resend": "Reenviar código",
+          "incorrect": "Código incorrecto. Revisa el correo e inténtalo de nuevo.",
+          "expired": "Este código caducó. Reenvía uno nuevo.",
+          "submit": "Verificar"
+        },
+        "snackbar": {
+          "wallet_added": "Billetera de pagos agregada",
+          "wallet_updated": "Billetera de pagos actualizada",
+          "email_verified": "Correo verificado"
+        },
+        "cancel": "Cancelar",
+        "error": "Algo salió mal al cargar tus pagos."
+      }
     },
     "errors": {
       "generic": "Algo salió mal. Vuelve a intentarlo.",

@@ -19,10 +19,20 @@ export enum SortBy {
 
 export type DependencyState = { [k in PACKAGES]?: Outdated[keyof Outdated] };
 
+/** One successful publish of a scene to a target: the entity it deployed there. */
+export type ProjectDeployment = {
+  publishedAt: number;
+  deploymentHash: string;
+  parcel: string;
+  worldName?: string;
+};
+
 export type ProjectInfo = {
   id: string;
   skipPublishWarning: boolean;
   uiDesignerOpen?: boolean;
+  /** The latest publish per target, keyed `land:<x,y>` or `world:<worldName>:<x,y>`. */
+  deployments?: Record<string, ProjectDeployment>;
 };
 
 export type Project = {

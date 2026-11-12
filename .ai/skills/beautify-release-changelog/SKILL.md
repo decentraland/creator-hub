@@ -129,9 +129,9 @@ Fetching continues to use curl; only the update step uses `gh`.
 **Input (raw):**
 
 ```
-* fix: Devtools by @cyaiox in https://github.com/decentraland/creator-hub/pull/1109
-* feat: Multi-Scene Worlds by @RocioCM in https://github.com/decentraland/creator-hub/pull/1089
-* remove save icon by @nearnshaw in https://github.com/decentraland/creator-hub/pull/1152
+* fix: Devtools by @contributor-a in https://github.com/decentraland/creator-hub/pull/1109
+* feat: Multi-Scene Worlds by @contributor-b in https://github.com/decentraland/creator-hub/pull/1089
+* remove save icon by @contributor-c in https://github.com/decentraland/creator-hub/pull/1152
 ```
 
 **Output (default: verbose, product-ready):**

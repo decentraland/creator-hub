@@ -179,4 +179,35 @@ export type Events = {
   'Creator Fund Read Terms': {
     source: 'landing' | 'snackbar' | 'menu';
   };
+  'Creator Fund Program Opened': {
+    source: 'menu';
+  };
+  'Creator Fund Program Rules Opened': {
+    source: 'menu';
+  };
+  'Creator Fund Tab Viewed': {
+    tab: 'home' | 'leaderboard' | 'my_places' | 'payouts';
+  };
+  'Creator Fund Cycle Changed': {
+    tab: 'leaderboard' | 'my_places';
+    cycle_id: number | 'all';
+  };
+  'Creator Fund Jump In': {
+    rank: number;
+    place_id: string;
+  };
+  'Creator Fund Empty State Action': {
+    action: 'create_scene' | 'start_from_template' | 'open_scene';
+  };
+  'Creator Fund Email Verification Started': undefined;
+  'Creator Fund Email Code Submitted': {
+    result: 'verified' | 'incorrect' | 'expired' | 'locked';
+  };
+  'Creator Fund Payout Wallet Saved': {
+    action: 'add' | 'edit';
+    ok: boolean;
+  };
+  'Creator Fund Transaction Viewed': undefined;
+  'Creator Fund Banner Clicked': undefined;
+  'Creator Fund Banner Dismissed': undefined;
 };

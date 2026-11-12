@@ -21,14 +21,16 @@ You own `packages/creator-hub`. `docs/DESIGN.md` and the `theme.css` token block
 - The settings Accordion is hand-rolled on purpose. Importing an unbundled `@mui/material` module retriggers Vite's optimizer.
 - A dev run reads `~/Library/Application Support/creator-hub/`, not the packaged product path.
 - A scene runs `sdk-commands` from its own `node_modules`, so local inspector changes only reach a running scene through `.ai/skills/local-package-chain/SKILL.md`.
-- Spec files aren't type-checked, so a passing typecheck says nothing about test fixtures.
+- `.spec.ts` files aren't type-checked, so a passing typecheck says nothing about their fixtures; `.spec.tsx` files are, so a dropped import fails `make typecheck` while vitest stays green.
+- Run vitest capped and one at a time, and read the `Test Files … passed` line (`docs/testing-standards.md` → "Run vitest capped").
+- A tab that loads several requests starts them together and shows nothing from them until all settle; test coming back to the tab (CLAUDE.md → "A tab that loads several requests").
 
 ## Completion gate
 
 Don't report success until all of these pass. Paste the tail of each output:
 
 ```bash
-(cd packages/creator-hub && npm run typecheck && npm run test:unit)
+(cd packages/creator-hub && npm run typecheck && VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 npm run test:unit)
 npx eslint <every touched .ts/.tsx>    # same rules as make lint, scoped to your files
 ```
 
