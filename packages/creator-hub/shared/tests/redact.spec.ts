@@ -59,6 +59,27 @@ describe('when text holds a secret', () => {
         .join('\n'),
       'seed_phrase',
     ],
+    [
+      'a seed phrase as a markdown list',
+      SEED.split(' ')
+        .map(w => `- ${w}`)
+        .join('\n'),
+      'seed_phrase',
+    ],
+    ['a seed phrase joined by pipes', SEED.split(' ').join(' | '), 'seed_phrase'],
+    ['a seed phrase joined by hyphens', SEED.split(' ').join('-'), 'seed_phrase'],
+    [
+      'a seed phrase numbered without dots',
+      SEED.split(' ')
+        .map((w, i) => `${i + 1} ${w}`)
+        .join(' '),
+      'seed_phrase',
+    ],
+    [
+      'a seed phrase with JSON-escaped line breaks',
+      JSON.stringify(SEED.split(' ').join('\n')),
+      'seed_phrase',
+    ],
     ['a base64 secret with slashes', 'secret wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', 'secret'],
     ['an escaped Windows home folder', '"C:\\\\Users\\\\jane\\\\scenes"', 'home_path'],
   ];
@@ -134,6 +155,20 @@ describe('when text holds nothing secret', () => {
       }
     }
     expect(changed).toEqual([]);
+  });
+});
+
+describe('when text is long and odd', () => {
+  it('should scan a long run of dotted words quickly, with no email in it', () => {
+    const text = 'a.'.repeat(40_000);
+    const started = performance.now();
+    redactText(text);
+
+    expect(performance.now() - started).toBeLessThan(1_000);
+  });
+
+  it('should still find an email at the end of such a run', () => {
+    expect(redactText(`${'a.'.repeat(5_000)} jane.doe@example.com`).redactions.email).toBe(1);
   });
 });
 

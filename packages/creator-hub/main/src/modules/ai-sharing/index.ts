@@ -4,7 +4,6 @@ import log from 'electron-log/main';
 import type { AiSendParams } from '/shared/types/ai';
 import { consentFor, hasSharingConsent, type AiTurnRecord } from '/shared/types/ai-sharing';
 
-import { getUserId } from '../analytics';
 import { getAppVersion, getUserDataPath } from '../electron';
 import { Outbox } from './outbox';
 import {
@@ -24,15 +23,25 @@ export function getOutbox(): Outbox {
   return outbox;
 }
 
+// The wallet the renderer is signed in with, lowercase, or null when signed out. The renderer
+// sets it on every sign-in, switch and sign-out. Analytics' user id is not used: it is only set
+// when Segment is configured, is never cleared on sign-out, and lags a wallet switch.
+let signedInWallet: string | null = null;
+
+export function setSignedInWallet(address: string | null): void {
+  signedInWallet =
+    address !== null && /^0x[0-9a-fA-F]{40}$/.test(address) ? address.toLowerCase() : null;
+}
+
 /**
- * Whether this turn may be recorded. The renderer asks (`params.share`), but main checks the
- * saved consent and the signed-in address itself, so a renderer bug can't record a turn the
- * user never agreed to share.
+ * Whether this turn may be recorded, and for which wallet. The renderer asks (`params.share`,
+ * naming the wallet it means), but main checks that wallet is the one signed in and has saved
+ * consent, so a renderer bug or a wallet switch can't record a turn under the wrong account.
  */
 export async function sharingAddress(params: AiSendParams): Promise<string | null> {
   if (params.share === undefined) return null;
-  const address = getUserId();
-  if (address === null || !/^0x[0-9a-fA-F]{40}$/.test(address)) return null;
+  const address = signedInWallet;
+  if (address === null || params.share.wallet.toLowerCase() !== address) return null;
   try {
     // Loaded lazily, like ai.ts's session store: config pulls in the Electron app, and ai.ts
     // (which imports this module) must stay importable in unit tests.
@@ -107,13 +116,17 @@ export class TurnRecorder {
   ): Promise<void> {
     if (this.finished) return;
     this.finished = true;
+    const excluded = () => isConversationExcluded(this.capture.conversationId);
     try {
-      if (isConversationExcluded(this.capture.conversationId) || !(await stillShared())) return;
+      if (excluded() || !(await stillShared())) return;
       const record = buildTurnRecord({ ...this.capture, info }, end);
       if (record === null) {
         log.warn(`[AI sharing] turn ${this.capture.turnId} is too large to share; not queued`);
         return;
       }
+      // Again after the await: excluding the conversation meanwhile purged a queue this record
+      // wasn't in yet.
+      if (excluded()) return;
       queue(record);
     } catch (e) {
       // Never let sharing break a turn: the record is lost, the conversation isn't.

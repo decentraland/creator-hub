@@ -14,16 +14,27 @@ export const OUTBOX_LIMITS = {
   maxAgeMs: 7 * 24 * 60 * 60 * 1000,
 } as const;
 
-const RECORD_FILE = /^[0-9a-f-]{36}\.json$/;
+// `<wallet>.<recordId>.json`: the wallet in the name lets a wallet's reads skip every other
+// wallet's files without opening them.
+const RECORD_FILE = /^(0x[0-9a-f]{40})\.([0-9a-f-]{36})\.json$/;
+const RECORD_ID = /^[0-9a-f-]{36}$/;
 // Long enough that a write in progress is never taken for a leftover.
 const TEMP_FILE_GRACE_MS = 60_000;
+
+interface Entry {
+  file: string;
+  address: string;
+  recordId: string;
+  mtimeMs: number;
+  size: number;
+}
 
 export class Outbox {
   constructor(private readonly dir: string) {}
 
   enqueue(record: AiTurnRecord): void {
     fs.mkdirSync(this.dir, { recursive: true, mode: 0o700 });
-    const file = path.join(this.dir, `${record.recordId}.json`);
+    const file = path.join(this.dir, `${record.address}.${record.recordId}.json`);
     // Write-then-rename so a crash mid-write leaves no half file for the uploader to choke on.
     const tmp = `${file}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(record), { mode: 0o600 });
@@ -31,27 +42,29 @@ export class Outbox {
     this.prune();
   }
 
-  /** The oldest `limit` records signed for `address`, oldest first. */
+  /** The oldest `limit` records of `address`, oldest first. Expired records are dropped first. */
   peek(address: string, limit: number): AiTurnRecord[] {
-    const wanted = address.toLowerCase();
+    this.prune();
     const out: AiTurnRecord[] = [];
-    for (const entry of this.entries()) {
+    for (const entry of this.entries(address)) {
       if (out.length >= limit) break;
       const record = this.read(entry.file);
-      if (record?.address === wanted) out.push(record);
+      if (record !== null) out.push(record);
     }
     return out;
   }
 
   ack(recordIds: string[]): void {
-    for (const id of recordIds) {
-      if (!/^[0-9a-f-]{36}$/.test(id)) continue;
-      fs.rmSync(path.join(this.dir, `${id}.json`), { force: true });
+    const ids = new Set(recordIds.filter(id => RECORD_ID.test(id)));
+    for (const entry of this.entries()) {
+      if (ids.has(entry.recordId)) fs.rmSync(entry.file, { force: true });
     }
   }
 
-  list(): AiSharingQueuedItem[] {
-    return this.entries().flatMap(entry => {
+  /** What Settings shows of one wallet's queue. Expired records are dropped first. */
+  list(address: string): AiSharingQueuedItem[] {
+    this.prune();
+    return this.entries(address).flatMap(entry => {
       const record = this.read(entry.file);
       if (record === null) return [];
       return [
@@ -79,16 +92,9 @@ export class Outbox {
     }
   }
 
-  /** Drops everything queued, or only one wallet's records when `address` is given. */
-  purge(address?: string): void {
-    if (address === undefined) {
-      fs.rmSync(this.dir, { recursive: true, force: true });
-      return;
-    }
-    const wanted = address.toLowerCase();
-    for (const entry of this.entries()) {
-      if (this.read(entry.file)?.address === wanted) fs.rmSync(entry.file, { force: true });
-    }
+  /** Drops one wallet's queued records (it said no, or erased what it shared). */
+  purge(address: string): void {
+    for (const entry of this.entries(address)) fs.rmSync(entry.file, { force: true });
   }
 
   /** Drops records past the age limit, then the oldest until the count and size limits hold. */
@@ -112,13 +118,7 @@ export class Outbox {
 
   // A crash between write and rename leaves a `.tmp` that no listing sees; it is never renamed.
   private removeStaleTempFiles(now: number): void {
-    let names: string[];
-    try {
-      names = fs.readdirSync(this.dir);
-    } catch {
-      return;
-    }
-    for (const name of names) {
+    for (const name of this.names()) {
       if (!name.endsWith('.json.tmp')) continue;
       const file = path.join(this.dir, name);
       try {
@@ -129,20 +129,27 @@ export class Outbox {
     }
   }
 
-  private entries(): { file: string; mtimeMs: number; size: number }[] {
-    let names: string[];
+  private names(): string[] {
     try {
-      names = fs.readdirSync(this.dir);
+      return fs.readdirSync(this.dir);
     } catch {
       return [];
     }
-    return names
-      .filter(name => RECORD_FILE.test(name))
+  }
+
+  /** Queued records, oldest first; only `address`'s when given. */
+  private entries(address?: string): Entry[] {
+    const wanted = address?.toLowerCase();
+    return this.names()
       .flatMap(name => {
+        const match = RECORD_FILE.exec(name);
+        if (match === null || (wanted !== undefined && match[1] !== wanted)) return [];
         const file = path.join(this.dir, name);
         try {
           const stat = fs.statSync(file);
-          return [{ file, mtimeMs: stat.mtimeMs, size: stat.size }];
+          return [
+            { file, address: match[1], recordId: match[2], mtimeMs: stat.mtimeMs, size: stat.size },
+          ];
         } catch {
           return [];
         }
@@ -151,15 +158,22 @@ export class Outbox {
   }
 
   private read(file: string): AiTurnRecord | null {
+    let text: string;
     try {
-      const parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as AiTurnRecord;
-      return typeof parsed?.recordId === 'string' && typeof parsed.address === 'string'
-        ? parsed
-        : null;
+      text = fs.readFileSync(file, 'utf8');
     } catch {
-      // Unreadable or hand-edited: it can never upload, so don't let it block the queue.
-      fs.rmSync(file, { force: true });
+      // Locked by an antivirus scan, out of file handles…: try again next time, never delete.
       return null;
     }
+    try {
+      const parsed = JSON.parse(text) as AiTurnRecord;
+      if (typeof parsed?.recordId === 'string' && typeof parsed.address === 'string') return parsed;
+    } catch {
+      // Falls through: not JSON.
+    }
+    // Readable but broken (hand-edited, truncated by a disk error): it can never upload, so it
+    // must not block the queue.
+    fs.rmSync(file, { force: true });
+    return null;
   }
 }

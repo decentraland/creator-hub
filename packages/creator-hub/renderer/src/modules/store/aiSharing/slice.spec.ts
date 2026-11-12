@@ -188,7 +188,12 @@ describe('when the chat sends a turn', () => {
   it('should ask main to share it, with counts only', async () => {
     const params = await sendIn(setup({ consent: granted }));
 
-    expect(params.share).toEqual({ turnIndex: 0, selectedEntityCount: 0, mentionedAssetCount: 0 });
+    expect(params.share).toEqual({
+      wallet: ADDRESS,
+      turnIndex: 0,
+      selectedEntityCount: 0,
+      mentionedAssetCount: 0,
+    });
   });
 
   it('should not ask main to share it without consent', async () => {
@@ -749,5 +754,66 @@ describe('when looking at what was shared', () => {
     expect(api.eraseTurn).toHaveBeenCalledWith(ADDRESS, 'a');
     expect(store.getState().aiSharing.shared.turns.map(t => t.recordId)).toEqual(['b']);
     expect(store.getState().workspace.settings.aiDataSharing?.[ADDRESS]?.consent).toBe('granted');
+  });
+});
+
+describe('when the first reply was stopped', () => {
+  it('should not count it as a finished reply for the consent card', () => {
+    const store = setup({
+      messages: [{ role: 'assistant', done: true, cancelled: true } as never],
+    });
+
+    expect(selectSharingView(store.getState(), ADDRESS).status).toBe('hidden');
+  });
+});
+
+describe('when the service rate-limits an upload', () => {
+  it('should wait as long as Retry-After says on a 429', async () => {
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
+    vi.mocked(aiSharing.peek).mockResolvedValue([record('a')]);
+    vi.mocked(api.uploadTurns).mockResolvedValue({ ...fail(429), retryAfterSeconds: 600 });
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    expect(aiSharing.ack).not.toHaveBeenCalled();
+    expect(store.getState().aiSharing.nextUploadAt).toBeGreaterThanOrEqual(Date.now() + 599_000);
+  });
+});
+
+describe('when a "yes" given offline meets a feature that was turned off', () => {
+  it('should not send it', async () => {
+    const store = setup({ flag: false, consent: { ...granted, delivered: false } });
+
+    await store.dispatch(actions.flush());
+
+    expect(api.getConsent).not.toHaveBeenCalled();
+    expect(api.putConsent).not.toHaveBeenCalled();
+  });
+});
+
+describe('when a page of shared turns arrives late', () => {
+  it('should drop it if everything was deleted meanwhile', async () => {
+    let answer: (value: unknown) => void = () => {};
+    vi.mocked(api.listTurns).mockReturnValue(new Promise(r => (answer = r)) as never);
+    vi.mocked(api.eraseAll).mockResolvedValue(ok({ deleted: 1 }));
+    const store = setup({ consent: granted });
+
+    const loading = store.dispatch(actions.loadSharedTurns({ reset: true }));
+    await store.dispatch(actions.deleteEverything());
+    answer(ok({ records: [{ recordId: 'gone' }], next: null }));
+    await loading;
+
+    expect(store.getState().aiSharing.shared.turns).toEqual([]);
+  });
+});
+
+describe('when reading the local queue', () => {
+  it("should ask main for the signed-in wallet's records only", async () => {
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.refreshQueue());
+
+    expect(aiSharing.list).toHaveBeenCalledWith(ADDRESS);
   });
 });

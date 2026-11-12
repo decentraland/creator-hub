@@ -30,6 +30,7 @@ import type {
   AiProviderInfo,
   AiSendParams,
 } from '/shared/types/ai';
+import { redactText } from '/shared/redact';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
 import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
 import { getAppDataPath, getUserDataPath } from './electron';
@@ -1030,15 +1031,8 @@ export function signInRequiredMessage(
 
 /** `text` with anything that looks like an API key or bearer token masked, for the log. */
 export function redactSecrets(text: string): string {
-  return text
-    .replace(
-      /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(-----END [A-Z ]*PRIVATE KEY-----|$)/g,
-      '<redacted private key>',
-    )
-    .replace(/\b(sk-|AIza|gh[opsu]_|github_pat_|xox[abpr]-|AKIA)[\w-]{8,}/g, '$1<redacted>')
-    .replace(/\beyJ[\w-]+\.[\w-]+\.[\w-]+/g, '<redacted jwt>')
-    .replace(/\b0x[0-9a-fA-F]{64}\b/g, '0x<redacted>')
-    .replace(/(Bearer\s+)[\w.~+/=-]+/gi, '$1<redacted>');
+  // One set of rules for logs and for shared turns, so the two can't drift apart.
+  return redactText(text).text;
 }
 
 /** `bin`, or null when it is a managed install of a CLI the app no longer signs in to. */
@@ -1344,8 +1338,8 @@ function resolveAttachments(attachments: AiSendParams['attachments']): ResolvedA
 //    from the log alone (exit code or signal, duration, output counts, the tail of its stderr).
 //  - ok/message: what the turn reports to the chat. A clean exit that produced nothing would
 //    leave an empty bubble that reads as a hang, so it reports an error instead. A null code
-//    means a signal killed the child: an intentional aiStop() already marked the turn done (so
-//    finish() no-ops there), so reaching it means an unsolicited kill (OOM, external SIGKILL),
+//    means a signal killed the child: an intentional aiStop() already ended the turn as cancelled
+//    (so finish() no-ops there), so reaching it means an unsolicited kill (OOM, external SIGKILL),
 //    reported as an interruption, never as a successful turn.
 export function turnOutcome(turn: {
   label: string;

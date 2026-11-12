@@ -172,8 +172,9 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     aiSharing.getOutbox().peek(address, Math.min(Math.max(1, limit), 50)),
   );
   handle('aiSharing.ack', async (_event, ids) => aiSharing.getOutbox().ack(ids));
-  handle('aiSharing.list', async () => aiSharing.getOutbox().list());
+  handle('aiSharing.list', async (_event, address) => aiSharing.getOutbox().list(address));
   handle('aiSharing.purge', async (_event, address) => aiSharing.getOutbox().purge(address));
+  handle('aiSharing.setWallet', async (_event, address) => aiSharing.setSignedInWallet(address));
   handle('aiSharing.setConversationShared', async (_event, conversationId, shared) =>
     aiSharing.setConversationShared(conversationId, shared),
   );

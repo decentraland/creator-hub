@@ -239,7 +239,7 @@ describe('when queuing records on disk', () => {
   it('should list a short prompt preview for Settings', () => {
     outbox.enqueue(record());
 
-    expect(outbox.list()).toEqual([
+    expect(outbox.list(ADDRESS)).toEqual([
       expect.objectContaining({
         provider: 'claude',
         promptPreview: 'add a door, my key is <api_key>',
@@ -247,12 +247,36 @@ describe('when queuing records on disk', () => {
     ]);
   });
 
-  it('should delete everything on purge', () => {
-    outbox.enqueue(record());
-    outbox.purge();
+  it("should name each file by its wallet, so other wallets' files are never opened", () => {
+    const r = record();
+    outbox.enqueue(r);
 
-    expect(outbox.count()).toBe(0);
-    expect(fs.existsSync(path.join(dir, 'outbox'))).toBe(false);
+    expect(fs.readdirSync(path.join(dir, 'outbox'))).toEqual([`${ADDRESS}.${r.recordId}.json`]);
+  });
+
+  it('should drop expired records when read, even if nothing new is queued', () => {
+    const r = record();
+    outbox.enqueue(r);
+    const file = path.join(dir, 'outbox', `${ADDRESS}.${r.recordId}.json`);
+    const old = new Date(Date.now() - OUTBOX_LIMITS.maxAgeMs - 60_000);
+    fs.utimesSync(file, old, old);
+
+    expect(outbox.peek(ADDRESS, 10)).toEqual([]);
+    expect(outbox.list(ADDRESS)).toEqual([]);
+  });
+
+  it('should keep a valid record it cannot read right now', () => {
+    const r = record();
+    outbox.enqueue(r);
+    const file = path.join(dir, 'outbox', `${ADDRESS}.${r.recordId}.json`);
+    fs.chmodSync(file, 0o000);
+    try {
+      expect(outbox.peek(ADDRESS, 10)).toEqual([]);
+      expect(fs.existsSync(file)).toBe(true);
+    } finally {
+      fs.chmodSync(file, 0o600);
+    }
+    expect(outbox.peek(ADDRESS, 10)).toHaveLength(1);
   });
 
   it('should drop records older than the age limit', () => {
@@ -271,7 +295,7 @@ describe('when queuing records on disk', () => {
   it('should discard an unreadable file instead of blocking the queue', () => {
     outbox.enqueue(record());
     fs.writeFileSync(
-      path.join(dir, 'outbox', '00000000-0000-0000-0000-000000000000.json'),
+      path.join(dir, 'outbox', `${ADDRESS}.00000000-0000-0000-0000-000000000000.json`),
       '{oops',
     );
 
@@ -298,7 +322,8 @@ describe('when dropping queued records', () => {
     outbox.enqueue(make({ address: OTHER }));
     outbox.purge(OTHER);
 
-    expect(outbox.list().map(item => item.address)).toEqual([ADDRESS]);
+    expect(outbox.list(OTHER)).toEqual([]);
+    expect(outbox.list(ADDRESS).map(item => item.address)).toEqual([ADDRESS]);
   });
 
   it("should drop only one conversation's records", () => {
@@ -355,6 +380,22 @@ describe('when a turn ends', () => {
   it('should queue nothing once sharing stopped during the turn', async () => {
     const queue = vi.fn();
     await start().finish(end, {}, async () => false, queue);
+
+    expect(queue).not.toHaveBeenCalled();
+  });
+
+  it('should queue nothing when the conversation is excluded while consent is being checked', async () => {
+    const queue = vi.fn();
+    await start().finish(
+      end,
+      {},
+      async () => {
+        setConversationShared('c-end', false);
+        return true;
+      },
+      queue,
+    );
+    setConversationShared('c-end', true);
 
     expect(queue).not.toHaveBeenCalled();
   });

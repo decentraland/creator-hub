@@ -114,8 +114,10 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     const context = editorContext(selection, assetMentions);
     dispatch(actions.clearAssetMentions());
     const apiKeyFromEnv = state.workspace.settings?.useApiKeyFromEnv ?? false;
-    const share = (await shareThisTurn(getState()))
+    const shareWallet = await shareThisTurn(getState());
+    const share = shareWallet
       ? {
+          wallet: shareWallet,
           turnIndex: state.ai.messages.filter(m => m.role === 'user').length,
           selectedEntityCount: selection.length,
           mentionedAssetCount: assetMentions.length,
@@ -134,14 +136,15 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
   },
 );
 
-// Loaded on use: the sharing module reads the app config at import, which this slice (and its
-// tests) must not depend on. If it can't load, the turn is simply not shared.
-async function shareThisTurn(state: AppState) {
+// The wallet to share this turn for, or null. Loaded on use: the sharing slice imports the app
+// config module, which initialises from the preload `env` when imported, and this slice's tests
+// stub that preload. If it can't load, the turn is simply not shared.
+async function shareThisTurn(state: AppState): Promise<string | null> {
   try {
-    const { shouldShareTurn } = await import('/@/modules/store/aiSharing/slice');
-    return shouldShareTurn(state);
+    const { currentWallet, shouldShareTurn } = await import('/@/modules/store/aiSharing/slice');
+    return shouldShareTurn(state) ? currentWallet() : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -182,8 +185,9 @@ function editorContext(
   return lines.length > 0 ? lines.join('\n') : undefined;
 }
 
-// Kill the in-flight turn. Main suppresses the `done` event on an intentional stop, so
-// the reducer finalizes the current bubble itself.
+// Kill the in-flight turn. Main ends it with a `done` event marked `cancelled`; `stopped` also
+// finalizes the bubble here, so the UI settles even if that event is missed (the editor was
+// left mid-turn).
 export const stop = createAsyncThunk('ai/stop', async (_: void, { dispatch }) => {
   await ai.stop();
   dispatch(actions.stopped());
@@ -486,6 +490,7 @@ const slice = createSlice({
           if (msg !== undefined) {
             msg.done = true;
             msg.mutations = payload.mutations;
+            if (payload.cancelled === true) msg.cancelled = true;
           }
           state.busy = false;
           break;
@@ -497,7 +502,8 @@ const slice = createSlice({
         }
       }
     },
-    // Finalize on an intentional stop (no `done` event follows a kill).
+    // Finalize on an intentional stop. Main also sends `done` (cancelled), which may arrive
+    // before or after this; both paths leave the same state.
     stopped: state => {
       state.busy = false;
       // A pending prompt can't be answered once the turn is dead (main already resolved its

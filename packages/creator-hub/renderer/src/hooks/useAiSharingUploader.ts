@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { hasSharingConsent } from '/shared/types/ai-sharing';
 
+import { aiSharing } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import {
   actions as aiSharingActions,
@@ -27,6 +28,11 @@ export function useAiSharingUploader() {
   // timer only keeps running while there is something to upload.
   const consented = hasSharingConsent(consent);
   const decided = consent !== undefined;
+
+  // Main records turns only for the wallet signed in here; tell it on every change.
+  useEffect(() => {
+    void aiSharing.setWallet(address);
+  }, [address]);
 
   useEffect(() => {
     if (!configured || address === null || !decided) return;

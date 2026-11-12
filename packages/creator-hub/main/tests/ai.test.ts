@@ -983,18 +983,20 @@ describe('when telling the user how to sign an agent back in', () => {
 describe('when writing CLI error output to the log', () => {
   it('should hide API keys and bearer tokens', () => {
     const out = redactSecrets(
-      'bad key sk-example1234567890 and AIzaExample1234567890abcdef; Authorization: Bearer example.token-123',
+      'bad key sk-example1234567890example and AIzaExampleExampleExampleExample12345; Authorization: Bearer example.token-123',
     );
-    expect(out).not.toMatch(/sk-example1234567890|AIzaExample1234567890abcdef|example\.token-123/);
+    expect(out).not.toMatch(
+      /sk-example1234567890example|AIzaExampleExampleExampleExample12345|example\.token-123/,
+    );
     expect(out).toContain('bad key');
   });
 
   it('should hide other token formats, private keys and JWTs', () => {
     const secrets = [
       'ghp_example1234567890abcdef',
-      'github_pat_example1234567890',
+      'github_pat_example1234567890example',
       'xoxb-example1234567890',
-      'AKIAEXAMPLE12345678',
+      'AKIAEXAMPLE000000000',
       'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJleGFtcGxlIn0.c2lnbmF0dXJlLWV4YW1wbGU',
       `0x${'ab'.repeat(32)}`,
       '-----BEGIN PRIVATE KEY-----\nMIIexample\n-----END PRIVATE KEY-----',

@@ -11,8 +11,6 @@ import { buildSignedHeaders } from './metricsApi';
  * The service that stores conversations creators chose to share. Empty until it is deployed:
  * `isConfigured()` is then false and nothing is ever sent.
  */
-// Read on use, not at import: the AI chat slice imports this module, and its tests stub the
-// preload `env` the config reads.
 const apiUrl = (): string => config.get('AI_SHARING_API_URL') ?? '';
 
 export const isConfigured = () => apiUrl() !== '';
@@ -79,17 +77,20 @@ async function send<T>(
   body?: unknown,
 ): Promise<MetricsResponse<T>> {
   if (!isConfigured()) return { ok: false, status: 0, error: 'Sharing service not configured' };
+  const rawBody = body === undefined ? undefined : JSON.stringify(body);
+  const metadata = await signedMetadata(method, rawBody);
+  // Checked after the await, right before signing: buildSignedHeaders signs as whoever is signed
+  // in at that moment.
   if (AuthServerProvider.getAccount()?.toLowerCase() !== wallet.toLowerCase()) {
     return { ok: false, status: 0, error: 'The signed-in account changed' };
   }
-  const rawBody = body === undefined ? undefined : JSON.stringify(body);
   let headers: Record<string, string>;
   try {
     headers = buildSignedHeaders(
       apiUrl(),
       path,
       method.toLowerCase() as 'get' | 'post' | 'put',
-      await signedMetadata(method, rawBody),
+      metadata,
     );
   } catch (error: any) {
     return { ok: false, status: 0, error: error.message };

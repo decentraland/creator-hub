@@ -10,7 +10,7 @@ import {
   type AiTurnRecord,
   type AiTurnUsage,
 } from '/shared/types/ai-sharing';
-import { redactForSharing } from '/shared/redact';
+import { prepareForSharing, redactForSharing } from '/shared/redact';
 
 /** What one CLI line says about the run itself, as opposed to the conversation. */
 export interface TurnInfo {
@@ -162,20 +162,24 @@ export function buildTurnRecord(capture: TurnCapture, end: TurnEnd): AiTurnRecor
 
 // Text limits are in characters, the cap in bytes: a reply in a multi-byte script, or text JSON
 // has to escape, can pass the first and break the second. Shrink the reply, then the tool details,
-// then the prompt; a record that still doesn't fit is not shared (null).
+// then the prompt; a record that still doesn't fit is not shared (null). Each text is redacted
+// once here, however many lengths are tried.
 function fitWithinCap(record: AiTurnRecord, capture: TurnCapture): AiTurnRecord | null {
+  if (byteLength(record) <= AI_SHARING_LIMITS.recordBytes) return record;
+  const response = prepareForSharing(capture.responseParts.join(''));
   let limit: number = AI_SHARING_LIMITS.responseChars;
   while (byteLength(record) > AI_SHARING_LIMITS.recordBytes && limit > 1_000) {
     limit = Math.floor(limit / 2);
-    record.response = redactForSharing(capture.responseParts.join(''), limit);
+    record.response = response(limit);
   }
   if (byteLength(record) > AI_SHARING_LIMITS.recordBytes) {
     record.tools = record.tools.map(t => ({ ...t, detail: redactForSharing('', 0) }));
   }
+  const prompt = prepareForSharing(capture.prompt);
   limit = AI_SHARING_LIMITS.promptChars;
   while (byteLength(record) > AI_SHARING_LIMITS.recordBytes && limit > 1_000) {
     limit = Math.floor(limit / 2);
-    record.prompt = redactForSharing(capture.prompt, limit);
+    record.prompt = prompt(limit);
   }
   return byteLength(record) <= AI_SHARING_LIMITS.recordBytes ? record : null;
 }

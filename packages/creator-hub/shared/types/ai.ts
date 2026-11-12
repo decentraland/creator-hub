@@ -174,6 +174,8 @@ export interface AiSendParams {
 
 // What only the renderer knows about a turn the user agreed to share. Counts, not content.
 export interface AiShareRequest {
+  // The wallet the renderer means to share for; main records only if it is the signed-in one.
+  wallet: string;
   turnIndex: number;
   selectedEntityCount: number;
   mentionedAssetCount: number;
@@ -232,6 +234,7 @@ export interface AiMirrorMessage {
   done: boolean;
   error?: string;
   mutations?: number;
+  cancelled?: boolean;
   reverted?: boolean;
   // Files the user attached to this prompt (chips under the user bubble). Name + kind only.
   attachments?: AiAttachmentMeta[];

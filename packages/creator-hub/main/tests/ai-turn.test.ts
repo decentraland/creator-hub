@@ -47,7 +47,7 @@ import log from 'electron-log/main';
 import type { AiEvent, AiSendParams } from '/shared/types/ai';
 import { AI_SHARING_CONSENT_VERSION, type AiTurnRecord } from '/shared/types/ai-sharing';
 import { track } from '../src/modules/analytics';
-import { setConversationShared } from '../src/modules/ai-sharing';
+import { setConversationShared, setSignedInWallet } from '../src/modules/ai-sharing';
 import { aiBusy, aiSend, aiStop } from '../src/modules/ai';
 
 type FakeChild = EventEmitter & {
@@ -412,13 +412,14 @@ describe('when running AI turns', () => {
       provider: 'claude',
       text: 'add a door, key sk-ant-api03-exampleexampleexample00',
       sessionId: 's1',
-      share: { turnIndex: 0, selectedEntityCount: 1, mentionedAssetCount: 0 },
+      share: { wallet: ADDRESS, turnIndex: 0, selectedEntityCount: 1, mentionedAssetCount: 0 },
     };
     const outboxDir = () => path.join(mocks.userData, 'ai-sharing', 'outbox');
     const queued = (): AiTurnRecord[] =>
       fs.existsSync(outboxDir())
         ? fs
             .readdirSync(outboxDir())
+            .filter(f => f.endsWith('.json'))
             .map(f => JSON.parse(fs.readFileSync(path.join(outboxDir(), f), 'utf8')))
         : [];
     const runTurn = async (params: AiSendParams) => {
@@ -439,13 +440,13 @@ describe('when running AI turns', () => {
     });
 
     beforeEach(() => {
-      mocks.userId = ADDRESS;
+      setSignedInWallet(ADDRESS);
       mocks.settings = { aiDataSharing: { [ADDRESS]: grant } };
     });
 
     afterEach(() => {
       fs.rmSync(outboxDir(), { recursive: true, force: true });
-      mocks.userId = null;
+      setSignedInWallet(null);
       mocks.settings = {};
     });
 
@@ -486,8 +487,9 @@ describe('when running AI turns', () => {
     });
 
     it('should record nothing for a wallet that never agreed, though another did here', async () => {
-      mocks.userId = '0x000000000000000000000000000000000000beef';
-      await runTurn(shared);
+      const other = '0x000000000000000000000000000000000000beef';
+      setSignedInWallet(other);
+      await runTurn({ ...shared, share: { ...shared.share!, wallet: other } });
 
       expect(queued()).toEqual([]);
     });
@@ -504,7 +506,7 @@ describe('when running AI turns', () => {
 
     it('should record nothing when the wallet changes while the turn runs', async () => {
       await aiSend(shared, projectDir, () => {});
-      mocks.userId = '0x000000000000000000000000000000000000beef';
+      setSignedInWallet('0x000000000000000000000000000000000000beef');
       writeLines(child, assistantText('Added it.'));
       exitAndClose(child, 0);
       await settle();
@@ -523,8 +525,15 @@ describe('when running AI turns', () => {
       expect(queued()).toEqual([]);
     });
 
+    it('should record nothing when the renderer asks for a wallet that is not signed in', async () => {
+      setSignedInWallet('0x000000000000000000000000000000000000beef');
+      await runTurn(shared);
+
+      expect(queued()).toEqual([]);
+    });
+
     it('should record nothing when signed out', async () => {
-      mocks.userId = null;
+      setSignedInWallet(null);
       await runTurn(shared);
 
       expect(queued()).toEqual([]);

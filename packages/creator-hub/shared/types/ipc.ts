@@ -215,10 +215,12 @@ export interface Ipc {
   // the renderer, which holds the signing identity, uploads and acknowledges.
   'aiSharing.peek': (address: string, limit: number) => Promise<AiTurnRecord[]>;
   'aiSharing.ack': (recordIds: string[]) => Promise<void>;
-  'aiSharing.list': () => Promise<AiSharingQueuedItem[]>;
-  'aiSharing.purge': (address?: string) => Promise<void>;
+  'aiSharing.list': (address: string) => Promise<AiSharingQueuedItem[]>;
+  'aiSharing.purge': (address: string) => Promise<void>;
   // The chip's per-conversation switch: an excluded conversation's queued and in-flight turns
   // are dropped.
+  // The renderer's signed-in wallet (null when signed out): the only account main records for.
+  'aiSharing.setWallet': (address: string | null) => Promise<void>;
   'aiSharing.setConversationShared': (conversationId: string, shared: boolean) => Promise<void>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (

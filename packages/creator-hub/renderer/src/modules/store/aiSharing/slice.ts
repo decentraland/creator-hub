@@ -27,6 +27,8 @@ export type DeleteStatus = 'idle' | 'confirming' | 'deleting' | 'deleted' | 'fai
 
 export interface SharedTurnsState {
   status: 'idle' | 'loading' | 'loaded' | 'failed';
+  // Bumped by every reset load and delete; a page from an older one is stale.
+  generation: number;
   turns: api.AiSharingStoredTurn[];
   next: string | null;
   erasing: string[];
@@ -60,7 +62,7 @@ const initialState: AiSharingState = {
   failures: 0,
   nextUploadAt: 0,
   versionMismatch: false,
-  shared: { status: 'idle', turns: [], next: null, erasing: [] },
+  shared: { status: 'idle', generation: 0, turns: [], next: null, erasing: [] },
 };
 
 /** The signed-in wallet, lowercase, or null when signed out. */
@@ -110,14 +112,21 @@ export function selectSharingView(state: AppState, wallet: string | null): AiSha
   const notAskedYet =
     consent === undefined ||
     (consent.consent === 'granted' && consent.version < AI_SHARING_CONSENT_VERSION);
-  const hasReply = state.ai.messages.some(m => m.role === 'assistant' && m.done && !m.error);
+  // A finished reply: not a failed turn, and not one the user stopped.
+  const hasReply = state.ai.messages.some(
+    m => m.role === 'assistant' && m.done && !m.error && !m.cancelled,
+  );
   if (!notAskedYet || state.aiSharing.notNow || !hasReply) {
     return { status: 'hidden', conversationExcluded };
   }
   return { status: wallet !== null ? 'ask' : 'signin', conversationExcluded };
 }
 
-export const refreshQueue = createAsyncThunk('aiSharing/refreshQueue', () => aiSharing.list());
+/** What main has queued for the signed-in wallet (other wallets' records stay hidden). */
+export const refreshQueue = createAsyncThunk('aiSharing/refreshQueue', async () => {
+  const wallet = currentWallet();
+  return wallet === null ? [] : aiSharing.list(wallet);
+});
 
 async function saveConsent(
   getState: () => AppState,
@@ -252,10 +261,13 @@ export const loadSharedTurns = createAsyncThunk(
   async ({ reset }: { reset: boolean }, { getState, rejectWithValue }) => {
     const wallet = currentWallet();
     if (wallet === null) return rejectWithValue('Signed out');
+    // Read before the request: a delete or a fresh load that lands meanwhile bumps it, and this
+    // page is then dropped instead of bringing back turns that are gone.
+    const generation = getState().aiSharing.shared.generation;
     const cursor = reset ? null : getState().aiSharing.shared.next;
     const response = await api.listTurns(wallet, cursor);
     if (!response.ok) return rejectWithValue(response.error);
-    return { ...response.data, reset };
+    return { ...response.data, reset, generation };
   },
 );
 
@@ -365,8 +377,10 @@ async function flushQueue(getState: () => AppState, dispatch: AppDispatch): Prom
   const consent = selectSharingConsent(getState(), wallet);
   if (consent === undefined) return;
   if (Date.now() < getState().aiSharing.nextUploadAt) return;
-  // A grant the service can't accept (consent text mismatch) isn't sent; a withdrawal always is.
-  if (getState().aiSharing.versionMismatch && consent.consent === 'granted') return;
+  // A "yes" goes out only while sharing is offered (the flag on, the consent text matching): a
+  // grant made offline must not reach the service after the feature was turned off. A "no"
+  // always goes out.
+  if (consent.consent === 'granted' && !isSharingFeatureOn(getState())) return;
 
   if (getState().aiSharing.syncedWallet !== wallet) {
     if (!(await syncConsent(getState, dispatch, wallet))) {
@@ -459,7 +473,7 @@ const slice = createSlice({
       state.deletedCount = null;
     },
     clearSharedTurns: state => {
-      state.shared = initialState.shared;
+      state.shared = { ...initialState.shared, generation: state.shared.generation + 1 };
     },
   },
   extraReducers: builder => {
@@ -470,6 +484,7 @@ const slice = createSlice({
       .addCase(deleteEverything.pending, state => {
         state.deleteStatus = 'deleting';
         state.deletedCount = null;
+        state.shared.generation += 1;
       })
       .addCase(deleteEverything.fulfilled, (state, { payload }) => {
         state.deleteStatus = 'deleted';
@@ -478,10 +493,12 @@ const slice = createSlice({
       .addCase(deleteEverything.rejected, state => {
         state.deleteStatus = 'failed';
       })
-      .addCase(loadSharedTurns.pending, state => {
+      .addCase(loadSharedTurns.pending, (state, { meta }) => {
+        if (meta.arg.reset) state.shared.generation += 1;
         state.shared.status = 'loading';
       })
       .addCase(loadSharedTurns.fulfilled, (state, { payload }) => {
+        if (payload.generation !== state.shared.generation) return;
         state.shared.turns = payload.reset
           ? payload.records
           : [...state.shared.turns, ...payload.records];

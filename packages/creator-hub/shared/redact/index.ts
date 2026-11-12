@@ -60,7 +60,9 @@ const RULES: Rule[] = [
   },
   {
     kind: 'email',
-    pattern: /\b[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.([a-zA-Z]{2,})\b/g,
+    // Every part bounded (RFC 5321 limits): an unbounded local part re-scans a long run of
+    // `a.a.a…` from every position, quadratic on a big reply.
+    pattern: /(?<![\w.+-])[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){0,8}\.([a-zA-Z]{2,24})\b/g,
     replace: (_m, [tld]) => (FILE_EXTENSION.test(tld) ? null : '<email>'),
   },
   { kind: 'phone', pattern: /(?<![\w.-])\+\d{1,3}(?:[\s.-]\(?\d{2,4}\)?){2,4}(?![\w.-])/g },
@@ -86,13 +88,17 @@ const RULES: Rule[] = [
 
 const MIN_SEED_WORDS = 12;
 
-// What may sit between two words of a written-down phrase: spaces, commas, quotes and brackets
-// (a JSON array), and list numbering (`1. abandon 2. ability`).
-const SEED_GAP = /^(?:[\s,;:"'`()[\]{}]|\d{1,2}[.)])+$/;
+// What may sit between two words of a written-down phrase: any short run without letters, so
+// spaces, commas, quotes and brackets (a JSON array), list markers (`1.`, `1)`, `1 `, `- `, `* `)
+// and separators (` | `, `-`) all join a run.
+const SEED_GAP = /^[^A-Za-z]{1,8}$/;
 
 /** Replaces any run of 12+ BIP-39 words, the shape of a wallet recovery phrase, however listed. */
 function redactSeedPhrases(text: string, counts: Record<string, number>): string {
-  const words = Array.from(text.matchAll(/[A-Za-z]+/g), m => ({
+  // JSON-escaped line breaks (`\nabandon`) would glue their letter to the next word. Blanked to
+  // the same length, so every offset found in `scan` is the same in `text`.
+  const scan = text.replace(/\\[ntr]/g, '  ');
+  const words = Array.from(scan.matchAll(/[A-Za-z]+/g), m => ({
     word: m[0],
     start: m.index,
     end: m.index + m[0].length,
@@ -108,7 +114,7 @@ function redactSeedPhrases(text: string, counts: Record<string, number>): string
   for (let i = 0; i < words.length; i++) {
     const isSeed = BIP39_ENGLISH.has(words[i].word.toLowerCase());
     const joined =
-      runStart >= 0 && i > 0 && SEED_GAP.test(text.slice(words[i - 1].end, words[i].start));
+      runStart >= 0 && i > 0 && SEED_GAP.test(scan.slice(words[i - 1].end, words[i].start));
     if (!isSeed) {
       closeRun(i - 1);
       continue;
@@ -223,14 +229,20 @@ export function truncateMiddle(text: string, max: number): { text: string; trunc
   };
 }
 
+/**
+ * Redacts once and returns a function that truncates the result to any length, for a caller
+ * that tries several lengths (shrinking a record to its byte cap) without redacting again.
+ */
+export function prepareForSharing(text: string): (max: number) => RedactedText {
+  const redacted = redactText(text);
+  const originalLength = Array.from(text).length;
+  return max => {
+    const { text: clipped, truncated } = truncateMiddle(redacted.text, max);
+    return { text: clipped, originalLength, truncated, redactions: redacted.redactions };
+  };
+}
+
 /** Redacts, then truncates: truncating first could split a secret and leave half of it. */
 export function redactForSharing(text: string, max: number): RedactedText {
-  const redacted = redactText(text);
-  const { text: clipped, truncated } = truncateMiddle(redacted.text, max);
-  return {
-    text: clipped,
-    originalLength: Array.from(text).length,
-    truncated,
-    redactions: redacted.redactions,
-  };
+  return prepareForSharing(text)(max);
 }

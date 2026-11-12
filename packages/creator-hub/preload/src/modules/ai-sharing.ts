@@ -10,11 +10,11 @@ export async function ack(recordIds: string[]): Promise<void> {
   return invoke('aiSharing.ack', recordIds);
 }
 
-export async function list(): Promise<AiSharingQueuedItem[]> {
-  return invoke('aiSharing.list');
+export async function list(address: string): Promise<AiSharingQueuedItem[]> {
+  return invoke('aiSharing.list', address);
 }
 
-export async function purge(address?: string): Promise<void> {
+export async function purge(address: string): Promise<void> {
   return invoke('aiSharing.purge', address);
 }
 
@@ -23,4 +23,8 @@ export async function setConversationShared(
   shared: boolean,
 ): Promise<void> {
   return invoke('aiSharing.setConversationShared', conversationId, shared);
+}
+
+export async function setWallet(address: string | null): Promise<void> {
+  return invoke('aiSharing.setWallet', address);
 }
