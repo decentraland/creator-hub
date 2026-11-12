@@ -442,3 +442,19 @@ describe('when a string param is tagged @format image', () => {
     expect(importAsset.props.disabled).toBe(true);
   });
 });
+
+// A layout written by a newer editor can carry a type this one doesn't know (#1765).
+describe('a param type this editor does not know', () => {
+  it('shows a notice instead of an editable text box', () => {
+    const { container } = render(
+      <ScriptParamField
+        name="spinAxis"
+        param={{ type: 'vector3', value: { x: 1 } } as unknown as ScriptParamObject}
+        onUpdate={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Spin Axis: this setting needs a newer version/)).toBeTruthy();
+    expect(container.querySelector('input')).toBeNull();
+    expect(container.textContent).not.toContain('[object Object]');
+  });
+});

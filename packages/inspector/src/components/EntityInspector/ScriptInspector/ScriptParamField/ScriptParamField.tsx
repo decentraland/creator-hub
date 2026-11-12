@@ -6,7 +6,8 @@ import { ColorPicker } from '../../../ui/ColorPicker';
 import { toColor3, toHex } from '../../../ui/ColorField/utils';
 import { Dropdown } from '../../../ui/Dropdown';
 import { WalletField } from '../../../ui/WalletField';
-import { toColorOfKind } from '../parser';
+import { Message, MessageType } from '../../../ui/Message';
+import { toColorOfKind } from '../../../../lib/sdk/script-params/parser';
 import type { ScriptColor } from '../types';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
 import ActionField from './ActionField';
@@ -15,7 +16,7 @@ import { ArrayField } from './ArrayField';
 import { EntityParamField } from './EntityParamField';
 import { ActionNameField } from './ActionNameField';
 import { FileParamField } from './FileParamField';
-import { labelWithTooltip } from './labels';
+import { formatLabel, labelWithTooltip } from './labels';
 
 import type { Props } from './types';
 
@@ -159,8 +160,7 @@ function ParamInput({
       );
 
     case 'string':
-    default:
-      if (param.type === 'string' && param.actionsOf) {
+      if (param.actionsOf) {
         return (
           <ActionNameField
             label={labelWithTooltip(name, param.tooltip)}
@@ -170,7 +170,7 @@ function ParamInput({
           />
         );
       }
-      if (param.type === 'string' && param.format === 'wallet') {
+      if (param.format === 'wallet') {
         return (
           <WalletField
             // WalletField keeps its own text, so remount it when the stored address changes
@@ -182,7 +182,7 @@ function ParamInput({
           />
         );
       }
-      if (param.type === 'string' && param.format && param.format !== 'wallet') {
+      if (param.format) {
         return (
           <FileParamField
             label={labelWithTooltip(name, param.tooltip)}
@@ -201,6 +201,15 @@ function ParamInput({
           onChange={e => onUpdate(e.target.value)}
           debounceTime={300}
           error={getError?.(param)}
+        />
+      );
+
+    // A type from a newer editor: a text box would show "[object Object]" and overwrite it.
+    default:
+      return (
+        <Message
+          text={`${formatLabel(name)}: this setting needs a newer version of Creator Hub to edit.`}
+          type={MessageType.WARNING}
         />
       );
   }
