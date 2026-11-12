@@ -17,8 +17,6 @@ export const CREATOR_FUND_RULES_URL = config.get('CREATOR_FUND_RULES_URL');
 
 export const EMAIL_MAX_LENGTH = 254;
 
-export const FEEDBACK_MESSAGE_MAX_LENGTH = 4096;
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const isEmail = (value: string) =>

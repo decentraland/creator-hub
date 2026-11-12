@@ -2,15 +2,13 @@ import { type ElementType, useEffect, useId, useState } from 'react';
 import type { InputBaseComponentProps } from 'decentraland-ui2';
 
 import { analytics, feedback } from '#preload';
-import type { FeedbackDelivery, FeedbackSource } from '/shared/types/feedback';
-import { t } from '/@/modules/store/translation/utils';
 import {
-  EMAIL_MAX_LENGTH,
   FEEDBACK_MESSAGE_MAX_LENGTH,
-  HELP_FAQ_URL,
-  isValidContact,
-  parseContact,
-} from '/@/modules/utils';
+  type FeedbackDelivery,
+  type FeedbackSource,
+} from '/shared/types/feedback';
+import { t } from '/@/modules/store/translation/utils';
+import { EMAIL_MAX_LENGTH, HELP_FAQ_URL, isValidContact, parseContact } from '/@/modules/utils';
 
 import { Required } from '../../EarnPage/ContactInfoForm.styled';
 import { WarningIcon } from '../../EarnPage/icons/WarningIcon';

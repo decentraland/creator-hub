@@ -132,6 +132,80 @@ describe('send', () => {
         expect(attachment()?.data).toBe('open ~\\a\nread ~/b');
       });
     });
+
+    describe.each([
+      ['a Windows path', 'C:\\Users\\jane\\AppData\\x', '~\\AppData\\x'],
+      [
+        'a JSON-escaped Windows path',
+        '"C:\\\\Users\\\\jane\\\\AppData\\\\x"',
+        '"~\\\\AppData\\\\x"',
+      ],
+      ['a lowercase forward-slash Windows path', 'c:/users/jane/AppData/x', '~/AppData/x'],
+      ['an 8.3 short name', 'C:\\Users\\GABRIE~1\\AppData\\Local\\Temp', '~\\AppData\\Local\\Temp'],
+      ['a macOS path of another user', 'open /Users/bob/scenes/a', 'open ~/scenes/a'],
+      ['a Linux path', '"path":"/home/jane/scenes/a"', '"path":"~/scenes/a"'],
+      ['a Windows name with a space', 'C:\\Users\\Jane Doe\\AppData', '~\\AppData'],
+    ])('and the log mentions a user folder as %s', (_, line, expected) => {
+      beforeEach(() => {
+        fs.writeFileSync(mocks.logPath, line);
+      });
+
+      it('should replace the user folder with ~ and keep the rest of the path', async () => {
+        await send(report);
+        expect(attachment()?.data).toBe(expected);
+      });
+    });
+
+    describe.each([
+      ['a file named users', 'read /var/data/users.json'],
+      ['a users folder below the root', 'read /var/data/users/jane/a'],
+    ])('and the log mentions %s', (_, line) => {
+      beforeEach(() => {
+        fs.writeFileSync(mocks.logPath, line);
+      });
+
+      it('should leave it untouched', async () => {
+        await send(report);
+        expect(attachment()?.data).toBe(line);
+      });
+    });
+  });
+
+  describe.each<[string, FeedbackReport]>([
+    ['an empty message', { ...report, message: '' }],
+    ['a message over 4096 characters', { ...report, message: 'a'.repeat(4097) }],
+    [
+      'an unknown contact method',
+      { ...report, contact: { method: 'phone', value: '+1-555-0100' } as never },
+    ],
+    [
+      'a contact value over 254 characters',
+      { ...report, contact: { method: 'email', value: `${'a'.repeat(243)}@example.com` } },
+    ],
+  ])('when the report has %s', (_, invalid) => {
+    beforeEach(() => {
+      fs.writeFileSync(mocks.logPath, 'some log');
+    });
+
+    it('should reject without sending', async () => {
+      await expect(send(invalid)).rejects.toThrow();
+      expect(mocks.captureFeedback).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the report is at the limits', () => {
+    beforeEach(() => {
+      fs.writeFileSync(mocks.logPath, 'some log');
+    });
+
+    it('should send it', async () => {
+      await send({
+        ...report,
+        message: 'a'.repeat(4096),
+        contact: { method: 'email', value: `${'a'.repeat(242)}@example.com` },
+      });
+      expect(mocks.captureFeedback).toHaveBeenCalled();
+    });
   });
 
   describe('when the report leaves the logs out', () => {

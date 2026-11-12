@@ -3,10 +3,14 @@ import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 
-import type { FeedbackDelivery, FeedbackReport } from '/shared/types/feedback';
+import {
+  FEEDBACK_MESSAGE_MAX_LENGTH,
+  type FeedbackDelivery,
+  type FeedbackReport,
+} from '/shared/types/feedback';
 import { en } from '/@/modules/store/translation/locales';
 import { setCurrentLocale } from '/@/modules/store/translation/utils';
-import { FEEDBACK_MESSAGE_MAX_LENGTH, HELP_FAQ_URL } from '/@/modules/utils';
+import { HELP_FAQ_URL } from '/@/modules/utils';
 
 const mocks = vi.hoisted(() => ({
   send: vi.fn<[FeedbackReport], Promise<FeedbackDelivery>>(),
