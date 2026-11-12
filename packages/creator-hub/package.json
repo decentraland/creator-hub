@@ -96,6 +96,7 @@
     "compile": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.cjs --dir",
     "compile:installer": "cross-env MODE=production npm run build && electron-builder build --config electron-builder.cjs --publish never",
     "lock:optimizer-tools": "node scripts/lock-optimizer-tools.js",
+    "lock:recording-tools": "node scripts/lock-recording-tools.js",
     "postinstall": "cross-env ELECTRON_RUN_AS_NODE=1 electron scripts/update-electron-vendors.js",
     "start": "npm run watch",
     "test": "npm run test:unit",

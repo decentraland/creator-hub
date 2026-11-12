@@ -35,6 +35,7 @@ function renderChat(props: Partial<ChatViewProps>) {
         detecting={false}
         selection={[]}
         assetMentions={[]}
+        recording={null}
         billingDismissed
         sessions={[]}
         currentSessionId="s1"
@@ -50,6 +51,7 @@ function renderChat(props: Partial<ChatViewProps>) {
         onDeleteSession={noop}
         onClearSelection={noop}
         onRemoveAssetMention={noop}
+        onRemoveRecording={noop}
         onClose={noop}
         {...props}
       />
@@ -174,6 +176,72 @@ describe('ChatView asset mentions', () => {
     it('should show it by its emote name', () => {
       renderChat({ assetMentions: [{ builtInEmote: 'wave' }] });
       expect(screen.getByText('Built-in animation: wave')).toBeTruthy();
+    });
+  });
+  describe('when a session recording is pending', () => {
+    const recording = {
+      durationMs: 42_000,
+      actionCount: 18,
+      dir: '/tmp/recordings/s1',
+      context: '[Session recording] …',
+    };
+
+    it('should show it with its duration and action count', () => {
+      renderChat({ recording });
+      expect(screen.getByText('Session recording · 0:42 · 18 actions')).toBeTruthy();
+    });
+
+    it('should discard it from the remove button', () => {
+      const onRemoveRecording = vi.fn();
+      renderChat({ recording, onRemoveRecording });
+      fireEvent.click(screen.getByRole('button', { name: 'Discard recording' }));
+      expect(onRemoveRecording).toHaveBeenCalled();
+    });
+
+    it('should let the user send it without typing anything', () => {
+      const onSend = vi.fn();
+      renderChat({ recording, onSend });
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+      expect(onSend).toHaveBeenCalledWith('', undefined);
+    });
+  });
+
+  describe('when the panel offers the Record button', () => {
+    const idle = { status: 'idle' as const, startedAt: null, micLabel: '', tools: null };
+
+    it('should show it above the composer and pass presses on', () => {
+      const onToggleRecording = vi.fn();
+      renderChat({ recorder: idle, onToggleRecording });
+      fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+      expect(screen.getByText('Record voice and actions')).toBeTruthy();
+      expect(onToggleRecording).toHaveBeenCalled();
+    });
+
+    it('should turn into a timed Stop button while recording', () => {
+      renderChat({
+        recorder: { ...idle, status: 'recording', startedAt: Date.now() - 42_000 },
+        onToggleRecording: vi.fn(),
+      });
+      expect(screen.getByRole('button', { name: 'Stop recording' })).toBeTruthy();
+      expect(screen.getByText('Stop · 0:42')).toBeTruthy();
+    });
+
+    it('should not start a recording while no assistant is available', () => {
+      renderChat({
+        providers: [{ id: 'claude', label: 'Claude', available: false, managedSignIn: true }],
+        recorder: idle,
+        onToggleRecording: vi.fn(),
+      });
+      expect((screen.getByRole('button', { name: 'Record' }) as HTMLButtonElement).disabled).toBe(
+        true,
+      );
+    });
+  });
+
+  describe('when the Record button is not wired (no recorder)', () => {
+    it('should not show it', () => {
+      renderChat({});
+      expect(screen.queryByTestId('editor-record-button')).toBeNull();
     });
   });
 });

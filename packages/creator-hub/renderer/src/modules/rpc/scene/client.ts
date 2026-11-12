@@ -61,6 +61,7 @@ export enum Method {
   SET_SCENE_SETTINGS = 'set_scene_settings',
   GET_VIEWPORT_RECT = 'get_viewport_rect',
   SAVE_SCENE = 'save_scene',
+  SET_RECORDING = 'set_recording',
 }
 
 export interface ViewportRect {
@@ -131,6 +132,7 @@ export type Params = {
   [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
   [Method.GET_VIEWPORT_RECT]: Record<string, never>;
   [Method.SAVE_SCENE]: Record<string, never>;
+  [Method.SET_RECORDING]: { enabled: boolean };
 };
 
 export type Result = {
@@ -174,6 +176,7 @@ export type Result = {
   [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
   [Method.GET_VIEWPORT_RECT]: { rect: ViewportRect | null };
   [Method.SAVE_SCENE]: void;
+  [Method.SET_RECORDING]: { ok: true };
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -378,6 +381,12 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   clearSelection = () => {
     return this.request('clear_selection', {} as Record<string, never>);
+  };
+
+  // Start/stop the inspector's side of the session recorder. Stopping flushes its buffered
+  // events before resolving, so the host can close the session right after.
+  setRecording = (enabled: boolean) => {
+    return this.request('set_recording', { enabled });
   };
 
   getSceneSettings = () => {

@@ -39,10 +39,11 @@ import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
 
-import { ai, analytics } from '#preload';
+import { ai, analytics, recording as recordingPreload } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { useAiSession } from '/@/hooks/useAiSession';
+import { useSessionRecorder } from '/@/hooks/useSessionRecorder';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as optimizerActions } from '/@/modules/store/optimizer';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
@@ -54,6 +55,7 @@ import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { AssistantIcon } from '../Icons';
 import { AiChatPanel } from '../AiChatPanel';
+import { RecordButton, RecordingConsentModal } from '../SessionRecorder';
 import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
 import { OptimizeModal } from '../OptimizeModal';
 import type { ButtonGroupHandle } from '../Button';
@@ -145,6 +147,7 @@ export function EditorPage() {
   );
 
   const userId = useSelector(state => state.analytics.userId);
+  const locale = useSelector(state => state.translation.locale);
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
@@ -159,11 +162,20 @@ export function EditorPage() {
   // on, independent of whether the chat is shown inline or popped out. It also relays the
   // detached window's "clear selection" back to the inspector here.
   const [aiOpen, setAiOpen] = useState(false);
+  // The detached window's Record button lands here; the handler is defined further down,
+  // with the recorder it drives.
+  const recordClickRef = useRef<() => void>(() => undefined);
   const {
     detachedOpen: aiDetached,
     openDetached: openAiWindow,
     closeDetached: closeAiWindow,
-  } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection, () => setAiOpen(false));
+  } = useAiSession(
+    aiChatEnabled,
+    project?.path,
+    handleClearAiSelection,
+    () => setAiOpen(false),
+    () => recordClickRef.current(),
+  );
   // A prompt seeded from the inspector (Trigger Area "describe a reaction"). Open the inline
   // panel on it; ChatView copies the text into the composer and clears the draft.
   const aiDraftPrompt = useSelector(state => state.ai.draftPrompt);
@@ -239,6 +251,37 @@ export function EditorPage() {
   });
   useProjectAssetWatch(iframeRef, project?.path);
   useSceneMcpDiscovery(project?.path);
+
+  // The Record button: speech + everything the creator does, handed to the assistant on stop.
+  // Only offered with the assistant on (that's where the recording goes).
+  const recorder = useSessionRecorder({
+    enabled: aiChatEnabled,
+    project,
+    rpcRef: iframeRef,
+    inspectorReadyNonce,
+    onFinished: () => setAiOpen(true),
+  });
+  const [recordingConsent, setRecordingConsent] = useState<{ downloadMb: number } | null>(null);
+  const handleRecordClick = useCallback(async () => {
+    if (recorder.status === 'recording') {
+      void recorder.stop();
+      return;
+    }
+    if (settings.recordingConsentAcknowledged) {
+      void recorder.start();
+      return;
+    }
+    const tools = await recordingPreload
+      .toolsStatus(locale)
+      .catch(() => ({ state: 'missing' as const, downloadMb: 0 }));
+    setRecordingConsent({ downloadMb: tools.state === 'missing' ? tools.downloadMb : 0 });
+  }, [recorder, settings.recordingConsentAcknowledged, locale]);
+  recordClickRef.current = () => void handleRecordClick();
+  const handleRecordingConsentAccept = useCallback(() => {
+    setRecordingConsent(null);
+    updateAppSettings({ ...settings, recordingConsentAcknowledged: true });
+    void recorder.start();
+  }, [settings, updateAppSettings, recorder]);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -773,6 +816,17 @@ export function EditorPage() {
               </Tooltip>
             </>
             <div className="actions">
+              {/* The Record button lives in the assistant panel. With the panel closed, a
+                  running recording keeps a visible control up here. */}
+              {aiChatEnabled && !aiOpen && recorder.status !== 'idle' && (
+                <RecordButton
+                  status={recorder.status}
+                  startedAt={recorder.startedAt}
+                  micLabel={recorder.micLabel}
+                  tools={recorder.tools}
+                  onClick={handleRecordClick}
+                />
+              )}
               {aiChatEnabled && (
                 <Tooltip title={aiOpen ? t('editor.ai.close') : t('editor.ai.open')}>
                   <IconButton
@@ -923,6 +977,7 @@ export function EditorPage() {
                   <DetachedPlaceholder
                     onDock={closeAiWindow}
                     width={aiPanelWidth}
+                    onToggleRecording={handleRecordClick}
                   />
                 ) : (
                   <AiChatPanel
@@ -930,6 +985,7 @@ export function EditorPage() {
                     onPopOut={openAiWindow}
                     onClearSelection={handleClearAiSelection}
                     width={aiPanelWidth}
+                    onToggleRecording={handleRecordClick}
                   />
                 )}
               </>
@@ -942,6 +998,12 @@ export function EditorPage() {
             initialStep={modalState.initialStep}
           />
           <OptimizeModal project={project} />
+          <RecordingConsentModal
+            open={recordingConsent !== null}
+            downloadMb={recordingConsent?.downloadMb ?? 0}
+            onAccept={handleRecordingConsentAccept}
+            onCancel={() => setRecordingConsent(null)}
+          />
           {mobileQRData && (
             <MobileQRCode
               open={!!mobileQRData}

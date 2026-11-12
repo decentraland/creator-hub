@@ -1,6 +1,7 @@
 import { engine } from '@dcl/sdk/ecs';
 import { getPlayer } from '@dcl/sdk/players';
 
+import { setActivityReporting, setActivitySceneFrozen, setupActivityReporting } from './activity';
 import { bus } from './bus';
 import { getBevyApi } from './bevy-api';
 import { setAvatarVisible } from './avatar-visibility';
@@ -15,6 +16,7 @@ import {
 } from './camera';
 import {
   getGroundPointAtPointer,
+  getSceneOffset,
   setSpawnGizmo,
   setupGizmo,
   setSelectedEntity,
@@ -126,6 +128,7 @@ export function main(): void {
     }
     // Freeze (static) or run the inspected scene (the toolbar's run/freeze toggle).
     if (msg.kind === 'set-scene-frozen') {
+      setActivitySceneFrozen(msg.frozen);
       void setSceneFrozen(msg.frozen);
       return;
     }
@@ -152,12 +155,19 @@ export function main(): void {
       setEditingEnabled(msg.enabled);
       return;
     }
+    // Session recorder: report pointer target / scene clicks / player moves.
+    if (msg.kind === 'set-activity-reporting') {
+      setActivityReporting(msg.enabled);
+      return;
+    }
   });
 
   // setupGizmo installs the pointer-down handler (grab-or-pick) + drag system.
   setupGizmo();
   // setupCamera installs the (initially inactive) editor fly-camera.
   setupCamera();
+  // setupActivityReporting installs the player-move sampler (idle until reporting).
+  setupActivityReporting(getSceneOffset);
   // Watch the inspected scene's logs for a runtime error (#1448). The SDK wraps
   // main() (and each system) in a try/catch that `console.error(e)`s the throw, so
   // an uncaught scene error surfaces as a SceneError log entry (prefixed "ERROR ")

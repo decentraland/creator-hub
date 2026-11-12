@@ -42,6 +42,7 @@ import {
 import { updateCanSave } from '../../../redux/app';
 import { getConfig } from '../../logic/config';
 import { withAssetDir } from '../../data-layer/host/fs-utils';
+import type { SessionRecorder } from '../../recorder';
 import {
   fromSceneSpawnPoint,
   isSceneSpawnAxis,
@@ -94,6 +95,7 @@ enum Method {
   SET_SCENE_SETTINGS = 'set_scene_settings',
   GET_VIEWPORT_RECT = 'get_viewport_rect',
   SAVE_SCENE = 'save_scene',
+  SET_RECORDING = 'set_recording',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -157,6 +159,7 @@ type Params = {
   [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
   [Method.GET_VIEWPORT_RECT]: Record<string, never>;
   [Method.SAVE_SCENE]: Record<string, never>;
+  [Method.SET_RECORDING]: { enabled: boolean };
 };
 
 type Result = {
@@ -200,6 +203,7 @@ type Result = {
   [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
   [Method.GET_VIEWPORT_RECT]: { rect: ViewportRect | null };
   [Method.SAVE_SCENE]: void;
+  [Method.SET_RECORDING]: { ok: true };
 };
 
 // Validate an AI-supplied entity id before branding it as an Entity. The id comes from the
@@ -277,6 +281,9 @@ export class SceneServer extends RPC<Method, Params, Result> {
     engine?: IEngine,
     // Network-id allocator, needed by addAsset for Smart Items with sync components.
     enumEntity?: EnumEntity,
+    // Session recording for the AI assistant. Absent in test/standalone setups, where
+    // set_recording acknowledges without capturing anything.
+    recorder?: Pick<SessionRecorder, 'setEnabled'>,
   ) {
     super('SceneRpcInbound', transport);
 
@@ -410,6 +417,13 @@ export class SceneServer extends RPC<Method, Params, Result> {
     // compositor screenshot to just the viewport — the Bevy screenshot fallback (#1526).
     // DOM-only, so it's available for both renderers regardless of the operations layer.
     this.handle('get_viewport_rect', async () => ({ rect: getViewportRect() }));
+
+    // Resolves only after a stop has flushed what was captured, so the host can read its
+    // timeline as complete once this returns.
+    this.handle('set_recording', async ({ enabled }) => {
+      await recorder?.setEnabled(enabled);
+      return { ok: true as const };
+    });
 
     // Scene-graph mutations (AI assistant). Only wired when the operations layer + engine
     // are provided (i.e. embedded in a host). Each mutation runs the inspector's real

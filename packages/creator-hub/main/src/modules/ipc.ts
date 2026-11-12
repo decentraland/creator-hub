@@ -1,5 +1,12 @@
+import { ipcMain } from 'electron';
+
 import { AI_STREAM_EVENT } from '/shared/types/ipc';
 import { SCENE_EXPORT_PROGRESS_EVENT } from '/shared/types/scene-export';
+import {
+  RECORDING_AUDIO_CHANNEL,
+  RECORDING_EVENTS_CHANNEL,
+  RECORDING_TOOLS_PROGRESS_EVENT,
+} from '/shared/types/recording';
 import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
@@ -31,6 +38,8 @@ import {
   revertTurn,
 } from './scene-mcp';
 import * as optimizer from './optimizer';
+import * as recording from './recording';
+import * as recordingTools from './recording/tools';
 import * as sceneExport from './scene-export';
 import * as landUnpublish from './land-unpublish';
 
@@ -216,6 +225,29 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('optimizer.revert', (_event, path) => optimizer.revert(path));
   handle('optimizer.tools', () => optimizer.tools());
   handle('optimizer.installTools', (_event, path) => optimizer.installTools(path));
+  // session recorder (Record button: speech + editor actions for the AI assistant)
+  handle('recording.start', (event, path, title, language) =>
+    recording.start(event.sender, path, title, language),
+  );
+  handle('recording.stop', (event, sessionId) => recording.stop(event.sender.id, sessionId));
+  handle('recording.abort', async (event, sessionId) =>
+    recording.abortIfOwner(event.sender.id, sessionId),
+  );
+  handle('recording.toolsStatus', (_event, language) =>
+    recordingTools.getStatus(recordingTools.modelFor(language)),
+  );
+  handle('recording.installTools', (event, language) =>
+    recordingTools.install(recordingTools.modelFor(language), status => {
+      if (!event.sender.isDestroyed()) event.sender.send(RECORDING_TOOLS_PROGRESS_EVENT, status);
+    }),
+  );
+  // Unlogged on purpose (see RECORDING_AUDIO_CHANNEL): raw audio and the user's actions.
+  ipcMain.on(RECORDING_AUDIO_CHANNEL, (event, sessionId, pcm, firstSampleAt) =>
+    recording.appendAudio(event.sender.id, sessionId, pcm, firstSampleAt),
+  );
+  ipcMain.on(RECORDING_EVENTS_CHANNEL, (event, sessionId, events) =>
+    recording.appendEvents(event.sender.id, sessionId, events),
+  );
 
   handle('sceneExport.export', (event, entityId, title, source) =>
     sceneExport.saveScene(entityId, title, source, progress => {

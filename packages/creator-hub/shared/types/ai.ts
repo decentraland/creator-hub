@@ -11,6 +11,8 @@
 // sits behind this contract so it can be swapped (e.g. for ACP) without touching the
 // panel or the IPC surface.
 
+import type { RecordingToolsStatus } from './recording';
+
 export type AiProvider = 'claude' | 'codex' | 'cursor' | 'gemini';
 
 // One selectable backend, as reported to the chat UI. `available` is false when the
@@ -234,6 +236,29 @@ export function assetMentionKey(mention: AiAssetMention): string {
   return 'path' in mention ? `path:${mention.path}` : `emote:${mention.builtInEmote}`;
 }
 
+// A finished session recording (the editor's Record button) waiting to go out with the next
+// message: `context` is the condensed said-and-done timeline prepended to that turn.
+export interface AiPendingRecording {
+  durationMs: number;
+  actionCount: number;
+  dir: string;
+  context: string;
+  transcriptionError?: string;
+}
+
+// What the Record button shows. The recorder runs in the editor window; the assistant panel and
+// the detached window render it from here and send presses back (`toggleRecording`).
+export type RecorderStatus = 'idle' | 'starting' | 'recording' | 'stopping';
+export interface AiRecorderState {
+  status: RecorderStatus;
+  // Epoch ms when the current recording started (for the live timer).
+  startedAt: number | null;
+  // The input device's name, for the tooltip.
+  micLabel: string;
+  // Speech-to-text download progress while it installs on first use.
+  tools: RecordingToolsStatus | null;
+}
+
 export interface AiMirrorState {
   providers: AiProviderInfo[];
   provider: AiProvider;
@@ -243,6 +268,8 @@ export interface AiMirrorState {
   detecting: boolean;
   selection: { id: number; name: string }[];
   assetMentions: AiAssetMention[];
+  recording: AiPendingRecording | null;
+  recorder?: AiRecorderState;
   billingDismissed: boolean;
   sessions: { id: string; title: string; updatedAt: number }[];
   currentSessionId: string;
@@ -265,6 +292,8 @@ export type AiRemoteCommand =
   | { type: 'deleteSession'; id: string }
   | { type: 'clearSelection' }
   | { type: 'removeAssetMention'; mention: AiAssetMention }
+  | { type: 'removeRecording' }
+  | { type: 'toggleRecording' }
   // The detached window's close button: shut the assistant entirely (close the window AND the
   // inline panel), instead of just docking back — so close is consistent whether detached or not.
   | { type: 'closeAssistant' }

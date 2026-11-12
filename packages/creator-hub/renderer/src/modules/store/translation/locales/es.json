@@ -177,10 +177,40 @@
         "needs_login_help": "Puede que su sesión guardada haya caducado, aunque aparezca como conectado. Cierra sesión y vuelve a iniciarla: ejecuta esto en una terminal, un comando a la vez, y termina en tu navegador. Luego vuelve a enviar tu mensaje:",
         "needs_login_managed_help": "Puede que su inicio de sesión guardado haya caducado, aunque apareciera como conectado. En Configuración → IA, haz clic en Cerrar sesión y luego en Iniciar sesión, y vuelve a enviar tu mensaje.",
         "api_key_alternative": "O usa una clave de API: define {envVar} y activa \"{setting}\" en Configuración → IA."
+      },
+      "recording": {
+        "chip": "Grabación de sesión · {duration} · {actions} acciones",
+        "chip_no_speech": "Grabación de sesión · {duration} · {actions} acciones (sin voz)",
+        "remove": "Descartar grabación"
       }
     },
     "publish": {
       "save_failed": "No se pudo guardar tu escena antes de publicar, así que se detuvo la publicación para no desplegar contenido anterior. {reason}"
+    },
+    "recording": {
+      "record": "Grabar",
+      "record_panel": "Grabar voz y acciones",
+      "stop": "Detener grabación",
+      "stop_with_time": "Detener · {time}",
+      "starting": "Iniciando…",
+      "transcribing": "Transcribiendo…",
+      "downloading": "Modelo de voz {percent}%",
+      "default_mic": "el micrófono predeterminado del sistema",
+      "tooltip_idle": "Graba lo que dices y haces para el asistente de IA. Usa el micrófono predeterminado del sistema; cambia el dispositivo de entrada en la configuración de sonido del sistema para usar otro.",
+      "tooltip_live": "Grabando desde {mic}. Para usar otro micrófono, cambia el dispositivo de entrada en la configuración de sonido del sistema y vuelve a grabar.",
+      "error": "No se pudo grabar: {message}",
+      "no_transcript": "No se pudo transcribir tu voz. La grabación igual incluye todo lo que hiciste.",
+      "consent": {
+        "title": "Graba una sesión para el asistente de IA",
+        "intro": "Habla mientras trabajas y luego detén la grabación: el asistente recibe lo que dijiste junto con lo que estabas haciendo, así \"borra este\" significa la entidad que estabas señalando.",
+        "what": "Esto graba tu voz y cada acción que hagas en el editor: clics, dónde está el mouse, qué señalas y seleccionas, menús que abres, paneles que desplazas, búsquedas, ediciones, y lo que señalas y clickeas mientras juegas tu escena.",
+        "local": "Solo se graba mientras el botón Grabar está activo. Cerrar el proyecto o la app termina la grabación de inmediato. El audio y el registro quedan en tu computadora, y tu voz también se transcribe en tu computadora.",
+        "download": "La primera vez, Creator Hub descarga un modelo de voz a texto (unos {size} MB).",
+        "sent": "Al detener, la grabación se adjunta a tu próximo mensaje. Al enviarlo, la transcripción y la lista de acciones (no el audio) se comparten con tu proveedor de IA.",
+        "microphone": "Usa el micrófono predeterminado del sistema. Para usar otro, cambia el dispositivo de entrada en la configuración de sonido del sistema antes de empezar.",
+        "cancel": "Cancelar",
+        "accept": "Empezar a grabar"
+      }
     }
   },
   "scene_list": {

@@ -80,6 +80,22 @@ function findParentEntity<T extends BABYLON.Node & { isDCLEntity?: boolean }>(
   return (parent as any) || null;
 }
 
+/**
+ * The ECS entity at a viewport position, resolved the way a click-pick resolves it.
+ * Spawn-point handles and meshes outside any entity (grid, helpers) count as nothing.
+ */
+export function pickEntityAt(
+  scene: BABYLON.Scene,
+  x: number,
+  y: number,
+): { entity: EcsEntity; mesh: BABYLON.AbstractMesh; point: BABYLON.Vector3 | null } | null {
+  const pickingResult = scene.pick(x, y, void 0, false);
+  const mesh = pickingResult?.pickedMesh;
+  if (!mesh || createSpawnPointManager(scene).isMeshSpawnPoint(mesh)) return null;
+  const entity = findParentEntity(mesh);
+  return entity ? { entity, mesh, point: pickingResult.pickedPoint } : null;
+}
+
 function getSceneContext(scene: BABYLON.Scene) {
   const ecsEntity = scene.transformNodes.find(n => isEcsEntity(n));
   return ecsEntity ? (ecsEntity.context.deref() ?? null) : null;

@@ -955,3 +955,82 @@ describe('SceneServer RPC scene settings spawn points', () => {
     });
   });
 });
+
+describe('SceneServer RPC set_recording', () => {
+  let parent: InMemoryTransport;
+  let iframe: InMemoryTransport;
+  let host: RPC<string, any, any>;
+  let store: Store;
+
+  beforeEach(() => {
+    parent = new InMemoryTransport();
+    iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+    store = { dispatch: vi.fn(), getState: vi.fn(), subscribe: vi.fn() } as any as Store;
+    host = new RPC('SceneRpcInbound', parent);
+  });
+
+  afterEach(() => vi.resetAllMocks());
+
+  describe('when the server has a session recorder', () => {
+    let calls: string[];
+    let setEnabled: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      calls = [];
+      setEnabled = vi.fn(async (enabled: boolean) => {
+        await Promise.resolve();
+        calls.push(enabled ? 'started' : 'flushed and stopped');
+      });
+      new SceneServer(iframe, store, undefined, undefined, undefined, undefined, undefined, {
+        setEnabled,
+      });
+    });
+
+    it('should switch recording on', async () => {
+      await expect(host.request('set_recording', { enabled: true })).resolves.toEqual({
+        ok: true,
+      });
+      expect(setEnabled).toHaveBeenCalledWith(true);
+    });
+
+    it('should resolve a stop only after the recorder has flushed', async () => {
+      const result = await host.request('set_recording', { enabled: false });
+      expect(calls).toEqual(['flushed and stopped']);
+      expect(result).toEqual({ ok: true });
+    });
+  });
+
+  describe('when the server has no session recorder (standalone)', () => {
+    beforeEach(() => {
+      new SceneServer(iframe, store);
+    });
+
+    it('should still acknowledge', async () => {
+      await expect(host.request('set_recording', { enabled: true })).resolves.toEqual({
+        ok: true,
+      });
+    });
+  });
+});
+
+describe('SceneClient recordEvents', () => {
+  let parent: InMemoryTransport;
+  let client: SceneClient;
+
+  beforeEach(() => {
+    parent = new InMemoryTransport();
+    const iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+    client = new SceneClient(parent);
+  });
+
+  it('should send the batch as a record_events request', async () => {
+    const events = [{ t: 1, kind: 'click', text: 'Clicked "Play" in the Toolbar' }];
+    const spy = vi.spyOn(client, 'request').mockResolvedValueOnce(undefined);
+    await client.recordEvents(events);
+    expect(spy).toHaveBeenCalledWith('record_events', { events });
+  });
+});

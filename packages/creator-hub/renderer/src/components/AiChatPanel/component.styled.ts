@@ -596,6 +596,11 @@ const MenuSectionLabel = styled('div')(({ theme }) => ({
   letterSpacing: '0.08em',
 }));
 
+const RecordRow = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1, 1.5, 0),
+  borderTop: `1px solid ${theme.palette.divider}`,
+}));
+
 const SelectionBar = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -654,6 +659,7 @@ export {
   ProviderOption,
   ProviderRow,
   ProviderValueHint,
+  RecordRow,
   SelectionBar,
   SelectionNames,
   SendButton,

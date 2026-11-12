@@ -16,6 +16,7 @@ import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import MicNoneOutlinedIcon from '@mui/icons-material/MicNoneOutlined';
 import type { Theme } from '@mui/material/styles';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
@@ -31,7 +32,14 @@ import {
   Tooltip,
 } from 'decentraland-ui2';
 
-import type { AiAssetMention, AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
+import type {
+  AiAssetMention,
+  AiAttachment,
+  AiAttachmentKind,
+  AiPendingRecording,
+  AiProvider,
+  AiRecorderState,
+} from '/shared/types/ai';
 import {
   MIN_CLAUDE_CLI_VERSION,
   assetMentionKey,
@@ -46,6 +54,7 @@ import { useCliSignIn } from '/@/hooks/useCliSignIn';
 import type { AiMessage, AiPromptData, AiSessionMeta } from '/@/modules/store/ai/types';
 import { WarningCircleIcon } from '../Icons';
 import { SignInCodeField } from '../SignInCodeField';
+import { RecordButton } from '../SessionRecorder';
 import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
@@ -82,6 +91,7 @@ import {
   ProviderHint,
   ProviderOption,
   ProviderValueHint,
+  RecordRow,
   SelectionBar,
   SelectionNames,
   SendButton,
@@ -338,6 +348,12 @@ export interface ChatViewProps {
   selection: { id: number; name: string }[];
   // Local asset paths mentioned for the next prompt (double-clicked in the Local Assets panel).
   assetMentions: AiAssetMention[];
+  // A finished session recording that goes out with the next message.
+  recording: AiPendingRecording | null;
+  // The Record button's state and its press handler. Both set = the button is shown, right
+  // above the composer (the recording goes to this chat).
+  recorder?: AiRecorderState;
+  onToggleRecording?: () => void;
   // The user dismissed the billing hint for this scene (#1505) — hide it.
   billingDismissed: boolean;
   // The scene's saved conversations (newest first) and which one is active, for the history menu.
@@ -367,6 +383,8 @@ export interface ChatViewProps {
   onClearSelection: () => void;
   // Drop one mentioned asset from the next prompt.
   onRemoveAssetMention: (mention: AiAssetMention) => void;
+  // Discard the pending recording instead of sending it.
+  onRemoveRecording: () => void;
   // Open the detached window (inline only — omitted/no-op in the detached window).
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
@@ -375,6 +393,11 @@ export interface ChatViewProps {
   // changes the composer copies `text` into its input and calls onDraftConsumed. Inline only.
   draftPrompt?: { text: string; nonce: number } | null;
   onDraftConsumed?: () => void;
+}
+
+function formatRecordingDuration(ms: number): string {
+  const seconds = Math.round(ms / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 function ClearMentionButton({ label, onClick }: { label: string; onClick: () => void }) {
@@ -407,6 +430,9 @@ export function ChatView(props: ChatViewProps) {
     detecting,
     selection,
     assetMentions,
+    recording,
+    recorder,
+    onToggleRecording,
     billingDismissed,
     sessions,
     currentSessionId,
@@ -425,6 +451,7 @@ export function ChatView(props: ChatViewProps) {
     onDeleteSession,
     onClearSelection,
     onRemoveAssetMention,
+    onRemoveRecording,
     onPopOut,
     onClose,
     draftPrompt,
@@ -569,11 +596,11 @@ export function ChatView(props: ChatViewProps) {
   const handleSend = useCallback(() => {
     if (busy) return;
     const text = input.trim();
-    if (text === '' && attachments.length === 0) return;
+    if (text === '' && attachments.length === 0 && recording === null) return;
     onSend(text, attachments.length > 0 ? attachments : undefined);
     setInput('');
     setAttachments([]);
-  }, [busy, input, attachments, onSend]);
+  }, [busy, input, attachments, recording, onSend]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -842,6 +869,7 @@ export function ChatView(props: ChatViewProps) {
       fill={detached}
       panelWidth={width}
       aria-label="ai-chat-panel"
+      data-recording-area="AI assistant panel"
     >
       <PanelHeader>
         <HeaderTitle>
@@ -1126,6 +1154,41 @@ export function ChatView(props: ChatViewProps) {
             </SelectionBar>
           ))}
 
+        {available && recording !== null && (
+          <SelectionBar data-testid="ai-recording-chip">
+            <MicNoneOutlinedIcon fontSize="small" />
+            <SelectionNames title={recording.dir}>
+              {recording.transcriptionError
+                ? t('editor.ai.recording.chip_no_speech', {
+                    duration: formatRecordingDuration(recording.durationMs),
+                    actions: recording.actionCount,
+                  })
+                : t('editor.ai.recording.chip', {
+                    duration: formatRecordingDuration(recording.durationMs),
+                    actions: recording.actionCount,
+                  })}
+            </SelectionNames>
+            <ClearMentionButton
+              label={t('editor.ai.recording.remove')}
+              onClick={onRemoveRecording}
+            />
+          </SelectionBar>
+        )}
+
+        {recorder !== undefined && onToggleRecording !== undefined && (
+          <RecordRow>
+            <RecordButton
+              fullWidth
+              status={recorder.status}
+              startedAt={recorder.startedAt}
+              micLabel={recorder.micLabel}
+              tools={recorder.tools}
+              disabled={!available}
+              onClick={onToggleRecording}
+            />
+          </RecordRow>
+        )}
+
         <Composer
           dragging={dragging}
           onDragOver={handleDragOver}
@@ -1220,7 +1283,10 @@ export function ChatView(props: ChatViewProps) {
                   <span>
                     <SendButton
                       aria-label={t('editor.ai.send')}
-                      disabled={!available || (input.trim() === '' && attachments.length === 0)}
+                      disabled={
+                        !available ||
+                        (input.trim() === '' && attachments.length === 0 && recording === null)
+                      }
                       onClick={handleSend}
                     >
                       <ArrowUpwardIcon fontSize="small" />

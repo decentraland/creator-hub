@@ -14,6 +14,7 @@ import type { GizmoType } from '../../utils/gizmo';
 import type {
   GroundPlane,
   IRenderer,
+  RendererActivityTracking,
   RendererAnimation,
   RendererCamera,
   RendererDebug,
@@ -25,6 +26,7 @@ import type {
   SpawnPointTarget,
   Unsubscribe,
 } from '../types';
+import { createBabylonActivityTracking } from './activity';
 import { computeEntitiesOutsideLayout, computeSceneMetrics } from './metrics';
 
 const ZOOM_AXIS = new BABYLON.Vector3(0, 0, 1.1);
@@ -53,6 +55,7 @@ export class BabylonRenderer implements IRenderer {
   readonly viewport: RendererViewport;
   readonly spawnPoints: SpawnPointController;
   readonly debug: RendererDebug;
+  readonly activity: RendererActivityTracking;
 
   #axisHelper: AxisHelperHandle;
   #disposeSpeedBridge: () => void;
@@ -74,6 +77,7 @@ export class BabylonRenderer implements IRenderer {
     this.viewport = createViewportFacade(scene, context);
     this.spawnPoints = createSpawnPointsFacade(spawnPoints, babylonGizmos);
     this.debug = createDebugFacade(scene);
+    this.activity = createBabylonActivityTracking(scene, cameraManager.getCamera());
 
     // The axis indicator is a renderer editor-visual: it draws an orientation
     // gizmo into a secondary scene and follows the editor camera. The inspector

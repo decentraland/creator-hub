@@ -5,6 +5,7 @@ import { fs, editor, consoleWindow, misc } from '#preload';
 
 import { type Project } from '/shared/types/projects';
 import type { AiAssetMention } from '/shared/types/ai';
+import type { RecordedEvent } from '/shared/types/recording';
 import { getPath } from '../';
 import type { Severity } from '../../store/snackbar/types';
 import { store } from '../../store';
@@ -13,6 +14,7 @@ import { actions as snackbarActions } from '../../store/snackbar';
 import { createGenericNotification } from '../../store/snackbar/utils';
 import { actions as workspaceActions } from '../../store/workspace';
 import { actions as optimizerActions } from '../../store/optimizer';
+import { forwardRecordedEvents } from '../../recording/session';
 import { resolveProfiles, sanitizeProfileAddresses, type ProfileSummary } from './profiles';
 
 type NotificationRequest = {
@@ -42,6 +44,7 @@ export enum Method {
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
   NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
   NOTIFY_READY = 'notify_ready',
+  RECORD_EVENTS = 'record_events',
 }
 
 export type Params = {
@@ -62,6 +65,7 @@ export type Params = {
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
   [Method.NOTIFY_SCENE_METADATA]: { title: string; scene?: Project['scene'] };
   [Method.NOTIFY_READY]: Record<string, never>;
+  [Method.RECORD_EVENTS]: { events: RecordedEvent[] };
 };
 
 export type Result = {
@@ -85,6 +89,7 @@ export type Result = {
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
   [Method.NOTIFY_SCENE_METADATA]: void;
   [Method.NOTIFY_READY]: void;
+  [Method.RECORD_EVENTS]: void;
 };
 
 export type SceneRpcServerCallbacks = {
@@ -103,6 +108,12 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
 
     this.handle('notify_ready', async () => {
       callbacks.onReady?.();
+    });
+
+    // The inspector's half of the session recorder. Dropped unless a recording is running (the
+    // inspector only captures between set_recording on/off, but it can't be trusted to).
+    this.handle('record_events', async ({ events }) => {
+      if (Array.isArray(events)) forwardRecordedEvents(events);
     });
 
     // The layout the editor reported last, seeded with the one it opened with. A notice

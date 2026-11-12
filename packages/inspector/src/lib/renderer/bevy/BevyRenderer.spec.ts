@@ -349,3 +349,35 @@ describe('BevyRenderer getEntityAnimations', () => {
     expect(await renderer.getEntityAnimations(addModel('assets/dog.glb'))).toEqual([]);
   });
 });
+
+describe('BevyRenderer activity tracking', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => {
+    renderer.dispose();
+  });
+
+  describe('when no activity source is wired (conformance path)', () => {
+    it('should accept a tracker and return a working unsubscribe', () => {
+      const off = renderer.activity.track(() => {});
+      expect(() => off()).not.toThrow();
+    });
+  });
+
+  describe('when the agent activity source is wired', () => {
+    it('should delegate tracking to it', () => {
+      const off = vi.fn();
+      const track = vi.fn(() => off);
+      renderer.setActivitySource({ track });
+      const cb = vi.fn();
+      const unsubscribe = renderer.activity.track(cb);
+      expect(track).toHaveBeenCalledWith(cb);
+      unsubscribe();
+      expect(off).toHaveBeenCalled();
+    });
+  });
+});

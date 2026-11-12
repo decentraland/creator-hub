@@ -26,6 +26,7 @@ import type {
   OptimizeScanResult,
   OptimizeToolsInfo,
 } from './optimizer';
+import type { RecordingResult, RecordingStartResult, RecordingToolsStatus } from './recording';
 
 export type IpcResult<T> = {
   success: true;
@@ -209,6 +210,15 @@ export interface Ipc {
   'optimizer.revert': (path: string) => Promise<{ restored: number }>;
   'optimizer.tools': () => Promise<OptimizeToolsInfo>;
   'optimizer.installTools': (path: string) => Promise<OptimizeToolsInfo>;
+  'recording.start': (
+    projectPath: string,
+    projectTitle: string,
+    language: string,
+  ) => Promise<RecordingStartResult>;
+  'recording.stop': (sessionId: string) => Promise<RecordingResult>;
+  'recording.abort': (sessionId: string) => Promise<void>;
+  'recording.toolsStatus': (language: string) => Promise<RecordingToolsStatus>;
+  'recording.installTools': (language: string) => Promise<void>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (

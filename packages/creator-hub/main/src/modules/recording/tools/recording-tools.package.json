@@ -1,0 +1,8 @@
+{
+  "name": "creator-hub-recording-tools",
+  "private": true,
+  "description": "Speech-to-text for the session recorder, installed on first use (see recording/tools.ts). The platform binding is added per platform by scripts/lock-recording-tools.js.",
+  "dependencies": {
+    "@fugood/whisper.node": "1.1.3"
+  }
+}

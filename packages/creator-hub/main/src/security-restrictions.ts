@@ -79,6 +79,30 @@ const ALLOWED_ORIGINS_AND_PERMISSIONS = new Map<string, Set<Permission>>(
 );
 
 /**
+ * The session recorder's microphone: audio only, and only for the app's own top-level page —
+ * never the inspector iframe, an embedded page or a camera. The recorder asks for it only after
+ * the creator presses Record (and macOS asks the user once more on top of this).
+ */
+function isAppMicrophoneRequest(
+  permission: Permission,
+  details: Electron.PermissionRequest | Electron.MediaAccessPermissionRequest,
+): boolean {
+  if (permission !== 'media' || !details.isMainFrame) return false;
+  const mediaTypes = 'mediaTypes' in details ? (details.mediaTypes ?? []) : [];
+  if (mediaTypes.length === 0 || mediaTypes.some(type => type !== 'audio')) return false;
+  let url: URL;
+  try {
+    url = new URL(details.requestingUrl);
+  } catch {
+    return false;
+  }
+  if (IS_DEV && import.meta.env.VITE_DEV_SERVER_URL) {
+    return url.origin === new URL(import.meta.env.VITE_DEV_SERVER_URL).origin;
+  }
+  return url.protocol === 'file:';
+}
+
+/**
  * A list of origins that you allow open IN BROWSER.
  * Navigation to the origins below is only possible if the link opens in a new window.
  *
@@ -218,10 +242,12 @@ app.on('web-contents-created', (_, contents) => {
    *
    * @see https://www.electronjs.org/docs/latest/tutorial/security#5-handle-session-permission-requests-from-remote-content
    */
-  contents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+  contents.session.setPermissionRequestHandler((webContents, permission, callback, details) => {
     const { origin } = new URL(webContents.getURL());
 
-    const permissionGranted = !!ALLOWED_ORIGINS_AND_PERMISSIONS.get(origin)?.has(permission);
+    const permissionGranted =
+      !!ALLOWED_ORIGINS_AND_PERMISSIONS.get(origin)?.has(permission) ||
+      isAppMicrophoneRequest(permission, details);
     callback(permissionGranted);
 
     if (!permissionGranted && IS_DEV) {

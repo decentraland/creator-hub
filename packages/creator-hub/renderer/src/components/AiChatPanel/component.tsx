@@ -16,12 +16,20 @@ interface Props {
   onClearSelection: () => void;
   // Draggable panel width in px (owned by EditorPage).
   width: number;
+  // Press the Record button (EditorPage owns the recorder and its consent dialog).
+  onToggleRecording: () => void;
 }
 
 // The inline chat panel: a thin container that wires the redux store + thunks to the shared
 // presentational ChatView. The turn event stream, persistence and provider detection live
 // in useAiSession (mounted in the editor), so this is purely a view over the store.
-export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Props) {
+export function AiChatPanel({
+  onClose,
+  onPopOut,
+  onClearSelection,
+  width,
+  onToggleRecording,
+}: Props) {
   const dispatch = useDispatch();
   const {
     providers,
@@ -31,6 +39,8 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     detecting,
     selection,
     assetMentions,
+    recording,
+    recorder,
     billingDismissed,
     sessions,
     currentSessionId,
@@ -70,6 +80,7 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     [dispatch],
   );
   const onDraftConsumed = useCallback(() => dispatch(aiActions.consumeDraftPrompt()), [dispatch]);
+  const onRemoveRecording = useCallback(() => dispatch(aiActions.setRecording(null)), [dispatch]);
 
   return (
     <ChatView
@@ -82,6 +93,9 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
       detecting={detecting}
       selection={selection}
       assetMentions={assetMentions}
+      recording={recording}
+      recorder={recorder}
+      onToggleRecording={onToggleRecording}
       billingDismissed={billingDismissed}
       sessions={sessions}
       currentSessionId={currentSessionId}
@@ -98,6 +112,7 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
       onDeleteSession={onDeleteSession}
       onClearSelection={onClearSelection}
       onRemoveAssetMention={onRemoveAssetMention}
+      onRemoveRecording={onRemoveRecording}
       onPopOut={onPopOut}
       onClose={onClose}
     />

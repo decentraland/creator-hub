@@ -200,6 +200,49 @@ describe('when sending with a selected entity and mentioned assets', () => {
   });
 });
 
+describe('when sending with a pending session recording and no typed text', () => {
+  let ai: ReturnType<typeof reducer>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.isBusy.mockResolvedValue(false);
+    preloadAi.send.mockResolvedValue({ turnId: 't-1' });
+    ai = reducer(undefined, actions.setSelection([{ id: 512, name: 'Front Door' }]));
+    ai = reducer(
+      ai,
+      actions.setRecording({
+        durationMs: 65_000,
+        actionCount: 4,
+        dir: '/rec/s1',
+        context: '[Session recording] 00:04.0  SAID: "delete this one"',
+      }),
+    );
+    const dispatch = vi.fn((action: { type: string }) => {
+      ai = reducer(ai, action);
+      return action;
+    });
+    const getState = () => ({ editor: { project: { path: '/scene' } }, ai, workspace: {} });
+    await send({ text: '' })(dispatch as never, getState as never, undefined);
+  });
+
+  it('should send the turn with the timeline after the selection context', () => {
+    const { text, context } = preloadAi.send.mock.calls[0][1];
+    expect(text).toBe('');
+    expect(context).toBe(
+      `${selectionContext([{ id: 512, name: 'Front Door' }])}\n\n[Session recording] 00:04.0  SAID: "delete this one"`,
+    );
+  });
+
+  it('should show the recording as a chip on the sent message', () => {
+    const sent = ai.messages.find(m => m.role === 'user');
+    expect(sent?.attachments).toEqual([{ name: 'Session recording 1:05', kind: 'audio' }]);
+  });
+
+  it('should use the recording for this message only', () => {
+    expect(ai.recording).toBeNull();
+  });
+});
+
 describe('assetMentionsContext', () => {
   it('should be undefined when no asset is mentioned', () => {
     expect(assetMentionsContext([])).toBeUndefined();

@@ -22,6 +22,9 @@ export function useAiSession(
   // Close the assistant entirely (EditorPage owns the inline `aiOpen` flag). The detached
   // window's close button triggers it via a remote command, so close is consistent everywhere.
   onCloseAssistant?: () => void,
+  // Press the Record button. The recorder runs here, in the editor window; the detached
+  // window's button triggers it via a remote command.
+  onToggleRecording?: () => void,
 ) {
   const dispatch = useDispatch();
   const aiState = useSelector(state => state.ai);
@@ -30,8 +33,14 @@ export function useAiSession(
   const [detachedOpen, setDetachedOpen] = useState(false);
   // Latest snapshot + clear callback, read by the (stable) remote-command listener so it
   // doesn't need to re-subscribe on every streamed token / callback identity change.
-  const latest = useRef({ aiState, projectTitle, onClearSelection, onCloseAssistant });
-  latest.current = { aiState, projectTitle, onClearSelection, onCloseAssistant };
+  const latest = useRef({
+    aiState,
+    projectTitle,
+    onClearSelection,
+    onCloseAssistant,
+    onToggleRecording,
+  });
+  latest.current = { aiState, projectTitle, onClearSelection, onCloseAssistant, onToggleRecording };
 
   // Provider detection + the turn event stream (fold events into the store, persist on done).
   useEffect(() => {
@@ -143,6 +152,12 @@ export function useAiSession(
           break;
         case 'removeAssetMention':
           dispatch(aiActions.removeAssetMention(command.mention));
+          break;
+        case 'removeRecording':
+          dispatch(aiActions.setRecording(null));
+          break;
+        case 'toggleRecording':
+          latest.current.onToggleRecording?.();
           break;
         case 'closeAssistant':
           void aiPreload.closeAiWindow();

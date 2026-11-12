@@ -5,6 +5,8 @@ import type {
   AiProvider,
   AiProviderInfo,
   AiAssetMention,
+  AiPendingRecording,
+  AiRecorderState,
 } from '/shared/types/ai';
 
 // The message content model (parts + prompt) is shared with the detached-window mirror, so it
@@ -68,6 +70,12 @@ export interface AiState {
   // inspector's Local Assets panel. Shown beside the selection and attached as context to the
   // next turn only, then cleared.
   assetMentions: AiAssetMention[];
+  // A session recording (Record button) to attach to the next turn, then cleared. Shown as a
+  // composer chip; the transcript is seeded into the input separately.
+  recording: AiPendingRecording | null;
+  // The Record button's live state, owned by the editor's recorder (useSessionRecorder) and
+  // shown in the assistant panel and the detached window.
+  recorder: AiRecorderState;
   // Whether the chat is showing anywhere (inline panel or detached window). Mentions are only
   // accepted while it is, so a double-click with the assistant closed does nothing.
   chatVisible: boolean;

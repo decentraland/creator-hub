@@ -370,6 +370,56 @@ export interface RendererInteraction {
 }
 
 /**
+ * What the user is doing in the viewport, reported for the session recorder (the AI
+ * assistant matches what the user said against it). Positions are scene-local metres.
+ *  - `pointerTarget`: the entity under the pointer changed. `entity` null = nothing
+ *    pickable (sky, bare ground). Deduped by the renderer: only sent on a change.
+ *  - `sceneClick`: a click that reached the RUNNING scene (editing off, Bevy), not an
+ *    editor pick — editor picks already show up as ECS selection changes.
+ *  - `playerMove`: the player avatar moved while the scene runs (throttled, Bevy).
+ * `meshName` is the hit mesh's name from the glTF, when the renderer knows it: the only
+ * handle on an entity the scene's code spawned at runtime, which the inspector's ECS
+ * has never seen.
+ */
+export type RendererActivity =
+  | { kind: 'pointerTarget'; entity: Entity | null; point?: Vector3; meshName?: string }
+  | { kind: 'sceneClick'; entity: Entity | null; point?: Vector3; meshName?: string }
+  | { kind: 'playerMove'; position: Vector3 }
+  | SceneEntityChange;
+
+/**
+ * Something the running scene's code created or removed, as the player would notice it.
+ * `description` reads like "a large dark-blue sphere with 6 attached parts" or
+ * "on-screen text "STAGE 2"". A burst of look-alikes (bullets, particles) is one change with
+ * `count` > 1 and no single `entity`.
+ */
+export type SceneEntityChange = {
+  kind: 'sceneEntities';
+  change: 'appeared' | 'removed';
+  entity: Entity | null;
+  count: number;
+  description: string;
+  position?: Vector3;
+  /** Epoch ms when the renderer noticed it (lookups that follow take a moment). */
+  at?: number;
+};
+
+/**
+ * Optional capability: stream {@link RendererActivity} to the session recorder.
+ * Reporting costs a raycast every few frames, so a renderer only does it while a
+ * tracker is subscribed. One subscriber at a time is enough (the recorder).
+ */
+export interface RendererActivityTracking {
+  track(cb: (activity: RendererActivity) => void): Unsubscribe;
+  /**
+   * What an entity the scene's code created looks like ("a red box", "the model coin.glb"),
+   * read from the running scene, or null when the renderer can't tell. Only a renderer that
+   * runs the scene's code can offer it; the editor's own ECS doesn't hold those entities.
+   */
+  describeEntity?(entity: Entity): Promise<string | null>;
+}
+
+/**
  * Optional capability for renderers that PLAY the scene's audio (a looping sound
  * keeps playing while you edit). Such a renderer can silence all scene audio with
  * an editor-side mute, independent of the run/freeze state. Babylon doesn't play
@@ -447,6 +497,8 @@ export interface IRenderer {
    * doesn't play scene audio, so it omits this — #1569).
    */
   readonly audio?: RendererAudio;
+  /** Present when the renderer can report pointer/play activity for the session recorder. */
+  readonly activity?: RendererActivityTracking;
 
   /** Set the editor selection by entity ID (the renderer draws it however it likes). */
   setSelection(entities: Entity[]): void;

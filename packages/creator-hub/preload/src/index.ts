@@ -51,5 +51,6 @@ export * as scene from './modules/scene';
 export * as custom from './modules/custom';
 export * as oxc from './modules/oxc';
 export * as optimizer from './modules/optimizer';
+export * as recording from './modules/recording';
 export * as sceneExport from './modules/scene-export';
 export * as landUnpublish from './modules/land-unpublish';

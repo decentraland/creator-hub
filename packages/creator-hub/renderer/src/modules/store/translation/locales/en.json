@@ -177,10 +177,40 @@
         "needs_login_help": "Its saved sign-in may have expired, even if it showed as connected. Sign out and back in: run these in a terminal, one at a time, and finish in your browser. Then send your message again:",
         "needs_login_managed_help": "Its saved sign-in may have expired, even if it showed as connected. In Settings → AI, click Sign out, then Sign in, then send your message again.",
         "api_key_alternative": "Or use an API key: set {envVar} and turn on \"{setting}\" in Settings → AI."
+      },
+      "recording": {
+        "chip": "Session recording · {duration} · {actions} actions",
+        "chip_no_speech": "Session recording · {duration} · {actions} actions (no speech)",
+        "remove": "Discard recording"
       }
     },
     "publish": {
       "save_failed": "Couldn't save your scene before publishing, so publishing was stopped to avoid deploying older content. {reason}"
+    },
+    "recording": {
+      "record": "Record",
+      "record_panel": "Record voice and actions",
+      "stop": "Stop recording",
+      "stop_with_time": "Stop · {time}",
+      "starting": "Starting…",
+      "transcribing": "Transcribing…",
+      "downloading": "Speech model {percent}%",
+      "default_mic": "your system's default microphone",
+      "tooltip_idle": "Record what you say and do for the AI assistant. Uses your system's default microphone; change the input device in your system's sound settings to use another one.",
+      "tooltip_live": "Recording from {mic}. To use a different microphone, change the input device in your system's sound settings and record again.",
+      "error": "Couldn't record: {message}",
+      "no_transcript": "Your speech couldn't be transcribed. The recording still lists everything you did.",
+      "consent": {
+        "title": "Record a session for the AI assistant",
+        "intro": "Talk while you work, then stop: the assistant gets what you said lined up with what you were doing, so \"delete this one\" means the entity you were pointing at.",
+        "what": "This records your voice and every action you take in the editor: clicks, where your mouse is, what you hover and select, menus you open, panels you scroll, searches, edits, and what you point at and click while playing your scene.",
+        "local": "Recording only happens while the Record button is on. Closing the project or the app ends it immediately. The audio and the log stay on your computer, and your speech is transcribed on your computer too.",
+        "download": "The first time, Creator Hub downloads a speech-to-text model (about {size} MB).",
+        "sent": "When you stop, the recording is attached to your next message. Sending that message shares the transcript and the list of actions (not the audio) with your AI provider.",
+        "microphone": "It uses your system's default microphone. To use a different one, change the input device in your system's sound settings before you start.",
+        "cancel": "Cancel",
+        "accept": "Start recording"
+      }
     }
   },
   "scene_list": {

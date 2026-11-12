@@ -8,6 +8,8 @@ import type {
   EditorCameraMode,
   GroundPlane,
   IRenderer,
+  RendererActivity,
+  RendererActivityTracking,
   RendererAnimation,
   RendererAudio,
   RendererCamera,
@@ -78,6 +80,7 @@ export class BevyRenderer implements IRenderer {
   readonly sceneRun: RendererSceneRun;
   readonly interaction: RendererInteraction;
   readonly audio: RendererAudio;
+  readonly activity: RendererActivityTracking;
 
   // In-memory camera pose. No wasm camera yet; this exists so the pose getters
   // are coherent (setPose → getPose) as the contract requires.
@@ -143,6 +146,9 @@ export class BevyRenderer implements IRenderer {
   #muted = true;
   #postMuted: ((muted: boolean) => void) | null = null;
   #muteHandlers = new Set<(muted: boolean) => void>();
+  // Session-recorder activity, reported by the agent over the bus. Injected by
+  // `register`; null in the conformance path (tracking then reports nothing).
+  #activitySource: RendererActivityTracking | null = null;
   // True from a Stop/reset until the agent signals `reset-complete` (the reloaded
   // scene is re-pinned + re-frozen). While resetting, Play is deferred: unfreezing
   // an unpinned scene silently no-ops, which is the "hit Play right after Stop and
@@ -186,6 +192,12 @@ export class BevyRenderer implements IRenderer {
     this.sceneRun = this.#createSceneRun();
     this.interaction = this.#createInteraction();
     this.audio = this.#createAudio();
+    this.activity = {
+      track: (cb: (activity: RendererActivity) => void): Unsubscribe =>
+        this.#activitySource?.track(cb) ?? (() => {}),
+      describeEntity: async entity =>
+        (await this.#activitySource?.describeEntity?.(entity)) ?? null,
+    };
     this.gizmos = this.#createGizmos();
     this.metrics = this.#createMetrics();
     this.viewport = this.#createViewport();
@@ -377,6 +389,11 @@ export class BevyRenderer implements IRenderer {
   /** Wire the mute poster (silences/restores the engine page's audio; #1569). */
   setMutedPoster(post: (muted: boolean) => void): void {
     this.#postMuted = post;
+  }
+
+  /** Wire the session-recorder activity source (the agent's reports over the bus). */
+  setActivitySource(source: RendererActivityTracking): void {
+    this.#activitySource = source;
   }
 
   /** Wire the scene resetter (Stop = reboot the engine to the scene's initial

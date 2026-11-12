@@ -71,6 +71,9 @@ export type AppSettings = {
   // The creator ticked "don't show this again" on the Optimize tools disclosure. Per machine;
   // the install screen still says when tools are being downloaded.
   optimizerConsentAcknowledged?: boolean;
+  // The creator has seen the session recorder's explanation (what Record captures) once; the
+  // Record button starts right away from then on. Per machine.
+  recordingConsentAcknowledged?: boolean;
   // Dev/QA only: point the inspector's smart-item catalog at the development CDN
   // (builder-items.decentraland.zone) instead of production, so assets uploaded from a PR via
   // `/upload-assets` can be tested before merge. The toggle is shown and honored ONLY in

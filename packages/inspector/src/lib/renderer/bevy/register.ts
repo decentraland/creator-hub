@@ -19,6 +19,8 @@ import { isTransformInputArmed } from '../../logic/transform-input';
 import { consoleCommand } from './console';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
+import { createActivityBridge } from './activity-bridge';
+import { combineActivitySources, createSceneObserver } from './scene-observer';
 import { createCameraBridge } from './camera-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
@@ -346,6 +348,19 @@ export function registerBevyRenderer(): void {
           };
         },
       });
+
+      // Session recorder: the agent reports the pointer target, clicks on the running
+      // scene and player moves while a tracker is subscribed (see activity-bridge.ts).
+      const activityBridge = createActivityBridge();
+      // ...and what the running scene's code creates and removes, read from the engine console
+      // (see scene-observer.ts). Follows the engine window across reboots.
+      const sceneObserver = createSceneObserver({
+        command: (cmd, args) => consoleCommand(liveEngineWindow, cmd, args),
+        isRunning: () => bevy.sceneRun.isRunning(),
+      });
+      bevy.setActivitySource(
+        combineActivitySources([activityBridge, sceneObserver], sceneObserver.describeEntity),
+      );
 
       // Forward the inspector's selection to the agent so its gizmo attaches to
       // the selected entity (from a viewport pick OR a tree click). The gizmos
@@ -686,6 +701,8 @@ export function registerBevyRenderer(): void {
           disconnectSelection();
           disconnectPick();
           disconnectHoverHint();
+          activityBridge.disconnect();
+          sceneObserver.disconnect();
           disconnectLayoutReload();
           buildReload.disconnect();
           offScriptEdits();

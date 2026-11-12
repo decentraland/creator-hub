@@ -6,7 +6,9 @@ import type {
   AiAttachment,
   AiAttachmentMeta,
   AiEvent,
+  AiPendingRecording,
   AiProvider,
+  AiRecorderState,
 } from '/shared/types/ai';
 import { assetMentionKey } from '/shared/types/ai';
 import type { AiRevertResult } from '/shared/types/ipc';
@@ -33,6 +35,8 @@ const initialState: AiState = {
   detecting: false,
   selection: [],
   assetMentions: [],
+  recording: null,
+  recorder: { status: 'idle', startedAt: null, micLabel: '', tools: null },
   chatVisible: false,
   billingDismissed: false,
   sessions: [],
@@ -82,11 +86,11 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     const path = state.editor.project?.path;
     if (path === undefined || path === '')
       throw new Error('Open a scene before using the assistant.');
-    const { provider, model, busy, selection, assetMentions } = state.ai;
+    const { provider, model, busy, selection, assetMentions, recording } = state.ai;
     if (busy) return;
     const trimmed = text.trim();
     const files = attachments ?? [];
-    if (trimmed === '' && files.length === 0) return;
+    if (trimmed === '' && files.length === 0 && recording === null) return;
     dispatch(actions.setBusy(true));
     if (await ai.isBusy()) {
       dispatch(actions.setDraftPrompt(trimmed));
@@ -106,12 +110,15 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
       );
     }
     const attachmentMeta: AiAttachmentMeta[] = files.map(f => ({ name: f.name, kind: f.kind }));
+    if (recording) attachmentMeta.unshift(recordingAttachmentMeta(recording));
     dispatch(actions.pushUserMessage({ text: trimmed, attachments: attachmentMeta }));
-    // Attach the current editor selection and mentioned assets as context so the assistant can
-    // resolve "this" without the user spelling out ids or paths. Not shown in the chat bubble
-    // (main prepends it). Mentions belong to this prompt only; the selection is live state.
-    const context = editorContext(selection, assetMentions);
+    // Attach the current editor selection, mentioned assets and a finished recording as context
+    // so the assistant can resolve "this" without the user spelling out ids or paths. Not shown
+    // in the chat bubble (main prepends it). Mentions and the recording belong to this prompt
+    // only; the selection is live state.
+    const context = editorContext(selection, assetMentions, recording);
     dispatch(actions.clearAssetMentions());
+    dispatch(actions.setRecording(null));
     const apiKeyFromEnv = state.workspace.settings?.useApiKeyFromEnv ?? false;
     await ai.send(path, {
       provider,
@@ -155,11 +162,23 @@ export function assetMentionsContext(assetMentions: AiState['assetMentions']): s
 function editorContext(
   selection: AiState['selection'],
   assetMentions: AiState['assetMentions'],
+  recording: AiState['recording'],
 ): string | undefined {
   const lines = [selectionContext(selection), assetMentionsContext(assetMentions)].filter(
     (line): line is string => line !== undefined,
   );
-  return lines.length > 0 ? lines.join('\n') : undefined;
+  const blocks = [lines.length > 0 ? lines.join('\n') : undefined, recording?.context].filter(
+    (block): block is string => block !== undefined,
+  );
+  return blocks.length > 0 ? blocks.join('\n\n') : undefined;
+}
+
+// The chip on the sent message. Display only: the timeline travels as context, not a file.
+// Exported for tests.
+export function recordingAttachmentMeta(recording: AiPendingRecording): AiAttachmentMeta {
+  const seconds = Math.round(recording.durationMs / 1000);
+  const duration = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  return { name: `Session recording ${duration}`, kind: 'audio' };
 }
 
 // Kill the in-flight turn. Main suppresses the `done` event on an intentional stop, so
@@ -368,6 +387,12 @@ const slice = createSlice({
     },
     clearAssetMentions: state => {
       state.assetMentions = [];
+    },
+    setRecording: (state, { payload }: PayloadAction<AiPendingRecording | null>) => {
+      state.recording = payload;
+    },
+    setRecorderState: (state, { payload }: PayloadAction<AiRecorderState>) => {
+      state.recorder = payload;
     },
     // Seed the composer from elsewhere in the editor (the Trigger Area "describe a reaction"
     // buttons). Bumps a nonce so clicking the same button twice re-seeds. EditorPage opens the

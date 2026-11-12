@@ -1,6 +1,7 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 import type { NotificationRequest } from '../../../hooks/useSnackbar';
+import type { RecordedEvent } from '../../recorder/types';
 
 enum Method {
   OPEN_FILE = 'open_file',
@@ -20,6 +21,7 @@ enum Method {
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
   NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
   NOTIFY_READY = 'notify_ready',
+  RECORD_EVENTS = 'record_events',
 }
 
 export type ProfileSummary = {
@@ -47,6 +49,7 @@ type Params = {
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
   [Method.NOTIFY_SCENE_METADATA]: SceneMetadataNotice;
   [Method.NOTIFY_READY]: Record<string, never>;
+  [Method.RECORD_EVENTS]: { events: RecordedEvent[] };
 };
 
 // A scene file (scene-relative path) or a built-in avatar animation, which has no file.
@@ -78,6 +81,7 @@ type Result = {
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
   [Method.NOTIFY_SCENE_METADATA]: void;
   [Method.NOTIFY_READY]: void;
+  [Method.RECORD_EVENTS]: void;
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {
@@ -187,5 +191,10 @@ export class SceneClient extends RPC<Method, Params, Result> {
   // The browser clipboard API is denied inside the Electron host, so copies go through it.
   copyToClipboard = (text: string) => {
     return this.request('copy_to_clipboard', { text });
+  };
+
+  // A batch of what the user did while the host is recording a session (see lib/recorder).
+  recordEvents = (events: RecordedEvent[]) => {
+    return this.request('record_events', { events });
   };
 }
