@@ -419,6 +419,33 @@ describe('when a script tags its params with editor hints', () => {
     });
   });
 
+  it('should mark a string tagged @format image, audio, video or model as a file path', () => {
+    const { params } = getScriptParams(
+      classScript(`
+        /** @format image */
+        public skyboxTexture: string = '',
+        /** @format audio */
+        public clip: string = '',
+        /** @format video */
+        public movie: string = '',
+        /** @format model */
+        public prop: string = '',`),
+    );
+    expect(params.skyboxTexture).toMatchObject({ type: 'string', value: '', format: 'image' });
+    expect(params.clip).toMatchObject({ format: 'audio' });
+    expect(params.movie).toMatchObject({ format: 'video' });
+    expect(params.prop).toMatchObject({ format: 'model' });
+  });
+
+  it('should ignore an unknown @format', () => {
+    const { params } = getScriptParams(
+      classScript(`
+        /** @format texture */
+        public skyboxTexture: string = '',`),
+    );
+    expect(params.skyboxTexture).not.toHaveProperty('format');
+  });
+
   it('should tie a param to the sibling named by @enabledIf', () => {
     const { params } = getScriptParams(
       classScript(`

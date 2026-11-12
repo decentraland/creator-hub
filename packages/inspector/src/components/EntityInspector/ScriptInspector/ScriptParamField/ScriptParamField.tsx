@@ -14,6 +14,7 @@ import { ObjectField } from './ObjectField';
 import { ArrayField } from './ArrayField';
 import { EntityParamField } from './EntityParamField';
 import { ActionNameField } from './ActionNameField';
+import { FileParamField } from './FileParamField';
 import { labelWithTooltip } from './labels';
 
 import type { Props } from './types';
@@ -178,6 +179,17 @@ function ParamInput({
             label={labelWithTooltip(name, param.tooltip)}
             value={param.value}
             onChange={e => onUpdate(e.target.value)}
+          />
+        );
+      }
+      if (param.type === 'string' && param.format && param.format !== 'wallet') {
+        return (
+          <FileParamField
+            label={labelWithTooltip(name, param.tooltip)}
+            value={param.value}
+            format={param.format}
+            disabled={disabled}
+            onChange={onUpdate}
           />
         );
       }

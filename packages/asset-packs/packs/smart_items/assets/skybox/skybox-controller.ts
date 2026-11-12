@@ -38,9 +38,10 @@ export class SkyboxController {
 
   /**
    * @param startEnabled - Apply these settings as soon as the scene loads. Turn it off to apply them later with the Enable action
+   * @param skyboxTexture - Image that replaces the sky: a PNG or JPG panorama in equirectangular (latitude-longitude) format, twice as wide as it is tall, e.g. 4096 x 2048. Its centre faces north (+Z) and its top edge is straight above. Cube maps and six-image skyboxes are not supported. It hides the clouds and stars; the sun, the fog and the light are unchanged, and the ambient light still follows the sky colours
    * @param sunIntensity - Strength of the sunlight and moonlight, as a multiplier: 1 is the normal strength, 0 turns it off
    * @param ambientBrightness - Darkens the light that comes from the sky, along with the sky, the clouds and the fog. 0 makes them all black. Below 1 it also darkens the regular sky and fog colours, as they look at midday, when their Custom option is off
-   * @param starBrightness - Brightness of the stars, which only show at night. 0 hides them (default: 4.62)
+   * @param starBrightness - Brightness of the stars, which only show at night. 0 hides them. Not used with a Skybox Texture (default: 4.62)
    * @param showSun - Show the sun and moon discs in the sky. Hiding them does not turn off their light
    * @param customFog - Replace the thickness and colour of the fog
    * @param fogDensity - How thick the fog is. Higher values hide distant objects sooner: 0.0005 is a light haze, 0.01 hides things beyond about 300 m, 1 hides everything beyond 3 m (default: 0.0005)
@@ -50,10 +51,10 @@ export class SkyboxController {
    * @param sunDirection - Compass direction the sun shines from, in degrees: 0 is north (+Z), 90 is east (+X)
    * @param customSunColor - Replace the colour of the sunlight and moonlight. It also tints the sun disc, which then looks less bright than the regular one
    * @param sunColor - Colour of the sunlight and of the sun disc
-   * @param cloudOpacity - How visible the clouds are: 0 hides them, 1 is fully opaque (default: 1)
-   * @param cloudSpeed - How fast the clouds turn around the sky. 0 keeps them still (default: 0.01)
-   * @param cloudColor - Colour of the clouds. They are drawn twice as bright as the colour picked here, as the regular clouds are
+   * @param cloudOpacity - How visible the clouds are: 0 hides them, 1 is fully opaque. Not used with a Skybox Texture (default: 1)
+   * @param cloudSpeed - How fast the clouds turn around the sky. 0 keeps them still. Not used with a Skybox Texture (default: 0.01)
    * @param customSkyColors - Replace the colours of the sky. They are also the colour of the ambient light of the whole scene
+   * @param cloudColor - Colour of the clouds. They are drawn twice as bright as the colour picked here, as the regular clouds are
    * @param zenithColor - Colour of the sky straight above
    * @param horizonColor - Colour of the broad band of sky around the horizon
    * @param horizonGlowColor - Colour of the narrow glow right on the horizon line, like a sunset glow
@@ -63,8 +64,11 @@ export class SkyboxController {
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
     public startEnabled: boolean = true,
+    /** @format image */
+    public skyboxTexture: string = '',
     public sunIntensity: Slider<0, 5, 0.05> = 1,
     public ambientBrightness: Slider<0, 1, 0.01> = 1,
+    /** @enabledIf !skyboxTexture */
     public starBrightness: Slider<0, 20, 0.01> = 4.62,
     public showSun: boolean = true,
     public customFog: boolean = true,
@@ -80,11 +84,13 @@ export class SkyboxController {
     public customSunColor: boolean = false,
     /** @enabledIf customSunColor */
     public sunColor: Color3 = Color3.fromHexString('#FFECAF'),
+    /** @enabledIf !skyboxTexture */
     public cloudOpacity: Slider<0, 1, 0.05> = 1,
+    /** @enabledIf !skyboxTexture */
     public cloudSpeed: Slider<0, 0.1, 0.005> = 0.01,
+    public customSkyColors: boolean = true,
     /** @enabledIf customSkyColors */
     public cloudColor: Color3 = Color3.fromHexString('#B5E5FF'),
-    public customSkyColors: boolean = true,
     /** @enabledIf customSkyColors */
     public zenithColor: Color3 = Color3.fromHexString('#3099EE'),
     /** @enabledIf customSkyColors */
@@ -190,6 +196,7 @@ export class SkyboxController {
     const custom = this.customSkyColors;
     const skyColors = custom || this.darkened;
     Skybox.createOrReplace(engine.RootEntity, {
+      skyboxTexture: this.skyboxTexture.trim() || undefined,
       skyColors: skyColors
         ? {
             zenith: this.ambient(custom ? this.zenithColor : REGULAR.zenith),

@@ -1,11 +1,28 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 
-import type { ScriptParamArray, ScriptParamColor, ScriptParamObject } from '../types';
+import type {
+  ScriptParamArray,
+  ScriptParamColor,
+  ScriptParamObject,
+  ScriptParamString,
+} from '../types';
+import ImportAsset from '../../../ImportAsset';
 import { ScriptParamField } from './ScriptParamField';
 
 // Container pulls SDK clipboard context we don't need here; a passthrough keeps the test
 // focused on the new object/array editors (field iteration, add/remove, onUpdate bubbling).
+// The real file field needs the asset catalog store and drag and drop; the stub shows what the
+// script field hands it.
+vi.mock('../../../ImportAsset', () => ({
+  default: vi.fn((props: { label?: React.ReactNode }) => (
+    <div className="ImportAssetStub">{props.label}</div>
+  )),
+}));
+vi.mock('../../../../hooks/useAssetOptions', () => ({
+  useAssetOptions: (accept: string[]) => [{ label: `options for ${accept}`, value: '' }],
+}));
+
 vi.mock('../../../Container', () => ({
   Container: ({ label, children }: { label?: string; children?: React.ReactNode }) => (
     <div data-testid="container">
@@ -348,5 +365,80 @@ describe('when a param is tied to a sibling with @enabledIf', () => {
       const container = renderSunHeight({ fixSunPosition: true }, '!fixSunPosition');
       expect(container.querySelector('fieldset.ScriptParamField.disabled')).not.toBeNull();
     });
+  });
+});
+
+describe('when a string param is tagged @format image', () => {
+  const skyboxTexture: ScriptParamString = {
+    type: 'string',
+    value: 'assets/scene/Images/sky.png',
+    format: 'image',
+    tooltip: 'A panorama',
+  };
+  let onUpdate: ReturnType<typeof vi.fn>;
+  const importAsset = {
+    get props() {
+      // React also records calls without props on the mock, so take the last real render.
+      const calls = vi.mocked(ImportAsset).mock.calls.filter(([props]) => props?.mode === 'field');
+      return calls[calls.length - 1][0] as any;
+    },
+  };
+
+  function renderTexture(param: ScriptParamString = skyboxTexture) {
+    onUpdate = vi.fn();
+    return render(
+      <ScriptParamField
+        name="skyboxTexture"
+        param={param}
+        onUpdate={onUpdate}
+      />,
+    );
+  }
+
+  it('should render the file field for images, labelled with the param name', () => {
+    const { container } = renderTexture();
+    expect(container.querySelector('.ImportAssetStub')?.textContent).toBe('Skybox Texture ');
+    expect(importAsset.props).toMatchObject({
+      mode: 'field',
+      value: 'assets/scene/Images/sky.png',
+      accept: ['.png', '.jpg', '.jpeg'],
+      options: [{ label: 'options for .png,.jpg,.jpeg', value: '' }],
+      error: undefined,
+    });
+  });
+
+  it('should store the picked path as the param value', () => {
+    renderTexture();
+    importAsset.props.onChange({ target: { value: 'assets/scene/Images/night.jpg' } });
+    expect(onUpdate).toHaveBeenCalledWith('assets/scene/Images/night.jpg');
+  });
+
+  it('should only take image files from the file tree', () => {
+    renderTexture();
+    const node = (name: string) => ({ type: 'asset', name, parent: null, src: name });
+    expect(importAsset.props.isValidFile(node('Sky.JPG'))).toBe(true);
+    expect(importAsset.props.isValidFile(node('sky.glb'))).toBe(false);
+  });
+
+  it('should flag a stored path that is not an image', () => {
+    renderTexture({ ...skyboxTexture, value: 'assets/scene/models/sky.glb' });
+    expect(importAsset.props.error).toBe('Invalid file type');
+  });
+
+  it('should accept an empty value', () => {
+    renderTexture({ ...skyboxTexture, value: '' });
+    expect(importAsset.props.error).toBeUndefined();
+  });
+
+  it('should be disabled while its @enabledIf sibling is off', () => {
+    render(
+      <ScriptParamField
+        name="skyboxTexture"
+        param={{ ...skyboxTexture, enabledIf: 'useTexture' }}
+        siblings={{ useTexture: false }}
+        onUpdate={vi.fn()}
+      />,
+    );
+    expect(importAsset.props.disabled).toBe(true);
   });
 });

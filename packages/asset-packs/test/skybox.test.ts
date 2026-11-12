@@ -70,6 +70,27 @@ describe('SkyboxController', () => {
     it('should leave the sun alone', () => {
       expect(sun()).toBeUndefined();
     });
+
+    it('should keep the procedural sky, with no texture', () => {
+      expect(sky().skyboxTexture).toBeUndefined();
+    });
+  });
+
+  describe('when a skybox texture is picked', () => {
+    it('should send its path, which the explorer draws in place of the sky', () => {
+      const skybox = create();
+      skybox.skyboxTexture = ' assets/scene/Images/sky.png ';
+      skybox.start();
+      expect(sky().skyboxTexture).toBe('assets/scene/Images/sky.png');
+    });
+
+    // The ambient light follows the sky colours even under a texture.
+    it('should still send the sky colours', () => {
+      const skybox = create();
+      skybox.skyboxTexture = 'assets/scene/Images/sky.png';
+      skybox.start();
+      expect(sky().skyColors.zenith).toBeDefined();
+    });
   });
 
   describe('when it is set not to start enabled', () => {

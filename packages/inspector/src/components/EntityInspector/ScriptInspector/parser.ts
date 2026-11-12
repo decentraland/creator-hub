@@ -12,7 +12,7 @@ import type {
 import { engine } from '@dcl/ecs';
 import { Color3, Color4 } from '@dcl/ecs-math';
 
-import type { ScriptParamUnion, ScriptAction, ScriptColor } from './types';
+import type { ScriptParamUnion, ScriptAction, ScriptColor, ScriptStringFormat } from './types';
 
 const SLIDER_DEFAULT_STEP = 1;
 
@@ -317,12 +317,13 @@ type Comments = { type: string; value: string }[] | undefined | null;
 //   @components <name> …  an Entity picks only entities with one of these components
 //   @actionsOf <key>      a string picks one of the actions of the entity in sibling `<key>`
 //   @format wallet        a string holds an Ethereum address
+//   @format image         a string holds the path of a scene image (also audio, video, model)
 //   @enabledIf [!]<key>   the field is locked unless the sibling field `<key>` is on (off with !)
 // On a list, the hint applies to each element, except @enabledIf, which locks the whole list.
 type ParamTags = {
   components?: string[];
   actionsOf?: string;
-  format?: 'wallet';
+  format?: ScriptStringFormat;
   enabledIf?: string;
 };
 
@@ -347,7 +348,8 @@ function extractParamTags(comments: Comments): ParamTags {
         tags.enabledIf = enabledIf[1].replace(/\s+/g, '');
         continue;
       }
-      if (/^@format\s+wallet\b/.test(line)) tags.format = 'wallet';
+      const format = line.match(/^@format\s+(wallet|image|audio|video|model)\b/);
+      if (format) tags.format = format[1] as ScriptStringFormat;
     }
   }
   return tags;

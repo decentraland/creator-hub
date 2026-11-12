@@ -73,9 +73,13 @@ export type ScriptParamString = ScriptParam & {
   // `@actionsOf <key>`: the value names one of the actions on the entity held by the sibling
   // field `<key>` of the same object, so the editor offers that entity's actions.
   actionsOf?: string;
-  // `@format wallet`: the value is an Ethereum address.
-  format?: 'wallet';
+  // `@format wallet`: the value is an Ethereum address. `@format image` (or audio, video, model):
+  // the value is the path of a scene file of that kind, picked with the file field.
+  format?: ScriptStringFormat;
 };
+
+export type ScriptFileFormat = 'image' | 'audio' | 'video' | 'model';
+export type ScriptStringFormat = 'wallet' | ScriptFileFormat;
 
 // A string-literal union in the constructor (e.g. `shape: 'box' | 'sphere'`) becomes a
 // dropdown. `options` come from the parsed type; `value` is the current choice.

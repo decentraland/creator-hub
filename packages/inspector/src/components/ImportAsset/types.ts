@@ -80,7 +80,7 @@ export interface FieldModeProps extends BaseProps {
   /** Current value (controlled) */
   value?: string | number;
   /** Field label */
-  label?: string;
+  label?: React.ReactNode;
   /** Error message to display */
   error?: string;
   /** CSS class name */
