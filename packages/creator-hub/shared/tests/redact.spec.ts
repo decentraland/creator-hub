@@ -113,11 +113,26 @@ describe('when text holds nothing secret', () => {
 });
 
 describe('when text is longer than the limit', () => {
-  it('should keep the first three quarters and the last quarter', () => {
+  it('should keep the head and tail around a marker, within the limit', () => {
     const { text, truncated } = truncateMiddle('a'.repeat(60) + 'b'.repeat(40), 40);
 
     expect(truncated).toBe(true);
-    expect(text).toBe(`${'a'.repeat(30)}[… 60 chars cut …]${'b'.repeat(10)}`);
+    expect(text).toBe(`${'a'.repeat(17)}[… 78 chars cut …]${'b'.repeat(5)}`);
+    expect(Array.from(text)).toHaveLength(40);
+  });
+
+  it.each([30, 100, 500, 16_000, 32_000])(
+    'should never exceed a limit of %i characters, marker included',
+    max => {
+      for (const length of [max + 1, max + 9, max * 3, max * 1000]) {
+        const { text } = truncateMiddle('x'.repeat(length), max);
+        expect(Array.from(text).length).toBeLessThanOrEqual(max);
+      }
+    },
+  );
+
+  it('should still respect a limit shorter than the marker', () => {
+    expect(truncateMiddle('x'.repeat(50), 5)).toEqual({ text: 'xxxxx', truncated: true });
   });
 
   it('should never split an emoji in half', () => {

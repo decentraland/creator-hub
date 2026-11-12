@@ -151,15 +151,28 @@ export function redactText(text: string): { text: string; redactions: Record<str
   return { text: out, redactions: counts };
 }
 
-/** Keeps the head and tail of text over `max` characters, never splitting a surrogate pair. */
+const cutMarker = (cut: number) => `[… ${cut} chars cut …]`;
+
+/**
+ * Keeps the head and tail of text over `max` characters (code points, never splitting a
+ * surrogate pair), with a marker saying how much was cut. The result, marker included, is at
+ * most `max` characters: the service rejects a field over its limit.
+ */
 export function truncateMiddle(text: string, max: number): { text: string; truncated: boolean } {
   const chars = Array.from(text);
   if (chars.length <= max) return { text, truncated: false };
-  const head = Math.floor(max * 0.75);
-  const tail = max - head;
-  const cut = chars.length - head - tail;
+  // The marker's length depends on the number it carries, which depends on the marker's length;
+  // two passes settle it, since dropping a digit can only shorten the marker.
+  let markerLength = cutMarker(chars.length).length;
+  let kept = max - markerLength;
+  markerLength = cutMarker(chars.length - Math.max(kept, 0)).length;
+  kept = max - markerLength;
+  if (kept <= 0) return { text: chars.slice(0, max).join(''), truncated: true };
+  const head = Math.ceil(kept * 0.75);
+  const tail = kept - head;
+  const cut = chars.length - kept;
   return {
-    text: `${chars.slice(0, head).join('')}[… ${cut} chars cut …]${chars.slice(-tail).join('')}`,
+    text: `${chars.slice(0, head).join('')}${cutMarker(cut)}${tail > 0 ? chars.slice(-tail).join('') : ''}`,
     truncated: true,
   };
 }
