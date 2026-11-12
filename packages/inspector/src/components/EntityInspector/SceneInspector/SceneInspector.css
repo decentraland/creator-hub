@@ -151,3 +151,7 @@
 .Container.Scene .ProfileRow .Avatar {
   cursor: default;
 }
+
+.SceneDescription textarea {
+  resize: vertical;
+}

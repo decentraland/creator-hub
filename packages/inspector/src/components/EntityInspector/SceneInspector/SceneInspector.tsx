@@ -349,6 +349,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           <TextArea
             label="Description"
             {...descriptionProps}
+            className="SceneDescription"
           />
           <div className="ThumbnailRow">
             <FileUploadField
