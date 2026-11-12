@@ -26,6 +26,13 @@ describe('when text holds a secret', () => {
     ['a JWT', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJleGFtcGxlIn0.ZXhhbXBsZXNpZw', 'jwt'],
     ['a .env line', 'OPENAI_API_KEY=example-value-123', 'credential'],
     ['a quoted .env line', 'DB_PASSWORD="example-pass"', 'credential'],
+    ['a double-quoted passphrase', 'DB_PASSWORD="correct horse battery staple"', 'credential'],
+    ['a single-quoted passphrase', "DB_PASSWORD='correct horse battery staple'", 'credential'],
+    ['a JSON password', '{ "password": "hunter2!!" }', 'credential'],
+    ['a YAML password', 'password: correct-horse-1', 'credential'],
+    ['a camelCase API key with spaces', '{ "apiKey": "correct horse battery" }', 'credential'],
+    ['a lowercase client secret', "client_secret = 'example-secret-value'", 'credential'],
+    ['a lowercase Windows home folder', 'open c:\\users\\jane\\scenes', 'home_path'],
     ['URL credentials', 'https://jane:example-pass@db.example.com/x', 'credential'],
     [
       'a token in a query string',
@@ -97,6 +104,25 @@ describe('when text holds a secret', () => {
     expect(text).toBe('please use <api_key> for this');
   });
 
+  it('should replace a quoted passphrase whole, keeping its key', () => {
+    expect(redactText('DB_PASSWORD="correct horse battery staple" next').text).toBe(
+      'DB_PASSWORD=<credential> next',
+    );
+    expect(redactText('{ "password": "hunter2!!" }').text).toBe('{ "password": <credential> }');
+  });
+
+  it('should count a value both credential rules see only once', () => {
+    expect(redactText('DB_PASSWORD="correct horse battery staple"').redactions).toEqual({
+      credential: 1,
+    });
+  });
+
+  it('should not run past an unterminated quote into the next line', () => {
+    const text = 'API_KEY="never closed\nconst door = engine.addEntity()';
+
+    expect(redactText(text).text.split('\n')[1]).toBe('const door = engine.addEntity()');
+  });
+
   it('should name only the user in a home path, not the rest of it', () => {
     expect(redactText('/Users/jane/scenes/mine').text).toBe('/Users/<user>/scenes/mine');
   });
@@ -128,6 +154,10 @@ describe('when text holds nothing secret', () => {
     'localhost at 127.0.0.1:8000',
     'const createEntityWithTransformAndPointerEvents = () => {}',
     'images/button@2x.png and icons/close@3x.webp',
+    'const binding = { key: "Enter", action: "jump" }',
+    'pointerKey = "click here"',
+    'const secretDoor = "hidden"',
+    'GET https://api.example.com/users/42/profile',
     'position 10.123.4567',
     'requires @dcl/sdk@7.10.2.1 or v7.10.2.1',
     '"src": "{assetPath}/DocksModuleStairs_01/DocksModuleStairs_01.glb"',

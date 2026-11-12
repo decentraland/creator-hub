@@ -76,6 +76,13 @@ describe('when a signed-in creator shares', () => {
 });
 
 describe('when the creator said no', () => {
+  it('should keep retrying a withdrawal the service has not received', () => {
+    const { flush } = mount({ wallet: ADDRESS, decision: { ...consent(false), delivered: false } });
+
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(flush).toHaveBeenCalledTimes(2);
+  });
+
   it('should sync once, to deliver the withdrawal, and not keep a timer', () => {
     const { flush } = mount({ wallet: ADDRESS, decision: consent(false) });
 

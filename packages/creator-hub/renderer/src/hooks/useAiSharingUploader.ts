@@ -24,10 +24,12 @@ export function useAiSharingUploader() {
   const address = wallet?.toLowerCase() ?? null;
   const configured = useSelector(state => canManageSharing(state, address));
   const consent = useSelector(state => selectSharingConsent(state, address));
-  // A "no" still syncs once, so a withdrawal that failed to reach the service gets there; the
-  // timer only keeps running while there is something to upload.
   const consented = hasSharingConsent(consent);
   const decided = consent !== undefined;
+  // The timer runs while there is something to upload, and while a decision (a "no" included)
+  // hasn't reached the service yet: a withdrawal that failed is retried, with the usual backoff,
+  // instead of waiting for the next launch.
+  const keepRunning = consented || consent?.delivered !== true;
 
   // Main records turns only for the wallet signed in here; tell it on every change.
   useEffect(() => {
@@ -37,10 +39,10 @@ export function useAiSharingUploader() {
   useEffect(() => {
     if (!configured || address === null || !decided) return;
     void dispatch(aiSharingActions.flush());
-    if (!consented) return;
+    if (!keepRunning) return;
     const timer = setInterval(() => void dispatch(aiSharingActions.flush()), UPLOAD_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [configured, address, decided, consented, dispatch]);
+  }, [configured, address, decided, keepRunning, dispatch]);
 }
 
 export function AiSharingUploader() {

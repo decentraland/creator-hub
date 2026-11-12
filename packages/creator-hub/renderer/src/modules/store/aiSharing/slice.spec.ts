@@ -817,3 +817,30 @@ describe('when reading the local queue', () => {
     expect(aiSharing.list).toHaveBeenCalledWith(ADDRESS);
   });
 });
+
+describe('when a withdrawal does not get through', () => {
+  it('should forget the sync after a failed erase, so the next upload run retries it', async () => {
+    vi.mocked(api.eraseAll).mockResolvedValue(fail(503));
+    const store = setup({ consent: granted });
+    store.dispatch(actions.setSyncedWallet(ADDRESS));
+
+    await store.dispatch(actions.deleteEverything());
+
+    expect(store.getState().aiSharing.syncedWallet).toBeNull();
+    expect(store.getState().aiSharing.deleteStatus).toBe('failed');
+  });
+
+  it('should never turn a refused "no" back into the service\'s "yes"', async () => {
+    vi.mocked(api.putConsent).mockResolvedValue(fail(409));
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.decide(false));
+
+    expect(store.getState().workspace.settings.aiDataSharing?.[ADDRESS]).toMatchObject({
+      consent: 'denied',
+      delivered: false,
+    });
+    expect(api.getConsent).not.toHaveBeenCalled();
+  });
+});

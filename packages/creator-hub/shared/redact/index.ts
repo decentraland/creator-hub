@@ -21,6 +21,9 @@ interface Rule {
 const FILE_EXTENSION =
   /^(?:png|jpe?g|gif|webp|svg|ktx2?|basis|glb|gltf|bin|fbx|obj|mp3|ogg|wav|mp4|webm|json|ts|tsx|js|jsx|css|html|md|txt|zip)$/i;
 
+// A credential's value: quoted (spaces allowed, one line, bounded) or a bare run of 6+ characters.
+const CREDENTIAL_VALUE = String.raw`(?:"[^"\r\n]{6,512}"|'[^'\r\n]{6,512}'|[^\s"',}]{6,})`;
+
 const RULES: Rule[] = [
   {
     kind: 'private_key',
@@ -47,11 +50,28 @@ const RULES: Rule[] = [
       /([?&](?:token|key|api_key|apikey|sig|signature|secret|password|access_token)=)[^&\s#]+/gi,
     replace: (_m, [prefix]) => `${prefix}<credential>`,
   },
+  // `.env` style: `DB_PASSWORD=…`. A quoted value is taken whole, spaces included (a
+  // passphrase), but never past the end of its line, so an unterminated quote can't swallow
+  // the code below it.
   {
     kind: 'credential',
-    pattern:
-      /\b([A-Z][A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD|PWD)[A-Z0-9_]*\s*[=:]\s*)(["']?)[^\s"']{6,}\2/g,
+    pattern: new RegExp(
+      `\\b([A-Z][A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD|PWD)[A-Z0-9_]*\\s*[=:]\\s*)${CREDENTIAL_VALUE}`,
+      'g',
+    ),
     replace: (_m, [prefix]) => `${prefix}<credential>`,
+  },
+  // JSON, YAML and camelCase: `"password": "…"`, `apiKey = '…'`. Exact key names only, any
+  // case, so `key: "Enter"` or `const secretDoor = "hidden"` stay as they are.
+  {
+    kind: 'credential',
+    pattern: new RegExp(
+      `(["']?)\\b((?:db_|client_)?(?:password|passwd|pwd|secret|api_?key|access_?token|auth_?token|private_?key|client_?secret))\\1(\\s*[:=]\\s*)${CREDENTIAL_VALUE}`,
+      'gi',
+    ),
+    // The `.env` rule above may have taken this value already.
+    replace: (match, [quote, key, separator]) =>
+      match.endsWith('<credential>') ? null : `${quote}${key}${quote}${separator}<credential>`,
   },
   {
     kind: 'credential',
@@ -80,8 +100,10 @@ const RULES: Rule[] = [
   },
   {
     kind: 'home_path',
-    // Windows separators may arrive escaped (`C:\\Users\\jane` inside JSON).
-    pattern: /(\/Users\/|\/home\/|[A-Za-z]:\\{1,2}Users\\{1,2})([^/\\\s'"`]+)/g,
+    // Windows separators may arrive escaped (`C:\\Users\\jane` inside JSON), and Windows paths
+    // ignore case (`c:\users\jane`). The POSIX branches stay case-sensitive, so URL paths that
+    // happen to contain `/users/` are left alone.
+    pattern: /(\/Users\/|\/home\/|[A-Za-z]:\\{1,2}[Uu][Ss][Ee][Rr][Ss]\\{1,2})([^/\\\s'"`]+)/g,
     replace: (_m, [root]) => `${root}<user>`,
   },
 ];

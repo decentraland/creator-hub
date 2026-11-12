@@ -197,6 +197,9 @@ async function deliver(
   }
   if (response.status === 409) {
     if (checkVersionMismatch(dispatch, response)) return false;
+    // A "no" is never replaced by the service's "yes": withdrawals always apply there, so a 409
+    // on one is a transient refusal, and it is retried rather than undone.
+    if (consent.consent === 'denied') return false;
     const remote = await api.getConsent(wallet);
     if (!remote.ok) return false;
     await adoptRemote(getState, dispatch, wallet, remote.data);
@@ -247,7 +250,11 @@ export const deleteEverything = createAsyncThunk(
     await aiSharing.purge(wallet);
     await dispatch(refreshQueue());
     const response = await api.eraseAll(wallet, withdrawal.decidedAt);
-    if (!response.ok) return rejectWithValue(response.error);
+    if (!response.ok) {
+      // The "no" stays saved and undelivered, so the uploader keeps retrying it.
+      dispatch(actions.setSyncedWallet(null));
+      return rejectWithValue(response.error);
+    }
     await saveConsent(getState, dispatch, wallet, { ...withdrawal, delivered: true });
     dispatch(actions.setSyncedWallet(wallet));
     dispatch(actions.clearSharedTurns());
