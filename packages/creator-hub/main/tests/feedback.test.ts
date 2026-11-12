@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => {
   return {
     home: '/Users/jane',
     logPath: '',
+    online: true,
     response: { statusCode: 200 } as SendResponse | undefined,
     hooks,
     captureFeedback: vi.fn(),
@@ -34,6 +35,8 @@ vi.mock('os', async importOriginal => {
   const homedir = () => mocks.home;
   return { ...real, homedir, default: { ...real, homedir } };
 });
+
+vi.mock('electron', () => ({ net: { isOnline: () => mocks.online } }));
 
 vi.mock('electron-log/main', () => ({
   default: {
@@ -73,6 +76,7 @@ describe('send', () => {
     dir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'feedback-'));
     mocks.logPath = path.join(dir, 'main.log');
     mocks.home = '/Users/jane';
+    mocks.online = true;
     mocks.response = { statusCode: 200 };
     mocks.captureFeedback.mockImplementation(() => {
       const response = mocks.response;
@@ -107,6 +111,36 @@ describe('send', () => {
         expect(Buffer.byteLength(log!.data)).toBe(MB);
         expect(log!.data).not.toContain('FIRST-LINE');
         expect(log!.data.endsWith('LAST-LINE')).toBe(true);
+      });
+    });
+
+    describe('and the log rotated recently, leaving main.log short', () => {
+      const oldLog = () => path.join(dir, 'main.old.log');
+
+      beforeEach(() => {
+        fs.writeFileSync(oldLog(), `OLD-FIRST\n${'o'.repeat(2 * MB)}\nOLD-LAST\n`);
+        fs.writeFileSync(mocks.logPath, 'CURRENT /Users/jane/a');
+      });
+
+      it('should fill the 1 MB with the end of main.old.log, old content first', async () => {
+        await send(report);
+        const log = attachment();
+        expect(log?.filename).toBe('main.log');
+        expect(mocks.captureFeedback.mock.calls[0][1].attachments).toHaveLength(1);
+        expect(Buffer.byteLength(log!.data)).toBe(MB - '/Users/jane'.length + '~'.length);
+        expect(log!.data).not.toContain('OLD-FIRST');
+        expect(log!.data.endsWith('OLD-LAST\nCURRENT ~/a')).toBe(true);
+      });
+    });
+
+    describe('and there is no main.old.log', () => {
+      beforeEach(() => {
+        fs.writeFileSync(mocks.logPath, 'CURRENT ONLY');
+      });
+
+      it('should attach main.log alone', async () => {
+        await send(report);
+        expect(attachment()?.data).toBe('CURRENT ONLY');
       });
     });
 
@@ -283,14 +317,27 @@ describe('send', () => {
     });
   });
 
-  describe('when the transport stores the report to send later', () => {
+  describe('when Sentry reports no status code', () => {
     beforeEach(() => {
       mocks.response = {};
     });
 
-    it('should resolve to queued', async () => {
-      await expect(send({ ...report, includeLogs: false })).resolves.toBe('queued');
-      expect(mocks.hooks.size).toBe(0);
+    describe('and the app is offline, so the transport stored it', () => {
+      beforeEach(() => {
+        mocks.online = false;
+      });
+
+      it('should resolve to queued and stop listening', async () => {
+        await expect(send({ ...report, includeLogs: false })).resolves.toBe('queued');
+        expect(mocks.hooks.size).toBe(0);
+      });
+    });
+
+    describe('and the app is online, so it may have been dropped', () => {
+      it('should resolve to unknown and stop listening', async () => {
+        await expect(send({ ...report, includeLogs: false })).resolves.toBe('unknown');
+        expect(mocks.hooks.size).toBe(0);
+      });
     });
   });
 
@@ -305,22 +352,26 @@ describe('send', () => {
     });
   });
 
-  describe('when Sentry does not answer within 30 seconds', () => {
+  describe.each([
+    ['offline', false, 'queued'],
+    ['online', true, 'unknown'],
+  ])('when Sentry does not answer within 30 seconds and the app is %s', (_, online, outcome) => {
     beforeEach(() => {
       mocks.response = undefined;
+      mocks.online = online;
       vi.useFakeTimers();
     });
 
-    it('should resolve to queued and stop listening', async () => {
-      const outcome = send({ ...report, includeLogs: false });
+    it(`should resolve to ${outcome} and stop listening`, async () => {
+      const delivery = send({ ...report, includeLogs: false });
       let settled = false;
-      void outcome.then(() => (settled = true));
+      void delivery.then(() => (settled = true));
 
       await vi.advanceTimersByTimeAsync(29_999);
       expect(settled).toBe(false);
 
       await vi.advanceTimersByTimeAsync(1);
-      await expect(outcome).resolves.toBe('queued');
+      await expect(delivery).resolves.toBe(outcome);
       expect(mocks.hooks.size).toBe(0);
     });
   });

@@ -60,7 +60,6 @@ describe('LogoMenu', () => {
 
       expect(feedback.send).toHaveBeenCalledWith({
         message: 'The app froze',
-        email: undefined,
         includeLogs: true,
         associatedEventId: undefined,
         source: 'logo-menu',

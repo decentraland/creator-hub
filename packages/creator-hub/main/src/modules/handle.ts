@@ -64,7 +64,7 @@ export async function handle<T extends keyof Ipc>(
         extra.stderr = error.stderr.toString('utf8');
       }
 
-      if (name !== 'AbortError') {
+      if (name !== 'AbortError' && channel !== 'feedback.send') {
         captureException(error, { tags: { source: 'ipc-handle' }, extra });
       }
       const result: IpcError = {

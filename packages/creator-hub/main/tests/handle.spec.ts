@@ -9,6 +9,7 @@ vi.mock('../src/modules/bin', () => ({ StreamError: class StreamError extends Er
 
 import { ipcMain } from 'electron';
 import log from 'electron-log';
+import { captureException } from '@sentry/electron/main';
 
 import { formatArgs, handle, handleSync } from '../src/modules/handle';
 
@@ -131,6 +132,25 @@ describe('handle', () => {
       await listener({} as never, ...args);
 
       expect(log.info).toHaveBeenCalledWith(`[IPC] channel=${channel} [redacted]`);
+    });
+  });
+
+  describe.each([
+    ['feedback.send', 0],
+    ['ai.deleteSession', 1],
+  ] as const)('when the %s handler rejects', (channel, captures) => {
+    it(`should log the error, return it, and report it to Sentry ${captures} time(s)`, async () => {
+      vi.mocked(log.error).mockClear();
+      vi.mocked(captureException).mockClear();
+      vi.mocked(ipcMain.handle).mockClear();
+      handle(channel, vi.fn().mockRejectedValue(new Error('boom')) as never);
+      const listener = vi.mocked(ipcMain.handle).mock.calls[0][1];
+
+      const result = await listener({} as never);
+
+      expect(log.error).toHaveBeenCalledWith(`[IPC] channel=${channel} name=Error error=boom`);
+      expect(result).toEqual({ success: false, error: { message: 'boom', name: 'Error' } });
+      expect(captureException).toHaveBeenCalledTimes(captures);
     });
   });
 

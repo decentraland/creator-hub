@@ -639,6 +639,23 @@ describe('deployment slice', () => {
       });
     });
 
+    describe('when the catalyst reports the deployment failed', () => {
+      beforeEach(async () => {
+        store = await initDeploymentStore();
+        mockDeploySuccess();
+        mockCheckStatus('failed');
+      });
+
+      it('should keep the Sentry event id of the failure', async () => {
+        const result = await store.dispatch(executeDeployment(TEST_PATH));
+
+        const deployment = store.getState().deployment.deployments[TEST_PATH];
+        expect(result.type).toBe('deployment/execute/rejected');
+        expect(deployment?.error?.name).toBe('DEPLOYMENT_FAILED');
+        expect(deployment?.error?.eventId).toBe('sentry-event-id');
+      });
+    });
+
     describe('when the deploy request fails for good', () => {
       beforeEach(async () => {
         store = await initDeploymentStore();

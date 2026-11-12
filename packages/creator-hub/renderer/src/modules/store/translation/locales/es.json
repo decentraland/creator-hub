@@ -777,6 +777,8 @@
       "sent": "¡Gracias por ayudarnos a mejorar Creator Hub! Recibimos tu reporte y nuestro equipo investigará el problema y trabajará en una solución.",
       "queued_title": "Reporte de problema guardado",
       "queued": "Guardamos tu reporte y lo enviaremos en cuanto vuelvas a tener conexión.",
+      "unknown_title": "No pudimos confirmar tu reporte",
+      "unknown": "Enviamos tu reporte, pero no pudimos confirmar que llegó. Si el problema continúa, vuelve a reportarlo.",
       "failed_title": "Algo salió mal",
       "failed": "No pudimos enviar tu reporte. Revisa tu conexión e inténtalo de nuevo."
     }

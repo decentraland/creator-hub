@@ -777,6 +777,8 @@
       "sent": "Thanks for helping us improve the Creator Hub! We've received your report and our team will investigate the issue and work on a fix.",
       "queued_title": "Issue Report Saved",
       "queued": "We saved your report and will send it as soon as you're back online.",
+      "unknown_title": "Couldn't Confirm Your Report",
+      "unknown": "We sent your report but couldn't confirm it arrived. If the problem continues, report it again.",
       "failed_title": "Something went wrong",
       "failed": "We couldn't send your report. Check your connection and try again."
     }

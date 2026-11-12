@@ -63,11 +63,11 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
   const overLimit = message.length > FEEDBACK_MESSAGE_MAX_LENGTH;
   const counter: CounterState = overLimit ? 'over' : descriptionFocused ? 'shown' : 'hidden';
   const sending = status === 'sending';
-  const delivered = status === 'sent' || status === 'queued';
+  const delivered = status === 'sent' || status === 'queued' || status === 'unknown';
 
   useEffect(() => {
     if (open) void analytics.track('Report Issue Opened', { source });
-  }, [open]);
+  }, [open, source]);
 
   const close = () => {
     if (sending) return;

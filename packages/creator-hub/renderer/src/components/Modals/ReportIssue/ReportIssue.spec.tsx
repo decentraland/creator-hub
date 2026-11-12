@@ -59,7 +59,7 @@ const precedes = (a: Node, b: Node) =>
 const closeButton = () => screen.getByText('Close', { selector: 'button' });
 const tracked = (event: string) => mocks.track.mock.calls.filter(([name]) => name === event);
 
-async function sendWith(delivery: 'sent' | 'queued' | Error) {
+async function sendWith(delivery: FeedbackDelivery | Error) {
   if (delivery instanceof Error) mocks.send.mockRejectedValueOnce(delivery);
   else mocks.send.mockResolvedValueOnce(delivery);
   await act(async () => fireEvent.click(sendButton()));
@@ -417,6 +417,41 @@ describe('ReportIssue', () => {
       fireEvent.click(closeButton());
       reopen();
 
+      expectFormEmpty();
+    });
+  });
+
+  describe('when the delivery cannot be confirmed', () => {
+    it('should say so, offer only Close, and track it as unknown', async () => {
+      renderDialog();
+      fillForm();
+
+      await sendWith('unknown');
+
+      expect(screen.getByRole('dialog', { name: "Couldn't Confirm Your Report" })).toBeTruthy();
+      expect(
+        screen.getByText(
+          "We sent your report but couldn't confirm it arrived. If the problem continues, report it again.",
+        ),
+      ).toBeTruthy();
+      expect(closeButton()).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+      expect(tracked('Report Issue Submitted')).toEqual([
+        ['Report Issue Submitted', { source: 'logo-menu', result: 'unknown' }],
+      ]);
+    });
+
+    it('should clear the form once closed', async () => {
+      const { onClose, reopen } = renderDialog();
+      fillForm();
+      await sendWith('unknown');
+
+      fireEvent.click(closeButton());
+      reopen();
+
+      expect(onClose).toHaveBeenCalledTimes(1);
       expectFormEmpty();
     });
   });

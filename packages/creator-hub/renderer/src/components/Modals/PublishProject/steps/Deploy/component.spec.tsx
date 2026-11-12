@@ -442,7 +442,6 @@ describe('Deploy step', () => {
       it('should send the report linked to the failure', () => {
         expect(feedback.send).toHaveBeenCalledWith({
           message: 'Publishing failed',
-          email: undefined,
           includeLogs: true,
           associatedEventId: 'deploy-event-id',
           source: 'publish-failure',
