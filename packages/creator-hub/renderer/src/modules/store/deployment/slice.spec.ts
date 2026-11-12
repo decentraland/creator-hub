@@ -38,6 +38,10 @@ vi.mock('../../../lib/auth', () => ({
   },
 }));
 
+vi.mock('@sentry/electron/renderer', () => ({
+  captureException: vi.fn(() => 'sentry-event-id'),
+}));
+
 vi.mock('@dcl/crypto', () => ({
   Authenticator: {
     signPayload: vi.fn().mockResolvedValue({}),
@@ -623,6 +627,47 @@ describe('deployment slice', () => {
         const deployment = store.getState().deployment.deployments[TEST_PATH];
         expect(deployment?.status).toBe('failed');
         expect(deployment?.error?.name).toBe('INVALID_IDENTITY');
+      });
+
+      it('should keep the Sentry event id of the failure', async () => {
+        vi.mocked(AuthServerProvider.hasValidIdentity).mockReturnValueOnce(false);
+
+        await store.dispatch(executeDeployment(TEST_PATH));
+
+        const deployment = store.getState().deployment.deployments[TEST_PATH];
+        expect(deployment?.error?.eventId).toBe('sentry-event-id');
+      });
+    });
+
+    describe('when the catalyst reports the deployment failed', () => {
+      beforeEach(async () => {
+        store = await initDeploymentStore();
+        mockDeploySuccess();
+        mockCheckStatus('failed');
+      });
+
+      it('should keep the Sentry event id of the failure', async () => {
+        const result = await store.dispatch(executeDeployment(TEST_PATH));
+
+        const deployment = store.getState().deployment.deployments[TEST_PATH];
+        expect(result.type).toBe('deployment/execute/rejected');
+        expect(deployment?.error?.name).toBe('DEPLOYMENT_FAILED');
+        expect(deployment?.error?.eventId).toBe('sentry-event-id');
+      });
+    });
+
+    describe('when the deploy request fails for good', () => {
+      beforeEach(async () => {
+        store = await initDeploymentStore();
+        vi.mocked(deploy).mockRejectedValue(new Error('The deployment is too big'));
+      });
+
+      it('should keep the Sentry event id of the failure', async () => {
+        await store.dispatch(executeDeployment(TEST_PATH));
+
+        const deployment = store.getState().deployment.deployments[TEST_PATH];
+        expect(deployment?.error?.name).toBe('MAX_POINTER_SIZE_EXCEEDED');
+        expect(deployment?.error?.eventId).toBe('sentry-event-id');
       });
     });
   });

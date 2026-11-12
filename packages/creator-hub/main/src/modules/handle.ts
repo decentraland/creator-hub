@@ -5,53 +5,55 @@ import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 import { captureException } from '@sentry/electron/main';
 import { StreamError } from './bin';
 
-// `rawBody`/`body` carry request payloads; the AI sharing upload's are conversation records.
-const SENSITIVE_KEY = /^x-identity-|auth-chain|authorization|password|token|secret|^(raw)?body$/i;
+// `rawBody`/`body` carry request payloads; an AI sharing upload's are conversation records.
+const SENSITIVE_KEY =
+  /^x-identity-|auth-?chain|auth_chain|authorization|password|token|secret|email|contact|^(raw)?body$/i;
 
-/**
- * `ai.*` and `aiSharing.*` channels carry what the user typed (prompts, `ask_user` answers, the
- * sign-in code), the whole conversation (`ai.mirrorPush`) and screenshots. The
- * electron log is attached to bug reports, so for these only the shape is logged.
- */
-const CONTENT_CHANNEL = /^ai[.A-Z]/;
+const CONTENT_CHANNELS = new Set<keyof Ipc>([
+  'ai.submitSignInCode',
+  'ai.send',
+  'ai.screenshotResult',
+  'ai.askResult',
+  'ai.mirrorPush',
+  'ai.remoteCommand',
+]);
 
-const MAX_SHAPE_DEPTH = 3;
-
-function describeShape(value: unknown, depth = 0): unknown {
-  if (typeof value === 'string') return `<${value.length} chars>`;
-  if (value === null || typeof value !== 'object') return value;
-  if (Array.isArray(value)) return `<${value.length} items>`;
-  if (depth >= MAX_SHAPE_DEPTH) return '<object>';
-  return Object.fromEntries(
-    Object.entries(value).map(([key, entry]) => [key, describeShape(entry, depth + 1)]),
-  );
+function shortenDataUrl(value: unknown) {
+  if (typeof value !== 'string' || !value.startsWith('data:')) return value;
+  return `[data:${value.slice(5, value.search(/[;,]|$/))}, ${value.length} bytes]`;
 }
 
 /**
- * Renders IPC arguments for the log. Credential-shaped values are masked because
- * these lines land in the electron log on disk — `metrics.request` alone carries
- * a signed ADR-44 auth chain on every call.
+ * Renders IPC arguments for the log. Credential-shaped values and contact details are
+ * masked and data URLs shortened, because these lines land in the electron log on disk,
+ * which issue reports attach.
  */
-export function formatArgs(args: unknown[], channel?: string): string {
-  const shapeOnly = channel !== undefined && CONTENT_CHANNEL.test(channel);
+export function formatArgs(args: unknown[]): string {
   return args
     .map(
       (arg, idx) =>
-        `args[${idx}]=${JSON.stringify(shapeOnly ? describeShape(arg) : arg, (key, value) =>
-          SENSITIVE_KEY.test(key) ? '[redacted]' : value,
+        `args[${idx}]=${JSON.stringify(arg, (key, value) =>
+          SENSITIVE_KEY.test(key) ? '[redacted]' : shortenDataUrl(value),
         )}`,
     )
     .join(' ');
 }
 
-// wrapper for ipcMain.handle with types
+// The AI sharing queue's channels carry wallet addresses and record ids.
+const isContentChannel = (channel: keyof Ipc) =>
+  CONTENT_CHANNELS.has(channel) || channel.startsWith('aiSharing.');
+
+function logArgs(channel: keyof Ipc, args: unknown[]) {
+  return isContentChannel(channel) ? '[redacted]' : formatArgs(args);
+}
+
 export async function handle<T extends keyof Ipc>(
   channel: T,
   handler: (event: Electron.IpcMainInvokeEvent, ...args: Parameters<Ipc[T]>) => ReturnType<Ipc[T]>,
 ) {
   ipcMain.handle(channel, async (event, ...args) => {
     try {
-      log.info(`[IPC] channel=${channel} ${formatArgs(args, channel)}`.trim());
+      log.info(`[IPC] channel=${channel} ${logArgs(channel, args)}`.trim());
       const value = await handler(event, ...(args as Parameters<Ipc[T]>));
       const result: IpcResult<typeof value> = {
         success: true,
@@ -67,7 +69,7 @@ export async function handle<T extends keyof Ipc>(
         extra.stderr = error.stderr.toString('utf8');
       }
 
-      if (name !== 'AbortError') {
+      if (name !== 'AbortError' && channel !== 'feedback.send') {
         captureException(error, { tags: { source: 'ipc-handle' }, extra });
       }
       const result: IpcError = {
@@ -88,7 +90,7 @@ export function handleSync<T extends keyof Ipc>(
 ) {
   ipcMain.on(channel, (event, ...args) => {
     try {
-      log.info(`[IPC-SYNC] channel=${channel} ${formatArgs(args, channel)}`.trim());
+      log.info(`[IPC-SYNC] channel=${channel} ${logArgs(channel, args)}`.trim());
       const result = handler(event, ...(args as Parameters<Ipc[T]>));
       event.returnValue = result;
       return result;
