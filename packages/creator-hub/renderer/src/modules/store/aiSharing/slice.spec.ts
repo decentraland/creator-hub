@@ -14,6 +14,7 @@ import { actions, selectSharingView, shouldShareTurn } from './slice';
 vi.mock('../../../lib/aiSharingApi', () => ({
   isConfigured: vi.fn(() => true),
   MAX_RECORDS_PER_UPLOAD: 20,
+  MAX_UPLOAD_BYTES: 900_000,
   getConsent: vi.fn(),
   putConsent: vi.fn(),
   uploadTurns: vi.fn(),
@@ -30,6 +31,13 @@ const granted = {
   decidedAt: '2026-11-12T00:00:00Z',
 };
 const record = (id: string) => ({ recordId: id, address: ADDRESS }) as AiTurnRecord;
+const NOW = '2026-11-12T00:00:00Z';
+const LATER = '2026-11-13T00:00:00Z';
+const serverSays = (isGranted: boolean, decidedAt: string | null) => ({
+  granted: isGranted,
+  version: decidedAt === null ? null : AI_SHARING_CONSENT_VERSION,
+  decidedAt,
+});
 
 function setup({
   flag = true,
@@ -178,22 +186,24 @@ describe('when the chat sends a turn', () => {
 });
 
 describe('when the creator decides', () => {
-  it('should save a yes and tell the server', async () => {
-    vi.mocked(api.putConsent).mockResolvedValue(ok({ granted: true, version: 1 }));
+  it('should save a yes and send it to the server with the time it was made', async () => {
+    vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(true, NOW)));
     const store = setup();
 
     await store.dispatch(actions.decide(true));
 
-    expect(store.getState().workspace.settings.aiDataSharing).toMatchObject({
-      consent: 'granted',
+    const saved = store.getState().workspace.settings.aiDataSharing!;
+    expect(saved).toMatchObject({ consent: 'granted', version: AI_SHARING_CONSENT_VERSION });
+    expect(api.putConsent).toHaveBeenCalledWith({
+      granted: true,
       version: AI_SHARING_CONSENT_VERSION,
+      decidedAt: saved.decidedAt,
     });
-    expect(api.putConsent).toHaveBeenCalledWith(true, AI_SHARING_CONSENT_VERSION);
     expect(store.getState().aiSharing.serverConsentSynced).toBe(true);
   });
 
   it('should empty the local queue on a no', async () => {
-    vi.mocked(api.putConsent).mockResolvedValue(ok({ granted: false, version: 1 }));
+    vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(false, NOW)));
     const store = setup({ consent: granted });
 
     await store.dispatch(actions.decide(false));
@@ -202,7 +212,7 @@ describe('when the creator decides', () => {
     expect(store.getState().workspace.settings.aiDataSharing?.consent).toBe('denied');
   });
 
-  it('should keep the local answer when the server cannot be reached', async () => {
+  it('should keep the local answer, unsynced, when the server cannot be reached', async () => {
     vi.mocked(api.putConsent).mockResolvedValue(fail(0));
     const store = setup();
 
@@ -213,23 +223,109 @@ describe('when the creator decides', () => {
   });
 });
 
-describe('when uploading', () => {
-  beforeEach(() => {
-    vi.mocked(api.putConsent).mockResolvedValue(ok({ granted: true, version: 1 }));
-  });
-
-  it('should confirm consent with the server, then upload and acknowledge each batch', async () => {
-    vi.mocked(aiSharing.peek)
-      .mockResolvedValueOnce([record('a'), record('b')])
-      .mockResolvedValueOnce([]);
-    vi.mocked(api.uploadTurns).mockResolvedValue(ok({ accepted: 2 }));
+describe('when settling consent with the server before uploading', () => {
+  it('should upload without re-sending a decision the server already has', async () => {
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
     const store = setup({ consent: granted });
 
     await store.dispatch(actions.flush());
 
-    expect(api.putConsent).toHaveBeenCalledWith(true, AI_SHARING_CONSENT_VERSION);
+    expect(api.putConsent).not.toHaveBeenCalled();
+    expect(store.getState().aiSharing.serverConsentSynced).toBe(true);
+  });
+
+  it('should send a decision the server never received, keeping its original time', async () => {
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(false, null)));
+    vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    expect(api.putConsent).toHaveBeenCalledWith({
+      granted: true,
+      version: AI_SHARING_CONSENT_VERSION,
+      decidedAt: granted.decidedAt,
+    });
+  });
+
+  it('should adopt a newer withdrawal from another machine and upload nothing', async () => {
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(false, LATER)));
+    vi.mocked(aiSharing.peek).mockResolvedValue([record('a')]);
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    expect(store.getState().workspace.settings.aiDataSharing).toMatchObject({
+      consent: 'denied',
+      decidedAt: LATER,
+    });
+    expect(aiSharing.purge).toHaveBeenCalled();
+    expect(api.uploadTurns).not.toHaveBeenCalled();
+  });
+
+  it('should send a local withdrawal that never reached the server', async () => {
+    const denied = { ...granted, consent: 'denied' as const, decidedAt: LATER };
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
+    vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(false, LATER)));
+    const store = setup({ consent: denied });
+
+    await store.dispatch(actions.flush());
+
+    expect(api.putConsent).toHaveBeenCalledWith(expect.objectContaining({ granted: false }));
+    expect(api.uploadTurns).not.toHaveBeenCalled();
+  });
+
+  it('should wait and retry when the server cannot be reached', async () => {
+    vi.mocked(api.getConsent).mockResolvedValue(fail(0));
+    vi.mocked(aiSharing.peek).mockResolvedValue([record('a')]);
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    expect(api.uploadTurns).not.toHaveBeenCalled();
+    expect(store.getState().aiSharing.nextUploadAt).toBeGreaterThan(Date.now());
+  });
+});
+
+describe('when uploading', () => {
+  beforeEach(() => {
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
+  });
+
+  it('should upload and acknowledge each batch', async () => {
+    vi.mocked(aiSharing.peek)
+      .mockResolvedValueOnce([record('a'), record('b')])
+      .mockResolvedValueOnce([]);
+    vi.mocked(api.uploadTurns).mockResolvedValue(ok({ accepted: 2, rejected: [] }));
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
     expect(aiSharing.peek).toHaveBeenCalledWith(ADDRESS, 20);
     expect(aiSharing.ack).toHaveBeenCalledWith(['a', 'b']);
+  });
+
+  it('should keep each request under the body cap, however big the records are', async () => {
+    const big = (id: string) => ({ ...record(id), padding: 'x'.repeat(120_000) }) as AiTurnRecord;
+    const queue = Array.from({ length: 20 }, (_, i) => big(`r${i}`));
+    vi.mocked(aiSharing.peek).mockImplementation(async () => queue);
+    vi.mocked(aiSharing.ack).mockImplementation(async ids => {
+      for (const id of ids)
+        queue.splice(
+          queue.findIndex(r => r.recordId === id),
+          1,
+        );
+    });
+    vi.mocked(api.uploadTurns).mockResolvedValue(ok({ accepted: 1, rejected: [] }));
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    const sizes = vi
+      .mocked(api.uploadTurns)
+      .mock.calls.map(([records]) => JSON.stringify({ records }).length);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(api.MAX_UPLOAD_BYTES);
+    expect(queue).toEqual([]);
   });
 
   it('should upload nothing without consent', async () => {
@@ -249,9 +345,9 @@ describe('when uploading', () => {
     expect(api.uploadTurns).not.toHaveBeenCalled();
   });
 
-  it('should keep the batch and back off when the service is down', async () => {
+  it.each([0, 401, 429, 503])('should keep the batch and back off on %s', async status => {
     vi.mocked(aiSharing.peek).mockResolvedValue([record('a')]);
-    vi.mocked(api.uploadTurns).mockResolvedValue(fail(503));
+    vi.mocked(api.uploadTurns).mockResolvedValue(fail(status));
     const store = setup({ consent: granted });
 
     await store.dispatch(actions.flush());
@@ -263,7 +359,22 @@ describe('when uploading', () => {
     expect(api.uploadTurns).toHaveBeenCalledTimes(1);
   });
 
-  it('should drop a batch the service rejects as invalid, so it cannot block the queue', async () => {
+  it('should acknowledge records the service accepted and rejected alike', async () => {
+    vi.mocked(aiSharing.peek)
+      .mockResolvedValueOnce([record('a'), record('bad')])
+      .mockResolvedValue([]);
+    vi.mocked(api.uploadTurns).mockResolvedValue(
+      ok({ accepted: 1, rejected: [{ recordId: 'bad', reason: 'prompt too long' }] }),
+    );
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    expect(aiSharing.ack).toHaveBeenCalledWith(['a', 'bad']);
+  });
+
+  it('should drop a request the service cannot read, so it cannot block the queue', async () => {
     vi.mocked(aiSharing.peek)
       .mockResolvedValueOnce([record('bad')])
       .mockResolvedValueOnce([]);
@@ -276,21 +387,43 @@ describe('when uploading', () => {
     expect(aiSharing.ack).toHaveBeenCalledWith(['bad']);
   });
 
-  it('should stop, empty the queue and ask again when the server has no consent', async () => {
+  it('should split a batch the service finds too large', async () => {
+    const queue = [record('a'), record('b')];
+    vi.mocked(aiSharing.peek).mockImplementation(async () => [...queue]);
+    vi.mocked(aiSharing.ack).mockImplementation(async ids => {
+      for (const id of ids)
+        queue.splice(
+          queue.findIndex(r => r.recordId === id),
+          1,
+        );
+    });
+    vi.mocked(api.uploadTurns).mockImplementation(async records =>
+      records.length > 1 ? fail(413) : ok({ accepted: 1, rejected: [] }),
+    );
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    expect(vi.mocked(api.uploadTurns).mock.calls.map(([r]) => r.length)).toEqual([2, 1, 1]);
+    expect(queue).toEqual([]);
+  });
+
+  it('should stop and settle consent again when the server says it has none', async () => {
     vi.mocked(aiSharing.peek).mockResolvedValue([record('a')]);
     vi.mocked(api.uploadTurns).mockResolvedValue(fail(403));
     const store = setup({ consent: granted });
 
     await store.dispatch(actions.flush());
 
-    expect(aiSharing.purge).toHaveBeenCalled();
-    expect(store.getState().workspace.settings.aiDataSharing).toBeUndefined();
+    expect(aiSharing.ack).not.toHaveBeenCalled();
+    expect(store.getState().aiSharing.serverConsentSynced).toBe(false);
+    expect(store.getState().workspace.settings.aiDataSharing?.consent).toBe('granted');
   });
 
   it('should not run two uploads at once', async () => {
     let release: () => void = () => {};
     vi.mocked(aiSharing.peek)
-      .mockReturnValueOnce(new Promise(r => (release = () => r([])) as never))
+      .mockReturnValueOnce(new Promise(r => (release = () => r([]))) as never)
       .mockResolvedValue([]);
     const store = setup({ consent: granted });
 
@@ -307,7 +440,7 @@ describe('when uploading', () => {
 describe('when deleting everything shared', () => {
   it('should delete on the server, empty the queue and turn sharing off', async () => {
     vi.mocked(api.deleteAllTurns).mockResolvedValue(ok({ deleted: 7 }));
-    vi.mocked(api.putConsent).mockResolvedValue(ok({ granted: false, version: 1 }));
+    vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(false, NOW)));
     const store = setup({ consent: granted });
 
     await store.dispatch(actions.deleteEverything());

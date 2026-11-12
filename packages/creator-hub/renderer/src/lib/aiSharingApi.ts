@@ -16,26 +16,50 @@ const apiUrl = (): string => config.get('AI_SHARING_API_URL') ?? '';
 
 export const isConfigured = () => apiUrl() !== '';
 
-/** The service accepts at most this many records per upload. */
+/** The service accepts at most this many records per upload… */
 export const MAX_RECORDS_PER_UPLOAD = 20;
+/** …and a body of at most 1 MiB; uploads stay below it with room to spare. */
+export const MAX_UPLOAD_BYTES = 900_000;
 
-export type AiSharingConsentState = { granted: boolean; version: number | null };
+/** A consent decision, dated when the creator made it (a re-send keeps the original date). */
+export type AiSharingDecision = { granted: boolean; version: number; decidedAt: string };
+
+/** The server's latest decision for the signer; all null when it has none. */
+export type AiSharingConsentState = {
+  granted: boolean;
+  version: number | null;
+  decidedAt: string | null;
+};
+
+export type AiSharingUploadResult = {
+  accepted: number;
+  rejected: { recordId: string; reason: string }[];
+};
 
 async function sha256Hex(text: string) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
+type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
+
 /**
- * Every call is ADR-44 signed. A body's sha256 goes in the signed metadata (`hashPayload`, as
- * the Creator Fund API does): the signature otherwise covers only the method and path, so
- * captured headers could be replayed with another body.
+ * The signed metadata the service requires on a write: a fresh `nonce`, which it refuses to
+ * see twice (a captured request can't be replayed inside the signature's five-minute window),
+ * and the body's `body_sha256`, which binds the body to the signature. Reads carry neither.
  */
-async function send<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
-  path: string,
-  body?: unknown,
-): Promise<MetricsResponse<T>> {
+export async function signedMetadata(
+  method: Method,
+  rawBody: string | undefined,
+): Promise<Record<string, string>> {
+  if (method === 'GET') return {};
+  const metadata: Record<string, string> = { nonce: crypto.randomUUID() };
+  if (rawBody !== undefined) metadata.body_sha256 = await sha256Hex(rawBody);
+  return metadata;
+}
+
+/** Every call is ADR-44 signed, and requested through main (see `metrics.request`). */
+async function send<T>(method: Method, path: string, body?: unknown): Promise<MetricsResponse<T>> {
   if (!isConfigured()) return { ok: false, status: 0, error: 'Sharing service not configured' };
   const rawBody = body === undefined ? undefined : JSON.stringify(body);
   let headers: Record<string, string>;
@@ -44,7 +68,7 @@ async function send<T>(
       apiUrl(),
       path,
       method.toLowerCase() as 'get' | 'post' | 'put' | 'delete',
-      rawBody === undefined ? {} : { hashPayload: await sha256Hex(rawBody) },
+      await signedMetadata(method, rawBody),
     );
   } catch (error: any) {
     return { ok: false, status: 0, error: error.message };
@@ -54,10 +78,10 @@ async function send<T>(
 
 export const getConsent = () => send<AiSharingConsentState>('GET', '/consent');
 
-export const putConsent = (granted: boolean, version: number) =>
-  send<AiSharingConsentState>('PUT', '/consent', { granted, version });
+export const putConsent = (decision: AiSharingDecision) =>
+  send<AiSharingConsentState>('PUT', '/consent', decision);
 
 export const uploadTurns = (records: AiTurnRecord[]) =>
-  send<{ accepted: number }>('POST', '/turns', { records });
+  send<AiSharingUploadResult>('POST', '/turns', { records });
 
 export const deleteAllTurns = () => send<{ deleted: number }>('DELETE', '/turns');

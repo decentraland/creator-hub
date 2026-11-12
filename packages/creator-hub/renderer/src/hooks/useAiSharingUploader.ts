@@ -21,8 +21,11 @@ export function useAiSharingUploader() {
   const dispatch = useDispatch();
   const { isSignedIn, wallet } = useAuth();
   const featureOn = useSelector(isSharingFeatureOn);
-  const consented = useSelector(state => hasSharingConsent(selectSharingConsent(state)));
-  const active = featureOn && consented && isSignedIn;
+  const consent = useSelector(selectSharingConsent);
+  // A "no" still syncs once, so a withdrawal that failed to reach the server gets there; the
+  // timer only keeps running while there is something to upload.
+  const consented = hasSharingConsent(consent);
+  const decided = consent !== undefined;
 
   // Another account has its own consent on the server; confirm it before uploading for it.
   useEffect(() => {
@@ -30,11 +33,12 @@ export function useAiSharingUploader() {
   }, [wallet, dispatch]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!featureOn || !isSignedIn || !decided) return;
     void dispatch(aiSharingActions.flush());
+    if (!consented) return;
     const timer = setInterval(() => void dispatch(aiSharingActions.flush()), UPLOAD_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [active, wallet, dispatch]);
+  }, [featureOn, isSignedIn, decided, consented, wallet, dispatch]);
 }
 
 export function AiSharingUploader() {

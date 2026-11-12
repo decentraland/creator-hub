@@ -6,6 +6,7 @@ import {
   hasSharingConsent,
   type AiSharingConsent,
   type AiSharingQueuedItem,
+  type AiTurnRecord,
 } from '/shared/types/ai-sharing';
 
 import { aiSharing } from '#preload';
@@ -94,14 +95,20 @@ export const decide = createAsyncThunk(
     };
     await dispatch(workspaceActions.updateSettings({ ...settings, aiDataSharing: consent }));
     if (!granted) await aiSharing.purge();
-    // Best effort: the uploader re-sends consent before its first upload anyway.
+    // Best effort: if this fails, the uploader's sync sends the same decision later.
     if (AuthServerProvider.getAccount()) {
-      const response = await api.putConsent(granted, AI_SHARING_CONSENT_VERSION);
-      if (response.ok) dispatch(actions.setServerConsentSynced(granted));
+      const response = await api.putConsent(toServerDecision(consent));
+      dispatch(actions.setServerConsentSynced(response.ok));
     }
     await dispatch(refreshQueue());
   },
 );
+
+const toServerDecision = (consent: AiSharingConsent): api.AiSharingDecision => ({
+  granted: consent.consent === 'granted',
+  version: consent.version,
+  decidedAt: consent.decidedAt,
+});
 
 /** "Delete everything I've shared": the server copy, then the local queue, then consent. */
 export const deleteEverything = createAsyncThunk(
@@ -115,12 +122,12 @@ export const deleteEverything = createAsyncThunk(
   },
 );
 
+let flushing = false;
+
 /**
  * Uploads what main queued for the signed-in account, a batch at a time. Records for another
  * account stay queued until it signs in again (main drops them after 7 days).
  */
-let flushing = false;
-
 export const flush = createAsyncThunk(
   'aiSharing/flush',
   async (_: void, { getState, dispatch }) => {
@@ -135,50 +142,111 @@ export const flush = createAsyncThunk(
   },
 );
 
+/**
+ * Makes the server's consent agree with this machine's, once per run and account. The newer
+ * decision wins: ours is sent with its original time (never re-dated, so the server's history
+ * shows when the creator actually decided); a newer one from the server, such as a withdrawal
+ * on another machine, replaces ours. Returns whether uploading may go ahead.
+ */
+async function syncConsent(getState: () => AppState, dispatch: AppDispatch): Promise<boolean> {
+  const local = selectSharingConsent(getState());
+  if (local === undefined) return false;
+  const remote = await api.getConsent();
+  if (!remote.ok) return false;
+  const remoteAt = remote.data.decidedAt === null ? 0 : Date.parse(remote.data.decidedAt);
+  const localAt = Date.parse(local.decidedAt);
+
+  if (remoteAt > localAt) {
+    const adopted: AiSharingConsent = {
+      consent: remote.data.granted ? 'granted' : 'denied',
+      version: remote.data.version ?? AI_SHARING_CONSENT_VERSION,
+      decidedAt: remote.data.decidedAt ?? new Date().toISOString(),
+    };
+    const settings = getState().workspace.settings;
+    await dispatch(workspaceActions.updateSettings({ ...settings, aiDataSharing: adopted }));
+    if (!remote.data.granted) await aiSharing.purge();
+  } else if (remoteAt < localAt) {
+    const sent = await api.putConsent(toServerDecision(local));
+    if (!sent.ok) return false;
+  }
+  dispatch(actions.setServerConsentSynced(true));
+  return hasSharingConsent(selectSharingConsent(getState()));
+}
+
+/** Records per upload, kept under the service's body cap whatever the records weigh. */
+function nextBatch(records: AiTurnRecord[], maxRecords: number): AiTurnRecord[] {
+  const batch: AiTurnRecord[] = [];
+  let bytes = UPLOAD_ENVELOPE_BYTES;
+  for (const record of records.slice(0, maxRecords)) {
+    const size = new TextEncoder().encode(JSON.stringify(record)).length + 1;
+    if (batch.length > 0 && bytes + size > api.MAX_UPLOAD_BYTES) break;
+    batch.push(record);
+    bytes += size;
+  }
+  return batch;
+}
+
+const UPLOAD_ENVELOPE_BYTES = '{"records":[]}'.length;
+
 async function flushQueue(getState: () => AppState, dispatch: AppDispatch): Promise<void> {
   const state = getState();
   const address = AuthServerProvider.getAccount();
   if (!isSharingFeatureOn(state) || !address) return;
-  if (!hasSharingConsent(selectSharingConsent(state))) return;
+  if (selectSharingConsent(state) === undefined) return;
   if (Date.now() < state.aiSharing.nextUploadAt) return;
 
-  if (!state.aiSharing.serverConsentSynced) {
-    const response = await api.putConsent(true, AI_SHARING_CONSENT_VERSION);
-    if (!response.ok) {
-      dispatch(actions.uploadFailed());
-      return;
-    }
-    dispatch(actions.setServerConsentSynced(true));
+  // Runs for a "no" too, so a withdrawal that failed to reach the server gets there.
+  if (!state.aiSharing.serverConsentSynced && !(await syncConsent(getState, dispatch))) {
+    if (!getState().aiSharing.serverConsentSynced) dispatch(actions.uploadFailed());
+    await dispatch(refreshQueue());
+    return;
   }
+  if (!hasSharingConsent(selectSharingConsent(getState()))) return;
 
+  // Lowered when the service still finds a batch too large (a proxy in front of it with a
+  // smaller cap, say), so the next try sends fewer records.
+  let maxRecords: number = api.MAX_RECORDS_PER_UPLOAD;
   for (;;) {
-    const batch = await aiSharing.peek(address, api.MAX_RECORDS_PER_UPLOAD);
-    if (batch.length === 0) break;
+    const queued = await aiSharing.peek(address, api.MAX_RECORDS_PER_UPLOAD);
+    if (queued.length === 0) break;
+    const batch = nextBatch(queued, maxRecords);
+    const ids = batch.map(r => r.recordId);
     const response = await api.uploadTurns(batch);
+
     if (response.ok) {
-      await aiSharing.ack(batch.map(r => r.recordId));
+      // Rejected records failed validation and would fail again, so they leave the queue too.
+      if (response.data.rejected.length > 0) {
+        console.warn('[AI sharing] the service rejected records', response.data.rejected);
+      }
+      await aiSharing.ack(ids);
       dispatch(actions.uploadSucceeded());
       continue;
     }
     if (response.status === 403) {
-      // The server has no consent for this account (withdrawn on another machine, or deleted).
-      // Its record wins: stop, empty the queue, and ask again.
-      await aiSharing.purge();
-      const settings = getState().workspace.settings;
-      const { aiDataSharing: _dropped, ...rest } = settings;
-      await dispatch(workspaceActions.updateSettings(rest));
+      // The server holds no current consent for this account: decided otherwise elsewhere, or
+      // the consent text changed. Stop, and let the next sync settle whose decision stands.
       dispatch(actions.setServerConsentSynced(false));
+      dispatch(actions.uploadFailed());
       break;
     }
-    if (response.status >= 400 && response.status < 500 && response.status !== 429) {
-      // The service will never take these records; keeping them would block the queue forever.
-      console.warn(
-        `[AI sharing] dropped ${batch.length} records the service rejected (${response.status})`,
-        batch.map(r => r.recordId),
-      );
-      await aiSharing.ack(batch.map(r => r.recordId));
+    if (response.status === 413) {
+      if (batch.length > 1) {
+        maxRecords = Math.ceil(batch.length / 2);
+        continue;
+      }
+      console.warn('[AI sharing] dropped a record larger than the service accepts', ids);
+      await aiSharing.ack(ids);
       continue;
     }
+    if (response.status === 400) {
+      // The request itself is malformed; sending it again can't help, and it would block the
+      // queue. Ids only, never content.
+      console.warn('[AI sharing] dropped records the service could not read', ids);
+      await aiSharing.ack(ids);
+      continue;
+    }
+    // Network errors, 401 (clock skew, expired identity), 429, 503 (writes off) and 5xx are
+    // passing conditions: keep the records and try later.
     dispatch(actions.uploadFailed());
     break;
   }
