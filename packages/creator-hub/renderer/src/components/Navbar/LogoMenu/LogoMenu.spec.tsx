@@ -14,7 +14,23 @@ describe('LogoMenu', () => {
     setCurrentLocale('en', flatten(en));
   });
 
-  describe('when the user picks Report Bug', () => {
+  describe('when the menu is open', () => {
+    it('should offer "Report an issue"', () => {
+      render(
+        <ThemeProvider theme={dark}>
+          <LogoMenu
+            onClickAbout={vi.fn()}
+            onClickSettings={vi.fn()}
+            onClickCheckForUpdates={vi.fn()}
+          />
+        </ThemeProvider>,
+      );
+      fireEvent.click(screen.getByTestId('logo-menu-button'));
+      expect(screen.getByTestId('logo-menu-report-bug').textContent).toBe('Report an issue');
+    });
+  });
+
+  describe('when the user picks Report an issue', () => {
     beforeEach(() => {
       render(
         <ThemeProvider theme={dark}>
@@ -30,13 +46,13 @@ describe('LogoMenu', () => {
     });
 
     it('should open the report dialog instead of the Typeform', () => {
-      expect(screen.getByRole('dialog', { name: 'Tell us what went wrong' })).toBeTruthy();
+      expect(screen.getByRole('dialog', { name: 'Report an issue' })).toBeTruthy();
       expect(misc.openExternal).not.toHaveBeenCalled();
     });
 
     it('should send the report tagged as coming from the logo menu', async () => {
       vi.mocked(feedback.send).mockResolvedValue('sent');
-      fireEvent.change(screen.getByRole('textbox', { name: 'What happened?' }), {
+      fireEvent.change(screen.getByRole('textbox', { name: 'What went wrong?' }), {
         target: { value: 'The app froze' },
       });
 

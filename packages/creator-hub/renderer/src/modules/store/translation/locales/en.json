@@ -321,7 +321,6 @@
     },
     "earn_not_joined": "EARN, not joined yet",
     "feedback": "Submit feedback",
-    "report_an_issue": "Report an Issue",
     "user_menu": {
       "sign_in": "Sign In",
       "sign_out": "Sign Out",
@@ -338,7 +337,7 @@
       "about": "About Creator Hub",
       "check_for_updates": "Check for Updates",
       "settings": "Settings",
-      "report_bug": "Report Bug",
+      "report_bug": "Report an issue",
       "help": {
         "label": "Help & Support",
         "faq": "FAQ",
@@ -754,10 +753,11 @@
     },
     "close": "Close",
     "report_issue": {
-      "title": "Tell us what went wrong",
+      "title": "Report an issue",
       "description": {
-        "label": "What happened?",
-        "placeholder": "Describe what you were doing and what went wrong."
+        "label": "What went wrong?",
+        "placeholder": "Describe what you were doing and what went wrong.",
+        "counter": "{count}/{max}"
       },
       "contact": {
         "label": "How can we reach you? (optional)",
@@ -773,8 +773,11 @@
       "help_center": "Visit the Help Center",
       "send": "Send",
       "retry": "Try again",
-      "sent": "Thanks! We got your report and will look into it.",
+      "sent_title": "Issue Report Submitted",
+      "sent": "Thanks for helping us improve the Creator Hub! We've received your report and our team will investigate the issue and work on a fix.",
+      "queued_title": "Issue Report Saved",
       "queued": "We saved your report and will send it as soon as you're back online.",
+      "failed_title": "Something went wrong",
       "failed": "We couldn't send your report. Check your connection and try again."
     }
   },

@@ -1,23 +1,41 @@
-import { useId, useState } from 'react';
+import { type ElementType, useEffect, useId, useState } from 'react';
+import type { InputBaseComponentProps } from 'decentraland-ui2';
 
-import { feedback } from '#preload';
+import { analytics, feedback } from '#preload';
 import type { FeedbackDelivery, FeedbackSource } from '/shared/types/feedback';
 import { t } from '/@/modules/store/translation/utils';
-import { EMAIL_MAX_LENGTH, HELP_FAQ_URL, isValidContact, parseContact } from '/@/modules/utils';
-
-import { SelectCheckbox } from '../../LandDetailPage/SelectCheckbox';
 import {
-  DescriptionInput,
-  ErrorText,
-  Field,
-  FieldTitle,
-} from '../../LandDetailPage/DetailsTab/DetailsTab.styled';
+  EMAIL_MAX_LENGTH,
+  FEEDBACK_MESSAGE_MAX_LENGTH,
+  HELP_FAQ_URL,
+  isValidContact,
+  parseContact,
+} from '/@/modules/utils';
+
+import { Required } from '../../EarnPage/ContactInfoForm.styled';
+import { WarningIcon } from '../../EarnPage/icons/WarningIcon';
+import { SelectCheckbox } from '../../LandDetailPage/SelectCheckbox';
+import { Field } from '../../LandDetailPage/DetailsTab/DetailsTab.styled';
 import { FormTextInput } from '../../TextInput';
 import { CheckRow } from '../../WorldDetailPage/SettingsTab/SettingsTab.styled';
 import { DefaultModal } from '../DefaultModal';
-import { Form, HelpLink, Hint, LogsOption } from './ReportIssue.styled';
+import {
+  ContactHint,
+  Counter,
+  DescriptionBox,
+  ErrorLine,
+  Form,
+  HelpLink,
+  Hint,
+  Label,
+  LogsOption,
+} from './ReportIssue.styled';
 
 type Status = 'editing' | 'sending' | FeedbackDelivery | 'failed';
+
+type CounterState = 'over' | 'shown' | 'hidden';
+
+const NATIVE_TEXTAREA = 'textarea' as ElementType<InputBaseComponentProps>;
 
 type Props = {
   open: boolean;
@@ -29,11 +47,13 @@ type Props = {
 /** Collects a problem report and sends it, with the app log when allowed, to Sentry User Feedback. */
 export function ReportIssue({ open, source, associatedEventId, onClose }: Props) {
   const descriptionId = useId();
+  const counterId = useId();
   const contactId = useId();
   const contactHintId = useId();
   const contactErrorId = useId();
   const logsHintId = useId();
   const [message, setMessage] = useState('');
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
   const [contactValue, setContactValue] = useState('');
   const [contactBlurred, setContactBlurred] = useState(false);
   const [includeLogs, setIncludeLogs] = useState(true);
@@ -42,8 +62,14 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
   const contact = parseContact(contactValue);
   const contactInvalid = !!contact && !isValidContact(contact);
   const showContactError = contactBlurred && contactInvalid;
+  const overLimit = message.length > FEEDBACK_MESSAGE_MAX_LENGTH;
+  const counter: CounterState = overLimit ? 'over' : descriptionFocused ? 'shown' : 'hidden';
   const sending = status === 'sending';
   const delivered = status === 'sent' || status === 'queued';
+
+  useEffect(() => {
+    if (open) void analytics.track('Report Issue Opened', { source });
+  }, [open]);
 
   const close = () => {
     if (sending) return;
@@ -59,28 +85,46 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
 
   const send = async () => {
     setStatus('sending');
+    let result: FeedbackDelivery | 'failed';
     try {
-      const delivery = await feedback.send({
+      result = await feedback.send({
         message: message.trim(),
         ...(contact && { contact }),
         includeLogs,
         associatedEventId,
         source,
       });
-      setStatus(delivery);
     } catch {
-      setStatus('failed');
+      result = 'failed';
     }
+    setStatus(result);
+    void analytics.track('Report Issue Submitted', { source, result });
   };
 
   if (delivered)
     return (
       <DefaultModal
         open={open}
-        title={t('modal.report_issue.title')}
+        title={t(`modal.report_issue.${status}_title`)}
         body={t(`modal.report_issue.${status}`)}
         onClose={close}
         primary={{ label: t('modal.close'), state: 'idle', onClick: close }}
+      />
+    );
+
+  if (status === 'failed')
+    return (
+      <DefaultModal
+        open={open}
+        title={t('modal.report_issue.failed_title')}
+        body={t('modal.report_issue.failed')}
+        onClose={close}
+        secondary={{ label: t('modal.cancel'), onClick: close }}
+        primary={{
+          label: t('modal.report_issue.retry'),
+          state: 'idle',
+          onClick: () => setStatus('editing'),
+        }}
       />
     );
 
@@ -93,29 +137,51 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
       initialFocus="content"
       secondary={{ label: t('modal.cancel'), onClick: close }}
       primary={{
-        label: t(status === 'failed' ? 'modal.report_issue.retry' : 'modal.report_issue.send'),
-        state: sending ? 'busy' : message.trim() && !contactInvalid ? 'idle' : 'blocked',
+        label: t('modal.report_issue.send'),
+        state: sending
+          ? 'busy'
+          : !message.trim() || overLimit || contactInvalid
+            ? 'blocked'
+            : 'idle',
         onClick: () => void send(),
       }}
     >
       <Form>
         <Field>
-          <FieldTitle htmlFor={descriptionId}>
+          <Label htmlFor={descriptionId}>
             {t('modal.report_issue.description.label')}
-          </FieldTitle>
-          <DescriptionInput
+            <Required aria-hidden> *</Required>
+          </Label>
+          <DescriptionBox
             id={descriptionId}
             multiline
+            inputComponent={NATIVE_TEXTAREA}
             autoFocus
             required
             disabled={sending}
             value={message}
+            error={overLimit}
             placeholder={t('modal.report_issue.description.placeholder')}
             onChange={event => setMessage(event.target.value)}
+            onFocus={() => setDescriptionFocused(true)}
+            onBlur={() => setDescriptionFocused(false)}
+            inputProps={{ 'aria-invalid': overLimit, 'aria-describedby': counterId }}
           />
+          <Counter
+            id={counterId}
+            data-state={counter}
+          >
+            {counter === 'over' && <WarningIcon />}
+            {counter !== 'hidden' &&
+              t('modal.report_issue.description.counter', {
+                count: String(message.length),
+                max: String(FEEDBACK_MESSAGE_MAX_LENGTH),
+              })}
+          </Counter>
         </Field>
         <Field>
-          <FieldTitle htmlFor={contactId}>{t('modal.report_issue.contact.label')}</FieldTitle>
+          <Label htmlFor={contactId}>{t('modal.report_issue.contact.label')}</Label>
+          <ContactHint id={contactHintId}>{t('modal.report_issue.contact.hint')}</ContactHint>
           <FormTextInput
             id={contactId}
             type="text"
@@ -127,6 +193,7 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
             onBlur={() => setContactBlurred(true)}
             inputProps={{
               maxLength: EMAIL_MAX_LENGTH,
+              spellCheck: false,
               'aria-invalid': showContactError,
               'aria-describedby': showContactError
                 ? `${contactErrorId} ${contactHintId}`
@@ -134,11 +201,14 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
             }}
           />
           {contact && showContactError && (
-            <ErrorText id={contactErrorId}>
+            <ErrorLine
+              id={contactErrorId}
+              role="alert"
+            >
+              <WarningIcon />
               {t(`modal.report_issue.contact.${contact.method}_invalid`)}
-            </ErrorText>
+            </ErrorLine>
           )}
-          <Hint id={contactHintId}>{t('modal.report_issue.contact.hint')}</Hint>
         </Field>
         <LogsOption>
           <CheckRow>
@@ -152,10 +222,13 @@ export function ReportIssue({ open, source, associatedEventId, onClose }: Props)
           </CheckRow>
           <Hint id={logsHintId}>{t('modal.report_issue.logs.hint')}</Hint>
         </LogsOption>
-        {status === 'failed' && (
-          <ErrorText role="alert">{t('modal.report_issue.failed')}</ErrorText>
-        )}
-        <HelpLink href={HELP_FAQ_URL}>{t('modal.report_issue.help_center')}</HelpLink>
+        <HelpLink
+          href={HELP_FAQ_URL}
+          onOpen={() => void analytics.track('Report Issue Help Center Clicked', { source })}
+        >
+          {t('modal.report_issue.help_center')}
+          <span aria-hidden> →</span>
+        </HelpLink>
       </Form>
     </DefaultModal>
   );

@@ -6,10 +6,11 @@ type Props = {
   href: string;
   className?: string;
   children: ReactNode;
+  onOpen?: () => void;
 };
 
-/** A real `<a>` whose click opens the URL in the system browser. */
-export function ExternalLink({ href, className, children }: Props) {
+/** A real `<a>` whose click opens the URL in the system browser, then calls `onOpen`. */
+export function ExternalLink({ href, className, children, onOpen }: Props) {
   return (
     <a
       href={href}
@@ -17,6 +18,7 @@ export function ExternalLink({ href, className, children }: Props) {
       onClick={event => {
         event.preventDefault();
         void misc.openExternal(href);
+        onOpen?.();
       }}
     >
       {children}
