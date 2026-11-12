@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import equal from 'fast-deep-equal';
-import { Box } from 'decentraland-ui2';
 import {
   loadEditors,
   setDefaultEditor,
@@ -195,15 +194,12 @@ export function AppSettings({
         );
       case SettingsTab.AI:
         return (
-          <>
-            <AiTab
-              settings={settings}
-              updateSettings={handleUpdateSettings}
-            />
-            <Box className="FormContainer AiTab">
-              <AiSharingSection />
-            </Box>
-          </>
+          <AiTab
+            settings={settings}
+            updateSettings={handleUpdateSettings}
+          >
+            <AiSharingSection />
+          </AiTab>
         );
       case SettingsTab.EXPERIMENTAL:
         return (

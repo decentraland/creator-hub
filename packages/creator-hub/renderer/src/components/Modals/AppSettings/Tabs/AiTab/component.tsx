@@ -286,7 +286,13 @@ function AgentConnect({
   );
 }
 
-const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
+// `children` renders at the end of the tab, inside its layout: the settings modal passes the
+// store-backed sharing section this way, since this tab itself takes only settings props.
+const AiTab: React.FC<BaseTabProps & { children?: ReactNode }> = ({
+  settings,
+  updateSettings,
+  children,
+}) => {
   const handleAiAssistantChange = useCallback(
     (checked: boolean) => {
       updateSettings({
@@ -500,6 +506,7 @@ const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
           </Box>
         )}
       </Box>
+      {children}
     </Box>
   );
 };

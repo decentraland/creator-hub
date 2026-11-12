@@ -25,6 +25,9 @@ import { t } from '/@/modules/store/translation/utils';
 
 const PREVIEW_ROWS = 5;
 
+const when = (iso: string) =>
+  new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+
 const buttonSx = {
   backgroundColor: 'var(--dark-gray)',
   '&:hover': { backgroundColor: 'var(--light-gray)' },
@@ -108,7 +111,7 @@ export function AiSharingSection() {
                     component="div"
                     noWrap
                   >
-                    {new Date(item.startedAt).toLocaleString()} · {item.promptPreview}
+                    {when(item.startedAt)} · {item.promptPreview}
                   </Typography>
                 ))}
               </Box>
@@ -161,7 +164,7 @@ export function AiSharingSection() {
                         noWrap
                         sx={{ flex: 1, minWidth: 0 }}
                       >
-                        {new Date(turn.startedAt).toLocaleString()} · {turn.prompt.text}
+                        {when(turn.startedAt)} · {turn.prompt.text}
                       </Typography>
                       <Tooltip title={t('modal.app_settings.fields.ai_sharing.viewer_delete')}>
                         <span>
