@@ -18,17 +18,23 @@ vi.mock('../../../lib/aiSharingApi', () => ({
   getConsent: vi.fn(),
   putConsent: vi.fn(),
   uploadTurns: vi.fn(),
-  deleteAllTurns: vi.fn(),
+  erase: vi.fn(),
 }));
 vi.mock('../../../lib/auth', () => ({ AuthServerProvider: { getAccount: vi.fn() } }));
 
 const ADDRESS = '0x1234567890abcdef1234567890abcdef12345678';
 const ok = <T>(data: T, status = 200) => ({ ok: true as const, status, data });
-const fail = (status: number) => ({ ok: false as const, status, error: 'nope' });
+const fail = (status: number, body?: object) => ({
+  ok: false as const,
+  status,
+  error: 'nope',
+  body,
+});
 const granted = {
   consent: 'granted' as const,
   version: AI_SHARING_CONSENT_VERSION,
   decidedAt: '2026-11-12T00:00:00Z',
+  delivered: true,
 };
 const record = (id: string) => ({ recordId: id, address: ADDRESS }) as AiTurnRecord;
 const NOW = '2026-11-12T00:00:00Z';
@@ -193,7 +199,11 @@ describe('when the creator decides', () => {
     await store.dispatch(actions.decide(true));
 
     const saved = store.getState().workspace.settings.aiDataSharing!;
-    expect(saved).toMatchObject({ consent: 'granted', version: AI_SHARING_CONSENT_VERSION });
+    expect(saved).toMatchObject({
+      consent: 'granted',
+      version: AI_SHARING_CONSENT_VERSION,
+      delivered: true,
+    });
     expect(api.putConsent).toHaveBeenCalledWith({
       granted: true,
       version: AI_SHARING_CONSENT_VERSION,
@@ -218,7 +228,10 @@ describe('when the creator decides', () => {
 
     await store.dispatch(actions.decide(true));
 
-    expect(store.getState().workspace.settings.aiDataSharing?.consent).toBe('granted');
+    expect(store.getState().workspace.settings.aiDataSharing).toMatchObject({
+      consent: 'granted',
+      delivered: false,
+    });
     expect(store.getState().aiSharing.serverConsentSynced).toBe(false);
   });
 });
@@ -234,10 +247,10 @@ describe('when settling consent with the server before uploading', () => {
     expect(store.getState().aiSharing.serverConsentSynced).toBe(true);
   });
 
-  it('should send a decision the server never received, keeping its original time', async () => {
+  it('should send a decision that never arrived, keeping its original time', async () => {
     vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(false, null)));
     vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
-    const store = setup({ consent: granted });
+    const store = setup({ consent: { ...granted, delivered: false } });
 
     await store.dispatch(actions.flush());
 
@@ -246,12 +259,28 @@ describe('when settling consent with the server before uploading', () => {
       version: AI_SHARING_CONSENT_VERSION,
       decidedAt: granted.decidedAt,
     });
+    expect(store.getState().workspace.settings.aiDataSharing?.delivered).toBe(true);
   });
 
-  it('should adopt a newer withdrawal from another machine and upload nothing', async () => {
+  it('should send an undelivered decision even when the server holds a later one', async () => {
+    // The creator's click here is their latest action on this machine; the server, which
+    // orders by receive time, decides with the 409 rule whether it stands.
     vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(false, LATER)));
+    vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
+    const store = setup({ consent: { ...granted, delivered: false } });
+
+    await store.dispatch(actions.flush());
+
+    expect(api.putConsent).toHaveBeenCalled();
+  });
+
+  it('should adopt the withdrawal when the server refuses a grant older than it', async () => {
+    vi.mocked(api.getConsent)
+      .mockResolvedValueOnce(ok(serverSays(false, LATER)))
+      .mockResolvedValueOnce(ok(serverSays(false, LATER)));
+    vi.mocked(api.putConsent).mockResolvedValue(fail(409, { currentVersion: 1 }));
     vi.mocked(aiSharing.peek).mockResolvedValue([record('a')]);
-    const store = setup({ consent: granted });
+    const store = setup({ consent: { ...granted, delivered: false } });
 
     await store.dispatch(actions.flush());
 
@@ -263,8 +292,35 @@ describe('when settling consent with the server before uploading', () => {
     expect(api.uploadTurns).not.toHaveBeenCalled();
   });
 
+  it('should adopt a later decision made on another machine', async () => {
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(false, LATER)));
+    vi.mocked(aiSharing.peek).mockResolvedValue([record('a')]);
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    expect(api.putConsent).not.toHaveBeenCalled();
+    expect(store.getState().workspace.settings.aiDataSharing).toMatchObject({
+      consent: 'denied',
+      decidedAt: LATER,
+    });
+    expect(api.uploadTurns).not.toHaveBeenCalled();
+  });
+
+  it('should re-send a delivered decision the server has lost', async () => {
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(false, null)));
+    vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+
+    expect(api.putConsent).toHaveBeenCalledWith(
+      expect.objectContaining({ granted: true, decidedAt: granted.decidedAt }),
+    );
+  });
+
   it('should send a local withdrawal that never reached the server', async () => {
-    const denied = { ...granted, consent: 'denied' as const, decidedAt: LATER };
+    const denied = { ...granted, consent: 'denied' as const, decidedAt: LATER, delivered: false };
     vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(true, granted.decidedAt)));
     vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(false, LATER)));
     const store = setup({ consent: denied });
@@ -273,6 +329,23 @@ describe('when settling consent with the server before uploading', () => {
 
     expect(api.putConsent).toHaveBeenCalledWith(expect.objectContaining({ granted: false }));
     expect(api.uploadTurns).not.toHaveBeenCalled();
+  });
+
+  it('should stop offering sharing when the server has a newer consent text', async () => {
+    vi.mocked(api.getConsent).mockResolvedValue(ok(serverSays(false, null)));
+    vi.mocked(api.putConsent).mockResolvedValue(
+      fail(409, { currentVersion: AI_SHARING_CONSENT_VERSION + 1 }),
+    );
+    const store = setup({
+      consent: { ...granted, delivered: false },
+      messages: [{ role: 'assistant', done: true }],
+    });
+
+    await store.dispatch(actions.flush());
+
+    expect(store.getState().aiSharing.outdated).toBe(true);
+    expect(selectSharingView(store.getState(), true).status).toBe('hidden');
+    expect(shouldShareTurn(store.getState())).toBe(false);
   });
 
   it('should wait and retry when the server cannot be reached', async () => {
@@ -420,6 +493,20 @@ describe('when uploading', () => {
     expect(store.getState().workspace.settings.aiDataSharing?.consent).toBe('granted');
   });
 
+  it('should stop for good when the server has a newer consent text', async () => {
+    vi.mocked(aiSharing.peek).mockResolvedValue([record('a')]);
+    vi.mocked(api.uploadTurns).mockResolvedValue(
+      fail(403, { currentVersion: AI_SHARING_CONSENT_VERSION + 1 }),
+    );
+    const store = setup({ consent: granted });
+
+    await store.dispatch(actions.flush());
+    await store.dispatch(actions.flush());
+
+    expect(store.getState().aiSharing.outdated).toBe(true);
+    expect(api.uploadTurns).toHaveBeenCalledTimes(1);
+  });
+
   it('should not run two uploads at once', async () => {
     let release: () => void = () => {};
     vi.mocked(aiSharing.peek)
@@ -439,11 +526,13 @@ describe('when uploading', () => {
 
 describe('when deleting everything shared', () => {
   it('should delete on the server, empty the queue and turn sharing off', async () => {
-    vi.mocked(api.deleteAllTurns).mockResolvedValue(ok({ deleted: 7 }));
-    vi.mocked(api.putConsent).mockResolvedValue(ok(serverSays(false, NOW)));
+    vi.mocked(api.erase).mockResolvedValue(ok({ deleted: 7 }));
     const store = setup({ consent: granted });
 
     await store.dispatch(actions.deleteEverything());
+
+    expect(api.erase).toHaveBeenCalledWith(expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/));
+    expect(api.putConsent).not.toHaveBeenCalled();
 
     expect(aiSharing.purge).toHaveBeenCalled();
     expect(store.getState().aiSharing).toMatchObject({ deleteStatus: 'deleted', deletedCount: 7 });
@@ -451,7 +540,7 @@ describe('when deleting everything shared', () => {
   });
 
   it('should keep sharing on and say so when the server delete fails', async () => {
-    vi.mocked(api.deleteAllTurns).mockResolvedValue(fail(500));
+    vi.mocked(api.erase).mockResolvedValue(fail(500));
     const store = setup({ consent: granted });
 
     await store.dispatch(actions.deleteEverything());

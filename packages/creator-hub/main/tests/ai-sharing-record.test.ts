@@ -161,6 +161,24 @@ describe('when building the record for a shared turn', () => {
     expect(record.response.originalLength).toBe(200_000);
   });
 
+  it('should fit text that JSON has to escape, shrinking the prompt when it must', () => {
+    // A control character takes six bytes in JSON (\u0001), so 16,000 of them pass the cap alone.
+    const escaped = '\u0001'.repeat(40_000);
+    const record = buildTurnRecord(
+      capture({ prompt: escaped, responseParts: [escaped], tools: [['Bash', escaped]] }),
+      end,
+    );
+
+    expect(record).not.toBeNull();
+    expect(Buffer.byteLength(JSON.stringify(record))).toBeLessThanOrEqual(
+      AI_SHARING_LIMITS.recordBytes,
+    );
+  });
+
+  it('should send no project id rather than an empty one', () => {
+    expect(buildTurnRecord(capture({ projectId: null }), end)?.projectId).toBeNull();
+  });
+
   it('should cap the number of tools and the length of each detail', () => {
     const tools = Array.from({ length: 300 }, (): [string, string] => ['Bash', 'x'.repeat(2_000)]);
     const record = buildTurnRecord(capture({ tools }), end);

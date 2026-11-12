@@ -93,7 +93,7 @@ export interface TurnCapture {
   systemPrompt: string;
   prompt: string;
   attachments: { name: string; kind: string }[];
-  projectId: string;
+  projectId: string | null;
   info: TurnInfo;
   responseParts: string[];
   tools: [string, string][];
@@ -117,7 +117,7 @@ const byteLength = (record: AiTurnRecord): number =>
  * The record for one finished turn: redacted, truncated and within the size cap. Any text a
  * user typed or an agent wrote goes through `redactForSharing`; nothing else carries content.
  */
-export function buildTurnRecord(capture: TurnCapture, end: TurnEnd): AiTurnRecord {
+export function buildTurnRecord(capture: TurnCapture, end: TurnEnd): AiTurnRecord | null {
   const tools = capture.tools.slice(0, AI_SHARING_LIMITS.maxTools).map(([name, detail]) => ({
     name: name.slice(0, 120),
     detail: redactForSharing(detail, AI_SHARING_LIMITS.toolDetailChars),
@@ -160,9 +160,10 @@ export function buildTurnRecord(capture: TurnCapture, end: TurnEnd): AiTurnRecor
   return fitWithinCap(record, capture);
 }
 
-// Text limits are in characters, the cap in bytes: a reply in a multi-byte script can pass the
-// first and break the second. Shrink the reply, then drop tool details, until it fits.
-function fitWithinCap(record: AiTurnRecord, capture: TurnCapture): AiTurnRecord {
+// Text limits are in characters, the cap in bytes: a reply in a multi-byte script, or text JSON
+// has to escape, can pass the first and break the second. Shrink the reply, then the tool details,
+// then the prompt; a record that still doesn't fit is not shared (null).
+function fitWithinCap(record: AiTurnRecord, capture: TurnCapture): AiTurnRecord | null {
   let limit: number = AI_SHARING_LIMITS.responseChars;
   while (byteLength(record) > AI_SHARING_LIMITS.recordBytes && limit > 1_000) {
     limit = Math.floor(limit / 2);
@@ -171,5 +172,10 @@ function fitWithinCap(record: AiTurnRecord, capture: TurnCapture): AiTurnRecord 
   if (byteLength(record) > AI_SHARING_LIMITS.recordBytes) {
     record.tools = record.tools.map(t => ({ ...t, detail: redactForSharing('', 0) }));
   }
-  return record;
+  limit = AI_SHARING_LIMITS.promptChars;
+  while (byteLength(record) > AI_SHARING_LIMITS.recordBytes && limit > 1_000) {
+    limit = Math.floor(limit / 2);
+    record.prompt = redactForSharing(capture.prompt, limit);
+  }
+  return byteLength(record) <= AI_SHARING_LIMITS.recordBytes ? record : null;
 }

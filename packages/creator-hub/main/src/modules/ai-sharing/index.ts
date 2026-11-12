@@ -86,7 +86,12 @@ export class TurnRecorder {
     if (this.finished) return;
     this.finished = true;
     try {
-      queue(buildTurnRecord({ ...this.capture, info }, end));
+      const record = buildTurnRecord({ ...this.capture, info }, end);
+      if (record === null) {
+        log.warn(`[AI sharing] turn ${this.capture.turnId} is too large to share; not queued`);
+        return;
+      }
+      queue(record);
     } catch (e) {
       // Never let sharing break a turn: the record is lost, the conversation isn't.
       log.warn('[AI sharing] could not queue the turn record', e);

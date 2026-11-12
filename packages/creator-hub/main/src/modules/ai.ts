@@ -1441,7 +1441,7 @@ export async function aiSend(
           systemPrompt: DCL_SYSTEM_PROMPT,
           prompt: params.text,
           attachments: (params.attachments ?? []).map(a => ({ name: a.name, kind: a.kind })),
-          projectId: await projectIdPromise,
+          projectId: (await projectIdPromise) || null,
         }).catch((e: unknown) => {
           log.warn('[AI sharing] could not start recording this turn', e);
           return null;

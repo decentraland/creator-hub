@@ -84,4 +84,6 @@ export const putConsent = (decision: AiSharingDecision) =>
 export const uploadTurns = (records: AiTurnRecord[]) =>
   send<AiSharingUploadResult>('POST', '/turns', { records });
 
-export const deleteAllTurns = () => send<{ deleted: number }>('DELETE', '/turns');
+/** Erases every shared turn of the signer and records the withdrawal, dated `decidedAt`. */
+export const erase = (decidedAt: string) =>
+  send<{ deleted: number }>('POST', '/erase', { decidedAt });

@@ -33,6 +33,8 @@ export interface AiSharingState {
   serverConsentSynced: boolean;
   failures: number;
   nextUploadAt: number;
+  /** The service has a newer consent text than this app shows; sharing is off until an update. */
+  outdated: boolean;
 }
 
 const initialState: AiSharingState = {
@@ -43,10 +45,13 @@ const initialState: AiSharingState = {
   serverConsentSynced: false,
   failures: 0,
   nextUploadAt: 0,
+  outdated: false,
 };
 
 export const isSharingFeatureOn = (state: AppState): boolean =>
-  state.featureFlags.flags[FeatureFlag.AI_PROMPT_SHARING] === true && api.isConfigured();
+  state.featureFlags.flags[FeatureFlag.AI_PROMPT_SHARING] === true &&
+  api.isConfigured() &&
+  !state.aiSharing.outdated;
 
 export const selectSharingConsent = (state: AppState): AiSharingConsent | undefined =>
   state.workspace.settings?.aiDataSharing;
@@ -83,26 +88,14 @@ export function selectSharingView(state: AppState, isSignedIn: boolean): AiShari
 
 export const refreshQueue = createAsyncThunk('aiSharing/refreshQueue', () => aiSharing.list());
 
-/** The user's answer on the card or the Settings switch. A "no" also empties the local queue. */
-export const decide = createAsyncThunk(
-  'aiSharing/decide',
-  async (granted: boolean, { getState, dispatch }) => {
-    const settings = getState().workspace.settings;
-    const consent: AiSharingConsent = {
-      consent: granted ? 'granted' : 'denied',
-      version: AI_SHARING_CONSENT_VERSION,
-      decidedAt: new Date().toISOString(),
-    };
-    await dispatch(workspaceActions.updateSettings({ ...settings, aiDataSharing: consent }));
-    if (!granted) await aiSharing.purge();
-    // Best effort: if this fails, the uploader's sync sends the same decision later.
-    if (AuthServerProvider.getAccount()) {
-      const response = await api.putConsent(toServerDecision(consent));
-      dispatch(actions.setServerConsentSynced(response.ok));
-    }
-    await dispatch(refreshQueue());
-  },
-);
+async function saveConsent(
+  getState: () => AppState,
+  dispatch: AppDispatch,
+  consent: AiSharingConsent,
+): Promise<void> {
+  const settings = getState().workspace.settings;
+  await dispatch(workspaceActions.updateSettings({ ...settings, aiDataSharing: consent }));
+}
 
 const toServerDecision = (consent: AiSharingConsent): api.AiSharingDecision => ({
   granted: consent.consent === 'granted',
@@ -110,14 +103,104 @@ const toServerDecision = (consent: AiSharingConsent): api.AiSharingDecision => (
   decidedAt: consent.decidedAt,
 });
 
-/** "Delete everything I've shared": the server copy, then the local queue, then consent. */
+/** The service's `currentVersion` from a 403/409 body, when it sent one. */
+function serverVersion(response: { ok: false; body?: unknown }): number | null {
+  const version = (response.body as { currentVersion?: unknown } | undefined)?.currentVersion;
+  return typeof version === 'number' ? version : null;
+}
+
+/**
+ * The service has a newer consent text than this Creator Hub can show: stop offering sharing
+ * and stop uploading, since no grant this version makes can be accepted. Returns whether it is.
+ */
+function checkOutdated(dispatch: AppDispatch, response: { ok: false; body?: unknown }): boolean {
+  const version = serverVersion(response);
+  if (version === null || version <= AI_SHARING_CONSENT_VERSION) return false;
+  dispatch(actions.setOutdated());
+  return true;
+}
+
+/** Takes the service's latest decision as this machine's, emptying the queue on a "no". */
+async function adoptRemote(
+  getState: () => AppState,
+  dispatch: AppDispatch,
+  remote: api.AiSharingConsentState,
+): Promise<void> {
+  if (remote.decidedAt === null || remote.version === null) return;
+  await saveConsent(getState, dispatch, {
+    consent: remote.granted ? 'granted' : 'denied',
+    version: remote.version,
+    decidedAt: remote.decidedAt,
+    delivered: true,
+  });
+  if (!remote.granted) await aiSharing.purge();
+}
+
+/**
+ * Sends this machine's decision. The service orders decisions by when it receives them, so the
+ * creator's latest click wins; it refuses (409) a grant older than a withdrawal it already holds,
+ * which is an offline machine delivering a stale "yes" after the creator said no elsewhere. Then
+ * the withdrawal stands here too. Returns whether the service now holds a decision for us.
+ */
+async function deliver(
+  getState: () => AppState,
+  dispatch: AppDispatch,
+  consent: AiSharingConsent,
+): Promise<boolean> {
+  const response = await api.putConsent(toServerDecision(consent));
+  if (response.ok) {
+    await saveConsent(getState, dispatch, { ...consent, delivered: true });
+    return true;
+  }
+  if (response.status === 409) {
+    if (checkOutdated(dispatch, response)) return false;
+    const remote = await api.getConsent();
+    if (!remote.ok) return false;
+    await adoptRemote(getState, dispatch, remote.data);
+    return true;
+  }
+  return false;
+}
+
+/** The user's answer on the card or the Settings switch. A "no" also empties the local queue. */
+export const decide = createAsyncThunk(
+  'aiSharing/decide',
+  async (granted: boolean, { getState, dispatch }) => {
+    const consent: AiSharingConsent = {
+      consent: granted ? 'granted' : 'denied',
+      version: AI_SHARING_CONSENT_VERSION,
+      decidedAt: new Date().toISOString(),
+      delivered: false,
+    };
+    await saveConsent(getState, dispatch, consent);
+    if (!granted) await aiSharing.purge();
+    // If this fails, the decision stays undelivered and the uploader's sync sends it.
+    if (AuthServerProvider.getAccount()) {
+      dispatch(actions.setServerConsentSynced(await deliver(getState, dispatch, consent)));
+    }
+    await dispatch(refreshQueue());
+  },
+);
+
+/**
+ * "Delete everything I've shared": the service erases the records and records the withdrawal in
+ * one request, dated by this machine's clock like every other decision; then the local queue.
+ */
 export const deleteEverything = createAsyncThunk(
   'aiSharing/deleteEverything',
-  async (_: void, { dispatch, rejectWithValue }) => {
-    const response = await api.deleteAllTurns();
+  async (_: void, { getState, dispatch, rejectWithValue }) => {
+    const decidedAt = new Date().toISOString();
+    const response = await api.erase(decidedAt);
     if (!response.ok) return rejectWithValue(response.error);
     await aiSharing.purge();
-    await dispatch(decide(false));
+    await saveConsent(getState, dispatch, {
+      consent: 'denied',
+      version: AI_SHARING_CONSENT_VERSION,
+      decidedAt,
+      delivered: true,
+    });
+    dispatch(actions.setServerConsentSynced(true));
+    await dispatch(refreshQueue());
     return response.data.deleted;
   },
 );
@@ -143,34 +226,34 @@ export const flush = createAsyncThunk(
 );
 
 /**
- * Makes the server's consent agree with this machine's, once per run and account. The newer
- * decision wins: ours is sent with its original time (never re-dated, so the server's history
- * shows when the creator actually decided); a newer one from the server, such as a withdrawal
- * on another machine, replaces ours. Returns whether uploading may go ahead.
+ * Makes this machine and the service agree, once per run and account. A decision made here that
+ * never reached the service is sent, keeping its original time. Otherwise the service's latest
+ * decision is the creator's latest anywhere (another machine's withdrawal, say) and is adopted.
+ * Returns whether they now agree.
  */
 async function syncConsent(getState: () => AppState, dispatch: AppDispatch): Promise<boolean> {
   const local = selectSharingConsent(getState());
   if (local === undefined) return false;
   const remote = await api.getConsent();
   if (!remote.ok) return false;
-  const remoteAt = remote.data.decidedAt === null ? 0 : Date.parse(remote.data.decidedAt);
-  const localAt = Date.parse(local.decidedAt);
 
-  if (remoteAt > localAt) {
-    const adopted: AiSharingConsent = {
-      consent: remote.data.granted ? 'granted' : 'denied',
-      version: remote.data.version ?? AI_SHARING_CONSENT_VERSION,
-      decidedAt: remote.data.decidedAt ?? new Date().toISOString(),
-    };
-    const settings = getState().workspace.settings;
-    await dispatch(workspaceActions.updateSettings({ ...settings, aiDataSharing: adopted }));
-    if (!remote.data.granted) await aiSharing.purge();
-  } else if (remoteAt < localAt) {
-    const sent = await api.putConsent(toServerDecision(local));
-    if (!sent.ok) return false;
+  const sameAsRemote =
+    remote.data.decidedAt === local.decidedAt &&
+    remote.data.granted === (local.consent === 'granted') &&
+    remote.data.version === local.version;
+  let agreed = true;
+  if (sameAsRemote) {
+    if (local.delivered !== true)
+      await saveConsent(getState, dispatch, { ...local, delivered: true });
+  } else if (local.delivered !== true || remote.data.decidedAt === null) {
+    // Ours never arrived, or the service has none (a restore lost it): ours is still the
+    // creator's latest decision.
+    agreed = await deliver(getState, dispatch, local);
+  } else {
+    await adoptRemote(getState, dispatch, remote.data);
   }
-  dispatch(actions.setServerConsentSynced(true));
-  return hasSharingConsent(selectSharingConsent(getState()));
+  if (agreed) dispatch(actions.setServerConsentSynced(true));
+  return agreed;
 }
 
 /** Records per upload, kept under the service's body cap whatever the records weigh. */
@@ -225,6 +308,7 @@ async function flushQueue(getState: () => AppState, dispatch: AppDispatch): Prom
     if (response.status === 403) {
       // The server holds no current consent for this account: decided otherwise elsewhere, or
       // the consent text changed. Stop, and let the next sync settle whose decision stands.
+      if (checkOutdated(dispatch, response)) break;
       dispatch(actions.setServerConsentSynced(false));
       dispatch(actions.uploadFailed());
       break;
@@ -259,6 +343,9 @@ const slice = createSlice({
   reducers: {
     notNow: state => {
       state.notNow = true;
+    },
+    setOutdated: state => {
+      state.outdated = true;
     },
     setServerConsentSynced: (state, { payload }: PayloadAction<boolean>) => {
       state.serverConsentSynced = payload;

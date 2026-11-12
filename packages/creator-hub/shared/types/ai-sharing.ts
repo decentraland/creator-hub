@@ -11,6 +11,8 @@ export interface AiSharingConsent {
   consent: 'granted' | 'denied';
   version: number;
   decidedAt: string;
+  // The sharing service has this decision. Until it does, the next sync sends it.
+  delivered?: boolean;
 }
 
 /** True only for a yes to the current consent text. */
@@ -79,7 +81,7 @@ export interface AiTurnRecord {
   errorKind: AiTurnErrorKind | null;
   mutations: number;
   usage: AiTurnUsage | null;
-  projectId: string;
+  projectId: string | null;
 }
 
 /** What Settings shows for a queued record: enough to recognise it, nothing more. */
