@@ -17,6 +17,7 @@ import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { TranslationProvider } from '/@/components/TranslationProvider';
 
 import { AuthProvider } from '/@/components/AuthProvider';
+import { AiSharingUploader } from '/@/hooks/useAiSharingUploader';
 
 import { AiChatWindow } from '/@/components/AiChatWindow';
 import { ConsoleWindow } from '/@/components/ConsoleWindow';
@@ -124,6 +125,7 @@ if (isAiChatWindow || isConsoleWindow) {
                 <Router>
                   <ScrollToTop />
                   <AuthProvider>
+                    <AiSharingUploader />
                     <RouteErrorBoundary>
                       <Routes>
                         <Route

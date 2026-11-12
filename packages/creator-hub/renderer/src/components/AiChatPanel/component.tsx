@@ -1,9 +1,12 @@
 import { useCallback } from 'react';
+import { shallowEqual } from 'react-redux';
 
 import type { AiAssetMention, AiAttachment, AiProvider } from '/shared/types/ai';
 
 import { useDispatch, useSelector } from '#store';
 import { actions as aiActions } from '/@/modules/store/ai';
+import { actions as aiSharingActions, selectSharingView } from '/@/modules/store/aiSharing';
+import { useAuth } from '/@/hooks/useAuth';
 
 import { ChatView } from './ChatView';
 
@@ -70,6 +73,17 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     [dispatch],
   );
   const onDraftConsumed = useCallback(() => dispatch(aiActions.consumeDraftPrompt()), [dispatch]);
+  const { isSignedIn } = useAuth();
+  const sharing = useSelector(state => selectSharingView(state, isSignedIn), shallowEqual);
+  const onShareDecision = useCallback(
+    (granted: boolean) => dispatch(aiSharingActions.decide(granted)),
+    [dispatch],
+  );
+  const onShareNotNow = useCallback(() => dispatch(aiSharingActions.notNow()), [dispatch]);
+  const onSetConversationShared = useCallback(
+    (shared: boolean) => dispatch(aiActions.setConversationShared(shared)),
+    [dispatch],
+  );
 
   return (
     <ChatView
@@ -100,6 +114,10 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
       onRemoveAssetMention={onRemoveAssetMention}
       onPopOut={onPopOut}
       onClose={onClose}
+      sharing={sharing}
+      onShareDecision={onShareDecision}
+      onShareNotNow={onShareNotNow}
+      onSetConversationShared={onSetConversationShared}
     />
   );
 }

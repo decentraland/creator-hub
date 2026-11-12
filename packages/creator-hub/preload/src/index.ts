@@ -35,6 +35,7 @@ export const fs = {
 };
 
 export * as ai from './modules/ai';
+export * as aiSharing from './modules/ai-sharing';
 export * as consoleWindow from './modules/console-window';
 export * as auth from './modules/auth';
 export * as editor from './modules/editor';

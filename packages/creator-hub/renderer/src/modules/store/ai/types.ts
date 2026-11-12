@@ -36,6 +36,8 @@ export interface AiSessionMeta {
   id: string;
   title: string;
   updatedAt: number; // epoch ms; the list is sorted newest first
+  // The creator turned conversation sharing off for this conversation only.
+  shareExcluded?: boolean;
 }
 
 export interface AiState {

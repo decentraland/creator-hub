@@ -1,3 +1,4 @@
+import type { AiSharingConsent } from './ai-sharing';
 export enum DEPENDENCY_UPDATE_STRATEGY {
   AUTO_UPDATE = 'auto_update',
   NOTIFY = 'notify',
@@ -76,6 +77,9 @@ export type AppSettings = {
   // `/upload-assets` can be tested before merge. The toggle is shown and honored ONLY in
   // non-production builds (`!import.meta.env.PROD`); a production release ignores it entirely.
   useDevAssetCatalog?: boolean;
+  // Opt-in sharing of AI assistant conversations. Deliberately NOT in DEFAULT_CONFIG: absent
+  // means the creator was never asked, which is what shows them the consent card.
+  aiDataSharing?: AiSharingConsent;
 };
 
 export interface ReleaseNotes {

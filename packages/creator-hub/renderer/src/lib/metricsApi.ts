@@ -68,7 +68,7 @@ export type MetricsBatch = {
 export function buildSignedHeaders(
   baseUrl: string,
   path: string,
-  method: 'get' | 'post' | 'put' = 'post',
+  method: 'get' | 'post' | 'put' | 'delete' = 'post',
   metadata: Record<string, string> = {},
 ): Record<string, string> {
   const address = AuthServerProvider.getAccount();

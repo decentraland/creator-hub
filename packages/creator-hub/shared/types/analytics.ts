@@ -137,10 +137,15 @@ export type Events = {
     project_id: string;
     provider: string;
     model: string;
+    // What the CLI reported running, when it reports it ('default' above says nothing).
+    actual_model: string | null;
     ok: boolean;
+    cancelled: boolean;
     duration_ms: number;
     tool_count: number;
     mutations: number;
+    input_tokens: number | null;
+    output_tokens: number | null;
   };
   'Creator Fund Join Clicked': {
     signed_in: boolean;

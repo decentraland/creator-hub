@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { shallowEqual } from 'react-redux';
 import { ai as aiPreload } from '#preload';
+
 import { useDispatch, useSelector } from '#store';
 import { actions as aiActions } from '/@/modules/store/ai';
+import { actions as aiSharingActions, selectSharingView } from '/@/modules/store/aiSharing';
+import { useAuth } from './useAuth';
 
 // Coalesce mirror pushes to the detached window to at most one per this interval (P2-1).
 const MIRROR_THROTTLE_MS = 60;
@@ -27,11 +31,13 @@ export function useAiSession(
   const aiState = useSelector(state => state.ai);
   const projectTitle = useSelector(state => state.editor.project?.title);
   const locale = useSelector(state => state.translation.locale);
+  const { isSignedIn } = useAuth();
+  const sharing = useSelector(state => selectSharingView(state, isSignedIn), shallowEqual);
   const [detachedOpen, setDetachedOpen] = useState(false);
   // Latest snapshot + clear callback, read by the (stable) remote-command listener so it
   // doesn't need to re-subscribe on every streamed token / callback identity change.
-  const latest = useRef({ aiState, projectTitle, onClearSelection, onCloseAssistant });
-  latest.current = { aiState, projectTitle, onClearSelection, onCloseAssistant };
+  const latest = useRef({ aiState, projectTitle, sharing, onClearSelection, onCloseAssistant });
+  latest.current = { aiState, projectTitle, sharing, onClearSelection, onCloseAssistant };
 
   // Provider detection + the turn event stream (fold events into the store, persist on done).
   useEffect(() => {
@@ -47,7 +53,8 @@ export function useAiSession(
       dispatch(aiActions.applyEvent(event));
       if (event.kind === 'done') {
         dispatch(aiActions.persistConversation());
-        void dispatch(aiActions.recheckAfterTurn(event.ok));
+        // A stop isn't a failure: don't re-detect providers for it.
+        void dispatch(aiActions.recheckAfterTurn(event.ok || event.cancelled === true));
       }
     });
     // Interactive `ask_user` prompts arrive on their own channel (they block an MCP tool call,
@@ -148,10 +155,20 @@ export function useAiSession(
           void aiPreload.closeAiWindow();
           latest.current.onCloseAssistant?.();
           break;
+        case 'shareDecision':
+          dispatch(aiSharingActions.decide(command.granted));
+          break;
+        case 'shareNotNow':
+          dispatch(aiSharingActions.notNow());
+          break;
+        case 'setConversationShared':
+          dispatch(aiActions.setConversationShared(command.shared));
+          break;
         case 'sync':
           aiPreload.pushAiMirrorState({
             ...latest.current.aiState,
             projectTitle: latest.current.projectTitle,
+            sharing: latest.current.sharing,
           });
           break;
         default: {
@@ -176,6 +193,7 @@ export function useAiSession(
       aiPreload.pushAiMirrorState({
         ...latest.current.aiState,
         projectTitle: latest.current.projectTitle,
+        sharing: latest.current.sharing,
       });
     };
     const elapsed = Date.now() - lastMirror.current;
@@ -187,7 +205,7 @@ export function useAiSession(
         push();
       }, MIRROR_THROTTLE_MS - elapsed);
     }
-  }, [enabled, detachedOpen, aiState, projectTitle]);
+  }, [enabled, detachedOpen, aiState, projectTitle, sharing]);
 
   // Cancel a pending mirror push on unmount.
   useEffect(
@@ -215,5 +233,5 @@ export function useAiSession(
     void aiPreload.closeAiWindow();
   }, []);
 
-  return { detachedOpen, openDetached, closeDetached };
+  return { detachedOpen, openDetached, closeDetached, sharing };
 }

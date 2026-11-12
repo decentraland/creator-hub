@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import * as ai from '../../src/modules/store/ai';
+import * as aiSharing from '../../src/modules/store/aiSharing';
 import * as editor from '../../src/modules/store/editor';
 import * as snackbar from '../../src/modules/store/snackbar';
 import * as translations from '../../src/modules/store/translation';
@@ -22,6 +23,7 @@ export const createTestStore = () =>
   configureStore({
     reducer: {
       ai: ai.reducer,
+      aiSharing: aiSharing.reducer,
       editor: editor.reducer,
       snackbar: snackbar.reducer,
       translation: translations.reducer,

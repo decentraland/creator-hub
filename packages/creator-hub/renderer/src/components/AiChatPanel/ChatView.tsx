@@ -47,6 +47,7 @@ import type { AiMessage, AiPromptData, AiSessionMeta } from '/@/modules/store/ai
 import { WarningCircleIcon } from '../Icons';
 import { SignInCodeField } from '../SignInCodeField';
 import { toolChipLabel } from './labels';
+import { SharingConsentCard, SharingStatusChip, type SharingProps } from './SharingConsent';
 import {
   AssistantBubble,
   AssistantImage,
@@ -320,7 +321,7 @@ function PromptBlock({
 // The pure chat surface, driven entirely by props. Both the inline panel (redux-backed)
 // and the detached window (mirror-backed) render this — neither reaches into a store from
 // here, so the same view works whichever owns the state (#1504).
-export interface ChatViewProps {
+export interface ChatViewProps extends SharingProps {
   providers: {
     id: AiProvider;
     label: string;
@@ -429,6 +430,10 @@ export function ChatView(props: ChatViewProps) {
     onClose,
     draftPrompt,
     onDraftConsumed,
+    sharing,
+    onShareDecision,
+    onShareNotNow,
+    onSetConversationShared,
   } = props;
 
   const [input, setInput] = useState('');
@@ -849,6 +854,11 @@ export function ChatView(props: ChatViewProps) {
           {title !== undefined && title !== '' ? ` — ${title}` : ''}
         </HeaderTitle>
         <HeaderActions>
+          <SharingStatusChip
+            sharing={sharing}
+            onShareDecision={onShareDecision}
+            onSetConversationShared={onSetConversationShared}
+          />
           {!detached && onPopOut !== undefined && (
             <Tooltip title={t('editor.ai.pop_out')}>
               <IconButton
@@ -1062,6 +1072,12 @@ export function ChatView(props: ChatViewProps) {
             </SignInHintBody>
           </OutdatedHint>
         )}
+
+        <SharingConsentCard
+          sharing={sharing}
+          onShareDecision={onShareDecision}
+          onShareNotNow={onShareNotNow}
+        />
 
         {available && !billingDismissed && (
           <BillingCard>

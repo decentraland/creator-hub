@@ -11,6 +11,7 @@ import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
+import type { AiSharingQueuedItem, AiTurnRecord } from './ai-sharing';
 import type { SkillsUpdateStatus } from './skills';
 import type {
   AiMirrorState,
@@ -209,6 +210,13 @@ export interface Ipc {
   'optimizer.tools': () => Promise<OptimizeToolsInfo>;
   'optimizer.installTools': (path: string) => Promise<OptimizeToolsInfo>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
+
+  // Opt-in AI conversation sharing: the on-disk queue of redacted turn records. Main fills it;
+  // the renderer, which holds the signing identity, uploads and acknowledges.
+  'aiSharing.peek': (address: string, limit: number) => Promise<AiTurnRecord[]>;
+  'aiSharing.ack': (recordIds: string[]) => Promise<void>;
+  'aiSharing.list': () => Promise<AiSharingQueuedItem[]>;
+  'aiSharing.purge': () => Promise<void>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (
     path: string,

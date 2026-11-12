@@ -10,6 +10,7 @@ import type {
 } from '/shared/types/ai';
 import { assetMentionKey } from '/shared/types/ai';
 import type { AiRevertResult } from '/shared/types/ipc';
+import type { AppState } from '/@/modules/store';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -113,6 +114,13 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     const context = editorContext(selection, assetMentions);
     dispatch(actions.clearAssetMentions());
     const apiKeyFromEnv = state.workspace.settings?.useApiKeyFromEnv ?? false;
+    const share = (await shareThisTurn(getState()))
+      ? {
+          turnIndex: state.ai.messages.filter(m => m.role === 'user').length,
+          selectedEntityCount: selection.length,
+          mentionedAssetCount: assetMentions.length,
+        }
+      : undefined;
     await ai.send(path, {
       provider,
       model,
@@ -121,9 +129,21 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
       attachments: files,
       apiKeyFromEnv,
       sessionId,
+      share,
     });
   },
 );
+
+// Loaded on use: the sharing module reads the app config at import, which this slice (and its
+// tests) must not depend on. If it can't load, the turn is simply not shared.
+async function shareThisTurn(state: AppState) {
+  try {
+    const { shouldShareTurn } = await import('/@/modules/store/aiSharing/slice');
+    return shouldShareTurn(state);
+  } catch {
+    return false;
+  }
+}
 
 // One line naming what the user has selected, or undefined when nothing is. Kept terse —
 // the assistant can call get_selection / scene_state for the full picture. Exported for tests.
@@ -276,6 +296,25 @@ export const deleteSession = createAsyncThunk<void, string>(
   },
 );
 
+// The sharing chip's per-conversation switch. Saved with the scene's session index, so the
+// choice holds when the conversation is reopened.
+export const setConversationShared = createAsyncThunk<void, boolean>(
+  'ai/setConversationShared',
+  (shared, { getState, dispatch }) => {
+    const { ai: aiState, editor } = getState();
+    const current = aiState.currentSessionId;
+    if (current === '') return;
+    const sessions = aiState.sessions.map(s =>
+      s.id === current ? { ...s, shareExcluded: shared ? undefined : true } : s,
+    );
+    dispatch(actions.setSessions({ sessions, currentSessionId: current }));
+    const path = editor.project?.path;
+    if (path !== undefined && path !== '') {
+      writeSessionIndex(path, { current, sessions: savedSessions(sessions) });
+    }
+  },
+);
+
 // Dismiss the "runs on your own account" billing hint for the open scene (#1505), and
 // remember it per-project so it stays gone across restarts.
 export const dismissBilling = createAsyncThunk(
@@ -298,10 +337,12 @@ export const persistConversation = createAsyncThunk(
     const current = aiState.currentSessionId;
     if (path === undefined || path === '' || current === '') return;
     writeSessionMessages(path, current, aiState.messages);
+    const existing = aiState.sessions.find(s => s.id === current);
     const meta: AiSessionMeta = {
       id: current,
-      title: aiState.sessions.find(s => s.id === current)?.title || sessionTitle(aiState.messages),
+      title: existing?.title || sessionTitle(aiState.messages),
       updatedAt: Date.now(),
+      ...(existing?.shareExcluded === true ? { shareExcluded: true } : {}),
     };
     const sessions = [meta, ...savedSessions(aiState.sessions).filter(s => s.id !== current)];
     writeSessionIndex(path, { current, sessions });
@@ -614,6 +655,7 @@ export const actions = {
   loadConversation,
   persistConversation,
   dismissBilling,
+  setConversationShared,
   switchSession,
   deleteSession,
 };

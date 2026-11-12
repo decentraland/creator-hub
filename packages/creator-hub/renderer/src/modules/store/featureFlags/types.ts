@@ -14,4 +14,9 @@ export enum FeatureFlag {
    * same flag — the two apps have to agree on which pipeline converted a scene.
    */
   ABGEN_PIPELINE = 'explorer-alfa-abgen-pipeline',
+  /**
+   * Opt-in sharing of AI assistant conversations: the consent card, the Settings section and
+   * the uploader. Off means nothing is asked, recorded or sent.
+   */
+  AI_PROMPT_SHARING = 'creatorhub-ai-prompt-sharing',
 }

@@ -35,6 +35,8 @@ import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './
 import { getAppDataPath, getUserDataPath } from './electron';
 import { getChildEnv, resolveNodeRuntime } from './node-runtime';
 import { getProjectId, track } from './analytics';
+import { readTurnInfo, sharingAddress, TurnRecorder, type TurnInfo } from './ai-sharing';
+import type { AiTurnErrorKind } from '/shared/types/ai-sharing';
 import {
   clearPendingAsks,
   ensureSceneMcpServer,
@@ -1102,7 +1104,13 @@ export async function detectProviders(apiKeyFromEnv = false): Promise<AiProvider
   return scan(apiKeyFromEnv);
 }
 
-let current: { child: ChildProcess; turnId: string; done: boolean } | null = null;
+let current: {
+  child: ChildProcess;
+  turnId: string;
+  done: boolean;
+  // Ends the turn as cancelled (done event, analytics, shared record) before the kill.
+  cancel: () => void;
+} | null = null;
 
 // Each provider's resume id, per project AND per local session, so consecutive turns chain
 // into one conversation, each saved session resumes its own CLI thread, and it all survives
@@ -1182,8 +1190,8 @@ export function aiStop(): void {
   const c = current;
   current = null;
   if (!c.done) {
-    c.done = true;
     log.info(`[AI] Stopped turn ${c.turnId} before it finished`);
+    c.cancel();
     killTree(c.child);
   }
 }
@@ -1371,6 +1379,15 @@ export function turnOutcome(turn: {
   return { logLine, ok: false, message: stderr || `assistant exited with code ${code}` };
 }
 
+const stripUndefined = <T extends object>(value: T): Partial<T> =>
+  Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as Partial<T>;
+
+// How a failed turn ended, for the shared record: no free text, so no stderr leaks into it.
+function failureKind(code: number | null, signal: NodeJS.Signals | null): AiTurnErrorKind {
+  if (signal !== null) return 'signal';
+  return code === 0 ? 'no_reply' : 'exit_code';
+}
+
 // Spawn one turn and stream its events through `emit`. Returns as soon as the child is
 // running (with the turn id) — the conversation streams asynchronously; it does NOT
 // wait for the turn to finish.
@@ -1406,13 +1423,37 @@ export async function aiSend(
     log.warn('[AI] MCP server unavailable, continuing without scene tools:', e);
   }
 
+  const turnId = `t-${randomUUID()}`;
+  const startedAt = Date.now();
+  const projectIdPromise = getProjectId(projectDir).catch((): string => '');
+  // Only for a creator who opted in to sharing; null otherwise, and then nothing is recorded.
+  const shareAddress = await sharingAddress(params).catch(() => null);
+  const recorder =
+    shareAddress !== null && params.share !== undefined
+      ? await TurnRecorder.start({
+          address: shareAddress,
+          conversationId: params.sessionId ?? '',
+          turnId,
+          share: params.share,
+          startedAt,
+          provider: params.provider,
+          requestedModel: params.model ?? 'default',
+          systemPrompt: DCL_SYSTEM_PROMPT,
+          prompt: params.text,
+          attachments: (params.attachments ?? []).map(a => ({ name: a.name, kind: a.kind })),
+          projectId: await projectIdPromise,
+        }).catch((e: unknown) => {
+          log.warn('[AI sharing] could not start recording this turn', e);
+          return null;
+        })
+      : null;
+  // Checked after every await above, so two sends can't both get past it.
   if (current !== null)
     throw new Error(
       'The assistant is still working on your previous message. Wait for it to finish, or stop it first.',
     );
   if (mcp !== undefined) setSceneMcpProject(projectDir);
   resetTurnMutations(); // start counting this turn's scene-graph changes for "revert turn"
-  const turnId = `t-${randomUUID()}`;
   // Prepend editor context (when present) to the prompt so the assistant sees editor
   // state without the user retyping it. Not shown in the chat bubble.
   let prompt =
@@ -1477,19 +1518,19 @@ export async function aiSend(
     child.stdin.end(stdin);
   }
 
-  const turn = { child, turnId, done: false };
+  const turn = { child, turnId, done: false, cancel: () => finish(false, undefined, 'cancelled') };
   current = turn;
   emit({ kind: 'started', turnId });
 
   // Usage analytics (fire-and-forget, never blocks the turn; no prompt/scene content, only
   // the anonymous project id + provider/model + turn outcome). Resolve the project id once
   // and reuse it for both the start and completion events.
-  const startedAt = Date.now();
   let toolCount = 0;
   // Text blocks and images shown; with toolCount, they tell a turn that replied from a silent one.
   let textCount = 0;
   let imageCount = 0;
-  const projectIdPromise = getProjectId(projectDir).catch((): string => '');
+  // What the CLI reported about the run: the model it actually used, its version, tokens.
+  const info: TurnInfo = {};
   void projectIdPromise.then(project_id =>
     track('AI Turn Started', {
       project_id,
@@ -1498,22 +1539,41 @@ export async function aiSend(
     }),
   );
 
-  const finish = (ok: boolean, message?: string): void => {
+  const finish = (
+    ok: boolean,
+    message?: string,
+    errorKind: AiTurnErrorKind | 'cancelled' | null = null,
+  ): void => {
     if (turn.done) return;
     turn.done = true;
+    const cancelled = errorKind === 'cancelled';
+    const mutations = getTurnMutations();
     if (ok) providersNeedingLogin.delete(params.provider);
     if (message !== undefined) emit({ kind: 'error', turnId, message });
-    emit({ kind: 'done', turnId, ok, mutations: getTurnMutations() });
+    emit({ kind: 'done', turnId, ok, mutations, ...(cancelled ? { cancelled } : {}) });
     if (current === turn) current = null;
+    recorder?.finish(
+      {
+        outcome: ok ? 'ok' : cancelled ? 'cancelled' : 'error',
+        errorKind: ok || cancelled ? null : (errorKind ?? 'exit_code'),
+        mutations,
+        endedAt: Date.now(),
+      },
+      info,
+    );
     void projectIdPromise.then(project_id =>
       track('AI Turn Completed', {
         project_id,
         provider: params.provider,
         model: params.model ?? 'default',
+        actual_model: info.model ?? null,
         ok,
+        cancelled,
         duration_ms: Date.now() - startedAt,
         tool_count: toolCount,
-        mutations: getTurnMutations(),
+        mutations,
+        input_tokens: info.usage?.inputTokens ?? null,
+        output_tokens: info.usage?.outputTokens ?? null,
       }),
     );
   };
@@ -1546,14 +1606,18 @@ export async function aiSend(
       loginRequested = true;
       return;
     }
+    const lineInfo = readTurnInfo(params.provider, line);
+    if (lineInfo !== undefined) Object.assign(info, stripUndefined(lineInfo));
     const session = def.parseLine(line, projectDir, (text, tool, image) => {
       if (text !== '') {
         textCount++;
         emit({ kind: 'text', turnId, text: friendlyCliError(text) });
+        recorder?.onText(text);
       }
       if (tool !== undefined) {
         toolCount++;
         emit({ kind: 'tool', turnId, tool: tool[0], detail: tool[1] });
+        recorder?.onTool(tool[0], tool[1]);
       }
       if (image !== undefined) {
         imageCount++;
@@ -1582,7 +1646,7 @@ export async function aiSend(
   });
   child.on('error', e => {
     log.warn(`[AI] ${def.label} turn ${turnId} failed to start: ${e.message}`);
-    finish(false, `assistant failed to start: ${e.message}`);
+    finish(false, `assistant failed to start: ${e.message}`, 'start_failed');
   });
   let closeTimer: NodeJS.Timeout | undefined;
   let settled = false;
@@ -1615,10 +1679,10 @@ export async function aiSend(
           : bin.startsWith(getManagedBinDir())
             ? 'managed'
             : 'signin';
-      finish(false, signInRequiredMessage(params.provider, cause));
+      finish(false, signInRequiredMessage(params.provider, cause), 'sign_in');
       return;
     }
-    finish(outcome.ok, outcome.message);
+    finish(outcome.ok, outcome.message, outcome.ok ? null : failureKind(code, signal));
   };
   child.on('exit', (code, signal) => {
     closeTimer = setTimeout(() => settle(code, signal), OUTPUT_CLOSE_GRACE_MS);

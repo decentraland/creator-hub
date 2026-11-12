@@ -171,6 +171,23 @@
         "needs_login_help": "Its saved sign-in may have expired, even if it showed as connected. Sign out and back in: run these in a terminal, one at a time, and finish in your browser. Then send your message again:",
         "needs_login_managed_help": "Its saved sign-in may have expired, even if it showed as connected. In Settings → AI, click Sign out, then Sign in, then send your message again.",
         "api_key_alternative": "Or use an API key: set {envVar} and turn on \"{setting}\" in Settings → AI."
+      },
+      "sharing": {
+        "card_title": "Help improve the AI assistant",
+        "card_body": "Share your conversations with Decentraland so we can learn how creators use the assistant and make it better. Keys, seed phrases, emails and other personal details are removed on your computer before anything is sent.",
+        "signin_body": "Sign in to share your conversations and help improve the assistant.",
+        "details_toggle": "What's shared and what isn't",
+        "details_shared": "Shared: what you type, the assistant's replies, the tools it used, the agent and model, and how long each reply took.",
+        "details_not_shared": "Never shared: images, file contents, file paths, scene names, or conversations you mark as not shared.",
+        "details_control": "Stop sharing or delete everything you've shared at any time in Settings. Shared conversations are kept for up to 180 days.",
+        "accept": "Share to help improve",
+        "decline": "No thanks",
+        "not_now": "Not now",
+        "chip": "Sharing",
+        "chip_excluded": "Not sharing this chat",
+        "menu_exclude": "Don't share this conversation",
+        "menu_include": "Share this conversation",
+        "menu_stop": "Stop sharing all conversations"
       }
     },
     "publish": {
@@ -663,6 +680,17 @@
           "install": "Install",
           "sign_in_label": "Sign In",
           "copy": "Copy"
+        },
+        "ai_sharing": {
+          "label": "Share conversations to improve Creator Hub",
+          "description": "Sends what you ask the assistant and its replies to Decentraland, with keys and personal details removed on your computer first. Kept for up to 180 days.",
+          "signin": "Sign in to share conversations.",
+          "queued_title": "Waiting to upload ({count})",
+          "queued_empty": "Nothing is waiting to upload.",
+          "delete": "Delete everything I've shared",
+          "deleting": "Deleting…",
+          "deleted": "Deleted {count} shared conversations. Sharing is now off.",
+          "delete_failed": "Couldn't delete your shared conversations. Check your connection and try again."
         }
       },
       "actions": {

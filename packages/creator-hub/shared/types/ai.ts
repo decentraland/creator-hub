@@ -167,6 +167,16 @@ export interface AiSendParams {
   // Which local session this turn belongs to. Main keys the provider resume id by
   // (projectDir, sessionId), so each saved conversation resumes its own CLI thread.
   sessionId?: string;
+  // Present only when the user opted in to sharing and this conversation isn't excluded.
+  // Main still checks the saved consent and the signed-in address before recording.
+  share?: AiShareRequest;
+}
+
+// What only the renderer knows about a turn the user agreed to share. Counts, not content.
+export interface AiShareRequest {
+  turnIndex: number;
+  selectedEntityCount: number;
+  mentionedAssetCount: number;
 }
 
 // Streamed over the AI_STREAM_EVENT channel while a turn runs. `turnId` correlates
@@ -183,7 +193,8 @@ export type AiEvent =
   | { kind: 'error'; turnId: string; message: string }
   // `mutations` is how many undo entries this turn applied to the scene graph — the panel
   // uses it to offer a one-click "Undo AI changes" (revert the turn).
-  | { kind: 'done'; turnId: string; ok: boolean; mutations?: number };
+  // `cancelled` is set when the user stopped the turn.
+  | { kind: 'done'; turnId: string; ok: boolean; mutations?: number; cancelled?: boolean };
 
 // --- Detached AI window (#1504) -------------------------------------------------------
 //
@@ -248,6 +259,19 @@ export interface AiMirrorState {
   currentSessionId: string;
   // The open project's title, for the detached window's header (it has no editor of its own).
   projectTitle?: string;
+  // Opt-in conversation sharing, as the chat shows it. Computed by the main window, which
+  // holds the settings, flags and sign-in state the detached window doesn't have.
+  sharing?: AiSharingView;
+}
+
+// What the chat shows about conversation sharing.
+// - hidden: the feature is off (flag), or the user said no — nothing is shown.
+// - ask: show the consent card. signin: the user would be asked, but is signed out.
+// - on: the user said yes; the chat shows a "Sharing" chip.
+export interface AiSharingView {
+  status: 'hidden' | 'ask' | 'signin' | 'on';
+  // The user turned sharing off for the open conversation only.
+  conversationExcluded: boolean;
 }
 
 // A user action taken in the detached window, forwarded to the main window to run against
@@ -268,4 +292,9 @@ export type AiRemoteCommand =
   // The detached window's close button: shut the assistant entirely (close the window AND the
   // inline panel), instead of just docking back — so close is consistent whether detached or not.
   | { type: 'closeAssistant' }
+  // Opt-in conversation sharing: the consent card's answer, its "not now", and the chip's
+  // per-conversation switch.
+  | { type: 'shareDecision'; granted: boolean }
+  | { type: 'shareNotNow' }
+  | { type: 'setConversationShared'; shared: boolean }
   | { type: 'sync' };

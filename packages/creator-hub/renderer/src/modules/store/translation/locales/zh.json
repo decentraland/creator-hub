@@ -171,6 +171,23 @@
         "needs_login_help": "即使显示为已连接，其保存的登录也可能已过期。请先退出再重新登录：在终端中逐条运行以下命令，并在浏览器中完成登录，然后重新发送你的消息：",
         "needs_login_managed_help": "即使显示为已连接，其保存的登录状态也可能已过期。请在“设置 → AI”中点击“退出登录”，然后点击“登录”，再重新发送你的消息。",
         "api_key_alternative": "或者使用 API 密钥：设置 {envVar}，并在“设置 → AI”中开启“{setting}”。"
+      },
+      "sharing": {
+        "card_title": "帮助改进 AI 助手",
+        "card_body": "与 Decentraland 分享你的对话，帮助我们了解创作者如何使用助手并加以改进。发送前，密钥、助记词、邮箱和其他个人信息会在你的电脑上被移除。",
+        "signin_body": "登录后即可分享对话，帮助改进助手。",
+        "details_toggle": "会分享什么、不会分享什么",
+        "details_shared": "会分享：你输入的内容、助手的回复、它使用的工具、代理和模型，以及每次回复所用的时间。",
+        "details_not_shared": "绝不分享：图片、文件内容、文件路径、场景名称，以及你标记为不分享的对话。",
+        "details_control": "你可以随时在设置中停止分享或删除所有已分享的内容。已分享的对话最多保留 180 天。",
+        "accept": "分享以帮助改进",
+        "decline": "不用了",
+        "not_now": "暂不",
+        "chip": "正在分享",
+        "chip_excluded": "此对话不分享",
+        "menu_exclude": "不分享此对话",
+        "menu_include": "分享此对话",
+        "menu_stop": "停止分享所有对话"
       }
     },
     "publish": {
@@ -663,6 +680,17 @@
           "install": "安装",
           "sign_in_label": "登录",
           "copy": "复制"
+        },
+        "ai_sharing": {
+          "label": "分享对话以改进 Creator Hub",
+          "description": "将你向助手提出的问题及其回复发送给 Decentraland，发送前会先在你的电脑上移除密钥和个人信息。最多保留 180 天。",
+          "signin": "登录后即可分享对话。",
+          "queued_title": "等待上传（{count}）",
+          "queued_empty": "没有等待上传的内容。",
+          "delete": "删除我分享的所有内容",
+          "deleting": "正在删除…",
+          "deleted": "已删除 {count} 条分享的对话。分享已关闭。",
+          "delete_failed": "无法删除你分享的对话。请检查网络后重试。"
         }
       },
       "actions": {
