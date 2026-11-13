@@ -180,12 +180,13 @@
       },
       "sharing": {
         "card_title": "Help improve the AI assistant",
-        "card_body": "Share your conversations with Decentraland so we can learn how creators use the assistant and make it better. Before anything is sent, your computer removes keys, seed phrases, emails and other common personal details.",
+        "card_body": "Share your conversations with Decentraland to help improve the assistant. An AI model reads them to find what works and what doesn't. Before anything is sent, your computer removes keys, seed phrases, emails and other common personal details.",
         "signin_body": "Sign in to share your conversations and help improve the assistant.",
         "details_toggle": "What's shared and what isn't",
         "details_shared": "Shared: what you type, the assistant's replies, the tools it used with their file names and commands, the agent and model, and how long each reply took.",
         "details_not_shared": "Not shared: images, file contents, your scene's name, or conversations you mark as not shared.",
-        "details_control": "Stop sharing or delete everything you've shared at any time in Settings. Shared conversations are kept for up to 180 days.",
+        "details_analysis": "How they're used: an AI model from a provider working for Decentraland summarises each conversation. The provider keeps no copy and doesn't train on it. We keep the patterns we see across many creators to improve the assistant.",
+        "details_control": "Stop sharing or delete everything you've shared at any time in Settings. Stopping also stops the analysis, and deleting also deletes the summaries. Shared conversations and their summaries are kept for up to 180 days.",
         "accept": "Share to help improve",
         "decline": "No thanks",
         "not_now": "Not now",
@@ -689,7 +690,7 @@
         },
         "ai_sharing": {
           "label": "Share conversations to improve Creator Hub",
-          "description": "Sends what you ask the assistant and its replies to Decentraland, after removing keys and common personal details on your computer. Kept for up to 180 days.",
+          "description": "Sends what you ask the assistant and its replies to Decentraland, after removing keys and common personal details on your computer. An AI model summarises them to find ways to improve the assistant. Kept for up to 180 days.",
           "signin": "Sign in to share conversations.",
           "queued_title": "Waiting to upload ({count})",
           "queued_empty": "Nothing is waiting to upload.",
@@ -703,7 +704,7 @@
           "viewer_failed": "Couldn't load what you've shared. Check your connection and try again.",
           "viewer_delete": "Delete this turn",
           "viewer_more": "Show more",
-          "delete_confirm": "Delete everything you've shared and stop sharing? This can't be undone.",
+          "delete_confirm": "Delete everything you've shared, and its summaries, and stop sharing? This can't be undone.",
           "delete_confirm_yes": "Delete everything",
           "delete_cancel": "Cancel"
         }

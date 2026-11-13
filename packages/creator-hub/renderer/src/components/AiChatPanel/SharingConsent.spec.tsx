@@ -69,7 +69,7 @@ describe('when the creator has not been asked yet', () => {
     expect(onShareDecision).not.toHaveBeenCalled();
   });
 
-  it('should list what is and is not shared on request', () => {
+  it('should list what is shared, what is not, and how it is analysed on request', () => {
     renderBoth(view);
     expect(screen.queryByText(copy.details_not_shared)).toBeNull();
 
@@ -77,6 +77,7 @@ describe('when the creator has not been asked yet', () => {
 
     expect(screen.getByText(copy.details_shared)).toBeTruthy();
     expect(screen.getByText(copy.details_not_shared)).toBeTruthy();
+    expect(screen.getByText(copy.details_analysis)).toBeTruthy();
   });
 
   it('should not show the sharing chip', () => {

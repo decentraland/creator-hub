@@ -66,6 +66,7 @@ export function SharingConsentCard({ sharing, onShareDecision, onShareNotNow }: 
             <DetailsList id="ai-sharing-details">
               <li>{t('editor.ai.sharing.details_shared')}</li>
               <li>{t('editor.ai.sharing.details_not_shared')}</li>
+              <li>{t('editor.ai.sharing.details_analysis')}</li>
               <li>{t('editor.ai.sharing.details_control')}</li>
             </DetailsList>
           )}
