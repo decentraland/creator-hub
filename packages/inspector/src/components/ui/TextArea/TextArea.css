@@ -21,6 +21,7 @@
 }
 
 .TextArea.Field textarea {
+  resize: vertical;
   flex: 1;
   min-height: 72px;
   padding: 4px 8px;
